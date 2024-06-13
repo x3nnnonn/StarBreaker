@@ -9,14 +9,14 @@ public interface IDataForge
     /// </summary>
     /// <param name="fileNameFilter">Regex to filter files to export</param>
     /// <param name="progress">Progress callback</param>
-    void Export(Regex? fileNameFilter = null, IProgress<double>? progress = null);
+    void Extract(Regex? fileNameFilter = null, IProgress<double>? progress = null);
     
     /// <summary>
     ///     Export all records in the DataCoreBinary into a single XML file.
     /// </summary>
     /// <param name="fileNameFilter">Regex to filter files to export</param>
     /// <param name="progress">Progress callback</param>
-    void ExportSingle(Regex? fileNameFilter = null, IProgress<double>? progress = null);
+    void ExtractSingle(Regex? fileNameFilter = null, IProgress<double>? progress = null);
     
     /// <summary>
     ///     Export all enums in the DataForge to a dictionary.

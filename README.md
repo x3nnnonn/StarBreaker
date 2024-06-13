@@ -12,12 +12,13 @@ USAGE
   StarBreaker [command] [...]
 
 OPTIONS
-  -h|--help         Shows help text. 
-  --version         Shows version information. 
+  -h|--help         Shows help text.
+  --version         Shows version information.
 
 COMMANDS
-  extract           Extracts a DataForge binary file into separate xml files 
-  extract-single    Extracts a DataForge binary file into a single xml 
+  df-extract        Extracts a DataForge binary file into separate xml files
+  df-extract-single  Extracts a DataForge binary file into a single xml
+  extract-p4k       Extracts a Game.p4k file
 
 You can run `StarBreaker [command] --help` to show help on a specific command.
 ```

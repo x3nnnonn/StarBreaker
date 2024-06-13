@@ -1,12 +1,20 @@
 {
   "profiles": {
-    "extract": {
+    "help": {
       "commandName": "Project",
-      "commandLineArgs": "extract --dcb \"C:\\Scratch\\extract\\Game.dcb\" --output \"C:\\Scratch\\extract\\stbr\" --filter \"^[0-9A-Za-z]{3}[0-9A-Za-z-]\\d{0,21}$\""
+      "commandLineArgs": "-h"
     },
-    "extract-single": {
+    "df-extract": {
       "commandName": "Project",
-      "commandLineArgs": "extract-single --dcb \"C:\\Scratch\\extract\\Game.dcb\" --output \"C:\\Scratch\\extract\\stbr\" --filter \"^[0-9A-Za-z]{3}[0-9A-Za-z-]\\d{0,21}$\""
+      "commandLineArgs": "df-extract --dcb \"C:\\Scratch\\extract\\Game.dcb\" --output \"C:\\Scratch\\extract\\stbr\" --filter \"^[0-9A-Za-z]{3}[0-9A-Za-z-]\\d{0,21}$\""
+    },
+    "df-extract-single": {
+      "commandName": "Project",
+      "commandLineArgs": "df-extract-single --dcb \"C:\\Scratch\\extract\\Game.dcb\" --output \"C:\\Scratch\\extract\\stbr\" --filter \"^[0-9A-Za-z]{3}[0-9A-Za-z-]\\d{0,21}$\""
+    },
+    "extract-p4k": {
+      "commandName": "Project",
+      "commandLineArgs": "extract-p4k --p4k \"C:\\Scratch\\extract\\Data.p4k\" --output \"C:\\Scratch\\extract\\stbr\\p4k\""
     }
   }
 }
