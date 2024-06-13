@@ -10,4 +10,8 @@
     <ItemGroup>
       <ProjectReference Include="..\StarBreaker.Forge\StarBreaker.Forge.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="CliFx" Version="2.3.5" />
+    </ItemGroup>
 </Project>

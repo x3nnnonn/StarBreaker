@@ -36,7 +36,7 @@ public sealed class DataForge : IDataForge
         // }
     }
 
-    public void Export(Regex? fileNameFilter = null, IProgress<float>? progress = null)
+    public void Export(Regex? fileNameFilter = null, IProgress<double>? progress = null)
     {
         _progress = 0;
         var structsPerFileName = new Dictionary<string, List<DataForgeRecord>>();
@@ -57,7 +57,7 @@ public sealed class DataForge : IDataForge
         }
         
         var total = structsPerFileName.Count;
-
+        
         Parallel.ForEach(structsPerFileName, data =>
         {
             var structs = _database.StructDefinitions.Span;
@@ -108,13 +108,14 @@ public sealed class DataForge : IDataForge
                 writer.Write("__root");
                 writer.Write('>');
             }
-            
             var currentProgress = Interlocked.Increment(ref _progress);
-            progress?.Report(currentProgress * 100f / total);
+            //only report progress every 250 records and when we are done
+            if (currentProgress == total || currentProgress % 250 == 0)
+                progress?.Report(currentProgress / (double)total);
         });
     }
 
-    public void ExportSingle(Regex? fileNameFilter = null, IProgress<float>? progress = null)
+    public void ExportSingle(Regex? fileNameFilter = null, IProgress<double>? progress = null)
     {
         var progressValue = 0;
         var total = _database.RecordDefinitions.Length;
@@ -141,7 +142,10 @@ public sealed class DataForge : IDataForge
             FillNode(child, structDef, reader, 0);
 
             child.WriteTo(writer, 1, _database, _offsets);
-            progress?.Report(progressValue++ * 100f / total);
+            
+            ++progressValue;
+            if (progressValue % 250 == 0 || progressValue == total)
+                progress?.Report(progressValue / (double)total);
         }
         
         writer.WriteLine("</__root>");
