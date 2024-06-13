@@ -1,0 +1,20 @@
+name: Build
+
+on: push
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Clone
+        uses: actions/checkout@v4
+
+      - name: Publish
+        run: dotnet publish
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: StarBreaker
+          path: StarBreaker/bin/Release/net8.0/publish
