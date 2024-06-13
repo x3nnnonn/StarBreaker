@@ -9,6 +9,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\StarBreaker.Forge\StarBreaker.Forge.csproj" />
+      <ProjectReference Include="..\StarBreaker.P4k\StarBreaker.P4k.csproj" />
     </ItemGroup>
 
     <ItemGroup>

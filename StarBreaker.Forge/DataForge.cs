@@ -36,7 +36,7 @@ public sealed class DataForge : IDataForge
         // }
     }
 
-    public void Export(Regex? fileNameFilter = null, IProgress<double>? progress = null)
+    public void Extract(Regex? fileNameFilter = null, IProgress<double>? progress = null)
     {
         _progress = 0;
         var structsPerFileName = new Dictionary<string, List<DataForgeRecord>>();
@@ -115,7 +115,7 @@ public sealed class DataForge : IDataForge
         });
     }
 
-    public void ExportSingle(Regex? fileNameFilter = null, IProgress<double>? progress = null)
+    public void ExtractSingle(Regex? fileNameFilter = null, IProgress<double>? progress = null)
     {
         var progressValue = 0;
         var total = _database.RecordDefinitions.Length;
