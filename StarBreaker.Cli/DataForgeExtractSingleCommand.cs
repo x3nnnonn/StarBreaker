@@ -1,16 +1,17 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
+using StarBreaker.Forge;
 
-namespace StarBreaker;
+namespace StarBreaker.Cli;
 
-[Command("extract-p4k", Description = "Extracts a Game.p4k file")]
-public class ExtractP4kCommand : ICommand
+[Command("df-extract-single", Description = "Extracts a DataForge binary file into a single xml")]
+public class DataForgeExtractSingleCommand : ICommand
 {
-    [CommandOption("p4k", 'p', Description = "Path to the Game.p4k")]
-    public required string P4kFile { get; init; }
+    [CommandOption("dcb", 'd', Description = "Path to the DataForge binary file")]
+    public required string DataForgeBinary { get; init; }
     
     [CommandOption("output", 'o', Description = "Path to the output directory")]
     public required string OutputDirectory { get; init; }
@@ -20,13 +21,14 @@ public class ExtractP4kCommand : ICommand
     
     public ValueTask ExecuteAsync(IConsole console)
     {
-        var p4k = new P4k.Unp4ker(P4kFile, OutputDirectory);
+        var bytes = File.ReadAllBytes(DataForgeBinary);
+        var dataForge = new DataForge(bytes, OutputDirectory);
 
         console.Output.WriteLine("DataForge loaded.");
         console.Output.WriteLine("Exporting...");
         
         var sw = Stopwatch.StartNew();
-        p4k.Extract(RegexPattern, new ProgressBar(console));
+        dataForge.ExtractSingle(RegexPattern, new ProgressBar(console));
         sw.Stop();
         
         console.Output.WriteLine();

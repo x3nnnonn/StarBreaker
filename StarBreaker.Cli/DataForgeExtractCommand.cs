@@ -5,10 +5,10 @@ using CliFx.Attributes;
 using CliFx.Infrastructure;
 using StarBreaker.Forge;
 
-namespace StarBreaker;
+namespace StarBreaker.Cli;
 
-[Command("df-extract-single", Description = "Extracts a DataForge binary file into a single xml")]
-public class DataForgeExtractSingleCommand : ICommand
+[Command("df-extract", Description = "Extracts a DataForge binary file into separate xml files")]
+public class DataForgeExtractCommand : ICommand
 {
     [CommandOption("dcb", 'd', Description = "Path to the DataForge binary file")]
     public required string DataForgeBinary { get; init; }
@@ -28,7 +28,7 @@ public class DataForgeExtractSingleCommand : ICommand
         console.Output.WriteLine("Exporting...");
         
         var sw = Stopwatch.StartNew();
-        dataForge.ExtractSingle(RegexPattern, new ProgressBar(console));
+        dataForge.Extract(RegexPattern, new ProgressBar(console));
         sw.Stop();
         
         console.Output.WriteLine();
