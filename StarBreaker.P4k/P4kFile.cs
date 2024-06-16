@@ -3,7 +3,7 @@ using ICSharpCode.SharpZipLib.Zip;
 
 namespace StarBreaker.P4k;
 
-public class Unp4ker : IDisposable
+public class P4kFile : IDisposable
 {
     private static readonly byte[] _key = [
         0x5E, 0x7A, 0x20, 0x02,
@@ -13,7 +13,7 @@ public class Unp4ker : IDisposable
     ];
     private readonly ZipFile zipFile;
 
-    public Unp4ker(string p4kPath)
+    public P4kFile(string p4kPath)
     {
         zipFile = new ZipFile(p4kPath);
         zipFile.KeysRequired += OnKeysRequired;
