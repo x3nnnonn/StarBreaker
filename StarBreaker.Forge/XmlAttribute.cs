@@ -2,30 +2,28 @@ namespace StarBreaker.Forge;
 
 public abstract class XmlAttribute
 {
-    protected readonly Database _database;
-    protected DataForgeStringId _name;
+    protected readonly string _name;
     
     public abstract void WriteTo(TextWriter writer);
-    
-    protected XmlAttribute(DataForgeStringId name, Database database)
+
+    protected XmlAttribute(string name)
     {
         _name = name;
-        _database = database;
     }
 }
 
 public sealed class XmlAttribute<T> : XmlAttribute
 {
     public readonly T Value;
-
-    public XmlAttribute(DataForgeStringId name, T value, Database database) : base(name, database)
+    
+    public XmlAttribute(string name, T value) : base(name)
     {
         Value = value;
     }
 
     public override void WriteTo(TextWriter writer)
     {
-        writer.Write(_database.GetString(_name));
+        writer.Write(_name);
         writer.Write('=');
 
         writer.Write('"');
@@ -67,9 +65,6 @@ public sealed class XmlAttribute<T> : XmlAttribute
             case CigGuid g:
                 g.WriteInto(writer);
                 break;
-            case DataForgeStringId sid:
-                 writer.Write(_database.GetString(sid));
-                break;
             case DataForgeReference ra:
                 ra.Value.WriteInto(writer);
                 writer.Write('.');
@@ -80,6 +75,9 @@ public sealed class XmlAttribute<T> : XmlAttribute
                 writer.Write(p.StructIndex);
                 writer.Write('.');
                 writer.Write(p.InstanceIndex);
+                break;
+            case string ss:
+                writer.Write(ss);
                 break;
             default:
                 throw new NotImplementedException();
