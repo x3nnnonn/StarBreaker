@@ -13,11 +13,11 @@ public readonly record struct DataForgeStructDefinition
     public readonly uint NodeType;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int CalculateSize(Database db, ReadOnlySpan<DataForgeStructDefinition> structs)
+    public int CalculateSize(ReadOnlySpan<DataForgeStructDefinition> structs, ReadOnlySpan<DataForgePropertyDefinition> properties)
     {
         var size = 0;
 
-        foreach (ref readonly var attribute in EnumerateProperties(db))
+        foreach (var attribute in EnumerateProperties(structs, properties))
         {
             if (attribute.ConversionType == ConversionType.Attribute)
             {
@@ -41,7 +41,7 @@ public readonly record struct DataForgeStructDefinition
                     DataType.Int16 => Unsafe.SizeOf<short>(),
                     DataType.SByte => Unsafe.SizeOf<sbyte>(),
                     DataType.Boolean => Unsafe.SizeOf<byte>(),
-                    DataType.Class => structs[attribute.StructIndex].CalculateSize(db, structs),
+                    DataType.Class => structs[attribute.StructIndex].CalculateSize(structs, properties),
                     _ => throw new ArgumentOutOfRangeException()
                 };
             }
@@ -55,7 +55,23 @@ public readonly record struct DataForgeStructDefinition
         return size;
     }
 
-    public DataForgePropertyEnumerator EnumerateProperties(Database database) => new(this, database);
+    public List<DataForgePropertyDefinition> EnumerateProperties(
+        ReadOnlySpan<DataForgeStructDefinition> structs,
+        ReadOnlySpan<DataForgePropertyDefinition> properties
+        )
+    {
+        var _properties = new List<DataForgePropertyDefinition>();
+        _properties.AddRange(properties.Slice(FirstAttributeIndex, AttributeCount));
+        
+        var baseStruct = this;
+        while (baseStruct.ParentTypeIndex != 0xFFFFFFFF)
+        {
+            baseStruct = structs[(int)baseStruct.ParentTypeIndex];
+            _properties.InsertRange(0, properties.Slice(baseStruct.FirstAttributeIndex, baseStruct.AttributeCount));
+        }
+        
+        return _properties;
+    }
 
 #if DEBUG
     public string PropsAsString => string.Join("\n", Properties);
@@ -65,7 +81,7 @@ public readonly record struct DataForgeStructDefinition
         {
             var _properties = new List<DataForgePropertyDefinition>();
             
-            foreach (ref readonly var prop in EnumerateProperties(DebugGlobal.Database))
+            foreach (var prop in EnumerateProperties2(DebugGlobal.Database))
             {
                 _properties.Add(prop);
             }

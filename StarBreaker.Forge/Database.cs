@@ -38,10 +38,7 @@ public class Database
 
     public readonly ReadOnlyMemory<DataForgeStringId> EnumOptions;
 
-    public readonly DataForgeStringId ValueStringId;
-    public readonly DataForgeStringId CountStringId;
-    
-    private readonly FrozenDictionary<DataType, DataForgeStringId> _dataTypeStringIds;
+    private readonly FrozenDictionary<DataType, string> _dataTypeStringIds;
     private readonly FrozenDictionary<int, string> _cachedStringsss;
 
     public Database(byte[] bytes, out int bytesRead)
@@ -123,14 +120,10 @@ public class Database
             offset += length + 1;
         }
 
-        ValueStringId = ReserveStringId(strings, "__value");
-        CountStringId = ReserveStringId(strings, "__count");
-        
-        var dataTypeStringIds = new Dictionary<DataType, DataForgeStringId>();
+        var dataTypeStringIds = new Dictionary<DataType, string>();
         foreach (var type in Enum.GetValues<DataType>())
         {
-            var id = ReserveStringId(strings, type.ToString());
-            dataTypeStringIds[type] = id;
+            dataTypeStringIds[type] = type.ToString();
         }
 
         _cachedStringsss = strings.ToFrozenDictionary();
@@ -144,16 +137,5 @@ public class Database
     }
     
     public string GetString(DataForgeStringId id) => _cachedStringsss[id.Id];
-    public DataForgeStringId GetDataTypeStringId(DataType type) => _dataTypeStringIds[type];
-
-    private int _stringCounter;
-    private DataForgeStringId ReserveStringId(Dictionary<int, string> dict, string str)
-    {
-        var id = int.MaxValue - _stringCounter;
-        
-        ++_stringCounter;
-        
-        dict.Add(id, str);
-        return new DataForgeStringId(id);
-    }
+    public string GetString(DataType id) => _dataTypeStringIds[id];
 }

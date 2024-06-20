@@ -21,7 +21,7 @@ public class ExtractP4kCommand : ICommand
     
     public ValueTask ExecuteAsync(IConsole console)
     {
-        var p4k = new P4kFile(P4kFile);
+        using var p4k = new P4kFile(P4kFile);
 
         console.Output.WriteLine("DataForge loaded.");
         console.Output.WriteLine("Exporting...");
