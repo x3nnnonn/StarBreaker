@@ -6,15 +6,19 @@
     },
     "df-extract": {
       "commandName": "Project",
-      "commandLineArgs": "df-extract --dcb \"C:\\Scratch\\extract\\Game.dcb\" --output \"C:\\Scratch\\extract\\stbr\" --filter \"^[0-9A-Za-z]{3}[0-9A-Za-z-]\\d{0,21}$\""
+      "commandLineArgs": "df-extract --dcb \"D:\\extract\\Game.dcb\" --output \"D:\\extract\\stbr\""
     },
     "df-extract-single": {
       "commandName": "Project",
-      "commandLineArgs": "df-extract-single --dcb \"C:\\Scratch\\extract\\Game.dcb\" --output \"C:\\Scratch\\extract\\stbr\" --filter \"^[0-9A-Za-z]{3}[0-9A-Za-z-]\\d{0,21}$\""
+      "commandLineArgs": "df-extract-single --dcb \"D:\\extract\\Game.dcb\" --output \"D:\\extract\\stbr\""
     },
     "extract-p4k": {
       "commandName": "Project",
-      "commandLineArgs": "extract-p4k --p4k \"C:\\Scratch\\extract\\Data.p4k\" --output \"C:\\Scratch\\extract\\stbr\\p4k\""
+      "commandLineArgs": "extract-p4k --p4k \"C:\\Scratch\\extract\\Data.p4k\" --output \"D:\\extract\\stbr\\p4k\" --filter \\.(cgf|cga|chr|skin|anim|soc|caf|dba)$"
+    },
+    "extract-live": {
+      "commandName": "Project",
+      "commandLineArgs": "extract-p4k --p4k \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\LIVE\\Data.p4k\" --output \"D:\\out\""
     }
   }
 }
