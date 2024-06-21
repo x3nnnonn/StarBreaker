@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -6,6 +7,7 @@ namespace StarBreaker.Forge;
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public readonly record struct DataForgeStructDefinition
 {
+    private static readonly ConcurrentDictionary<DataForgeStructDefinition, DataForgePropertyDefinition[]> _propertiesCache = new();
     public readonly DataForgeStringId NameOffset;
     public readonly uint ParentTypeIndex;
     public readonly ushort AttributeCount;
@@ -55,11 +57,16 @@ public readonly record struct DataForgeStructDefinition
         return size;
     }
 
-    public List<DataForgePropertyDefinition> EnumerateProperties(
+    public DataForgePropertyDefinition[] EnumerateProperties(
         ReadOnlySpan<DataForgeStructDefinition> structs,
         ReadOnlySpan<DataForgePropertyDefinition> properties
         )
     {
+        if (_propertiesCache.TryGetValue(this, out var cachedProperties))
+        {
+            return cachedProperties;
+        }
+        
         var _properties = new List<DataForgePropertyDefinition>();
         _properties.AddRange(properties.Slice(FirstAttributeIndex, AttributeCount));
         
@@ -70,24 +77,9 @@ public readonly record struct DataForgeStructDefinition
             _properties.InsertRange(0, properties.Slice(baseStruct.FirstAttributeIndex, baseStruct.AttributeCount));
         }
         
-        return _properties;
+        var arr = _properties.ToArray();
+        _propertiesCache.TryAdd(this, arr);
+        
+        return arr;
     }
-
-#if DEBUG
-    public string PropsAsString => string.Join("\n", Properties);
-    public List<DataForgePropertyDefinition> Properties
-    {
-        get
-        {
-            var _properties = new List<DataForgePropertyDefinition>();
-            
-            foreach (var prop in EnumerateProperties2(DebugGlobal.Database))
-            {
-                _properties.Add(prop);
-            }
-
-            return _properties;
-        }
-    }
-#endif
 }

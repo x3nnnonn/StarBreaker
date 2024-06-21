@@ -49,3 +49,22 @@ public class ArrayReader(byte[] bytes, int initialPosition = 0)
         public override void Unpin() => throw new NotSupportedException();
     }
 }
+
+public ref struct SpanReader
+{
+    private readonly ReadOnlySpan<byte> _span;
+    private int _position;
+    
+    public SpanReader(ReadOnlySpan<byte> span, int offset)
+    {
+        _span = span;
+        _position = offset;
+    }
+
+    public T Read<T>() where T : unmanaged
+    {
+        var value = MemoryMarshal.Read<T>(_span[_position..]);
+        _position += Unsafe.SizeOf<T>();
+        return value;
+    }
+}

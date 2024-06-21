@@ -21,13 +21,13 @@ public class ExtractP4kCommand : ICommand
     
     public ValueTask ExecuteAsync(IConsole console)
     {
-        using var p4k = new P4kFile(P4kFile);
+        var p4k = new DirectP4kReader(P4kFile);
 
         console.Output.WriteLine("DataForge loaded.");
         console.Output.WriteLine("Exporting...");
         
         var sw = Stopwatch.StartNew();
-        p4k.Extract(OutputDirectory, RegexPattern, new ProgressBar(console));
+        p4k.Extract(OutputDirectory, new ProgressBar(console));
         sw.Stop();
         
         console.Output.WriteLine();
