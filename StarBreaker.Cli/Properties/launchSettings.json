@@ -12,11 +12,7 @@
       "commandName": "Project",
       "commandLineArgs": "df-extract-single --dcb \"D:\\extract\\Game.dcb\" --output \"D:\\extract\\stbr\""
     },
-    "extract-p4k": {
-      "commandName": "Project",
-      "commandLineArgs": "extract-p4k --p4k \"C:\\Scratch\\extract\\Data.p4k\" --output \"D:\\extract\\stbr\\p4k\" --filter \\.(cgf|cga|chr|skin|anim|soc|caf|dba)$"
-    },
-    "extract-live": {
+    "extract-p4k-live": {
       "commandName": "Project",
       "commandLineArgs": "extract-p4k --p4k \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\LIVE\\Data.p4k\" --output \"D:\\out\""
     }

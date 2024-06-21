@@ -9,25 +9,20 @@ public sealed class XmlNode
     public readonly string _name;
     public readonly List<XmlNode> _children;
     public readonly List<XmlAttribute> _attributes;
-    public XmlNode? _parent;
     
     public XmlNode(string name)
     {
         _name = name;
-        _children = [];
-        _attributes =  [];
+        _children = new List<XmlNode>();
+        _attributes = new List<XmlAttribute>();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void AppendChild(XmlNode child)
-    {
-        child._parent = this;
-        _children.Add(child);
-    }
+    public void AppendChild(XmlNode child) => _children.Add(child);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void AppendAttribute(XmlAttribute xmlAttribute) => _attributes.Add(xmlAttribute);
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void WriteTo(TextWriter writer, int depth)
     {

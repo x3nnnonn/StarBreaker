@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarBreaker", "StarBreaker\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarBreaker.Benchmarks", "StarBreaker.Benchmarks\StarBreaker.Benchmarks.csproj", "{42757FC6-7E3E-4CA2-AEF0-5167CB3C5961}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarBreaker.Profile", "StarBreaker.Profile\StarBreaker.Profile.csproj", "{D01E3529-ED27-4C75-8216-AEAC5EF57E51}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,5 +43,9 @@ Global
 		{42757FC6-7E3E-4CA2-AEF0-5167CB3C5961}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{42757FC6-7E3E-4CA2-AEF0-5167CB3C5961}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{42757FC6-7E3E-4CA2-AEF0-5167CB3C5961}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D01E3529-ED27-4C75-8216-AEAC5EF57E51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D01E3529-ED27-4C75-8216-AEAC5EF57E51}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D01E3529-ED27-4C75-8216-AEAC5EF57E51}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D01E3529-ED27-4C75-8216-AEAC5EF57E51}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

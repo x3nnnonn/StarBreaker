@@ -17,24 +17,6 @@ public sealed class DataForge : IDataForge
         _outputFolder = outputFolder;
         _database = new Database(allBytes, out var bytesRead);
         _offsets = ReadOffsets(bytesRead);
-
-        // Dictionary<CigGuid, int> dd = new();
-        // for (var index = 0; index < _database.RecordDefinitions.Span.Length; index++)
-        // {
-        //     var record = _database.RecordDefinitions.Span[index];
-        //     dd.Add(record.Hash, index);
-        // }
-        //
-        // var records = _database.RecordDefinitions.Span;
-        //
-        // foreach (var reference in _database.ReferenceValues.Span)
-        // {
-        //     if (reference.Item1 == 0xFFFFFFFF || reference.Value == CigGuid.Empty) continue;
-        //     
-        //     var record = records[dd[reference.Value]];
-        //     var offset = _offsets[record.StructIndex][reference.Item1];
-        //     Console.WriteLine($"{offset} | {record} ");
-        // }
     }
 
     public void Extract(Regex? fileNameFilter = null, IProgress<double>? progress = null)
@@ -59,9 +41,7 @@ public sealed class DataForge : IDataForge
 
         var total = structsPerFileName.Count;
 
-        Parallel.ForEach(structsPerFileName,
-            //new ParallelOptions { MaxDegreeOfParallelism = 12 },
-            data =>
+        Parallel.ForEach(structsPerFileName, data =>
         {
             var structs = _database.StructDefinitions.Span;
             var properties = _database.PropertyDefinitions.Span;
@@ -76,18 +56,18 @@ public sealed class DataForge : IDataForge
                 var structDef = structs[record.StructIndex];
                 var offset = _offsets[record.StructIndex][record.InstanceIndex];
 
-                var reader = new ArrayReader(_database.Bytes, offset);
+                var reader = new SpanReader(_database.Bytes, offset);
 
                 var node = new XmlNode(_database.GetString(structDef.NameOffset));
 
-                FillNode(node, structDef, reader, structs, properties);
+                FillNode(node, structDef, ref reader, structs, properties);
 
                 node.WriteTo(writer, 0);
             }
             else
             {
                 using var writer = new StreamWriter(filePath);
-
+                
                 writer.Write('<');
                 writer.Write("__root");
                 writer.Write('>');
@@ -98,11 +78,11 @@ public sealed class DataForge : IDataForge
                     var structDef = structs[record.StructIndex];
                     var offset = _offsets[record.StructIndex][record.InstanceIndex];
 
-                    var reader = new ArrayReader(_database.Bytes, offset);
+                    var reader = new SpanReader(_database.Bytes, offset);
 
                     var node = new XmlNode(_database.GetString(structDef.NameOffset));
 
-                    FillNode(node, structDef, reader, structs, properties);
+                    FillNode(node, structDef, ref reader, structs, properties);
 
                     node.WriteTo(writer, 1);
                 }
@@ -113,10 +93,13 @@ public sealed class DataForge : IDataForge
                 writer.Write('>');
             }
 
-            var currentProgress = Interlocked.Increment(ref _progress);
-            //only report progress every 250 records and when we are done
-            if (currentProgress == total || currentProgress % 250 == 0)
-                progress?.Report(currentProgress / (double)total);
+            lock (structsPerFileName)
+            {
+                var currentProgress = Interlocked.Increment(ref _progress);
+                //only report progress every 250 records and when we are done
+                if (currentProgress == total || currentProgress % 250 == 0)
+                    progress?.Report(currentProgress / (double)total);
+            }
         });
     }
 
@@ -142,10 +125,10 @@ public sealed class DataForge : IDataForge
 
             var structDef = structs[record.StructIndex];
             var offset = _offsets[record.StructIndex][record.InstanceIndex];
-            var reader = new ArrayReader(_database.Bytes, offset);
+            var reader = new SpanReader(_database.Bytes, offset);
             var child = new XmlNode(_database.GetString(structDef.NameOffset));
 
-            FillNode(child, structDef, reader, structs, properties);
+            FillNode(child, structDef, ref reader, structs, properties);
 
             child.WriteTo(writer, 1);
 
@@ -157,9 +140,9 @@ public sealed class DataForge : IDataForge
         writer.WriteLine("</__root>");
     }
 
-    private void FillNode(XmlNode node, DataForgeStructDefinition structDef, ArrayReader reader, ReadOnlySpan<DataForgeStructDefinition> structs, ReadOnlySpan<DataForgePropertyDefinition> properties)
+    private void FillNode(XmlNode node, DataForgeStructDefinition structDef, ref SpanReader reader, ReadOnlySpan<DataForgeStructDefinition> structs, ReadOnlySpan<DataForgePropertyDefinition> properties)
     {
-        foreach (var prop in structDef.EnumerateProperties(structs, properties))
+        foreach (ref readonly var prop in structDef.EnumerateProperties(structs, properties).AsSpan())
         {
             if (prop.ConversionType == ConversionType.Attribute)
             {
@@ -172,7 +155,7 @@ public sealed class DataForge : IDataForge
 
                     node.AppendChild(childClass);
 
-                    FillNode(childClass, structDef3, reader, structs, properties);
+                    FillNode(childClass, structDef3, ref reader, structs, properties);
                 }
                 else if (prop.DataType is DataType.StrongPointer /* or DataType.WeakPointer*/)
                 {
@@ -183,13 +166,13 @@ public sealed class DataForge : IDataForge
                     var structDef2 = structs[(int)ptr.StructIndex];
                     var offset2 = _offsets[(int)ptr.StructIndex][(int)ptr.InstanceIndex];
 
-                    var reader2 = new ArrayReader(_database.Bytes, offset2);
+                    var reader2 = new SpanReader(_database.Bytes, offset2);
 
                     var child = new XmlNode(_database.GetString(prop.NameOffset));
 
                     node.AppendChild(child);
 
-                    FillNode(child, structDef2, reader2, structs, properties);
+                    FillNode(child, structDef2, ref reader2, structs, properties);
                 }
                 else
                 {
@@ -268,13 +251,13 @@ public sealed class DataForge : IDataForge
                     {
                         var structDef1 = structs[prop.StructIndex];
                         var offset1 = _offsets[prop.StructIndex][index];
-                        var reader1 = new ArrayReader(_database.Bytes, offset1);
+                        var reader1 = new SpanReader(_database.Bytes, offset1);
 
                         var child = new XmlNode(_database.GetString(structDef1.NameOffset));
 
                         arrayNode.AppendChild(child);
 
-                        FillNode(child, structDef1, reader1, structs, properties);
+                        FillNode(child, structDef1, ref reader1, structs, properties);
                     }
                     else if (prop.DataType is DataType.StrongPointer /*or DataType.WeakPointer*/)
                     {
@@ -289,13 +272,13 @@ public sealed class DataForge : IDataForge
 
                         var structDef2 = structs[(int)reference.StructIndex];
                         var offset2 = _offsets[(int)reference.StructIndex][(int)reference.InstanceIndex];
-                        var reader2 = new ArrayReader(_database.Bytes, offset2);
+                        var reader2 = new SpanReader(_database.Bytes, offset2);
 
                         var child = new XmlNode(_database.GetString(prop.NameOffset));
 
                         arrayNode.AppendChild(child);
 
-                        FillNode(child, structDef2, reader2, structs, properties);
+                        FillNode(child, structDef2, ref reader2, structs, properties);
                     }
                     else
                     {
