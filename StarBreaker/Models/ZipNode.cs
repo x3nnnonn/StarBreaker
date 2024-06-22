@@ -2,8 +2,8 @@
 using System.Globalization;
 using System.Linq;
 using Humanizer;
-using ICSharpCode.SharpZipLib.Zip;
 using ReactiveUI;
+using StarBreaker.P4k;
 
 namespace StarBreaker.Models;
 
@@ -36,8 +36,8 @@ public class ZipNode : ReactiveObject
         Children = new Dictionary<string, ZipNode>();
     }
 
-    public string SizeUi => ZipEntry?.Size.Bytes().ToString() ?? "";
-    public string DateModifiedUi => ZipEntry?.DateTime.ToString("s", CultureInfo.InvariantCulture) ?? "";
+    public string SizeUi => ((long?)ZipEntry?.UncompressedSize)?.Bytes().ToString() ?? "";
+    public string DateModifiedUi => ZipEntry?.LastModified.ToString("s", CultureInfo.InvariantCulture) ?? "";
     public string CompressionMethodUi => ZipEntry?.CompressionMethod.ToString() ?? "";
     public string EncryptedUi => ZipEntry?.IsCrypted.ToString() ?? "";
     
@@ -51,6 +51,7 @@ public class ZipNode : ReactiveObject
     
     public ZipNode(IEnumerable<ZipEntry> zipEntries)
     {
+        Name = "";
         var root = new ZipNode("");
         foreach (var zipEntry in zipEntries)
         {

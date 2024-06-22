@@ -6,8 +6,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="DotNext.IO" Version="5.7.0" />
-      <PackageReference Include="SharpZipLibP4k" Version="1.4.2" />
       <PackageReference Include="ZstdSharp.Port" Version="0.8.1" />
     </ItemGroup>
 </Project>
