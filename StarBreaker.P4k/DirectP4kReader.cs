@@ -12,6 +12,8 @@ public sealed class DirectP4kReader
     private readonly string _comment;
     private readonly MyZipEntry[] _entries;
 
+    public MyZipEntry[] Entries => _entries;
+
     public DirectP4kReader(string filePath)
     {
         p4kPath = filePath;
@@ -93,10 +95,6 @@ public sealed class DirectP4kReader
 
             _entries[i] = new MyZipEntry(fileName, fileComment, compressedSize, uncompressedSize, header.CompressionMethod, isCrypted, localHeaderOffset);
         }
-
-        var cryptedSizes = _entries.Where(x => x.IsCrypted).Select(x => x.CompressedSize).Order().ToArray();
-
-        Console.WriteLine($"Crypted entries: {cryptedSizes.Length}");
     }
 
     public void Extract(string outputDir, IProgress<double>? progress = null)
@@ -105,10 +103,22 @@ public sealed class DirectP4kReader
         var fivePercent = numberOfEntries / 20;
         var processedEntries = 0;
 
+        byte[] key =
+        [
+            0x5E, 0x7A, 0x20, 0x02,
+            0x30, 0x2E, 0xEB, 0x1A,
+            0x3B, 0xB6, 0x17, 0xC3,
+            0x0F, 0xDE, 0x1E, 0x47
+        ];
+
         Parallel.ForEach(_entries,
+            new ParallelOptions()
+            {
+                MaxDegreeOfParallelism = 4
+            },
             entry =>
             {
-                using var p4kStream = new FileStream(p4kPath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 16);
+                using var p4kStream = new FileStream(p4kPath, FileMode.Open, FileAccess.Read, FileShare.Read);
                 using var p4kReader = new BinaryReader(p4kStream, Encoding.UTF8, true);
 
                 p4kStream.Seek((long)entry.Offset, SeekOrigin.Begin);
@@ -132,13 +142,7 @@ public sealed class DirectP4kReader
                 if (entry.IsCrypted)
                 {
                     using var aes = Aes.Create();
-                    aes.Key =
-                    [
-                        0x5E, 0x7A, 0x20, 0x02,
-                        0x30, 0x2E, 0xEB, 0x1A,
-                        0x3B, 0xB6, 0x17, 0xC3,
-                        0x0F, 0xDE, 0x1E, 0x47
-                    ];
+                    aes.Key = key;
                     aes.IV = new byte[16];
                     aes.Mode = CipherMode.CBC;
                     aes.Padding = PaddingMode.None;
@@ -165,7 +169,7 @@ public sealed class DirectP4kReader
                     if (entry.CompressedSize != entry.UncompressedSize)
                         throw new Exception("Invalid stored file");
 
-                    using var writeStream = new FileStream(entryPath, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 16);
+                    using var writeStream = new FileStream(entryPath, FileMode.Create, FileAccess.Write, FileShare.None);
 
                     entryStream.CopyTo(writeStream);
                 }
@@ -173,7 +177,7 @@ public sealed class DirectP4kReader
                 if (entry.CompressionMethod == 100) //zstd
                 {
                     using var decompressor = new DecompressionStream(entryStream);
-                    using var writeStream = new FileStream(entryPath, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 16);
+                    using var writeStream = new FileStream(entryPath, FileMode.Create, FileAccess.Write, FileShare.None);
 
                     decompressor.CopyTo(writeStream);
                 }
