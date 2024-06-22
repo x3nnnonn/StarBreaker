@@ -67,7 +67,7 @@ public static class BinaryReaderExtensions
         if (br.Read(span) != length)
             throw new Exception("Failed to read from stream");
         
-        return Encoding.UTF8.GetString(span);
+        return Encoding.ASCII.GetString(span);
     }
     
     public static List<ZipExtraField> ReadExtraFields(this BinaryReader br, ushort length)

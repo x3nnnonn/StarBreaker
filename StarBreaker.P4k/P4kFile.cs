@@ -15,7 +15,7 @@ public sealed class P4kFile
     public P4kFile(string filePath)
     {
         p4kPath = filePath;
-        using var _stream = new FileStream(p4kPath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 16);
+        using var _stream = new FileStream(p4kPath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 1024);
         using var reader = new BinaryReader(_stream, Encoding.UTF8, true);
 
         var eocdLocation = reader.Locate(EOCDRecord.Magic);
@@ -50,8 +50,6 @@ public sealed class P4kFile
             ulong localHeaderOffset = header.LocalFileHeaderOffset;
             ulong diskNumberStart = header.DiskNumberStart;
 
-            var beforeExtraField = reader.BaseStream.Position;
-
             if (reader.ReadUInt16() != 1)
                 throw new Exception();
 
@@ -84,10 +82,6 @@ public sealed class P4kFile
                 throw new Exception("Invalid extra field id");
             var extra0x5003Size = reader.ReadUInt16();
             reader.BaseStream.Seek(extra0x5003Size - 4, SeekOrigin.Current);
-
-            var size = reader.BaseStream.Position - beforeExtraField;
-            if (size != header.ExtraFieldLength)
-                throw new Exception("Extra field size mismatch");
 
             var fileComment = reader.ReadStringCustom(header.FileCommentLength);
 
