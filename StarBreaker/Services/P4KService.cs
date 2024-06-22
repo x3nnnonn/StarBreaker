@@ -11,10 +11,4 @@ public class P4KService : IP4kService
     {
         P4k = new P4kFile(path);
     }
-    
-    public void Dispose()
-    {
-        P4k?.Dispose();
-        GC.SuppressFinalize(this);
-    }
 }

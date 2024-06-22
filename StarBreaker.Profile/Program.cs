@@ -13,15 +13,15 @@ public static class Program
         Parallel.ForEach(xmlFiles, file =>
         {
             if (!CryXml.TryOpen(File.ReadAllBytes(file), out var cryXml))
-                return;                
-            
+                return;
+
             var destFile = file.Replace("D:\\out", dest);
             Directory.CreateDirectory(Path.GetDirectoryName(destFile)!);
             using var textWriter1 = new StreamWriter(destFile);
             cryXml.WriteXml(textWriter1);
         });
         var elapsed = sw.ElapsedMilliseconds;
-        
+
         Console.WriteLine($"Elapsed: {elapsed}ms");
     }
 }

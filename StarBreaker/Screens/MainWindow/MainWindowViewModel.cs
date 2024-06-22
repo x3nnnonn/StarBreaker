@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Controls.Models.TreeDataGrid;
 using Avalonia.Threading;
-using ICSharpCode.SharpZipLib.Zip;
 using ReactiveUI;
 using StarBreaker.Models;
+using StarBreaker.P4k;
 using StarBreaker.Services;
 
 namespace StarBreaker.Screens;
