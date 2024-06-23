@@ -61,6 +61,7 @@ see cgf-converter, TODO.
 - cga
 - cgam
 - cgf
+- cgfm
 - cigvoxel
 - cigvoxelheader
 - dst
