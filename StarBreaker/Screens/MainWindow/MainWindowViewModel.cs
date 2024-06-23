@@ -73,7 +73,7 @@ private readonly IP4kService _p4KService;
         if (_p4KService.P4k == null)
         {
             Dispatcher.UIThread.InvokeAsync(() => LoadingMessage = "Loading p4k...");
-            _p4KService.LoadP4k(@"C:\Scratch\extract\Data.p4k");
+            _p4KService.LoadP4k(@"C:\Program Files\Roberts Space Industries\StarCitizen\LIVE\Data.p4k");
         }
 
         Dispatcher.UIThread.InvokeAsync(() => LoadingMessage = "Processing entries...");

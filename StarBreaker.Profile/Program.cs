@@ -13,6 +13,10 @@ public static class Program
         var sw1 = Stopwatch.StartNew();
 
         var p4kf = new P4kFile(p4k);
+        
+        var allExtensions = p4kf.Entries.Select(x => Path.GetExtension(x.Name).ToLower()).Distinct().ToArray();
+        File.WriteAllLines("D:\\extensions.txt", allExtensions);
+        
         var elapsed1 = sw1.ElapsedMilliseconds;
         Console.WriteLine($"P4kFile ctor: {elapsed1}ms");
         return;
