@@ -7,23 +7,26 @@ namespace StarBreaker.Forge;
 
 public sealed class DataForge : IDataForge
 {
-    private readonly string _outputFolder;
     public readonly Database _database;
     private readonly Dictionary<int, int[]> _offsets;
-    private int _progress;
-
-    public DataForge(byte[] allBytes, string outputFolder)
+    
+    public DataForge(string dcb)
     {
-        _outputFolder = outputFolder;
+        _database = new Database(dcb, out var bytesRead);
+        _offsets = ReadOffsets((int)bytesRead);
+    }
+
+    public DataForge(ReadOnlySpan<byte> allBytes)
+    {
         _database = new Database(allBytes, out var bytesRead);
         _offsets = ReadOffsets(bytesRead);
     }
 
-    public void Extract(Regex? fileNameFilter = null, IProgress<double>? progress = null)
+    public void Extract(string outputFolder, Regex? fileNameFilter = null, IProgress<double>? progress = null)
     {
-        _progress = 0;
+        var progressValue = 0;
         var structsPerFileName = new Dictionary<string, List<DataForgeRecord>>();
-        foreach (ref readonly var record in _database.RecordDefinitions.Span)
+        foreach (var record in _database.RecordDefinitions)
         {
             var s = _database.GetString(record.FileNameOffset);
 
@@ -43,9 +46,9 @@ public sealed class DataForge : IDataForge
 
         Parallel.ForEach(structsPerFileName, data =>
         {
-            var structs = _database.StructDefinitions.Span;
-            var properties = _database.PropertyDefinitions.Span;
-            var filePath = Path.Combine(_outputFolder, data.Key);
+            var structs = _database.StructDefinitions.AsSpan();
+            var properties = _database.PropertyDefinitions.AsSpan();
+            var filePath = Path.Combine(outputFolder, data.Key);
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
 
             if (data.Value.Count == 1)
@@ -53,10 +56,10 @@ public sealed class DataForge : IDataForge
                 using var writer = new StreamWriter(filePath);
 
                 var record = data.Value[0];
-                var structDef = structs[record.StructIndex];
+                var structDef = _database.StructDefinitions[record.StructIndex];
                 var offset = _offsets[record.StructIndex][record.InstanceIndex];
 
-                var reader = new SpanReader(_database.Bytes, offset);
+                var reader = _database.GetReader(offset);
 
                 var node = new XmlNode(_database.GetString(structDef.NameOffset));
 
@@ -78,7 +81,7 @@ public sealed class DataForge : IDataForge
                     var structDef = structs[record.StructIndex];
                     var offset = _offsets[record.StructIndex][record.InstanceIndex];
 
-                    var reader = new SpanReader(_database.Bytes, offset);
+                    var reader = _database.GetReader(offset);
 
                     var node = new XmlNode(_database.GetString(structDef.NameOffset));
 
@@ -95,7 +98,7 @@ public sealed class DataForge : IDataForge
 
             lock (structsPerFileName)
             {
-                var currentProgress = Interlocked.Increment(ref _progress);
+                var currentProgress = Interlocked.Increment(ref progressValue);
                 //only report progress every 250 records and when we are done
                 if (currentProgress == total || currentProgress % 250 == 0)
                     progress?.Report(currentProgress / (double)total);
@@ -103,18 +106,19 @@ public sealed class DataForge : IDataForge
         });
     }
 
-    public void ExtractSingle(Regex? fileNameFilter = null, IProgress<double>? progress = null)
+    public void ExtractSingle(string outputFolder, Regex? fileNameFilter = null, IProgress<double>? progress = null)
     {
         var progressValue = 0;
         var total = _database.RecordDefinitions.Length;
-        using var writer = new StreamWriter(Path.Combine(_outputFolder, "StarBreaker.Export.xml"), false, Encoding.UTF8, 1024 * 1024);
+        if (!Directory.Exists(outputFolder))
+            Directory.CreateDirectory(outputFolder);
+        using var writer = new StreamWriter(Path.Combine(outputFolder, "StarBreaker.Export.xml"), false, Encoding.UTF8, 1024 * 1024);
         writer.WriteLine("<__root>");
 
-        var structs = _database.StructDefinitions.Span;
-        var records = _database.RecordDefinitions.Span;
-        var properties = _database.PropertyDefinitions.Span;
+        var structs = _database.StructDefinitions.AsSpan();
+        var properties = _database.PropertyDefinitions.AsSpan();
 
-        foreach (ref readonly var record in records)
+        foreach (var record in _database.RecordDefinitions)
         {
             if (fileNameFilter != null)
             {
@@ -125,7 +129,7 @@ public sealed class DataForge : IDataForge
 
             var structDef = structs[record.StructIndex];
             var offset = _offsets[record.StructIndex][record.InstanceIndex];
-            var reader = new SpanReader(_database.Bytes, offset);
+            var reader = _database.GetReader(offset);
             var child = new XmlNode(_database.GetString(structDef.NameOffset));
 
             FillNode(child, structDef, ref reader, structs, properties);
@@ -139,7 +143,7 @@ public sealed class DataForge : IDataForge
 
         writer.WriteLine("</__root>");
     }
-
+    
     private void FillNode(XmlNode node, DataForgeStructDefinition structDef, ref SpanReader reader, ReadOnlySpan<DataForgeStructDefinition> structs, ReadOnlySpan<DataForgePropertyDefinition> properties)
     {
         foreach (ref readonly var prop in structDef.EnumerateProperties(structs, properties).AsSpan())
@@ -153,9 +157,10 @@ public sealed class DataForge : IDataForge
 
                     var childClass = new XmlNode(_database.GetString(prop.NameOffset));
 
+                    FillNode(childClass, structDef3, ref reader, structs, properties);
+                    
                     node.AppendChild(childClass);
 
-                    FillNode(childClass, structDef3, ref reader, structs, properties);
                 }
                 else if (prop.DataType is DataType.StrongPointer /* or DataType.WeakPointer*/)
                 {
@@ -166,13 +171,13 @@ public sealed class DataForge : IDataForge
                     var structDef2 = structs[(int)ptr.StructIndex];
                     var offset2 = _offsets[(int)ptr.StructIndex][(int)ptr.InstanceIndex];
 
-                    var reader2 = new SpanReader(_database.Bytes, offset2);
+                    var reader2 = _database.GetReader(offset2);
 
                     var child = new XmlNode(_database.GetString(prop.NameOffset));
 
-                    node.AppendChild(child);
-
                     FillNode(child, structDef2, ref reader2, structs, properties);
+                    
+                    node.AppendChild(child);
                 }
                 else
                 {
@@ -241,7 +246,6 @@ public sealed class DataForge : IDataForge
                 var firstIndex = reader.Read<uint>();
 
                 var arrayNode = new XmlNode(_database.GetString(prop.NameOffset));
-                node.AppendChild(arrayNode);
 
                 for (var i = 0; i < count; i++)
                 {
@@ -251,20 +255,20 @@ public sealed class DataForge : IDataForge
                     {
                         var structDef1 = structs[prop.StructIndex];
                         var offset1 = _offsets[prop.StructIndex][index];
-                        var reader1 = new SpanReader(_database.Bytes, offset1);
+                        var reader1 = _database.GetReader(offset1);
 
                         var child = new XmlNode(_database.GetString(structDef1.NameOffset));
 
-                        arrayNode.AppendChild(child);
-
                         FillNode(child, structDef1, ref reader1, structs, properties);
+                        
+                        arrayNode.AppendChild(child);
                     }
                     else if (prop.DataType is DataType.StrongPointer /*or DataType.WeakPointer*/)
                     {
                         var reference = prop.DataType switch
                         {
-                            DataType.StrongPointer => _database.StrongValues.Span[index],
-                            DataType.WeakPointer => _database.WeakValues.Span[index],
+                            DataType.StrongPointer => _database.StrongValues[index],
+                            DataType.WeakPointer => _database.WeakValues[index],
                             _ => throw new InvalidOperationException(nameof(DataType))
                         };
 
@@ -272,99 +276,126 @@ public sealed class DataForge : IDataForge
 
                         var structDef2 = structs[(int)reference.StructIndex];
                         var offset2 = _offsets[(int)reference.StructIndex][(int)reference.InstanceIndex];
-                        var reader2 = new SpanReader(_database.Bytes, offset2);
+                        var reader2 = _database.GetReader(offset2);
 
                         var child = new XmlNode(_database.GetString(prop.NameOffset));
 
-                        arrayNode.AppendChild(child);
-
                         FillNode(child, structDef2, ref reader2, structs, properties);
+                        
+                        arrayNode.AppendChild(child);
                     }
                     else
                     {
                         var arrayItem = new XmlNode(_database.GetString(prop.DataType));
-                        arrayNode.AppendChild(arrayItem);
 
                         switch (prop.DataType)
                         {
                             case DataType.Byte:
-                                arrayItem.AppendAttribute(new XmlAttribute<byte>("__value", _database.UInt8Values.Span[index]));
+                                arrayItem.AppendAttribute(new XmlAttribute<byte>("__value", _database.UInt8Values[index]));
                                 break;
                             case DataType.Int16:
-                                arrayItem.AppendAttribute(new XmlAttribute<short>("__value", _database.Int16Values.Span[index]));
+                                arrayItem.AppendAttribute(new XmlAttribute<short>("__value", _database.Int16Values[index]));
                                 break;
                             case DataType.Int32:
-                                arrayItem.AppendAttribute(new XmlAttribute<int>("__value", _database.Int32Values.Span[index]));
+                                arrayItem.AppendAttribute(new XmlAttribute<int>("__value", _database.Int32Values[index]));
                                 break;
                             case DataType.Int64:
-                                arrayItem.AppendAttribute(new XmlAttribute<long>("__value", _database.Int64Values.Span[index]));
+                                arrayItem.AppendAttribute(new XmlAttribute<long>("__value", _database.Int64Values[index]));
                                 break;
                             case DataType.SByte:
-                                arrayItem.AppendAttribute(new XmlAttribute<sbyte>("__value", _database.Int8Values.Span[index]));
+                                arrayItem.AppendAttribute(new XmlAttribute<sbyte>("__value", _database.Int8Values[index]));
                                 break;
                             case DataType.UInt16:
-                                arrayItem.AppendAttribute(new XmlAttribute<ushort>("__value", _database.UInt16Values.Span[index]));
+                                arrayItem.AppendAttribute(new XmlAttribute<ushort>("__value", _database.UInt16Values[index]));
                                 break;
                             case DataType.UInt32:
-                                arrayItem.AppendAttribute(new XmlAttribute<uint>("__value", _database.UInt32Values.Span[index]));
+                                arrayItem.AppendAttribute(new XmlAttribute<uint>("__value", _database.UInt32Values[index]));
                                 break;
                             case DataType.UInt64:
-                                arrayItem.AppendAttribute(new XmlAttribute<ulong>("__value", _database.UInt64Values.Span[index]));
+                                arrayItem.AppendAttribute(new XmlAttribute<ulong>("__value", _database.UInt64Values[index]));
                                 break;
                             case DataType.Boolean:
-                                arrayItem.AppendAttribute(new XmlAttribute<bool>("__value", _database.BooleanValues.Span[index]));
+                                arrayItem.AppendAttribute(new XmlAttribute<bool>("__value", _database.BooleanValues[index]));
                                 break;
                             case DataType.Single:
-                                arrayItem.AppendAttribute(new XmlAttribute<float>("__value", _database.SingleValues.Span[index]));
+                                arrayItem.AppendAttribute(new XmlAttribute<float>("__value", _database.SingleValues[index]));
                                 break;
                             case DataType.Double:
-                                arrayItem.AppendAttribute(new XmlAttribute<double>("__value", _database.DoubleValues.Span[index]));
+                                arrayItem.AppendAttribute(new XmlAttribute<double>("__value", _database.DoubleValues[index]));
                                 break;
                             case DataType.Guid:
-                                arrayItem.AppendAttribute(new XmlAttribute<CigGuid>("__value", _database.GuidValues.Span[index]));
+                                arrayItem.AppendAttribute(new XmlAttribute<CigGuid>("__value", _database.GuidValues[index]));
                                 break;
                             case DataType.String:
-                                arrayItem.AppendAttribute(new XmlAttribute<string>("__value", _database.GetString(_database.StringIdValues.Span[index])));
+                                arrayItem.AppendAttribute(new XmlAttribute<string>("__value", _database.GetString(_database.StringIdValues[index])));
                                 break;
                             case DataType.Locale:
-                                arrayItem.AppendAttribute(new XmlAttribute<string>("__value", _database.GetString(_database.LocaleValues.Span[index])));
+                                arrayItem.AppendAttribute(new XmlAttribute<string>("__value", _database.GetString(_database.LocaleValues[index])));
                                 break;
                             case DataType.EnumChoice:
-                                arrayItem.AppendAttribute(new XmlAttribute<string>("__value", _database.GetString(_database.EnumValues.Span[index])));
+                                arrayItem.AppendAttribute(new XmlAttribute<string>("__value", _database.GetString(_database.EnumValues[index])));
                                 break;
                             case DataType.Reference:
-                                arrayItem.AppendAttribute(new XmlAttribute<DataForgeReference>("__value", _database.ReferenceValues.Span[index]));
+                                arrayItem.AppendAttribute(new XmlAttribute<DataForgeReference>("__value", _database.ReferenceValues[index]));
                                 break;
                             case DataType.WeakPointer:
-                                arrayItem.AppendAttribute(new XmlAttribute<DataForgePointer>("__value", _database.StrongValues.Span[index]));
+                                arrayItem.AppendAttribute(new XmlAttribute<DataForgePointer>("__value", _database.StrongValues[index]));
                                 break;
                             case DataType.Class:
-                                arrayItem.AppendAttribute(new XmlAttribute<DataForgePointer>("__value", _database.StrongValues.Span[index]));
+                                arrayItem.AppendAttribute(new XmlAttribute<DataForgePointer>("__value", _database.StrongValues[index]));
                                 break;
                             default:
                                 throw new InvalidOperationException(nameof(DataType));
                         }
+                        
+                        arrayNode.AppendChild(arrayItem);
                     }
                 }
 
                 arrayNode.AppendAttribute(new XmlAttribute<uint>("__count__", count));
+                
+                node.AppendChild(arrayNode);
             }
         }
     }
 
+    public Dictionary<string, List<XmlNode>> GetData()
+    {
+        var result = new Dictionary<string, List<XmlNode>>();
+        var structs = _database.StructDefinitions.AsSpan();
+        var properties = _database.PropertyDefinitions.AsSpan();
+
+        foreach (var record in _database.RecordDefinitions)
+        {
+            var structDef = structs[record.StructIndex];
+            var offset = _offsets[record.StructIndex][record.InstanceIndex];
+            var reader = _database.GetReader(offset);
+            var child = new XmlNode(_database.GetString(structDef.NameOffset));
+
+            FillNode(child, structDef, ref reader, structs, properties);
+
+            if (!result.TryGetValue(_database.GetString(record.FileNameOffset), out var list))
+            {
+                list = new List<XmlNode>();
+                result.Add(_database.GetString(record.FileNameOffset), list);
+            }
+
+            list.Add(child);
+        }
+
+        return result;
+    }
+    
     //verified same as scdatatools
     private Dictionary<int, int[]> ReadOffsets(int initialOffset)
     {
-        var dataMappings = _database.DataMappings.Span;
-        var structDefinitions = _database.StructDefinitions.Span;
-        var properties = _database.PropertyDefinitions.Span;
         var instances = new Dictionary<int, int[]>();
 
-        foreach (ref readonly var mapping in dataMappings)
+        foreach (var mapping in _database.DataMappings)
         {
             var arr = new int[mapping.StructCount];
-            var structDef = structDefinitions[mapping.StructIndex];
-            var structSize = structDef.CalculateSize(structDefinitions, properties);
+            var structDef = _database.StructDefinitions[mapping.StructIndex];
+            var structSize = structDef.CalculateSize(_database.StructDefinitions, _database.PropertyDefinitions);
 
             for (var i = 0; i < mapping.StructCount; i++)
             {
@@ -375,23 +406,19 @@ public sealed class DataForge : IDataForge
             instances.Add(mapping.StructIndex, arr);
         }
 
-        Debug.Assert(initialOffset == _database.Bytes.Length);
-
         return instances;
     }
 
     public Dictionary<string, string[]> ExportEnums()
     {
-        var enumDefinitions = _database.EnumDefinitions.Span;
-        var enumOptions = _database.EnumOptions.Span;
-
-        var result = new Dictionary<string, string[]>(enumDefinitions.Length);
-        foreach (ref readonly var enumDef in enumDefinitions)
+        var result = new Dictionary<string, string[]>(_database.EnumDefinitions.Length);
+        
+        foreach (var enumDef in _database.EnumDefinitions)
         {
             var enumValues = new string[enumDef.ValueCount];
             for (var i = 0; i < enumDef.ValueCount; i++)
             {
-                enumValues[i] = _database.GetString(enumOptions[enumDef.FirstValueIndex + i]);
+                enumValues[i] = _database.GetString(_database.EnumOptions[enumDef.FirstValueIndex + i]);
             }
 
             result.Add(_database.GetString(enumDef.NameOffset), enumValues);

@@ -21,14 +21,13 @@ public class DataForgeExtractSingleCommand : ICommand
     
     public ValueTask ExecuteAsync(IConsole console)
     {
-        var bytes = File.ReadAllBytes(DataForgeBinary);
-        var dataForge = new DataForge(bytes, OutputDirectory);
+        var dataForge = new DataForge(DataForgeBinary);
 
         console.Output.WriteLine("DataForge loaded.");
         console.Output.WriteLine("Exporting...");
         
         var sw = Stopwatch.StartNew();
-        dataForge.ExtractSingle(RegexPattern, new ProgressBar(console));
+        dataForge.ExtractSingle(OutputDirectory, RegexPattern, new ProgressBar(console));
         sw.Stop();
         
         console.Output.WriteLine();
