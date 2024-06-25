@@ -6,11 +6,11 @@
     },
     "df-extract": {
       "commandName": "Project",
-      "commandLineArgs": "df-extract --dcb \"D:\\extract\\Game.dcb\" --output \"D:\\extract\\stbr\""
+      "commandLineArgs": "df-extract --dcb \"D:\\out\\Data\\Game.dcb\" --output \"D:\\out\\dataforge\""
     },
     "df-extract-single": {
       "commandName": "Project",
-      "commandLineArgs": "df-extract-single --dcb \"D:\\extract\\Game.dcb\" --output \"D:\\extract\\stbr\""
+      "commandLineArgs": "df-extract-single --dcb \"D:\\out\\Data\\Game.dcb\" --output \"D:\\out\\dataforge\""
     },
     "extract-p4k-live": {
       "commandName": "Project",
