@@ -1,5 +1,6 @@
 using System.Collections.Frozen;
 using System.Text;
+using StarBreaker.Common;
 
 namespace StarBreaker.Forge;
 
@@ -45,69 +46,69 @@ public class Database
     public Database(ReadOnlySpan<byte> bytes, out int bytesRead)
     {
         var reader = new SpanReader(bytes, 0);
-        _ = reader.Read<uint>();
-        var fileVersion = reader.Read<uint>();
-        _ = reader.Read<uint>();
-        _ = reader.Read<uint>();
+        _ = reader.ReadUInt32();
+        var fileVersion = reader.ReadUInt32();
+        _ = reader.ReadUInt32();
+        _ = reader.ReadUInt32();
 
-        var structDefinitionCount = reader.Read<int>();
-        var propertyDefinitionCount = reader.Read<int>();
-        var enumDefinitionCount = reader.Read<int>();
-        var dataMappingCount = reader.Read<int>();
-        var recordDefinitionCount = reader.Read<int>();
-        var booleanValueCount = reader.Read<int>();
-        var int8ValueCount = reader.Read<int>();
-        var int16ValueCount = reader.Read<int>();
-        var int32ValueCount = reader.Read<int>();
-        var int64ValueCount = reader.Read<int>();
-        var uint8ValueCount = reader.Read<int>();
-        var uint16ValueCount = reader.Read<int>();
-        var uint32ValueCount = reader.Read<int>();
-        var uint64ValueCount = reader.Read<int>();
-        var singleValueCount = reader.Read<int>();
-        var doubleValueCount = reader.Read<int>();
-        var guidValueCount = reader.Read<int>();
-        var stringIdValueCount = reader.Read<int>();
-        var localeValueCount = reader.Read<int>();
-        var enumValueCount = reader.Read<int>();
-        var strongValueCount = reader.Read<int>();
-        var weakValueCount = reader.Read<int>();
-        var referenceValueCount = reader.Read<int>();
-        var enumOptionCount = reader.Read<int>();
-        var textLength = reader.Read<uint>();
-        _ = reader.Read<uint>();
+        var structDefinitionCount = reader.ReadInt32();
+        var propertyDefinitionCount = reader.ReadInt32();
+        var enumDefinitionCount = reader.ReadInt32();
+        var dataMappingCount = reader.ReadInt32();
+        var recordDefinitionCount = reader.ReadInt32();
+        var booleanValueCount = reader.ReadInt32();
+        var int8ValueCount = reader.ReadInt32();
+        var int16ValueCount = reader.ReadInt32();
+        var int32ValueCount = reader.ReadInt32();
+        var int64ValueCount = reader.ReadInt32();
+        var uint8ValueCount = reader.ReadInt32();
+        var uint16ValueCount = reader.ReadInt32();
+        var uint32ValueCount = reader.ReadInt32();
+        var uint64ValueCount = reader.ReadInt32();
+        var singleValueCount = reader.ReadInt32();
+        var doubleValueCount = reader.ReadInt32();
+        var guidValueCount = reader.ReadInt32();
+        var stringIdValueCount = reader.ReadInt32();
+        var localeValueCount = reader.ReadInt32();
+        var enumValueCount = reader.ReadInt32();
+        var strongValueCount = reader.ReadInt32();
+        var weakValueCount = reader.ReadInt32();
+        var referenceValueCount = reader.ReadInt32();
+        var enumOptionCount = reader.ReadInt32();
+        var textLength = reader.ReadUInt32();
+        _ = reader.ReadUInt32();
 
-        StructDefinitions = reader.ReadArray<DataForgeStructDefinition>(structDefinitionCount);
-        PropertyDefinitions = reader.ReadArray<DataForgePropertyDefinition>(propertyDefinitionCount);
-        EnumDefinitions = reader.ReadArray<DataForgeEnumDefinition>(enumDefinitionCount);
-        DataMappings = reader.ReadArray<DataForgeDataMapping>(dataMappingCount);
-        RecordDefinitions = reader.ReadArray<DataForgeRecord>(recordDefinitionCount);
+        StructDefinitions = reader.ReadSpan<DataForgeStructDefinition>(structDefinitionCount).ToArray();
+        PropertyDefinitions = reader.ReadSpan<DataForgePropertyDefinition>(propertyDefinitionCount).ToArray();
+        EnumDefinitions = reader.ReadSpan<DataForgeEnumDefinition>(enumDefinitionCount).ToArray();
+        DataMappings = reader.ReadSpan<DataForgeDataMapping>(dataMappingCount).ToArray();
+        RecordDefinitions = reader.ReadSpan<DataForgeRecord>(recordDefinitionCount).ToArray();
 
-        Int8Values = reader.ReadArray<sbyte>(int8ValueCount);
-        Int16Values = reader.ReadArray<short>(int16ValueCount);
-        Int32Values = reader.ReadArray<int>(int32ValueCount);
-        Int64Values = reader.ReadArray<long>(int64ValueCount);
+        Int8Values = reader.ReadSpan<sbyte>(int8ValueCount).ToArray();
+        Int16Values = reader.ReadSpan<short>(int16ValueCount).ToArray();
+        Int32Values = reader.ReadSpan<int>(int32ValueCount).ToArray();
+        Int64Values = reader.ReadSpan<long>(int64ValueCount).ToArray();
 
-        UInt8Values = reader.ReadArray<byte>(uint8ValueCount);
-        UInt16Values = reader.ReadArray<ushort>(uint16ValueCount);
-        UInt32Values = reader.ReadArray<uint>(uint32ValueCount);
-        UInt64Values = reader.ReadArray<ulong>(uint64ValueCount);
+        UInt8Values = reader.ReadSpan<byte>(uint8ValueCount).ToArray();
+        UInt16Values = reader.ReadSpan<ushort>(uint16ValueCount).ToArray();
+        UInt32Values = reader.ReadSpan<uint>(uint32ValueCount).ToArray();
+        UInt64Values = reader.ReadSpan<ulong>(uint64ValueCount).ToArray();
 
-        BooleanValues = reader.ReadArray<bool>(booleanValueCount);
-        SingleValues = reader.ReadArray<float>(singleValueCount);
-        DoubleValues = reader.ReadArray<double>(doubleValueCount);
-        GuidValues = reader.ReadArray<CigGuid>(guidValueCount);
+        BooleanValues = reader.ReadSpan<bool>(booleanValueCount).ToArray();
+        SingleValues = reader.ReadSpan<float>(singleValueCount).ToArray();
+        DoubleValues = reader.ReadSpan<double>(doubleValueCount).ToArray();
+        GuidValues = reader.ReadSpan<CigGuid>(guidValueCount).ToArray();
 
-        StringIdValues = reader.ReadArray<DataForgeStringId>(stringIdValueCount);
-        LocaleValues = reader.ReadArray<DataForgeStringId>(localeValueCount);
-        EnumValues = reader.ReadArray<DataForgeStringId>(enumValueCount);
+        StringIdValues = reader.ReadSpan<DataForgeStringId>(stringIdValueCount).ToArray();
+        LocaleValues = reader.ReadSpan<DataForgeStringId>(localeValueCount).ToArray();
+        EnumValues = reader.ReadSpan<DataForgeStringId>(enumValueCount).ToArray();
 
-        StrongValues = reader.ReadArray<DataForgePointer>(strongValueCount);
-        WeakValues = reader.ReadArray<DataForgePointer>(weakValueCount);
-        ReferenceValues = reader.ReadArray<DataForgeReference>(referenceValueCount);
-        EnumOptions = reader.ReadArray<DataForgeStringId>(enumOptionCount);
+        StrongValues = reader.ReadSpan<DataForgePointer>(strongValueCount).ToArray();
+        WeakValues = reader.ReadSpan<DataForgePointer>(weakValueCount).ToArray();
+        ReferenceValues = reader.ReadSpan<DataForgeReference>(referenceValueCount).ToArray();
+        EnumOptions = reader.ReadSpan<DataForgeStringId>(enumOptionCount).ToArray();
         
-        var stringSpan = reader.ReadSpan((int)textLength);
+        var stringSpan = reader.ReadBytes((int)textLength);
 
         var strings = new Dictionary<int, string>();
         var offset = 0;
@@ -137,8 +138,6 @@ public class Database
 #if DEBUG
         DebugGlobal.Database = this;
 #endif
-        
-        GC.Collect();
     }
     
     public Database(string filePath, out int bytesRead)

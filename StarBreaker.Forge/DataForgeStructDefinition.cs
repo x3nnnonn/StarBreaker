@@ -63,9 +63,7 @@ public readonly record struct DataForgeStructDefinition
         )
     {
         if (_propertiesCache.TryGetValue(this, out var cachedProperties))
-        {
             return cachedProperties;
-        }
         
         var _properties = new List<DataForgePropertyDefinition>();
         _properties.AddRange(properties.Slice(FirstAttributeIndex, AttributeCount));

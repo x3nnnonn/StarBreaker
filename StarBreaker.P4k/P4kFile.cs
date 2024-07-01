@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
+using StarBreaker.Common;
 using ZstdSharp;
 
 namespace StarBreaker.P4k;
@@ -182,6 +183,24 @@ public sealed class P4kFile
                     if (processedEntries == numberOfEntries || processedEntries % fivePercent == 0)
                         progress?.Report(processedEntries / (double)numberOfEntries);
                 }
-            });
+            }
+        );
+    }
+    
+    public static List<ZipExtraField> ReadExtraFields(BinaryReader br, ushort length)
+    {
+        var fields = new List<ZipExtraField>();
+        
+        while (length > 0)
+        {
+            var tag = br.ReadUInt16();
+            var size = br.ReadUInt16();
+            var data = br.ReadBytes(size - 4);
+            
+            fields.Add(new ZipExtraField(tag, size, data));
+            length -= size;
+        }
+        
+        return fields;
     }
 }

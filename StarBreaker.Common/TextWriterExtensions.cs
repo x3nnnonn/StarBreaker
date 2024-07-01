@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace StarBreaker.CryXmlB;
+namespace StarBreaker.Common;
 
 public static class TextWriterExtensions
 {

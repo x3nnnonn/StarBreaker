@@ -94,3 +94,10 @@ Investigation needed. most of these are not obvious, not common, and probably no
 - socpak - server object container pak. zip file. explore me
 - vvg = vehicle voxel ?? sig 0xC? 0xBA 0xFE 0xCA
 - topology = unknown. medical gown. starcloth? no signature
+
+
+
+
+
+### yes
+check endiannes by reading the length. if the little-endian length matches the file size, it's little-endian. otherwise, it's big-endian.

@@ -10,4 +10,8 @@ public readonly record struct DataForgePropertyDefinition
     public readonly DataType DataType;
     public readonly ConversionType ConversionType;
     private readonly ushort _padding;
+
+    public bool IsAttribute => ConversionType == ConversionType.Attribute && 
+                               DataType != DataType.Class && 
+                               DataType != DataType.StrongPointer;
 }
