@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
+using StarBreaker.Common;
 
 namespace StarBreaker.Forge;
 
@@ -9,11 +10,11 @@ public sealed class DataForge : IDataForge
 {
     public readonly Database _database;
     private readonly Dictionary<int, int[]> _offsets;
-    
+
     public DataForge(string dcb)
     {
         _database = new Database(dcb, out var bytesRead);
-        _offsets = ReadOffsets((int)bytesRead);
+        _offsets = ReadOffsets(bytesRead);
     }
 
     public DataForge(ReadOnlySpan<byte> allBytes)
@@ -30,6 +31,7 @@ public sealed class DataForge : IDataForge
         {
             var s = _database.GetString(record.FileNameOffset);
 
+            //TODO: use FileSystemName.MatchesSimpleExpression() instead of regex
             if (fileNameFilter != null && !fileNameFilter.IsMatch(s))
                 continue;
 
@@ -63,14 +65,14 @@ public sealed class DataForge : IDataForge
 
                 var node = new XmlNode(_database.GetString(structDef.NameOffset));
 
-                FillNode(node, structDef, ref reader, structs, properties);
+                FillNode(node, structDef, ref reader);
 
                 node.WriteTo(writer, 0);
             }
             else
             {
                 using var writer = new StreamWriter(filePath);
-                
+
                 writer.Write('<');
                 writer.Write("__root");
                 writer.Write('>');
@@ -85,7 +87,7 @@ public sealed class DataForge : IDataForge
 
                     var node = new XmlNode(_database.GetString(structDef.NameOffset));
 
-                    FillNode(node, structDef, ref reader, structs, properties);
+                    FillNode(node, structDef, ref reader);
 
                     node.WriteTo(writer, 1);
                 }
@@ -115,24 +117,23 @@ public sealed class DataForge : IDataForge
         using var writer = new StreamWriter(Path.Combine(outputFolder, "StarBreaker.Export.xml"), false, Encoding.UTF8, 1024 * 1024);
         writer.WriteLine("<__root>");
 
-        var structs = _database.StructDefinitions.AsSpan();
-        var properties = _database.PropertyDefinitions.AsSpan();
-
         foreach (var record in _database.RecordDefinitions)
         {
             if (fileNameFilter != null)
             {
                 var s = _database.GetString(record.FileNameOffset);
+
+                //TODO: use FileSystemName.MatchesSimpleExpression() instead of regex
                 if (!fileNameFilter.IsMatch(s))
                     continue;
             }
 
-            var structDef = structs[record.StructIndex];
+            var structDef = _database.StructDefinitions[record.StructIndex];
             var offset = _offsets[record.StructIndex][record.InstanceIndex];
             var reader = _database.GetReader(offset);
             var child = new XmlNode(_database.GetString(structDef.NameOffset));
 
-            FillNode(child, structDef, ref reader, structs, properties);
+            FillNode(child, structDef, ref reader);
 
             child.WriteTo(writer, 1);
 
@@ -143,24 +144,23 @@ public sealed class DataForge : IDataForge
 
         writer.WriteLine("</__root>");
     }
-    
-    private void FillNode(XmlNode node, DataForgeStructDefinition structDef, ref SpanReader reader, ReadOnlySpan<DataForgeStructDefinition> structs, ReadOnlySpan<DataForgePropertyDefinition> properties)
+
+    private void FillNode(XmlNode node, DataForgeStructDefinition structDef, ref SpanReader reader)
     {
-        foreach (ref readonly var prop in structDef.EnumerateProperties(structs, properties).AsSpan())
+        foreach (ref readonly var prop in structDef.EnumerateProperties(_database.StructDefinitions, _database.PropertyDefinitions).AsSpan())
         {
             if (prop.ConversionType == ConversionType.Attribute)
             {
                 // ReSharper disable once ConvertIfStatementToSwitchStatement switch here looks kinda ugly idk
                 if (prop.DataType == DataType.Class)
                 {
-                    var structDef3 = structs[prop.StructIndex];
+                    var structDef3 = _database.StructDefinitions[prop.StructIndex];
 
                     var childClass = new XmlNode(_database.GetString(prop.NameOffset));
 
-                    FillNode(childClass, structDef3, ref reader, structs, properties);
-                    
-                    node.AppendChild(childClass);
+                    FillNode(childClass, structDef3, ref reader);
 
+                    node.AppendChild(childClass);
                 }
                 else if (prop.DataType is DataType.StrongPointer /* or DataType.WeakPointer*/)
                 {
@@ -168,15 +168,15 @@ public sealed class DataForge : IDataForge
 
                     if (ptr.StructIndex == 0xFFFFFFFF || ptr.InstanceIndex == 0xFFFFFFFF) continue;
 
-                    var structDef2 = structs[(int)ptr.StructIndex];
+                    var structDef2 = _database.StructDefinitions[(int)ptr.StructIndex];
                     var offset2 = _offsets[(int)ptr.StructIndex][(int)ptr.InstanceIndex];
 
                     var reader2 = _database.GetReader(offset2);
 
                     var child = new XmlNode(_database.GetString(prop.NameOffset));
 
-                    FillNode(child, structDef2, ref reader2, structs, properties);
-                    
+                    FillNode(child, structDef2, ref reader2);
+
                     node.AppendChild(child);
                 }
                 else
@@ -185,40 +185,40 @@ public sealed class DataForge : IDataForge
                     switch (prop.DataType)
                     {
                         case DataType.Boolean:
-                            node.AppendAttribute(new XmlAttribute<bool>(name1, reader.Read<bool>()));
+                            node.AppendAttribute(new XmlAttribute<bool>(name1, reader.ReadBoolean()));
                             break;
                         case DataType.Single:
-                            node.AppendAttribute(new XmlAttribute<float>(name1, reader.Read<float>()));
+                            node.AppendAttribute(new XmlAttribute<float>(name1, reader.ReadSingle()));
                             break;
                         case DataType.Double:
-                            node.AppendAttribute(new XmlAttribute<double>(name1, reader.Read<double>()));
+                            node.AppendAttribute(new XmlAttribute<double>(name1, reader.ReadDouble()));
                             break;
                         case DataType.Guid:
                             node.AppendAttribute(new XmlAttribute<CigGuid>(name1, reader.Read<CigGuid>()));
                             break;
                         case DataType.SByte:
-                            node.AppendAttribute(new XmlAttribute<sbyte>(name1, reader.Read<sbyte>()));
+                            node.AppendAttribute(new XmlAttribute<sbyte>(name1, reader.ReadSByte()));
                             break;
                         case DataType.UInt16:
-                            node.AppendAttribute(new XmlAttribute<ushort>(name1, reader.Read<ushort>()));
+                            node.AppendAttribute(new XmlAttribute<ushort>(name1, reader.ReadUInt16()));
                             break;
                         case DataType.UInt32:
-                            node.AppendAttribute(new XmlAttribute<uint>(name1, reader.Read<uint>()));
+                            node.AppendAttribute(new XmlAttribute<uint>(name1, reader.ReadUInt32()));
                             break;
                         case DataType.UInt64:
-                            node.AppendAttribute(new XmlAttribute<ulong>(name1, reader.Read<ulong>()));
+                            node.AppendAttribute(new XmlAttribute<ulong>(name1, reader.ReadUInt64()));
                             break;
                         case DataType.Byte:
-                            node.AppendAttribute(new XmlAttribute<byte>(name1, reader.Read<byte>()));
+                            node.AppendAttribute(new XmlAttribute<byte>(name1, reader.ReadByte()));
                             break;
                         case DataType.Int16:
-                            node.AppendAttribute(new XmlAttribute<short>(name1, reader.Read<short>()));
+                            node.AppendAttribute(new XmlAttribute<short>(name1, reader.ReadInt16()));
                             break;
                         case DataType.Int32:
-                            node.AppendAttribute(new XmlAttribute<int>(name1, reader.Read<int>()));
+                            node.AppendAttribute(new XmlAttribute<int>(name1, reader.ReadInt32()));
                             break;
                         case DataType.Int64:
-                            node.AppendAttribute(new XmlAttribute<long>(name1, reader.Read<long>()));
+                            node.AppendAttribute(new XmlAttribute<long>(name1, reader.ReadInt64()));
                             break;
                         case DataType.Reference:
                             node.AppendAttribute(new XmlAttribute<DataForgeReference>(name1, reader.Read<DataForgeReference>()));
@@ -242,10 +242,11 @@ public sealed class DataForge : IDataForge
             }
             else
             {
-                var count = reader.Read<uint>();
-                var firstIndex = reader.Read<uint>();
+                var count = reader.ReadUInt32();
+                var firstIndex = reader.ReadUInt32();
 
                 var arrayNode = new XmlNode(_database.GetString(prop.NameOffset));
+                arrayNode.AppendAttribute(new XmlAttribute<uint>("__count__", count));
 
                 for (var i = 0; i < count; i++)
                 {
@@ -253,14 +254,14 @@ public sealed class DataForge : IDataForge
 
                     if (prop.DataType == DataType.Class)
                     {
-                        var structDef1 = structs[prop.StructIndex];
+                        var structDef1 = _database.StructDefinitions[prop.StructIndex];
                         var offset1 = _offsets[prop.StructIndex][index];
                         var reader1 = _database.GetReader(offset1);
 
                         var child = new XmlNode(_database.GetString(structDef1.NameOffset));
 
-                        FillNode(child, structDef1, ref reader1, structs, properties);
-                        
+                        FillNode(child, structDef1, ref reader1);
+
                         arrayNode.AppendChild(child);
                     }
                     else if (prop.DataType is DataType.StrongPointer /*or DataType.WeakPointer*/)
@@ -274,14 +275,14 @@ public sealed class DataForge : IDataForge
 
                         if (reference.StructIndex == 0xFFFFFFFF || reference.InstanceIndex == 0xFFFFFFFF) continue;
 
-                        var structDef2 = structs[(int)reference.StructIndex];
+                        var structDef2 = _database.StructDefinitions[(int)reference.StructIndex];
                         var offset2 = _offsets[(int)reference.StructIndex][(int)reference.InstanceIndex];
                         var reader2 = _database.GetReader(offset2);
 
                         var child = new XmlNode(_database.GetString(prop.NameOffset));
 
-                        FillNode(child, structDef2, ref reader2, structs, properties);
-                        
+                        FillNode(child, structDef2, ref reader2);
+
                         arrayNode.AppendChild(child);
                     }
                     else
@@ -347,45 +348,16 @@ public sealed class DataForge : IDataForge
                             default:
                                 throw new InvalidOperationException(nameof(DataType));
                         }
-                        
+
                         arrayNode.AppendChild(arrayItem);
                     }
                 }
 
-                arrayNode.AppendAttribute(new XmlAttribute<uint>("__count__", count));
-                
                 node.AppendChild(arrayNode);
             }
         }
     }
 
-    public Dictionary<string, List<XmlNode>> GetData()
-    {
-        var result = new Dictionary<string, List<XmlNode>>();
-        var structs = _database.StructDefinitions.AsSpan();
-        var properties = _database.PropertyDefinitions.AsSpan();
-
-        foreach (var record in _database.RecordDefinitions)
-        {
-            var structDef = structs[record.StructIndex];
-            var offset = _offsets[record.StructIndex][record.InstanceIndex];
-            var reader = _database.GetReader(offset);
-            var child = new XmlNode(_database.GetString(structDef.NameOffset));
-
-            FillNode(child, structDef, ref reader, structs, properties);
-
-            if (!result.TryGetValue(_database.GetString(record.FileNameOffset), out var list))
-            {
-                list = new List<XmlNode>();
-                result.Add(_database.GetString(record.FileNameOffset), list);
-            }
-
-            list.Add(child);
-        }
-
-        return result;
-    }
-    
     //verified same as scdatatools
     private Dictionary<int, int[]> ReadOffsets(int initialOffset)
     {
@@ -412,7 +384,7 @@ public sealed class DataForge : IDataForge
     public Dictionary<string, string[]> ExportEnums()
     {
         var result = new Dictionary<string, string[]>(_database.EnumDefinitions.Length);
-        
+
         foreach (var enumDef in _database.EnumDefinitions)
         {
             var enumValues = new string[enumDef.ValueCount];
@@ -425,5 +397,253 @@ public sealed class DataForge : IDataForge
         }
 
         return result;
+    }
+
+    public void WriteTo(TextWriter writer, DataForgeStructDefinition structDef, ref SpanReader reader)
+    {
+        writer.Write('<');
+
+        writer.Write(_database.GetString(structDef.NameOffset));
+
+        var properties = structDef.EnumerateProperties(_database.StructDefinitions, _database.PropertyDefinitions);
+        foreach (var property in properties.Where(a => a.IsAttribute))
+        {
+            //these properties are attributes
+            writer.Write(' ');
+            writer.Write(_database.GetString(property.NameOffset));
+            writer.Write('=');
+            writer.Write('"');
+            switch (property.DataType)
+            {
+                case DataType.Boolean:
+                    writer.Write(reader.ReadBoolean());
+                    break;
+                case DataType.Single:
+                    writer.Write(reader.ReadSingle());
+                    break;
+                case DataType.Double:
+                    writer.Write(reader.ReadDouble());
+                    break;
+                case DataType.Guid:
+                    writer.Write(reader.Read<CigGuid>());
+                    break;
+                case DataType.SByte:
+                    writer.Write(reader.ReadSByte());
+                    break;
+                case DataType.UInt16:
+                    writer.Write(reader.ReadUInt16());
+                    break;
+                case DataType.UInt32:
+                    writer.Write(reader.ReadUInt32());
+                    break;
+                case DataType.UInt64:
+                    writer.Write(reader.ReadUInt64());
+                    break;
+                case DataType.Byte:
+                    writer.Write(reader.ReadByte());
+                    break;
+                case DataType.Int16:
+                    writer.Write(reader.ReadInt16());
+                    break;
+                case DataType.Int32:
+                    writer.Write(reader.ReadInt32());
+                    break;
+                case DataType.Int64:
+                    writer.Write(reader.ReadInt64());
+                    break;
+                case DataType.Reference:
+                    writer.Write(reader.Read<DataForgeReference>());
+                    break;
+                case DataType.String:
+                    writer.Write(_database.GetString(reader.Read<DataForgeStringId>()));
+                    break;
+                case DataType.Locale:
+                    writer.Write(_database.GetString(reader.Read<DataForgeStringId>()));
+                    break;
+                case DataType.EnumChoice:
+                    writer.Write(_database.GetString(reader.Read<DataForgeStringId>()));
+                    break;
+                case DataType.WeakPointer:
+                    writer.Write(reader.Read<DataForgePointer>());
+                    break;
+                default:
+                    throw new InvalidOperationException(nameof(DataType));
+            }
+        }
+
+        writer.Write('>');
+
+        foreach (var property in properties.Where(a => !a.IsAttribute))
+        {
+            var count = reader.ReadUInt32();
+            var firstIndex = reader.ReadUInt32();
+
+            writer.Write('<');
+            writer.Write(_database.GetString(property.NameOffset));
+            writer.Write(' ');
+            writer.Write("__count__");
+            writer.Write('=');
+            writer.Write('"');
+            writer.Write(count);
+            writer.Write('"');
+            writer.Write('>');
+
+            for (var i = 0; i < count; i++)
+            {
+                var index = (int)firstIndex + i;
+
+                if (property.DataType == DataType.Class)
+                {
+                    var structDef1 = _database.StructDefinitions[property.StructIndex];
+                    var offset1 = _offsets[property.StructIndex][index];
+                    var reader1 = _database.GetReader(offset1);
+
+                    WriteTo(writer, structDef1, ref reader1);
+                }
+                else if (property.DataType is DataType.StrongPointer /*or DataType.WeakPointer*/)
+                {
+                    var reference = property.DataType switch
+                    {
+                        DataType.StrongPointer => _database.StrongValues[index],
+                        DataType.WeakPointer => _database.WeakValues[index],
+                        _ => throw new InvalidOperationException(nameof(DataType))
+                    };
+
+                    if (reference.StructIndex == 0xFFFFFFFF || reference.InstanceIndex == 0xFFFFFFFF) continue;
+
+                    var structDef2 = _database.StructDefinitions[(int)reference.StructIndex];
+                    var offset2 = _offsets[(int)reference.StructIndex][(int)reference.InstanceIndex];
+                    var reader2 = _database.GetReader(offset2);
+
+                    WriteTo(writer, structDef2, ref reader2);
+                }
+                else
+                {
+                    writer.Write('<');
+                    writer.Write(_database.GetString(property.DataType));
+                    writer.Write(' ');
+                    writer.Write("__value");
+                    writer.Write('=');
+                    writer.Write('"');
+                    switch (property.DataType)
+                    {
+                        case DataType.Byte:
+                            writer.Write(reader.ReadByte());
+                            break;
+                        case DataType.Int16:
+                            writer.Write(reader.ReadInt16());
+                            break;
+                        case DataType.Int32:
+                            writer.Write(reader.ReadInt32());
+                            break;
+                        case DataType.Int64:
+                            writer.Write(reader.ReadInt64());
+                            break;
+                        case DataType.SByte:
+                            writer.Write(reader.ReadSByte());
+                            break;
+                        case DataType.UInt16:
+                            writer.Write(reader.ReadUInt16());
+                            break;
+                        case DataType.UInt32:
+                            writer.Write(reader.ReadUInt32());
+                            break;
+                        case DataType.UInt64:
+                            writer.Write(reader.ReadUInt64());
+                            break;
+                        case DataType.Boolean:
+                            writer.Write(reader.ReadBoolean());
+                            break;
+                        case DataType.Single:
+                            writer.Write(reader.ReadSingle());
+                            break;
+                        case DataType.Double:
+                            writer.Write(reader.ReadDouble());
+                            break;
+                        case DataType.Guid:
+                            writer.Write(reader.Read<CigGuid>());
+                            break;
+                        case DataType.String:
+                            writer.Write(_database.GetString(reader.Read<DataForgeStringId>()));
+                            break;
+                        case DataType.Locale:
+                            writer.Write(_database.GetString(reader.Read<DataForgeStringId>()));
+                            break;
+                        case DataType.EnumChoice:
+                            writer.Write(_database.GetString(reader.Read<DataForgeStringId>()));
+                            break;
+                        case DataType.Reference:
+                            writer.Write(reader.Read<DataForgeReference>());
+                            break;
+                        case DataType.WeakPointer:
+                            writer.Write(reader.Read<DataForgePointer>());
+                            break;
+                        default:
+                            throw new InvalidOperationException(nameof(DataType));
+                    }
+
+                    writer.Write('/');
+
+                    writer.Write('>');
+                }
+            }
+        }
+    }
+
+    public void ExtractSingle2(string outputFolder, Regex? fileNameFilter = null, IProgress<double>? progress = null)
+    {
+        var progressValue = 0;
+        var total = _database.RecordDefinitions.Length;
+        if (!Directory.Exists(outputFolder))
+            Directory.CreateDirectory(outputFolder);
+        using var writer = new StreamWriter(Path.Combine(outputFolder, "StarBreaker.Export.xml"), false, Encoding.UTF8, 1024 * 1024);
+        writer.WriteLine("<__root>");
+
+        foreach (var record in _database.RecordDefinitions)
+        {
+            if (fileNameFilter != null)
+            {
+                var s = _database.GetString(record.FileNameOffset);
+                if (!fileNameFilter.IsMatch(s))
+                    continue;
+            }
+
+            var structDef = _database.StructDefinitions[record.StructIndex];
+            var offset = _offsets[record.StructIndex][record.InstanceIndex];
+            var reader = _database.GetReader(offset);
+
+            WriteTo(writer, structDef, ref reader);
+
+            ++progressValue;
+            if (progressValue % 250 == 0 || progressValue == total)
+                progress?.Report(progressValue / (double)total);
+        }
+
+        writer.WriteLine("</__root>");
+    }
+
+    public void X(string recordFileName, TextWriter writer)
+    {
+        var names = _database.RecordDefinitions.Select(a => _database.GetString(a.FileNameOffset)).Distinct().OrderBy(x => x.Length).ToArray();
+        File.WriteAllLines("names.txt", names);
+
+        var targetRecords = _database.RecordDefinitions.Where(a => _database.GetString(a.FileNameOffset) == recordFileName).ToArray();
+        var xx = _database.RecordDefinitions.Single(x => x.Hash.ToString() == "66ee5bfc-d90b-41bd-ad2e-e0a2b3efe359");
+        var x = Array.IndexOf(_database.RecordDefinitions, xx);
+        writer.WriteLine("<__root>");
+
+        foreach (var record in targetRecords)
+        {
+            var structDef = _database.StructDefinitions[record.StructIndex];
+            var offset = _offsets[record.StructIndex][record.InstanceIndex];
+            var reader = _database.GetReader(offset);
+            var child = new XmlNode(_database.GetString(structDef.NameOffset));
+
+            FillNode(child, structDef, ref reader);
+
+            child.WriteTo(writer, 1);
+        }
+
+        writer.WriteLine("</__root>");
     }
 }

@@ -3,10 +3,17 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace StarBreaker.P4k;
+namespace StarBreaker.Common;
 
 public static class BinaryReaderExtensions
 {
+    public static T[] ReadArray<T>(this BinaryReader reader, int count) where T : unmanaged
+    {
+        var bytes = reader.ReadBytes(count * Unsafe.SizeOf<T>());
+        var array = MemoryMarshal.Cast<byte, T>(bytes).ToArray();
+        return array;
+    }
+    
     public static long Locate(this BinaryReader br, ReadOnlySpan<byte> magic, long bytesFromEnd = 0)
     {
         const int chunkSize = 8192;
@@ -70,20 +77,10 @@ public static class BinaryReaderExtensions
         return Encoding.ASCII.GetString(span);
     }
     
-    public static List<ZipExtraField> ReadExtraFields(this BinaryReader br, ushort length)
+    public static void Expect<T>(this BinaryReader br, T value) where T : unmanaged
     {
-        var fields = new List<ZipExtraField>();
-        
-        while (length > 0)
-        {
-            var tag = br.ReadUInt16();
-            var size = br.ReadUInt16();
-            var data = br.ReadBytes(size - 4);
-            
-            fields.Add(new ZipExtraField(tag, size, data));
-            length -= size;
-        }
-        
-        return fields;
+        var actual = br.ReadStruct<T>();
+        if (!EqualityComparer<T>.Default.Equals(actual, value))
+            throw new Exception($"Expected {value}, got {actual}");
     }
 }

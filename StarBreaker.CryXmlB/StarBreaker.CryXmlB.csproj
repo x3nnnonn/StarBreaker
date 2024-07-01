@@ -7,4 +7,8 @@
         <RootNamespace>StarBreaker.CryXml</RootNamespace>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\StarBreaker.Common\StarBreaker.Common.csproj" />
+    </ItemGroup>
+
 </Project>
