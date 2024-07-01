@@ -11,14 +11,20 @@ public class MaterialNameChunk : IChunk
     {
         var chunk = new MaterialNameChunk();
         var bytes = reader.ReadBytes(128);
-        
-        if (reader.ReadUInt32() != 0xdeadbeef)
-            throw new Exception("Invalid terminator");
-        if (reader.ReadUInt32() != 0x0000000)
-            throw new Exception("Invalid terminator");
-        
+
         var length = bytes.IndexOf((byte)0);
         chunk.Name = Encoding.ASCII.GetString(bytes[..length]);
+        
+        //this is very often 0xdeadbeef, but not always
+        _ = reader.ReadUInt32();
+        // this one is lots of things?? maybe a bitfield? unknown.
+        _ = reader.ReadUInt32();
+        
         return chunk;
+    }
+
+    public void WriteXmlTo(TextWriter writer)
+    {
+        throw new NotImplementedException();
     }
 }

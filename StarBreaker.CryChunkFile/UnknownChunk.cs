@@ -8,4 +8,8 @@ public class UnknownChunk : IChunk
     {
         return new UnknownChunk();
     }
+
+    public void WriteXmlTo(TextWriter writer)
+    {
+    }
 }

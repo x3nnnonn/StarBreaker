@@ -65,6 +65,7 @@ see cgf-converter, TODO.
 - cigvoxel
 - cigvoxelheader
 - dst
+- soc
 
 ### IVO
 
@@ -92,7 +93,7 @@ Investigation needed. most of these are not obvious, not common, and probably no
 - raw = no clue. from the path it seems to be planet texture related somehow
 - RigLogic = RIG V1.9 signature. animation related?
 - socpak - server object container pak. zip file. explore me
-- vvg = vehicle voxel ?? sig 0xC? 0xBA 0xFE 0xCA
+- vvg = vehicle voxel ?? sig 0xC? 0xBA 0xFE 0xCA | some of these are CrCh
 - topology = unknown. medical gown. starcloth? no signature
 
 

@@ -31,8 +31,12 @@ public class CompiledBoneChunk : IChunk
         
         return chunk;
     }
-    
-    
+
+    public void WriteXmlTo(TextWriter writer)
+    {
+        throw new NotImplementedException();
+    }
+
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public readonly record struct CompiledBoneData
     {

@@ -21,10 +21,6 @@
     </ItemGroup>
     
     <ItemGroup>
-        <Content Include="TestData/**/*.*" CopyToOutputDirectory="PreserveNewest"/>
-    </ItemGroup>
-    
-    <ItemGroup>
       <ProjectReference Include="..\StarBreaker.Forge\StarBreaker.Forge.csproj" />
     </ItemGroup>
 </Project>
