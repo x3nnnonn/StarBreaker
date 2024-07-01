@@ -6,11 +6,11 @@
     },
     "df-extract": {
       "commandName": "Project",
-      "commandLineArgs": "df-extract --dcb \"D:\\out\\Data\\Game.dcb\" --output \"D:\\out\\dataforge\""
+      "commandLineArgs": "df-extract --dcb \"D:\\StarCitizenExport\\Data\\Game.dcb\" --output \"D:\\out\\dataforge\""
     },
     "df-extract-single": {
       "commandName": "Project",
-      "commandLineArgs": "df-extract-single --dcb \"D:\\out\\Data\\Game.dcb\" --output \"D:\\out\\dataforge\""
+      "commandLineArgs": "df-extract-single --dcb \"D:\\StarCitizenExport\\Data\\Game.dcb\" --output \"D:\\out\\dataforge\""
     },
     "extract-p4k-live": {
       "commandName": "Project",

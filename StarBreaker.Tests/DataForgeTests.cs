@@ -9,13 +9,13 @@ public class Tests
     [SetUp]
     public void Setup()
     {
-        _target = File.ReadAllText(Path.Combine("TestData", "TagDatabase.TagDatabase.xml"));
+        _target = File.ReadAllText(@"D:\StarCitizenExport\Data\Libs\Foundry\Records\TagDatabase\TagDatabase.TagDatabase.xml");
     }
 
     [Test]
-    public void Test1()
+    public void TestTagDatabase()
     {
-        var forge = new DataForge(Path.Combine("TestData", "Game.dcb"));
+        var forge = new DataForge(@"D:\StarCitizenExport\Data\Game.dcb");
         
         var stringwriter = new StringWriter();
         forge.X(@"libs/foundry/records/tagdatabase/tagdatabase.tagdatabase.xml", stringwriter);
