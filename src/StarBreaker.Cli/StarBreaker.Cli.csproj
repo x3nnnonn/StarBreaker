@@ -1,17 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net8.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\StarBreaker.CryChunkFile\StarBreaker.CryChunkFile.csproj" />
-        <ProjectReference Include="..\StarBreaker.CryXmlB\StarBreaker.CryXmlB.csproj" />
         <ProjectReference Include="..\StarBreaker.Forge\StarBreaker.Forge.csproj"/>
         <ProjectReference Include="..\StarBreaker.P4k\StarBreaker.P4k.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <PackageReference Include="CliFx" Version="2.3.5"/>
+    </ItemGroup>
 </Project>
