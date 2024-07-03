@@ -80,4 +80,9 @@ public readonly record struct DataForgeStructDefinition
         
         return arr;
     }
+    
+    #if DEBUG
+    public DataForgePropertyDefinition[] Properties => EnumerateProperties(DebugGlobal.Database.StructDefinitions, DebugGlobal.Database.PropertyDefinitions);
+    public DataForgeStructDefinition? Parent => ParentTypeIndex == 0xffffffff ? null : DebugGlobal.Database.StructDefinitions[(int)ParentTypeIndex];
+    #endif
 }
