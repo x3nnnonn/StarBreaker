@@ -11,4 +11,8 @@ public readonly record struct DataForgeRecord
     public readonly CigGuid Hash;
     public readonly ushort InstanceIndex;
     public readonly ushort OtherIndex;
+    
+#if DEBUG
+    public DataForgeStructDefinition Struct => DebugGlobal.Database.StructDefinitions[(int)StructIndex];
+#endif
 }

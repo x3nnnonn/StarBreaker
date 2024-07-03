@@ -21,8 +21,8 @@ public sealed class P4kFile
 
         var eocdLocation = reader.Locate(EOCDRecord.Magic);
         reader.BaseStream.Seek(eocdLocation, SeekOrigin.Begin);
-        var eocd = reader.ReadStruct<EOCDRecord>();
-        _comment = reader.ReadStringCustom(eocd.CommentLength);
+        var eocd = reader.Read<EOCDRecord>();
+        _comment = reader.ReadStringOfLength(eocd.CommentLength);
 
         if (!eocd.IsZip64)
             throw new Exception("Not a zip64 archive");
@@ -30,11 +30,11 @@ public sealed class P4kFile
         var bytesFromEnd = _stream.Length - eocdLocation;
         var zip64LocatorLocation = reader.Locate(Zip64Locator.Magic, bytesFromEnd);
         reader.BaseStream.Seek(zip64LocatorLocation, SeekOrigin.Begin);
-        var zip64Locator = reader.ReadStruct<Zip64Locator>();
+        var zip64Locator = reader.Read<Zip64Locator>();
 
         reader.BaseStream.Seek((long)zip64Locator.Zip64EOCDOffset, SeekOrigin.Begin);
 
-        var eocd64 = reader.ReadStruct<EOCD64Record>();
+        var eocd64 = reader.Read<EOCD64Record>();
         if (eocd64.Signature != BitConverter.ToUInt32(EOCD64Record.Magic))
             throw new Exception("Invalid zip64 end of central directory locator");
 
@@ -44,8 +44,8 @@ public sealed class P4kFile
 
         for (var i = 0; i < (int)eocd64.TotalEntries; i++)
         {
-            var header = reader.ReadStruct<CentralDirectoryFileHeader>();
-            var fileName = reader.ReadStringCustom(header.FileNameLength);
+            var header = reader.Read<CentralDirectoryFileHeader>();
+            var fileName = reader.ReadStringOfLength(header.FileNameLength);
             ulong compressedSize = header.CompressedSize;
             ulong uncompressedSize = header.UncompressedSize;
             ulong localHeaderOffset = header.LocalFileHeaderOffset;
@@ -84,7 +84,7 @@ public sealed class P4kFile
             var extra0x5003Size = reader.ReadUInt16();
             reader.BaseStream.Seek(extra0x5003Size - 4, SeekOrigin.Current);
 
-            var fileComment = reader.ReadStringCustom(header.FileCommentLength);
+            var fileComment = reader.ReadStringOfLength(header.FileCommentLength);
 
             _entries[i] = new ZipEntry(fileName, fileComment, compressedSize, uncompressedSize, header.CompressionMethod, isCrypted, localHeaderOffset, header.LastModifiedTime, header.LastModifiedDate);
         }
@@ -119,7 +119,7 @@ public sealed class P4kFile
                 if (asd != 0x14034B50 && asd != 0x04034B50) //CIG-specific local file header
                     throw new Exception("Invalid local file header");
 
-                var header = p4kReader.ReadStruct<LocalFileHeader>();
+                var header = p4kReader.Read<LocalFileHeader>();
                 //var name2 = reader.ReadStringCustom(header.FileNameLength);
                 //var extraField = reader.ReadBytes(header.ExtraFieldLength);
                 p4kStream.Seek(header.FileNameLength + header.ExtraFieldLength, SeekOrigin.Current);

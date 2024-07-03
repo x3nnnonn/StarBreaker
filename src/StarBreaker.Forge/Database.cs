@@ -40,7 +40,6 @@ public class Database
 
     public readonly DataForgeStringId[] EnumOptions;
 
-    private readonly FrozenDictionary<DataType, string> _dataTypeStringIds;
     private readonly FrozenDictionary<int, string> _cachedStringsss;
 
     public Database(ReadOnlySpan<byte> bytes, out int bytesRead)
@@ -121,14 +120,7 @@ public class Database
             offset += length + 1;
         }
 
-        var dataTypeStringIds = new Dictionary<DataType, string>();
-        foreach (var type in Enum.GetValues<DataType>())
-        {
-            dataTypeStringIds[type] = type.ToString();
-        }
-
         _cachedStringsss = strings.ToFrozenDictionary();
-        _dataTypeStringIds = dataTypeStringIds.ToFrozenDictionary();
         
         bytesRead = reader.Position;
 
@@ -220,14 +212,7 @@ public class Database
             offset += length + 1;
         }
 
-        var dataTypeStringIds = new Dictionary<DataType, string>();
-        foreach (var type in Enum.GetValues<DataType>())
-        {
-            dataTypeStringIds[type] = type.ToString();
-        }
-
         _cachedStringsss = strings.ToFrozenDictionary();
-        _dataTypeStringIds = dataTypeStringIds.ToFrozenDictionary();
         
         bytesRead = (int)fs.Position;
 
@@ -243,5 +228,4 @@ public class Database
     
     public SpanReader GetReader(int offset) => new(DataSection, offset - DataSectionOffset);
     public string GetString(DataForgeStringId id) => _cachedStringsss[id.Id];
-    public string GetString(DataType id) => _dataTypeStringIds[id];
 }

@@ -19,4 +19,10 @@
     <ItemGroup>
         <ProjectReference Include="..\StarBreaker.Forge\StarBreaker.Forge.csproj"/>
     </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="D:\StarCitizenExport\Data\Libs\Foundry\Records\TagDatabase\TagDatabase.TagDatabase.xml">
+        <Link>TagDatabase.TagDatabase.xml</Link>
+      </Content>
+    </ItemGroup>
 </Project>

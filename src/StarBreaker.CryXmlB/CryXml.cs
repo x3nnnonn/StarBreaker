@@ -49,12 +49,6 @@ public readonly struct CryXml
     {
         return data.Length > magicLength && data[..magicLength].SequenceEqual(magic);
     }
-
-    public void WriteXml(Stream stream)
-    {
-        using var writer = new StreamWriter(stream);
-        WriteXml(writer);
-    }
     
     public void WriteXml(TextWriter writer)
     {
