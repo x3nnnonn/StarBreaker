@@ -2,80 +2,59 @@ namespace StarBreaker.Common;
 
 //code from DotNext.IO
 
-/// <summary>
-/// Represents read-only view over the portion of underlying stream.
-/// </summary>
-/// <remarks>
-/// The segmentation is supported only for seekable streams.
-/// </remarks>
-/// <param name="stream">The underlying stream represented by the segment.</param>
-/// <param name="leaveOpen"><see langword="true"/> to leave <paramref name="stream"/> open after the object is disposed; otherwise, <see langword="false"/>.</param>
-public sealed class StreamSegment(Stream stream, bool leaveOpen = true) : Stream
+public sealed class StreamSegment : Stream
 {
-    private long length = stream.Length, offset;
+    private readonly Stream _stream;
+    private readonly bool _leaveOpen;
+    private readonly long _offset;
+    private long _length;
 
-    /// <summary>
-    /// Gets underlying stream.
-    /// </summary>
-    public Stream BaseStream => stream;
-
-    /// <summary>
-    /// Establishes segment bounds.
-    /// </summary>
-    /// <remarks>
-    /// This method modifies <see cref="Stream.Position"/> property of the underlying stream.
-    /// </remarks>
-    /// <param name="offset">The offset in the underlying stream.</param>
-    /// <param name="length">The length of the segment.</param>
-    /// <exception cref="ArgumentOutOfRangeException"><paramref name="length"/> is larger than the remaining length of the underlying stream; or <paramref name="offset"/> if greater than the length of the underlying stream.</exception>
-    public void Adjust(long offset, long length)
+    public StreamSegment(Stream stream, long offset, long length, bool leaveOpen = true)
     {
-        ArgumentOutOfRangeException.ThrowIfGreaterThan((ulong)offset, (ulong)stream.Length, nameof(offset));
-        ArgumentOutOfRangeException.ThrowIfGreaterThan((ulong)length, (ulong)(stream.Length - offset), nameof(length));
-
-        this.length = length;
-        this.offset = offset;
-        stream.Position = offset;
+        _stream = stream;
+        _leaveOpen = leaveOpen;
+        _offset = offset;
+        _length = length;
+        _stream.Position = offset;
     }
+    
+    /// <inheritdoc/>
+    public override bool CanRead => _stream.CanRead;
 
     /// <inheritdoc/>
-    public override bool CanRead => stream.CanRead;
-
-    /// <inheritdoc/>
-    public override bool CanSeek => stream.CanSeek;
+    public override bool CanSeek => _stream.CanSeek;
 
     /// <inheritdoc/>
     public override bool CanWrite => false;
 
     /// <inheritdoc/>
-    public override long Length => length;
+    public override long Length => _length;
 
     /// <inheritdoc/>
     public override long Position
     {
-        get => stream.Position - offset;
+        get => _stream.Position - _offset;
         set
         {
-            ArgumentOutOfRangeException.ThrowIfGreaterThan((ulong)value, (ulong)length, nameof(value));
+            ArgumentOutOfRangeException.ThrowIfGreaterThan((ulong)value, (ulong)_length, nameof(value));
 
-            stream.Position = offset + value;
+            _stream.Position = _offset + value;
         }
     }
 
-    private long RemainingBytes => length - Position;
+    private long RemainingBytes => _length - Position;
 
     /// <inheritdoc/>
-    public override void Flush() => stream.Flush();
+    public override void Flush() => _stream.Flush();
 
     /// <inheritdoc/>
-    public override Task FlushAsync(CancellationToken token = default) => stream.FlushAsync(token);
+    public override Task FlushAsync(CancellationToken token) => _stream.FlushAsync(token);
 
     /// <inheritdoc/>
-    public override bool CanTimeout => stream.CanTimeout;
+    public override bool CanTimeout => _stream.CanTimeout;
 
     /// <inheritdoc/>
-    public override int ReadByte()
-        => Position < length ? stream.ReadByte() : -1;
+    public override int ReadByte() => Position < _length ? _stream.ReadByte() : -1;
 
     /// <inheritdoc/>
     public override void WriteByte(byte value) => throw new NotSupportedException();
@@ -85,30 +64,29 @@ public sealed class StreamSegment(Stream stream, bool leaveOpen = true) : Stream
     {
         ValidateBufferArguments(buffer, offset, count);
 
-        return stream.Read(buffer, offset, (int)Math.Min(count, RemainingBytes));
+        return _stream.Read(buffer, offset, (int)Math.Min(count, RemainingBytes));
     }
 
     /// <inheritdoc/>
-    public override int Read(Span<byte> buffer)
-        => stream.Read(buffer.TrimLength(int.CreateSaturating(RemainingBytes)));
+    public override int Read(Span<byte> buffer) => _stream.Read(buffer.TrimLength(int.CreateSaturating(RemainingBytes)));
 
     /// <inheritdoc/>
     public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback? callback, object? state)
     {
         count = (int)Math.Min(count, RemainingBytes);
-        return stream.BeginRead(buffer, offset, count, callback, state);
+        return _stream.BeginRead(buffer, offset, count, callback, state);
     }
 
     /// <inheritdoc/>
-    public override int EndRead(IAsyncResult asyncResult) => stream.EndRead(asyncResult);
+    public override int EndRead(IAsyncResult asyncResult) => _stream.EndRead(asyncResult);
 
     /// <inheritdoc/>
-    public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken token = default)
-        => stream.ReadAsync(buffer, offset, (int)Math.Min(count, RemainingBytes), token);
+    public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken token)
+        => _stream.ReadAsync(buffer, offset, (int)Math.Min(count, RemainingBytes), token);
 
     /// <inheritdoc/>
     public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken token = default)
-        => stream.ReadAsync(buffer.TrimLength(int.CreateSaturating(RemainingBytes)), token);
+        => _stream.ReadAsync(buffer.TrimLength(int.CreateSaturating(RemainingBytes)), token);
 
     /// <inheritdoc/>
     public override long Seek(long offset, SeekOrigin origin)
@@ -117,14 +95,14 @@ public sealed class StreamSegment(Stream stream, bool leaveOpen = true) : Stream
         {
             SeekOrigin.Begin => offset,
             SeekOrigin.Current => Position + offset,
-            SeekOrigin.End => length + offset,
+            SeekOrigin.End => _length + offset,
             _ => throw new ArgumentOutOfRangeException(nameof(origin))
         };
 
         if (newPosition < 0L)
             throw new IOException();
 
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(newPosition, length, nameof(offset));
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(newPosition, _length, nameof(offset));
 
         Position = newPosition;
         return newPosition;
@@ -133,9 +111,9 @@ public sealed class StreamSegment(Stream stream, bool leaveOpen = true) : Stream
     /// <inheritdoc/>
     public override void SetLength(long value)
     {
-        ArgumentOutOfRangeException.ThrowIfGreaterThan((ulong)value, (ulong)(stream.Length - stream.Position), nameof(value));
+        ArgumentOutOfRangeException.ThrowIfGreaterThan((ulong)value, (ulong)(_stream.Length - _stream.Position), nameof(value));
 
-        length = value;
+        _length = value;
     }
 
     /// <inheritdoc/>
@@ -161,30 +139,30 @@ public sealed class StreamSegment(Stream stream, bool leaveOpen = true) : Stream
     /// <inheritdoc/>
     public override int ReadTimeout
     {
-        get => stream.ReadTimeout;
-        set => stream.ReadTimeout = value;
+        get => _stream.ReadTimeout;
+        set => _stream.ReadTimeout = value;
     }
 
     /// <inheritdoc/>
     public override int WriteTimeout
     {
-        get => stream.WriteTimeout;
-        set => stream.WriteTimeout = value;
+        get => _stream.WriteTimeout;
+        set => _stream.WriteTimeout = value;
     }
 
     /// <inheritdoc/>
     protected override void Dispose(bool disposing)
     {
-        if (disposing && !leaveOpen)
-            stream.Dispose();
+        if (disposing && !_leaveOpen)
+            _stream.Dispose();
         base.Dispose(disposing);
     }
 
     /// <inheritdoc/>
     public override async ValueTask DisposeAsync()
     {
-        if (!leaveOpen)
-            await stream.DisposeAsync().ConfigureAwait(false);
+        if (!_leaveOpen)
+            await _stream.DisposeAsync().ConfigureAwait(false);
         await base.DisposeAsync().ConfigureAwait(false);
     }
 }
