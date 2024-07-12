@@ -1,6 +1,7 @@
 ﻿using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace StarBreaker.Common;
 
@@ -104,4 +105,16 @@ public ref struct SpanReader
     public ulong ReadUInt64(bool littleEndian = true) => littleEndian
         ? BinaryPrimitives.ReadUInt64LittleEndian(ReadBytes(sizeof(ulong)))
         : BinaryPrimitives.ReadUInt64BigEndian(ReadBytes(sizeof(ulong)));
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public string ReadStringOfLength(ushort length)
+    {
+        if (length == 0)
+            return string.Empty;
+        
+        if (length >= 0xffff)
+            throw new Exception("Size is too large");
+        
+        return Encoding.ASCII.GetString(ReadBytes(length));
+    }
 }

@@ -39,5 +39,5 @@ public static class MemoryExtensions
     /// <param name="memory">A contiguous region of arbitrary memory.</param>
     /// <param name="maxLength">Maximum length.</param>
     /// <returns>Trimmed memory block.</returns>
-    public static Memory<T> TrimLength<T>(this Memory<T> memory, int maxLength) => memory.Length <= maxLength ? memory : memory.Slice(0, maxLength);
+    public static Memory<T> TrimLength<T>(this Memory<T> memory, int maxLength) => memory.Length <= maxLength ? memory : memory[..maxLength];
 }

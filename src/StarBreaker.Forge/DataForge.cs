@@ -630,47 +630,20 @@ public sealed class DataForge : IDataForge
         //assume there are multiple records with the same name.
         //in this case, the "root" record is always the last one
         var mainRecord = targetRecords[^1];
-        var properties = _database.StructDefinitions[mainRecord.StructIndex].EnumerateProperties(_database.StructDefinitions, _database.PropertyDefinitions);
-        var aasdasd = properties[0];
-        var c = _database.StructDefinitions[aasdasd.StructIndex];
-        // var names = _database.RecordDefinitions.Select(a => _database.GetString(a.FileNameOffset)).ToArray();
-        // File.WriteAllLines("names.txt", names);
-
-        var large = _database.RecordDefinitions.GroupBy(x => x.FileNameOffset).Where(g => g.Count() > 1).ToArray();
-
-        foreach (var group in large)
-        {
-            var all = group.ToArray();
-            //check if the struct id of the last item in each group is different from all of the other ones
-            var last = all.Last();
-            var lastIndex = last.StructIndex; 
-
-            for (var i = 0; i < all.Length - 1; i++)
-            {
-                var index = all[i];
-                if (index.StructIndex == last.StructIndex)
-                {
-                    Debug.WriteLine("Different struct id");
-                    break;
-                }
-            }
-        }
+        var structDefMain = _database.StructDefinitions[mainRecord.StructIndex];
+        var offsetMain = _offsets[mainRecord.StructIndex][mainRecord.InstanceIndex];
+        var readerMain = _database.GetReader(offsetMain);
+        
+        var mainNode = new XmlNode(_database.GetString(structDefMain.NameOffset));
+        
+        FillNode(mainNode, structDefMain, ref readerMain);
+        
+        mainNode.WriteTo(writer, 0);
+        
+        return;
         
         
-        
-        var targetRecordss = _database.RecordDefinitions.Where(a => _database.GetString(a.FileNameOffset) == "libs/foundry/records/starmap/starmapobjecttypes.xml").ToArray();
-        var xxx = _database.StructDefinitions[targetRecords[0].StructIndex];
-        var xx = _database.RecordDefinitions.Single(x => x.Hash.ToString() == "66ee5bfc-d90b-41bd-ad2e-e0a2b3efe359");
-        var xxxx = _database.StructDefinitions[xx.StructIndex];
-        var xxxxx = xxxx.EnumerateProperties(_database.StructDefinitions, _database.PropertyDefinitions);
-
-        var bytes = BitConverter.ToString(MemoryMarshal.AsBytes([xx.Hash]).ToArray());
-        
-        
-        
-        var xxxxxxxxx = _database.StructDefinitions[4942].EnumerateProperties(_database.StructDefinitions, _database.PropertyDefinitions);
-        var x = Array.IndexOf(_database.RecordDefinitions, xx);
-        writer.WriteLine("<__root>");
+        writer.WriteLine("<Record>");
 
         foreach (var record in targetRecords)
         {
@@ -684,6 +657,6 @@ public sealed class DataForge : IDataForge
             child.WriteTo(writer, 1);
         }
 
-        writer.WriteLine("</__root>");
+        writer.WriteLine("</Record>");
     }
 }
