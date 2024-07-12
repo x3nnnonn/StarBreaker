@@ -76,7 +76,8 @@ public readonly struct CryXml
         }
 
         writer.Write('<');
-        writer.WriteString(stringData, (int)node.TagStringOffset);
+        if (writer.WriteString(stringData, (int)node.TagStringOffset) == 0)
+            writer.Write("__unknown__");
 
         for (var i = 0; i < node.AttributeCount; i++)
         {
@@ -142,5 +143,12 @@ public readonly struct CryXml
         writer.Write('/');
         writer.WriteString(stringData, (int)node.TagStringOffset);
         writer.WriteLine('>');
+    }
+    
+    public string ToXmlString()
+    {
+        using var sw = new StringWriter();
+        WriteXml(sw);
+        return sw.ToString();
     }
 }
