@@ -3,7 +3,6 @@ namespace StarBreaker.P4k;
 public sealed class ZipEntry
 {
     public string Name { get; }
-    public string Comment { get; }
     public ulong CompressedSize { get; }
     public ulong UncompressedSize { get; }
     public ushort CompressionMethod { get; }
@@ -11,10 +10,9 @@ public sealed class ZipEntry
     public ulong Offset { get; }
     public DateTime LastModified { get; }
     
-    public ZipEntry(string name, string comment, ulong compressedSize, ulong uncompressedSize, ushort compressionMethod, bool isCrypted, ulong offset, ushort lastModifiedTime, ushort lastModifiedDate)
+    public ZipEntry(string name, ulong compressedSize, ulong uncompressedSize, ushort compressionMethod, bool isCrypted, ulong offset, ushort lastModifiedTime, ushort lastModifiedDate)
     {
         Name = name;
-        Comment = comment;
         CompressedSize = compressedSize;
         UncompressedSize = uncompressedSize;
         CompressionMethod = compressionMethod;
