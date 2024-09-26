@@ -20,8 +20,8 @@ public static class Program
         //File.WriteAllText("output.xml", cxml.ToXmlString());
 
         //ExtrackSocPak();
-        TimeP4kExtract();
-        //ExtractChunkFiles();
+        //TimeP4kExtract();
+        ExtractChunkFiles();
     }
 
     private static void ExtractChunkFiles()

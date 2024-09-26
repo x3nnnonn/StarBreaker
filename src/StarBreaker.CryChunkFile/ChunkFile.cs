@@ -118,9 +118,6 @@ public sealed class ChunkFile
         for (var i = 0; i < headers.Length; i++)
         {
             ref readonly var header = ref headers[i];
-            //Debug.Assert(header.Offset == reader.GetPosition());
-            //reader.Seek((int)header.Offset);
-
             if (Enum.IsDefined(typeof(ChunkTypeIvo), header.ChunkType) == false)
             {
                 if (_unknownKeys.Add(header.ChunkType))
@@ -129,7 +126,7 @@ public sealed class ChunkFile
                 continue;
             }
 
-            //chunks[i] = ReadChunk(ref reader, header.ChunkType);
+            chunks[i] = ReadChunk(ref reader, header.ChunkType);
         }
     }
 
@@ -150,10 +147,9 @@ public sealed class ChunkFile
         return chunkTypeIvo switch
         {
             //TODO: fill in
-            // ChunkTypeIvo.Any => CompiledBoneChunk.Read(ref reader),
-            // ChunkTypeIvo.CompiledBonesIvo320 => CompiledBoneChunk.Read(ref reader),
-            // ChunkTypeIvo.MtlNameIvo320 => MaterialNameChunk.Read(ref reader),
-            // ChunkTypeIvo.CompiledPhysicalBonesUnknown => ProbablyCustomBonesChunk.Read(ref reader),
+            ChunkTypeIvo.CompiledBonesIvo320 => CompiledBoneChunk.Read(ref reader),
+            ChunkTypeIvo.MtlNameIvo320 => MaterialNameChunk.Read(ref reader),
+            ChunkTypeIvo.CompiledPhysicalBonesUnknown => ProbablyCustomBonesChunk.Read(ref reader),
             _ => UnknownChunk.Read(ref reader)
         };
     }
