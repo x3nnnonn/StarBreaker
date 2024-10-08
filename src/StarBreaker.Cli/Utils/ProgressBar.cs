@@ -1,6 +1,6 @@
 using CliFx.Infrastructure;
 
-namespace StarBreaker.Cli;
+namespace StarBreaker.Cli.Utils;
 
 public class ProgressBar : IProgress<double>
 {

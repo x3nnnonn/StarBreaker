@@ -3,9 +3,10 @@ using System.Text.RegularExpressions;
 using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
+using StarBreaker.Cli.Utils;
 using StarBreaker.Forge;
 
-namespace StarBreaker.Cli;
+namespace StarBreaker.Cli.DataForgeCommands;
 
 [Command("df-extract", Description = "Extracts a DataForge binary file into separate xml files")]
 public class DataForgeExtractCommand : ICommand
