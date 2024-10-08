@@ -18,6 +18,9 @@ public ref struct SpanReader
         _span = span;
         _position = position;
     }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ReadOnlySpan<byte> PeekBytes(int count) => _span.Slice(_position, count);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> ReadBytes(int count)
@@ -34,6 +37,8 @@ public ref struct SpanReader
         if (!actual.Equals(value))
             throw new Exception($"Expected {value}, got {actual}");
     }
+    
+    public int Length => _span.Length;
 
     // ReSharper disable once ConvertToAutoPropertyWithPrivateSetter
     public int Position => _position;
@@ -116,5 +121,16 @@ public ref struct SpanReader
             throw new Exception("Size is too large");
         
         return Encoding.ASCII.GetString(ReadBytes(length));
+    }
+    
+    /// <summary>
+    ///     Reads a value from the span without advancing the position.
+    /// </summary>
+    public T Peek<T>() where T : unmanaged
+    {
+        if (typeof(T) == typeof(bool))
+            throw new InvalidOperationException("Read an int and compare it to 0 instead");
+        
+        return MemoryMarshal.Read<T>(PeekBytes(Unsafe.SizeOf<T>()));
     }
 }
