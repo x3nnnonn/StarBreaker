@@ -1,4 +1,5 @@
 ﻿using System.Buffers.Binary;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -20,11 +21,31 @@ public ref struct SpanReader
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ReadOnlySpan<byte> PeekBytes(int count) => _span.Slice(_position, count);
+    public ReadOnlySpan<byte> PeekBytes(int count)
+    {
+#if DEBUG
+        if (_position + count > _span.Length)
+        {
+            Debugger.Break();            
+            throw new Exception("Reading past the end of the span");
+        }
+#endif
+        
+        return _span.Slice(_position, count);
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> ReadBytes(int count)
     {
+#if DEBUG
+        if (_position + count > _span.Length)
+        {
+            Debugger.Break();            
+            throw new Exception("Reading past the end of the span");
+        }
+
+#endif
+        
         var span = _span.Slice(_position, count);
         _position += count;
         return span;
@@ -36,14 +57,6 @@ public ref struct SpanReader
         var actual = Read<T>();
         if (!actual.Equals(value))
             throw new Exception($"Expected {value}, got {actual}");
-    }
-    
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void ExpectAll<T>(T value, int count) where T : unmanaged, IEquatable<T>
-    {
-        var actual = ReadSpan<T>(count);
-        if(actual.ContainsAnyExcept(value))
-            throw new Exception($"Expected {value} x {count}, got {string.Join(',', actual.ToArray())}");
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

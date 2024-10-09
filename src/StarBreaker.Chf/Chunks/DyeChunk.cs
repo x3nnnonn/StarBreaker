@@ -7,17 +7,18 @@ public sealed class DyeChunk
 {
     public static readonly uint[] DyeKeys =
     [
-        0x6C836947, 
-        0x078AC8BD, 
-        0x9B274D93
+        0x6C836947,
+        0x078AC8BD,
+        0x9B274D93,
+        0xA8770416,
     ];
-    
+
     public required DyeType DyeType { get; init; }
     public required uint Unknown { get; init; }
     public required DyeValuesChunk? Values { get; init; }
     public required Color? RootDyeColor { get; init; }
     public required Color? TipDyeColor { get; init; }
-    
+
     public static DyeChunk Read(ref SpanReader reader)
     {
         var key = reader.Read<uint>();
@@ -26,9 +27,10 @@ public sealed class DyeChunk
             0x6C836947 => DyeType.Hair,
             0x078AC8BD => DyeType.Eyebrow,
             0x9B274D93 => DyeType.Beard,
+            0xA8770416 => DyeType.idk,
             _ => throw new Exception($"Unexpected key: {key:X}")
         };
-        
+
         reader.Expect(Guid.Empty);
         var id = reader.Read<uint>();
         reader.Expect(Guid.Empty);
@@ -36,8 +38,10 @@ public sealed class DyeChunk
         reader.Expect(5);
         var floats = DyeValuesChunk.Read(ref reader);
         var colors = ColorsChunk.Read(ref reader);
-        reader.Expect(5);
-        
+        //TODO: why
+        if (reader.Remaining >= 4)
+            reader.Expect(5);
+
         return new DyeChunk
         {
             DyeType = dyeType,
@@ -54,4 +58,5 @@ public enum DyeType
     Hair,
     Eyebrow,
     Beard,
+    idk
 }

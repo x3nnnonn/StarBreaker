@@ -43,7 +43,7 @@ public class ChfFile(byte[] data, bool isModded)
         //Could be version number but that seems unlikely.
         // ReSharper disable once UnusedVariable
         var _unknown = reader.ReadBytes(2);
-        Console.WriteLine($"Unknown Magic bytes: {BitConverter.ToString(_unknown.ToArray())} in {file}");
+        //Console.WriteLine($"Unknown Magic bytes: {BitConverter.ToString(_unknown.ToArray())} in {file}");
         
         var expectedCrc = reader.Read<uint>();
         var compressedSize = reader.Read<uint>();

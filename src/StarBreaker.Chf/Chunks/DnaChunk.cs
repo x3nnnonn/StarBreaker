@@ -12,10 +12,8 @@ public sealed class DnaChunk
     public required uint ChildCount { get; init; }
     public required Dictionary<FacePart, DnaPart[]> Parts { get; init; }
 
-    public static DnaChunk Read(ref SpanReader reader, BodyType bodyType)
+    public static DnaChunk Read(ref SpanReader reader)
     {
-        var male = bodyType == BodyType.Male;
-
         reader.Expect<ulong>(Size);
         var dnaBytes = reader.ReadBytes(Size).ToArray();
         var dnaString = Convert.ToHexString(dnaBytes);
@@ -23,9 +21,8 @@ public sealed class DnaChunk
         var childReader = new SpanReader(dnaBytes);
         
         childReader.Expect(0xFCD09394);
-        childReader.Expect(male ? 0xDD6C67F6 : 0x9EF4EB54);
-        //childReader.Expect(male ? 0x65E740D3 : 0x65D75204);//0x66ebfad1
-        childReader.ExpectAny([0x65E740D3, 0x65D75204, 0x66ebfad1, 0x66DF165F]);
+        childReader.ExpectAny([0xDD6C67F6, 0x9EF4EB54]);
+        childReader.ExpectAny([0x65E740D3, 0x65D75204, 0x66EBFAD1, 0x66DF165F]);
         childReader.Expect(0);
         childReader.Expect<byte>(0x0c);
         childReader.Expect<byte>(0x0);

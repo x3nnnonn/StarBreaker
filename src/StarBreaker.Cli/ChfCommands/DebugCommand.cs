@@ -166,7 +166,7 @@ public class DebugCommand : ICommand
         reader.Expect<uint>(7);
 
         var gender = BodyTypeChunk.Read(ref reader);
-        DnaChunk.Read(ref reader, gender.Type);
+        var dna = DnaChunk.Read(ref reader);
     }
     
     public static string FixWeirdDnaString(string dna)

@@ -21,8 +21,12 @@ public sealed class BodyMaterialChunk
         {
             _ when guid == f_body_character_customizer => false,
             _ when guid == m_body_character_customizer => true,
-            _ => throw new Exception($"Unexpected guid {guid}")
+            _ => true,//if we do this it seems to work correctly in the next checks. Unsure.
         };
+        if (guid == CigGuid.Empty)
+        {
+            Console.WriteLine("[WARN] Empty guid in BodyMaterialChunk");
+        }
 
         var additionalParams = reader.Read<uint>();
         reader.Expect<uint>(0);
@@ -46,6 +50,9 @@ public sealed class BodyMaterialChunk
         reader.Expect<uint>(1);
         reader.Expect<uint>(0);
         var c2 = reader.ReadKeyedValue<Color>(0xbd530797);
+        //todo: why
+        if (reader.Remaining >= 4)
+            reader.Expect<uint>(5);
         
         return new BodyMaterialChunk
         {
