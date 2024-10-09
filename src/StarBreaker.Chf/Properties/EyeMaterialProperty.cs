@@ -11,6 +11,18 @@ public sealed class EyeMaterialProperty
     
     public static EyeMaterialProperty Read(ref SpanReader reader)
     {
+        if (reader.Peek<uint>() != Key)
+        {
+            return new EyeMaterialProperty
+            {
+                EyeColors = new ColorsProperty()
+                {
+                    Color01 = new Color(),
+                    Color02 = new Color(),
+                }
+            };
+        }
+
         reader.Expect(Key);
         reader.Expect(Guid.Empty);
         reader.Expect(0xCE9DF055);

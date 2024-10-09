@@ -33,33 +33,34 @@ public sealed class FaceInfoProperty
     
     public static FaceInfoProperty Read(ref SpanReader reader)
     {
-        reader.Expect<ulong>(0x19);
+        reader.Expect<uint>(0x19);
+        reader.Expect<uint>(0);
         
-        var freckleAmount = reader.ReadKeyValueAndChildCount<float>(0, 0xe87727e2);
-        var freckleOpacity = reader.ReadKeyValueAndChildCount<float>(0, 0x9361cb58);
-        var sunSpotsAmount = reader.ReadKeyValueAndChildCount<float>(0, 0x554ad20f);
-        var sunSpotOpacity = reader.ReadKeyValueAndChildCount<float>(0, 0xcfc41264);
-        var data00 = reader.ReadKeyValueAndChildCount<float>(0, 0xb95883b0);
-        var data01 = reader.ReadKeyValueAndChildCount<float>(0, 0x9cf750c3);
-        var data02 = reader.ReadKeyValueAndChildCount<float>(0, 0xa90644df);
-        var data04 = reader.ReadKeyValueAndChildCount<float>(0, 0xc871a987);
-        var data05 = reader.ReadKeyValueAndChildCount<float>(0, 0xedde7af4);
-        var data06 = reader.ReadKeyValueAndChildCount<float>(0, 0xd82f6ee8);
-        var data07 = reader.ReadKeyValueAndChildCount<float>(0, 0xcae526ba);
-        var data08 = reader.ReadKeyValueAndChildCount<float>(0, 0x0526ed02);
-        var data09 = reader.ReadKeyValueAndChildCount<float>(0, 0x20893e71);
-        var data10 = reader.ReadKeyValueAndChildCount<float>(0, 0x15782a6d);
-        var data11 = reader.ReadKeyValueAndChildCount<float>(0, 0x9be3d5d7);
-        var data12 = reader.ReadKeyValueAndChildCount<float>(0, 0xbe4c06a4);
-        var data13 = reader.ReadKeyValueAndChildCount<float>(0, 0x8bbd12b8);
-        var data14 = reader.ReadKeyValueAndChildCount<float>(0, 0x11a1a1d3);
-        var data15 = reader.ReadKeyValueAndChildCount<float>(0, 0x92571ac3);
-        var data16 = reader.ReadKeyValueAndChildCount<float>(0, 0xb7f8c9b0);
-        var data17 = reader.ReadKeyValueAndChildCount<float>(0, 0x8209ddac);
-        var data18 = reader.ReadKeyValueAndChildCount<float>(0, 0xaa9201e7);
-        var data19 = reader.ReadKeyValueAndChildCount<float>(0, 0x8f3dd294);
-        var data20 = reader.ReadKeyValueAndChildCount<float>(0, 0xbaccc688);
-        var data21 = reader.ReadKeyValueAndChildCount<float>(0, 0x589ddcf4);
+        var freckleAmount = reader.ReadKeyedValue<float>(0xe87727e2);
+        var freckleOpacity = reader.ReadKeyedValue<float>(0x9361cb58);
+        var sunSpotsAmount = reader.ReadKeyedValue<float>(0x554ad20f);
+        var sunSpotOpacity = reader.ReadKeyedValue<float>(0xcfc41264);
+        var eyeMetallic1 = reader.ReadKeyedValue<float>(0xb95883b0);
+        var eyeMetallic2 = reader.ReadKeyedValue<float>(0x9cf750c3);
+        var eyeMetallic3 = reader.ReadKeyedValue<float>(0xa90644df);
+        var eyeSmoothness1 = reader.ReadKeyedValue<float>(0xc871a987);
+        var eyeSmoothness2 = reader.ReadKeyedValue<float>(0xedde7af4);
+        var eyeSmoothness3 = reader.ReadKeyedValue<float>(0xd82f6ee8);
+        var eyeOpacity = reader.ReadKeyedValue<float>(0xcae526ba);
+        var cheekMetallic1 = reader.ReadKeyedValue<float>(0x0526ed02);
+        var cheekMetallic2 = reader.ReadKeyedValue<float>(0x20893e71);
+        var cheekMetallic3 = reader.ReadKeyedValue<float>(0x15782a6d);
+        var cheekSmoothness1 = reader.ReadKeyedValue<float>(0x9be3d5d7);
+        var cheekSmoothness2 = reader.ReadKeyedValue<float>(0xbe4c06a4);
+        var cheekSmoothness3 = reader.ReadKeyedValue<float>(0x8bbd12b8);
+        var cheekOpacity = reader.ReadKeyedValue<float>(0x11a1a1d3);
+        var lipMetallic1 = reader.ReadKeyedValue<float>(0x92571ac3);
+        var lipMetallic2 = reader.ReadKeyedValue<float>(0xb7f8c9b0);
+        var lipMetallic3 = reader.ReadKeyedValue<float>(0x8209ddac);
+        var lipSmoothness1 = reader.ReadKeyedValue<float>(0xaa9201e7);
+        var lipSmoothness2 = reader.ReadKeyedValue<float>(0x8f3dd294);
+        var lipSmoothness3 = reader.ReadKeyedValue<float>(0xbaccc688);
+        var lipOpacity = reader.ReadKeyedValue<float>(0x589ddcf4);
         
         return new FaceInfoProperty
         {
@@ -67,27 +68,27 @@ public sealed class FaceInfoProperty
             FreckleOpacity = freckleOpacity,
             SunSpotsAmount = sunSpotsAmount,
             SunSpotOpacity = sunSpotOpacity,
-            EyeMetallic1 = data00,
-            EyeMetallic2 = data01,
-            EyeMetallic3 = data02,
-            EyeSmoothness1 = data04,
-            EyeSmoothness2 = data05,
-            EyeSmoothness3 = data06,
-            EyeOpacity = data07,
-            CheekMetallic1 = data08,
-            CheekMetallic2 = data09,
-            CheekMetallic3 = data10,
-            CheekSmoothness1 = data11,
-            CheekSmoothness2 = data12,
-            CheekSmoothness3 = data13,
-            CheekOpacity = data14,
-            LipMetallic1 = data15,
-            LipMetallic2 = data16,
-            LipMetallic3 = data17,
-            LipSmoothness1 = data18,
-            LipSmoothness2 = data19,
-            LipSmoothness3 = data20,
-            LipOpacity = data21,
+            EyeMetallic1 = eyeMetallic1,
+            EyeMetallic2 = eyeMetallic2,
+            EyeMetallic3 = eyeMetallic3,
+            EyeSmoothness1 = eyeSmoothness1,
+            EyeSmoothness2 = eyeSmoothness2,
+            EyeSmoothness3 = eyeSmoothness3,
+            EyeOpacity = eyeOpacity,
+            CheekMetallic1 = cheekMetallic1,
+            CheekMetallic2 = cheekMetallic2,
+            CheekMetallic3 = cheekMetallic3,
+            CheekSmoothness1 = cheekSmoothness1,
+            CheekSmoothness2 = cheekSmoothness2,
+            CheekSmoothness3 = cheekSmoothness3,
+            CheekOpacity = cheekOpacity,
+            LipMetallic1 = lipMetallic1,
+            LipMetallic2 = lipMetallic2,
+            LipMetallic3 = lipMetallic3,
+            LipSmoothness1 = lipSmoothness1,
+            LipSmoothness2 = lipSmoothness2,
+            LipSmoothness3 = lipSmoothness3,
+            LipOpacity = lipOpacity,
         };
     }
 }

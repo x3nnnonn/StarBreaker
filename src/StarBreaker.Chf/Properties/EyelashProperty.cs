@@ -6,7 +6,7 @@ namespace StarBreaker.Chf;
 //libs/foundry/records/entities/scitem/characters/human/head/shared/eyelashes/head_eyelashes.xml
 public sealed class EyelashProperty 
 {
-    public static readonly Guid Eyelashes = new("6217c113-a448-443b-82aa-1bb108ba8e11");
+    public static readonly CigGuid Eyelashes = new("6217c113-a448-443b-82aa-1bb108ba8e11");
     public const uint Key = 0x190b04e2;
     
     public required ulong ChildCount { get; init; }

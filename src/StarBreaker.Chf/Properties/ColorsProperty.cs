@@ -14,8 +14,8 @@ public sealed class ColorsProperty
         switch (count)
         {
             case 2:
-                var data53 = reader.ReadKeyValueAndChildCount<Color>(0, 0x15e90814);
-                var data54 = reader.ReadKeyValueAndChildCount<Color>(0, 0xa2c7c909);
+                var data53 = reader.ReadKeyedValue<Color>(0x15e90814);
+                var data54 = reader.ReadKeyedValue<Color>(0xa2c7c909);
         
                 return new ColorsProperty
                 {
@@ -23,7 +23,7 @@ public sealed class ColorsProperty
                     Color02 = data54
                 };
             case 1:
-                var asd = reader.ReadKeyValueAndChildCount<Color>(0, 0x442a34ac);
+                var asd = reader.ReadKeyedValue<Color>(0x442a34ac);
                 
                 return new ColorsProperty
                 {

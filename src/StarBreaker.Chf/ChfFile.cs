@@ -1,5 +1,6 @@
 ﻿using System.Numerics;
 using System.Runtime.InteropServices;
+using StarBreaker.Common;
 using ZstdSharp;
 
 namespace StarBreaker.Chf;
@@ -7,7 +8,7 @@ namespace StarBreaker.Chf;
 public class ChfFile(byte[] data, bool isModded)
 {
     public const int Size = 4096;
-    private static ReadOnlySpan<byte> CigMagic => [0x42, 0x42, 0x00, 0x00];
+    private static ushort CigMagic => 0x4242;
     private static ReadOnlySpan<byte> MyMagic => "diogotr7"u8;
     
     public byte[] Data { get; } = data;
@@ -33,21 +34,37 @@ public class ChfFile(byte[] data, bool isModded)
         
         if (fileBytes.Length != Size)
             throw new ArgumentException("Invalid data length");
+
+        var reader = new SpanReader(span);
         
-        if (!span.StartsWith(CigMagic))
-            throw new ArgumentException("Invalid magic");
+        reader.Expect(CigMagic);
         
-        var compressedSize = BitConverter.ToUInt32(span[8..12]);
-        var uncompressedSize = BitConverter.ToUInt32(span[12..16]);
+        //these 2 bytes used to be 0x00, part of the magic, not anymore. investigate.
+        //Could be version number but that seems unlikely.
+        // ReSharper disable once UnusedVariable
+        var _unknown = reader.ReadBytes(2);
+        Console.WriteLine($"Unknown Magic bytes: {BitConverter.ToString(_unknown.ToArray())} in {file}");
         
-        var isModded = IsModded(span);
+        var expectedCrc = reader.Read<uint>();
+        var compressedSize = reader.Read<uint>();
+        var uncompressedSize = reader.Read<uint>();
+        
+        var actualCrc = Crc32C(reader.RemainingBytes);
+        if (actualCrc != expectedCrc)
+            throw new Exception("CRC32 does not match");
         
         var uncompressed = new byte[uncompressedSize];
         
         using var zstd = new Decompressor();
-        var written = zstd.Unwrap(span[16..(int)(16 + compressedSize)], uncompressed);
+        var written = zstd.Unwrap(reader.ReadBytes((int)compressedSize), uncompressed);
+
+
         if (written != uncompressedSize)
             throw new Exception("Decompressed size does not match expected size");
+                
+        //expect zeroes until the last 8 bytes
+        reader.ExpectAll<byte>(0, reader.Remaining - 8);
+        var isModded = IsModded(reader.ReadBytes(8));
         
         return new ChfFile(uncompressed, isModded);
     }
@@ -78,7 +95,7 @@ public class ChfFile(byte[] data, bool isModded)
         var writtenBytes = zstd.Wrap(Data, output, 16);
         var span = output.AsSpan();
         
-        CigMagic.CopyTo(span[..4]);
+        MemoryMarshal.Write(span[0..4], CigMagic);
         MemoryMarshal.Write(span[4..8], 0);//placeholder crc32
         MemoryMarshal.Write(span[8..12], (uint)writtenBytes);
         MemoryMarshal.Write(span[12..16], (uint)Data.Length);
@@ -87,12 +104,7 @@ public class ChfFile(byte[] data, bool isModded)
         if (Modded)
             MyMagic.CopyTo(span[(Size - MyMagic.Length)..]);
         
-        var acc = 0xFFFFFFFFu;
-        foreach (ref readonly var t in span[16..])
-        {
-            acc = BitOperations.Crc32C(acc, t);
-        }
-        var crc = ~acc;
+        var crc = Crc32C(span[16..]);
         
         BitConverter.TryWriteBytes(span[4..8], crc);
         
@@ -103,5 +115,15 @@ public class ChfFile(byte[] data, bool isModded)
     {
         ReadOnlySpan<byte> zeroes = [0, 0, 0, 0, 0, 0, 0, 0];
         return data.EndsWith(MyMagic) || data.EndsWith(zeroes);
+    }
+    
+    private static uint Crc32C(ReadOnlySpan<byte> data)
+    {
+        var acc = 0xFFFFFFFFu;
+        foreach (ref readonly var t in data)
+        {
+            acc = BitOperations.Crc32C(acc, t);
+        }
+        return ~acc;
     }
 }

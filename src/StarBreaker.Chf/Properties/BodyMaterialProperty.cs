@@ -4,8 +4,8 @@ namespace StarBreaker.Chf;
 
 public sealed class BodyMaterialProperty
 {
-    public static readonly Guid m_body_character_customizer = new("fa5042a3-8568-48f5-bf36-02dc98191b2d");
-    public static readonly Guid f_body_character_customizer = new("f0153262-588d-4ae8-8c06-53bf98cf80a5");
+    public static readonly CigGuid m_body_character_customizer = new("fa5042a3-8568-48f5-bf36-02dc98191b2d");
+    public static readonly CigGuid f_body_character_customizer = new("f0153262-588d-4ae8-8c06-53bf98cf80a5");
     
     public const uint Key = 0x27424D58;
     
@@ -16,7 +16,7 @@ public sealed class BodyMaterialProperty
     public static BodyMaterialProperty Read(ref SpanReader reader)
     {
         reader.Expect(Key);
-        var guid = reader.Read<Guid>();
+        var guid = reader.Read<CigGuid>();
         var isMan = guid switch
         {
             _ when guid == f_body_character_customizer => false,
@@ -37,7 +37,7 @@ public sealed class BodyMaterialProperty
         reader.Expect<uint>(0);
         reader.Expect<uint>(1);
         reader.Expect<uint>(0);
-        var c1 = reader.ReadKeyValueAndChildCount<Color>(0, 0xbd530797);
+        var c1 = reader.ReadKeyedValue<Color>(0xbd530797);
         reader.Expect<uint>(5);
         reader.Expect(isMan ? 0xA41FA12C : 0x8A5B66DB);
         reader.Expect<uint>(0);
@@ -45,7 +45,7 @@ public sealed class BodyMaterialProperty
         reader.Expect<uint>(0);
         reader.Expect<uint>(1);
         reader.Expect<uint>(0);
-        var c2 = reader.ReadKeyValueAndChildCount<Color>(0, 0xbd530797);
+        var c2 = reader.ReadKeyedValue<Color>(0xbd530797);
         
         return new BodyMaterialProperty
         {

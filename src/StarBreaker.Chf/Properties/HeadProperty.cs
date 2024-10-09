@@ -6,7 +6,7 @@ namespace StarBreaker.Chf;
 //libs/foundry/records/entities/scitem/characters/human/head/npc/face/pu_protos_head.xml
 public sealed class HeadProperty
 {
-    public static readonly Guid Head = new("1d5cfab3-bf80-4550-b4ab-39e896a7086e");
+    public static readonly CigGuid Head = new("1d5cfab3-bf80-4550-b4ab-39e896a7086e");
     public const uint Key = 0x47010DB9;
     
     public required ulong ChildCount { get; init; }

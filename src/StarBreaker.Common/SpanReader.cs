@@ -38,12 +38,31 @@ public ref struct SpanReader
             throw new Exception($"Expected {value}, got {actual}");
     }
     
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void ExpectAll<T>(T value, int count) where T : unmanaged, IEquatable<T>
+    {
+        var actual = ReadSpan<T>(count);
+        if(actual.ContainsAnyExcept(value))
+            throw new Exception($"Expected {value} x {count}, got {string.Join(',', actual.ToArray())}");
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void ExpectAny<T>(ReadOnlySpan<T> values) where T : unmanaged, IEquatable<T>
+    {
+        var actual = Read<T>();
+        if (!values.Contains(actual))
+            throw new Exception($"Expected {values.ToString()}, got {actual}");
+    }
+
+    
     public int Length => _span.Length;
 
     // ReSharper disable once ConvertToAutoPropertyWithPrivateSetter
     public int Position => _position;
 
     public int Remaining => _span.Length - _position;
+    
+    public uint NextKey => Peek<uint>();
 
     public ReadOnlySpan<byte> RemainingBytes => _span[_position..];
 

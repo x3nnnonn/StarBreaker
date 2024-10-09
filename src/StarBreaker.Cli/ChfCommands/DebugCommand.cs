@@ -20,7 +20,7 @@ public class DebugCommand : ICommand
     {
         await FixDnaStrings();
         
-        var hugeData = Path.Combine(DefaultPaths.Base, "dna", "huge_fixed.csv");
+        var hugeData = Path.Combine(DefaultPaths.ResearchFolder, "dna", "huge_fixed.csv");
         var huge_fixed = (await File.ReadAllLinesAsync(hugeData)).Select(x => x.Split(',')).Select(x => (x[1], x[0])).ToArray();
         await CreateCharactersFromDnaStrings(huge_fixed);
     }
@@ -43,7 +43,7 @@ public class DebugCommand : ICommand
 
     private static async Task FigureOutHeadCount()
     {
-        var dnaData = Path.Combine(DefaultPaths.Base, "dna", "website.csv");
+        var dnaData = Path.Combine(DefaultPaths.ResearchFolder, "dna", "website.csv");
         var lines = (await File.ReadAllLinesAsync(dnaData)).Select(x => x.Split(',')).ToArray();
         var bytes = lines.Select(x => Convert.FromHexString(x[0])).Distinct().ToArray();
 
@@ -93,12 +93,12 @@ public class DebugCommand : ICommand
         var characters2 = websiteCharacters.Select(x => (name: x, character: StarCitizenCharacter.FromBytes(File.ReadAllBytes(x)))).ToArray();
         var dnas = characters2.Select(p => $"{p.character.Dna.DnaString}, {Path.GetFileNameWithoutExtension(p.name)}").ToArray();
 
-        File.WriteAllLines(Path.Combine(DefaultPaths.Base, "dna", "website.csv"), dnas);
+        File.WriteAllLines(Path.Combine(DefaultPaths.ResearchFolder, "dna", "website.csv"), dnas);
     }
 
     private static async Task FixDnaStrings()
     {
-        var hugeData = Path.Combine(DefaultPaths.Base, "dna", "huge.csv");
+        var hugeData = Path.Combine(DefaultPaths.ResearchFolder, "dna", "huge.csv");
         var huge = (await File.ReadAllLinesAsync(hugeData)).Select(x => x.Split(',')).ToArray();
         var huge_fixed = huge
             .Where(x => x[0].Length == 384)
@@ -107,12 +107,12 @@ public class DebugCommand : ICommand
             .ToArray();
 
         var huge_fixed_csv = huge_fixed.Select(x => $"{x.Item2},{x.Item1}");
-        await File.WriteAllLinesAsync(Path.Combine(DefaultPaths.Base, "dna", "huge_fixed.csv"), huge_fixed_csv);
+        await File.WriteAllLinesAsync(Path.Combine(DefaultPaths.ResearchFolder, "dna", "huge_fixed.csv"), huge_fixed_csv);
     }
 
     public static async Task CreateCharactersFromDnaStrings(IEnumerable<(string name, string dna)> huge_fixed)
     {
-        var dump = Path.Combine(DefaultPaths.Base, "dump");
+        var dump = Path.Combine(DefaultPaths.ResearchFolder, "dump");
         Directory.CreateDirectory(dump);
         foreach (var (name, f1) in huge_fixed)
         {
