@@ -6,6 +6,7 @@ using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using StarBreaker.Cli;
+using StarBreaker.Cli.Utils;
 
 namespace StarBreaker.Chf;
 
@@ -22,18 +23,27 @@ public class ProcessAllCommand : ICommand
             await console.Error.WriteLineAsync("Folder not found");
             return;
         }
+
+        var progress = new ProgressBar(console);
+        var files = Directory.GetFiles(InputFolder, "*.chf", SearchOption.AllDirectories);
+        var processedFiles = 0;
         
-        foreach (var characterFile in Directory.GetFiles(InputFolder, "*.chf", SearchOption.AllDirectories))
+        progress.Report(0);
+        
+        foreach (var characterFile in files)
         {
             try
             {
                 await ChfProcessing.ProcessCharacter(characterFile);
-                await console.Output.WriteLineAsync($"Processed {characterFile}");
+                processedFiles++;
+                progress.Report((double)processedFiles / files.Length);
             }
             catch (Exception e)
             {
                 await console.Error.WriteLineAsync($"Error processing {characterFile}: {e.Message}");
             }
         }
+        
+        progress.Report(1);
     }
 }

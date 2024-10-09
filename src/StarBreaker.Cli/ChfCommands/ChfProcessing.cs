@@ -27,5 +27,4 @@ public static class ChfProcessing
         var jsonString = JsonSerializer.Serialize(character, opts);
         await File.WriteAllTextAsync(json, jsonString);
     }
-
 }
