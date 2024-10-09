@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO.Enumeration;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -24,22 +25,21 @@ public sealed class DataForge : IDataForge
         _offsets = ReadOffsets(bytesRead);
     }
 
-    public void Extract(string outputFolder, Regex? fileNameFilter = null, IProgress<double>? progress = null)
+    public void Extract(string outputFolder, string? fileNameFilter = null, IProgress<double>? progress = null)
     {
         var progressValue = 0;
         var structsPerFileName = new Dictionary<string, List<DataForgeRecord>>();
         foreach (var record in _database.RecordDefinitions)
         {
-            var s = _database.GetString(record.FileNameOffset);
+            var fileName = _database.GetString(record.FileNameOffset);
 
-            //TODO: use FileSystemName.MatchesSimpleExpression() instead of regex
-            if (fileNameFilter != null && !fileNameFilter.IsMatch(s))
+            if (fileNameFilter != null && !FileSystemName.MatchesSimpleExpression(fileNameFilter, fileName, true))
                 continue;
 
-            if (!structsPerFileName.TryGetValue(s, out var list))
+            if (!structsPerFileName.TryGetValue(fileName, out var list))
             {
                 list = [];
-                structsPerFileName.Add(s, list);
+                structsPerFileName.Add(fileName, list);
             }
 
             list.Add(record);
@@ -109,7 +109,7 @@ public sealed class DataForge : IDataForge
         });
     }
 
-    public void ExtractSingle(string outputFolder, Regex? fileNameFilter = null, IProgress<double>? progress = null)
+    public void ExtractSingle(string outputFolder, string? fileNameFilter = null, IProgress<double>? progress = null)
     {
         var progressValue = 0;
         var total = _database.RecordDefinitions.Length;
@@ -122,10 +122,9 @@ public sealed class DataForge : IDataForge
         {
             if (fileNameFilter != null)
             {
-                var s = _database.GetString(record.FileNameOffset);
+                var fileName = _database.GetString(record.FileNameOffset);
 
-                //TODO: use FileSystemName.MatchesSimpleExpression() instead of regex
-                if (!fileNameFilter.IsMatch(s))
+                if (!FileSystemName.MatchesSimpleExpression(fileNameFilter, fileName, true))
                     continue;
             }
 
@@ -591,7 +590,7 @@ public sealed class DataForge : IDataForge
         }
     }
 
-    public void ExtractSingle2(string outputFolder, Regex? fileNameFilter = null, IProgress<double>? progress = null)
+    public void ExtractSingle2(string outputFolder, string? fileNameFilter = null, IProgress<double>? progress = null)
     {
         var progressValue = 0;
         var total = _database.RecordDefinitions.Length;
@@ -605,7 +604,7 @@ public sealed class DataForge : IDataForge
             if (fileNameFilter != null)
             {
                 var s = _database.GetString(record.FileNameOffset);
-                if (!fileNameFilter.IsMatch(s))
+                if (!FileSystemName.MatchesSimpleExpression(fileNameFilter, s, true))
                     continue;
             }
 

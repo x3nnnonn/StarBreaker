@@ -17,7 +17,7 @@ public class ExtractP4kCommand : ICommand
     [CommandOption("output", 'o', Description = "Path to the output directory")]
     public required string OutputDirectory { get; init; }
 
-    [CommandOption("filter", 'f', Description = "Regex pattern to filter entries")]
+    [CommandOption("filter", 'f', Description = "Pattern to filter entries")]
     public string? FilterPattern { get; init; }
 
     public ValueTask ExecuteAsync(IConsole console)

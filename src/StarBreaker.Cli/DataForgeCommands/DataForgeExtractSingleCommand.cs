@@ -17,8 +17,8 @@ public class DataForgeExtractSingleCommand : ICommand
     [CommandOption("output", 'o', Description = "Path to the output directory")]
     public required string OutputDirectory { get; init; }
     
-    [CommandOption("filter", 'f', Description = "Regex pattern to filter entries")]
-    public Regex? RegexPattern { get; init; }
+    [CommandOption("filter", 'f', Description = "Pattern to filter entries")]
+    public string? Filter { get; init; }
     
     public ValueTask ExecuteAsync(IConsole console)
     {
@@ -28,7 +28,7 @@ public class DataForgeExtractSingleCommand : ICommand
         console.Output.WriteLine("Exporting...");
         
         var sw = Stopwatch.StartNew();
-        dataForge.ExtractSingle(OutputDirectory, RegexPattern, new ProgressBar(console));
+        dataForge.ExtractSingle(OutputDirectory, Filter, new ProgressBar(console));
         sw.Stop();
         
         console.Output.WriteLine();

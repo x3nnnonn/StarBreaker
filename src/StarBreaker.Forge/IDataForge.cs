@@ -8,17 +8,17 @@ public interface IDataForge
     ///     Export all files in the DataForge to XML.
     /// </summary>
     /// <param name="outputFolder">Output folder</param>
-    /// <param name="fileNameFilter">Regex to filter files to export</param>
+    /// <param name="fileNameFilter">Pattern to filter files to export</param>
     /// <param name="progress">Progress callback</param>
-    void Extract(string outputFolder, Regex? fileNameFilter = null, IProgress<double>? progress = null);
+    void Extract(string outputFolder, string? fileNameFilter = null, IProgress<double>? progress = null);
     
     /// <summary>
     ///     Export all records in the DataCoreBinary into a single XML file.
     /// </summary>
     /// <param name="outputFolder">Output folder</param>
-    /// <param name="fileNameFilter">Regex to filter files to export</param>
+    /// <param name="fileNameFilter">Pattern to filter files to export</param>
     /// <param name="progress">Progress callback</param>
-    void ExtractSingle(string outputFolder, Regex? fileNameFilter = null, IProgress<double>? progress = null);
+    void ExtractSingle(string outputFolder, string? fileNameFilter = null, IProgress<double>? progress = null);
     
     /// <summary>
     ///     Export all enums in the DataForge to a dictionary.
