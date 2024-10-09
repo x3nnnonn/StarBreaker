@@ -28,24 +28,4 @@ public static class ChfProcessing
         await File.WriteAllTextAsync(json, jsonString);
     }
 
-    public static string FixWeirdDnaString(string dna)
-    {
-        if (dna.Length != 384)
-            throw new ArgumentException("Invalid length", nameof(dna));
-        
-        var stringBuilder = new StringBuilder();
-
-        //reverse endianness
-        for (var i = 0; i < 48; i++)
-        {
-            var start = i * 8;
-            var part = dna.Substring(start, 8);
-            stringBuilder.Append(part[6..8]);
-            stringBuilder.Append(part[4..6]);
-            stringBuilder.Append(part[2..4]);
-            stringBuilder.Append(part[0..2]);
-        }
-        
-        return stringBuilder.ToString();
-    }
 }

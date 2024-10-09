@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using StarBreaker.Chf;
 using CliFx;
@@ -103,7 +104,7 @@ public class DebugCommand : ICommand
         var huge_fixed = huge
             .Where(x => x[0].Length == 384)
             .DistinctBy(x => x[0])
-            .Select(x => (x[1], ChfProcessing.FixWeirdDnaString(x[0])))
+            .Select(x => (x[1], FixWeirdDnaString(x[0])))
             .ToArray();
 
         var huge_fixed_csv = huge_fixed.Select(x => $"{x.Item2},{x.Item1}");
@@ -164,7 +165,28 @@ public class DebugCommand : ICommand
         reader.Expect<uint>(2);
         reader.Expect<uint>(7);
 
-        var gender = BodyTypeProperty.Read(ref reader);
-        DnaProperty.Read(ref reader, gender.Type);
+        var gender = BodyTypeChunk.Read(ref reader);
+        DnaChunk.Read(ref reader, gender.Type);
+    }
+    
+    public static string FixWeirdDnaString(string dna)
+    {
+        if (dna.Length != 384)
+            throw new ArgumentException("Invalid length", nameof(dna));
+        
+        var stringBuilder = new StringBuilder();
+
+        //reverse endianness
+        for (var i = 0; i < 48; i++)
+        {
+            var start = i * 8;
+            var part = dna.Substring(start, 8);
+            stringBuilder.Append(part[6..8]);
+            stringBuilder.Append(part[4..6]);
+            stringBuilder.Append(part[2..4]);
+            stringBuilder.Append(part[0..2]);
+        }
+        
+        return stringBuilder.ToString();
     }
 }

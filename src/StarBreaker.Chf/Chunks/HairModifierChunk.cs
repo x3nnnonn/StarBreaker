@@ -4,12 +4,12 @@ using StarBreaker.Common;
 namespace StarBreaker.Chf;
 
 //libs/foundry/records/entities/scitem/characters/human/appearance_modifier/hair_variant/hair_var_brown.xml
-public sealed class HairModifierProperty
+public sealed class HairModifierChunk
 {
     public const uint Key = 0xe7809d46;
     public required ulong ChildCount { get; init; }
     
-    public static HairModifierProperty Read(ref SpanReader reader)
+    public static HairModifierChunk Read(ref SpanReader reader)
     {
         reader.Expect(Key);
         var guid = reader.Read<CigGuid>();
@@ -21,15 +21,15 @@ public sealed class HairModifierProperty
         switch (count)
         {
             case 0:
-                return new HairModifierProperty { ChildCount = count };
+                return new HairModifierChunk { ChildCount = count };
             case 6:
                 //the data i have has this 5 here but the next property is right after.
                 //Unknown what this is.
                 //count of how many objects are left to read??
                 reader.Expect(5);
-                return new HairModifierProperty { ChildCount = count };
+                return new HairModifierChunk { ChildCount = count };
             default:
-                throw new Exception();
+                throw new Exception("HairModifierChunk child count is not 0 or 6");
         }
     }
     

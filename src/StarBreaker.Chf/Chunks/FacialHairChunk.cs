@@ -3,14 +3,14 @@ using StarBreaker.Common;
 
 namespace StarBreaker.Chf;
 
-public sealed class FacialHairProperty
+public sealed class FacialHairChunk
 {
     public const uint Key = 0x98EFBB1C;
 
     public required FacialHairType FacialHairType { get; init; }
-    public required HairModifierProperty? Modifier { get; init; }
+    public required HairModifierChunk? Modifier { get; init; }
 
-    public static FacialHairProperty Read(ref SpanReader reader)
+    public static FacialHairChunk Read(ref SpanReader reader)
     {
         reader.Expect(Key);
         var guid = reader.Read<CigGuid>();
@@ -46,7 +46,7 @@ public sealed class FacialHairProperty
             _ when guid == Beard28 => FacialHairType.Beard28,
             _ when guid == Beard29 => FacialHairType.Beard29,
             _ when guid == Beard30 => FacialHairType.Beard30,
-            _ => throw new ArgumentOutOfRangeException(nameof(guid), guid, null)
+            _ => FacialHairType.Unknown
         };
 
         var count = reader.Read<uint>();
@@ -54,19 +54,25 @@ public sealed class FacialHairProperty
         {
             case 0:
                 var cnt = reader.Read<uint>();
-                if (cnt != 5 && cnt != 6)
-                    throw new Exception();
+                if (cnt == 0)
+                {
+                    //don't expect anything else
+                    return new FacialHairChunk { FacialHairType = type, Modifier = null };
+                }
+                
+                if (cnt != 4 && cnt != 5 && cnt != 6)
+                    throw new Exception("FacialHairChunk sub child count has unexpected value " + cnt);
 
                 reader.Expect(5);
-                return new FacialHairProperty { FacialHairType = type, Modifier = null };
+                return new FacialHairChunk { FacialHairType = type, Modifier = null };
             case 1:
                 reader.Expect<uint>(0);
 
-                var hairModifier = HairModifierProperty.Read(ref reader);
+                var hairModifier = HairModifierChunk.Read(ref reader);
 
-                return new FacialHairProperty { FacialHairType = type, Modifier = hairModifier };
+                return new FacialHairChunk { FacialHairType = type, Modifier = hairModifier };
             default:
-                throw new Exception();
+                throw new Exception("FacialHairChunk child count has unexpected value " + count);
         }
     }
 
@@ -104,6 +110,7 @@ public sealed class FacialHairProperty
 
 public enum FacialHairType
 {
+    Unknown = -1,
     None,
     Beard01,
     Beard02,

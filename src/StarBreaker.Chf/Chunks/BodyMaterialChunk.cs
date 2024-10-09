@@ -2,7 +2,7 @@
 
 namespace StarBreaker.Chf;
 
-public sealed class BodyMaterialProperty
+public sealed class BodyMaterialChunk
 {
     public static readonly CigGuid m_body_character_customizer = new("fa5042a3-8568-48f5-bf36-02dc98191b2d");
     public static readonly CigGuid f_body_character_customizer = new("f0153262-588d-4ae8-8c06-53bf98cf80a5");
@@ -13,7 +13,7 @@ public sealed class BodyMaterialProperty
     public required Color TorsoColor { get; init; }
     public required Color LimbColor { get; init; }
     
-    public static BodyMaterialProperty Read(ref SpanReader reader)
+    public static BodyMaterialChunk Read(ref SpanReader reader)
     {
         reader.Expect(Key);
         var guid = reader.Read<CigGuid>();
@@ -47,7 +47,7 @@ public sealed class BodyMaterialProperty
         reader.Expect<uint>(0);
         var c2 = reader.ReadKeyedValue<Color>(0xbd530797);
         
-        return new BodyMaterialProperty
+        return new BodyMaterialChunk
         {
             AdditionalParams = additionalParams,
             TorsoColor = c1,

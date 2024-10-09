@@ -62,8 +62,9 @@ public class ChfFile(byte[] data, bool isModded)
         if (written != uncompressedSize)
             throw new Exception("Decompressed size does not match expected size");
                 
-        //expect zeroes until the last 8 bytes
-        reader.ExpectAll<byte>(0, reader.Remaining - 8);
+        //ideally we would expect zeroes until the last 8 bytes,
+        //but the data seems to be just garbage sometimes.
+        reader.Advance(reader.Remaining - 8);
         var isModded = IsModded(reader.ReadBytes(8));
         
         return new ChfFile(uncompressed, isModded);

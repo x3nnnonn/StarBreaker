@@ -3,7 +3,7 @@ using StarBreaker.Common;
 
 namespace StarBreaker.Chf;
 
-public sealed class DyeValuesProperty
+public sealed class DyeValuesChunk
 {
     public required uint Key { get; init; }
 
@@ -17,7 +17,7 @@ public sealed class DyeValuesProperty
     public required float Unknown { get; init; }
     public required float DyeGradient1 { get; init; }
 
-    public static DyeValuesProperty? Read(ref SpanReader reader)
+    public static DyeValuesChunk? Read(ref SpanReader reader)
     {
         //TODO: what is this?
         var k = reader.Read<uint>();
@@ -37,7 +37,7 @@ public sealed class DyeValuesProperty
         var f06 = reader.ReadKeyedValue<float>(0xa59aa7c8);
         var f07 = reader.ReadKeyedValue<float>(0x027eb674);
 
-        return new DyeValuesProperty
+        return new DyeValuesChunk
         {
             Key = k,
             DyeAmount = f01,

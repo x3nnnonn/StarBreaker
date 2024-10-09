@@ -3,7 +3,7 @@ using StarBreaker.Common;
 
 namespace StarBreaker.Chf;
 
-public sealed class DnaProperty
+public sealed class DnaChunk
 {
     private const int Size = 0xD8;
     private const int PartCount = 48;
@@ -12,7 +12,7 @@ public sealed class DnaProperty
     public required uint ChildCount { get; init; }
     public required Dictionary<FacePart, DnaPart[]> Parts { get; init; }
 
-    public static DnaProperty Read(ref SpanReader reader, BodyType bodyType)
+    public static DnaChunk Read(ref SpanReader reader, BodyType bodyType)
     {
         var male = bodyType == BodyType.Male;
 
@@ -25,7 +25,7 @@ public sealed class DnaProperty
         childReader.Expect(0xFCD09394);
         childReader.Expect(male ? 0xDD6C67F6 : 0x9EF4EB54);
         //childReader.Expect(male ? 0x65E740D3 : 0x65D75204);//0x66ebfad1
-        childReader.ExpectAny([0x65E740D3, 0x65D75204, 0x66ebfad1]);
+        childReader.ExpectAny([0x65E740D3, 0x65D75204, 0x66ebfad1, 0x66DF165F]);
         childReader.Expect(0);
         childReader.Expect<byte>(0x0c);
         childReader.Expect<byte>(0x0);
@@ -49,7 +49,7 @@ public sealed class DnaProperty
                 throw new Exception($"Invalid part percent for {k}");
         }
         
-        return new DnaProperty
+        return new DnaChunk
         {
             DnaString = dnaString,
             ChildCount = size,

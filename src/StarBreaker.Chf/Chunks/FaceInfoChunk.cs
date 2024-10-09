@@ -3,7 +3,7 @@ using StarBreaker.Common;
 
 namespace StarBreaker.Chf;
 
-public sealed class FaceInfoProperty
+public sealed class FaceInfoChunk
 {
     public required float FreckleAmount { get; init; }
     public required float FreckleOpacity { get; init; }
@@ -31,9 +31,11 @@ public sealed class FaceInfoProperty
     public required float LipSmoothness3 { get; init; }
     public required float LipOpacity { get; init; }
     
-    public static FaceInfoProperty Read(ref SpanReader reader)
+    public static FaceInfoChunk Read(ref SpanReader reader)
     {
-        reader.Expect<uint>(0x19);
+        var count = reader.Read<uint>();
+        if (count != 25 && count != 27)
+            throw new Exception("Unexpected FaceInfoChunk count: " + count);
         reader.Expect<uint>(0);
         
         var freckleAmount = reader.ReadKeyedValue<float>(0xe87727e2);
@@ -61,8 +63,13 @@ public sealed class FaceInfoProperty
         var lipSmoothness2 = reader.ReadKeyedValue<float>(0x8f3dd294);
         var lipSmoothness3 = reader.ReadKeyedValue<float>(0xbaccc688);
         var lipOpacity = reader.ReadKeyedValue<float>(0x589ddcf4);
-        
-        return new FaceInfoProperty
+        if (count == 27)
+        {
+            var unknownExtraFloat = reader.ReadKeyedValue<float>(0x64C1127);
+            var unknownExtraFloat2 = reader.ReadKeyedValue<float>(0xEC67C07D);
+            
+        }
+        return new FaceInfoChunk
         {
             FreckleAmount = freckleAmount,
             FreckleOpacity = freckleOpacity,
