@@ -25,16 +25,18 @@ public sealed class EyeMaterialChunk
 
         reader.Expect(Key);
         reader.Expect(Guid.Empty);
-        reader.Expect(0xCE9DF055);
+        reader.ExpectAny([0xCE9DF055, 0xD5354502]);
         reader.Expect(Guid.Empty);
         reader.Expect(1);
         reader.Expect(5);
-        reader.Expect(0x9736C44B);
+        reader.ExpectAny([0x9736C44B,0x8C9E711C]);
         reader.Expect<uint>(0);
         reader.Expect<uint>(0);
         reader.Expect<uint>(0);
         var colorBlock = ColorsChunk.Read(ref reader);
-        reader.Expect<uint>(5);
+        //TODO: why
+        if (reader.Remaining >= 4)
+            reader.Expect<uint>(5);
         
         return new EyeMaterialChunk
         {

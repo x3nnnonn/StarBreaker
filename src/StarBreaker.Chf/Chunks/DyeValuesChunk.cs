@@ -5,8 +5,7 @@ namespace StarBreaker.Chf;
 
 public sealed class DyeValuesChunk
 {
-    public required uint Key { get; init; }
-
+    public required uint Param { get; init; }
     public required float DyeAmount { get; init; }
     public required float DyeGradient2 { get; init; }
     //both of these color values are 0-1 floats. top left is 0,0 in the gui.
@@ -39,7 +38,7 @@ public sealed class DyeValuesChunk
 
         return new DyeValuesChunk
         {
-            Key = k,
+            Param = k,
             DyeAmount = f01,
             DyeGradient2 = f02,
             NaturalColorSaturation = f03,
