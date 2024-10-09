@@ -3,7 +3,7 @@ using StarBreaker.Common;
 
 namespace StarBreaker.Chf;
 
-public sealed class FaceColorInfoProperty
+public sealed class FaceColorsChunk
 {
     public required Color HeadColor { get; init; }
     public required Color EyeMakeupColor1 { get; init; }
@@ -28,7 +28,7 @@ public sealed class FaceColorInfoProperty
     public required uint Data20 { get; init; }
     public required uint Data21 { get; init; }
     
-    public static FaceColorInfoProperty Read(ref SpanReader reader)
+    public static FaceColorsChunk Read(ref SpanReader reader)
     {
         //note: the uints here are either a bitfield or a bool, not sure.
         reader.Expect<ulong>(0x16);
@@ -56,7 +56,7 @@ public sealed class FaceColorInfoProperty
         var data42 = reader.ReadKeyedValue<uint>(0x7b8b1fd6);
         var data43 = reader.ReadKeyedValue<uint>(0x68dbec22);
         
-        return new FaceColorInfoProperty
+        return new FaceColorsChunk
         {
             HeadColor = data22,
             EyeMakeupColor1 = data23,

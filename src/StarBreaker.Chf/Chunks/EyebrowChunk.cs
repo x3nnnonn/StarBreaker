@@ -3,14 +3,14 @@ using StarBreaker.Common;
 
 namespace StarBreaker.Chf;
 
-public sealed class EyebrowProperty
+public sealed class EyebrowChunk
 {
     public const uint Key = 0x1787EE22;
     
     public required EyebrowType EyebrowType { get; init; }
     public required ulong ChildCount { get; init; }
     
-    public static EyebrowProperty Read(ref SpanReader reader)
+    public static EyebrowChunk Read(ref SpanReader reader)
     {
         reader.Expect(Key);
         var guid = reader.Read<CigGuid>();
@@ -24,10 +24,10 @@ public sealed class EyebrowProperty
             _ when guid == Brows04 => EyebrowType.Brows04,
             _ when guid == Brows05 => EyebrowType.Brows05,
             _ when guid == Brows06 => EyebrowType.Brows06,
-            _ => throw new ArgumentOutOfRangeException(nameof(guid), guid, null)
+            _ =>  EyebrowType.Unknown
         };
 
-        return new EyebrowProperty
+        return new EyebrowChunk
         {
             EyebrowType = type,
             ChildCount = childCount
@@ -44,6 +44,7 @@ public sealed class EyebrowProperty
 
 public enum EyebrowType
 {
+    Unknown = -1,
     None,
     Brows01,
     Brows02,

@@ -1,19 +1,18 @@
-﻿
-using StarBreaker.Common;
+﻿using StarBreaker.Common;
 
 namespace StarBreaker.Chf;
 
-public sealed class MakeupProperty
+public sealed class MakeupChunk
 {
     public required byte Count { get; init; }
     public required MakeupType Type { get; init; }
 
-    public static MakeupProperty Read(ref SpanReader reader)
+    public static MakeupChunk Read(ref SpanReader reader)
     {
         reader.Expect<uint>(0);
         var count = reader.Read<byte>();
         var id = reader.Read<CigGuid>();
-        
+
         var type = id switch
         {
             _ when id == CigGuid.Empty => MakeupType.None,
@@ -27,16 +26,16 @@ public sealed class MakeupProperty
             _ when id == Lips03Id => MakeupType.Lips03,
             _ when id == Lips04Id => MakeupType.Lips04,
             _ when id == Lips05Id => MakeupType.Lips05,
-            _ => throw new ArgumentOutOfRangeException(nameof(id), id, null)
+            _ => MakeupType.Unknown
         };
 
-        return new MakeupProperty
+        return new MakeupChunk
         {
             Count = count,
             Type = type
         };
     }
-    
+
     public static readonly CigGuid Eyes01Id = new("b643f3b3-21bc-4f44-95e5-0de140fd7954");
     public static readonly CigGuid Eyes02Id = new("229a46c9-b9e5-4da2-875e-8f007642e52c");
     public static readonly CigGuid Eyes03Id = new("34e882d0-ae6b-4747-acf1-0a86ef8a64bb");
@@ -48,7 +47,7 @@ public sealed class MakeupProperty
     public static readonly CigGuid Lips03Id = new("521a1b21-8bb7-44ef-91b5-74d9a3f0cf1b");
     public static readonly CigGuid Lips04Id = new("5f213adc-04e0-44c4-bd5a-fb6a07022c70");
     public static readonly CigGuid Lips05Id = new("db723134-9142-43c1-84c0-ace36c176135");
-    
+
     //unused?
     public static readonly CigGuid MakeupFoundation01 = new("b5e53e65-bd4a-4f50-bcd1-843ce5fc231b");
     public static readonly CigGuid MakeupFoundation02 = new("318114ee-f184-42f5-86cb-19a321bcb513");
@@ -60,6 +59,7 @@ public sealed class MakeupProperty
 
 public enum MakeupType
 {
+    Unknown = -1,
     None,
     Eyes01,
     Eyes02,

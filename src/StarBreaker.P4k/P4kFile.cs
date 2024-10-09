@@ -1,6 +1,8 @@
 ﻿using System.Buffers;
+using System.IO.Enumeration;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using StarBreaker.Common;
 using ZstdSharp;
 
@@ -54,7 +56,7 @@ public sealed class P4kFile
                 var bytes = rent.AsSpan(0, length);
 
                 if (reader.Read(bytes) != length)
-                    throw new Exception();
+                    throw new Exception("Failed to read central directory file header");
 
                 var reader2 = new SpanReader(bytes);
 
@@ -65,7 +67,7 @@ public sealed class P4kFile
                 ulong diskNumberStart = header.DiskNumberStart;
 
                 if (reader2.ReadUInt16() != 1)
-                    throw new Exception();
+                    throw new Exception("Invalid version needed to extract");
 
                 var zip64HeaderSize = reader2.Read<ushort>();
 
@@ -121,15 +123,17 @@ public sealed class P4kFile
         }
     }
 
-    public void Extract(string outputDir, IProgress<double>? progress = null)
+    public void Extract(string outputDir, string? filter = null, IProgress<double>? progress = null)
     {
-        var numberOfEntries = _entries.Length;
+        var filteredEntries = filter is null ? _entries : _entries.Where(entry => FileSystemName.MatchesSimpleExpression(filter, entry.Name, true)).ToArray();
+        
+        var numberOfEntries = filteredEntries.Length;
         var fivePercent = numberOfEntries / 20;
         var processedEntries = 0;
 
         progress?.Report(0);
 
-        Parallel.ForEach(_entries, entry =>
+        Parallel.ForEach(filteredEntries, entry =>
             {
                 using var p4kStream = new FileStream(P4KPath, FileMode.Open, FileAccess.Read, FileShare.Read);
 
@@ -174,7 +178,7 @@ public sealed class P4kFile
 
                 entryStream.Dispose();
 
-                lock (_entries)
+                lock (filteredEntries)
                 {
                     processedEntries++;
                     if (processedEntries == numberOfEntries || processedEntries % fivePercent == 0)

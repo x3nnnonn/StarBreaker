@@ -3,7 +3,7 @@ using StarBreaker.Common;
 
 namespace StarBreaker.Chf;
 
-public sealed class DyeProperty
+public sealed class DyeChunk
 {
     public static readonly uint[] DyeKeys =
     [
@@ -14,11 +14,11 @@ public sealed class DyeProperty
     
     public required DyeType DyeType { get; init; }
     public required uint Unknown { get; init; }
-    public required DyeValuesProperty? Values { get; init; }
+    public required DyeValuesChunk? Values { get; init; }
     public required Color? RootDyeColor { get; init; }
     public required Color? TipDyeColor { get; init; }
     
-    public static DyeProperty Read(ref SpanReader reader)
+    public static DyeChunk Read(ref SpanReader reader)
     {
         var key = reader.Read<uint>();
         var dyeType = key switch
@@ -34,11 +34,11 @@ public sealed class DyeProperty
         reader.Expect(Guid.Empty);
         reader.Expect(1);
         reader.Expect(5);
-        var floats = DyeValuesProperty.Read(ref reader);
-        var colors = ColorsProperty.Read(ref reader);
+        var floats = DyeValuesChunk.Read(ref reader);
+        var colors = ColorsChunk.Read(ref reader);
         reader.Expect(5);
         
-        return new DyeProperty
+        return new DyeChunk
         {
             DyeType = dyeType,
             Unknown = id,

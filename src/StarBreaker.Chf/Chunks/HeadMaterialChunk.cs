@@ -3,14 +3,14 @@ using StarBreaker.Common;
 
 namespace StarBreaker.Chf;
 
-public sealed class HeadMaterialproperty
+public sealed class HeadMaterialChunk
 {
     public const uint Key = 0xA98BEB34;
 
     public required HeadMaterialType Material { get; init; }
     public required uint AdditionalParams { get; init; }
 
-    public static HeadMaterialproperty Read(ref SpanReader reader)
+    public static HeadMaterialChunk Read(ref SpanReader reader)
     {
         reader.Expect(Key);
         var guid = reader.Read<CigGuid>();
@@ -46,7 +46,8 @@ public sealed class HeadMaterialproperty
             _ when guid == HeadMaterialF12 => HeadMaterialType.HeadMaterialF12,
             _ when guid == HeadMaterialF13 => HeadMaterialType.HeadMaterialF13,
             _ when guid == HeadMaterialF14 => HeadMaterialType.HeadMaterialF14,
-            _ => throw new ArgumentOutOfRangeException(nameof(guid), guid, null)
+            _ when guid == NewHeadMaterial => HeadMaterialType.NewHeadMaterial,
+            _ => HeadMaterialType.Unknown
         };
 
         reader.Expect<uint>(0);
@@ -56,7 +57,7 @@ public sealed class HeadMaterialproperty
         reader.Expect<uint>(1);
         reader.Expect<uint>(5);
 
-        return new HeadMaterialproperty
+        return new HeadMaterialChunk
         {
             Material = type,
             AdditionalParams = additionalParams
@@ -93,10 +94,13 @@ public sealed class HeadMaterialproperty
     public static readonly CigGuid HeadMaterialF14 = new("e186048a-9a81-47b3-828e-71e957c65762");
     
     public static readonly CigGuid HeadMaterialM10T2_old = new("8a3f884e-4cbf-4c49-a64d-3170e95e54b8");
+
+    public static readonly CigGuid NewHeadMaterial = new("8849b7a9-7678-4314-bc54-b565f7a1eb87");
 }
 
 public enum HeadMaterialType
 {
+    Unknown = -1,
     HeadMaterialM01,
     HeadMaterialM02,
     HeadMaterialM04,
@@ -125,4 +129,7 @@ public enum HeadMaterialType
     HeadMaterialF12,
     HeadMaterialF13,
     HeadMaterialF14,
+    
+    //TODO look in the datacore for the rest of these
+    NewHeadMaterial
 }

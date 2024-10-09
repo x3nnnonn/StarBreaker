@@ -4,14 +4,14 @@ using StarBreaker.Common;
 namespace StarBreaker.Chf;
 
 //libs/foundry/records/entities/scitem/characters/human/head/shared/hair/hair_13.xml
-public sealed class HairProperty
+public sealed class HairChunk
 {
     public const uint Key = 0x13601A95;
 
     public required HairType HairType { get; init; }
-    public required HairModifierProperty? Modifier { get; init; }
+    public required HairModifierChunk? Modifier { get; init; }
 
-    public static HairProperty Read(ref SpanReader reader)
+    public static HairChunk Read(ref SpanReader reader)
     {
         reader.Expect(Key);
         var guid = reader.Read<CigGuid>();
@@ -41,25 +41,26 @@ public sealed class HairProperty
             _ when guid == Hair22 => HairType.Hair22,
             _ when guid == Hair23 => HairType.Hair23,
             _ when guid == Hair24 => HairType.Hair24,
-            _ => throw new ArgumentOutOfRangeException(nameof(guid), guid, null)
+            _ when guid == NewHair1 => HairType.NewHair1,
+            _ => HairType.Unknown
         };
         var childCount = reader.Read<ulong>();
 
         switch (childCount)
         {
             case 0:
-                return new HairProperty
+                return new HairChunk
                 {
                     HairType = type,
                     Modifier = null
                 };
             case 1:
             {
-                var hairModifier = HairModifierProperty.Read(ref reader);
+                var hairModifier = HairModifierChunk.Read(ref reader);
                 if (hairModifier.ChildCount != 0)
                     throw new Exception("HairModifierProperty child count is not 0");
 
-                return new HairProperty
+                return new HairChunk
                 {
                     HairType = type,
                     Modifier = hairModifier
@@ -93,10 +94,13 @@ public sealed class HairProperty
     public static readonly CigGuid Hair22 = new("d7cb9d99-2e76-43ab-b21e-7c0f9f1df419");
     public static readonly CigGuid Hair23 = new("63a60790-fc1c-47bb-b0df-d1452e8cde2b");
     public static readonly CigGuid Hair24 = new("03762539-c42e-4314-9710-97430c72da98");
+
+    public static readonly CigGuid NewHair1 = new("a49ce85f-d4be-40a9-bd97-e3193c31d249");
 }
 
 public enum HairType
 {
+    Unknown = -1,
     None,
     Bald01,
     Hair02,
@@ -121,5 +125,6 @@ public enum HairType
     Hair21,
     Hair22,
     Hair23,
-    Hair24
+    Hair24,
+    NewHair1
 }
