@@ -26,14 +26,15 @@ public sealed class StarCitizenCharacter
         var totalCount = reader.Read<ulong>();
         var body = BodyProperty.Read(ref reader);
         var headMaterial = HeadMaterialproperty.Read(ref reader);
-        var customMaterial = FaceMaterialProperty.Read(ref reader, headMaterial.Material);
+        var faceMaterial = FaceMaterialProperty.Read(ref reader, headMaterial.Material);
 
         var props = new List<DyeProperty>();
-        while (reader.Peek<uint>() != EyeMaterialProperty.Key)
+        while (DyeProperty.DyeKeys.Contains(reader.Peek<uint>()))
         {
             props.Add(DyeProperty.Read(ref reader));
         }
 
+        //sometimes we don't have eye material.
         var eyeMaterial = EyeMaterialProperty.Read(ref reader);
         var bodyMaterialInfo = BodyMaterialProperty.Read(ref reader);
 
@@ -46,7 +47,7 @@ public sealed class StarCitizenCharacter
             Dna = dnaProperty,
             Body = body,
             HeadMaterial = headMaterial,
-            FaceMaterial = customMaterial,
+            FaceMaterial = faceMaterial,
             EyeMaterial = eyeMaterial,
             BodyMaterial = bodyMaterialInfo,
             Dyes = props

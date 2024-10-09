@@ -1,3 +1,5 @@
+using StarBreaker.Common;
+
 namespace StarBreaker.Forge;
 
 public abstract class XmlAttribute

@@ -6,11 +6,12 @@ using System.Runtime.InteropServices;
 using System.Text;
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
-namespace StarBreaker.Forge;
+namespace StarBreaker.Common;
 
 [DebuggerDisplay("{ToString()}")]
 public readonly record struct CigGuid
 {
+    public static readonly CigGuid Empty = default;
     private static readonly char[] _map = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
     
     internal readonly byte _0;
@@ -29,6 +30,48 @@ public readonly record struct CigGuid
     internal readonly byte _d;
     internal readonly byte _e;
     internal readonly byte _f;
+
+    public CigGuid(string input)
+    {
+        if (input.Length != 36)
+        {
+            throw new FormatException("Input string was not in a correct format.");
+        }
+
+        var span = input.AsSpan();
+        
+        _7 = ParseHexDigit(span, 00);
+        _6 = ParseHexDigit(span, 02);
+        _5 = ParseHexDigit(span, 04);
+        _4 = ParseHexDigit(span, 06);
+        // skip the hyphen
+        _3 = ParseHexDigit(span, 09);
+        _2 = ParseHexDigit(span, 11);
+        // skip the hyphen
+        _1 = ParseHexDigit(span, 14);
+        _0 = ParseHexDigit(span, 16);
+        // skip the hyphen
+        _f = ParseHexDigit(span, 19);
+        _e = ParseHexDigit(span, 21);
+        // skip the hyphen
+        _d = ParseHexDigit(span, 24);
+        _c = ParseHexDigit(span, 26);
+        _b = ParseHexDigit(span, 28);
+        _a = ParseHexDigit(span, 30);
+        _9 = ParseHexDigit(span, 32);
+        _8 = ParseHexDigit(span, 34);
+        
+        return;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static byte ParseHexDigit(ReadOnlySpan<char> input, int offset)
+        {
+            if (!byte.TryParse(input.Slice(offset, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var result))
+                throw new FormatException("Input string was not in a correct format.");
+            
+            return result;
+        }
+    }
 
     public override string ToString()
     {
@@ -73,5 +116,10 @@ public readonly record struct CigGuid
             buffer[offset] = _map[value >> 4];
             buffer[offset + 1] = _map[value & 15];
         }
+    }
+    
+    public static CigGuid Parse(string input)
+    {
+        return new CigGuid(input);
     }
 }

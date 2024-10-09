@@ -12,7 +12,7 @@ public sealed class HairModifierProperty
     public static HairModifierProperty Read(ref SpanReader reader)
     {
         reader.Expect(Key);
-        var guid = reader.Read<Guid>();
+        var guid = reader.Read<CigGuid>();
         if (guid != HairVarBrown) throw new Exception("Unexpected Hair modifier guid: " + guid);
         
         reader.Expect(0);
@@ -33,5 +33,5 @@ public sealed class HairModifierProperty
         }
     }
     
-    public static readonly Guid HairVarBrown = new("12ce4ce5-e49a-4dab-9d31-ad262faaddf2");
+    public static readonly CigGuid HairVarBrown = new("12ce4ce5-e49a-4dab-9d31-ad262faaddf2");
 }

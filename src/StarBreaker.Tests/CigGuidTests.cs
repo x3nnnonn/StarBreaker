@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Runtime.InteropServices;
+using StarBreaker.Common;
 using StarBreaker.Forge;
 
 namespace StarBreaker.Tests;
@@ -18,5 +19,13 @@ public class CigGuidTests
         var directCig = MemoryMarshal.Read<CigGuid>(actualBytes);
 
         Assert.That(directCig.ToString(), Is.EqualTo(GUID_STRING));
+    }
+    
+    [Test]
+    public void TestParseCigGuid2()
+    {
+        var cigguid = new CigGuid(GUID_STRING);
+        var stringrepresentation = cigguid.ToString();
+        Assert.That(stringrepresentation, Is.EqualTo(GUID_STRING));
     }
 }

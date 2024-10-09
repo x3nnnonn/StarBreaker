@@ -6,15 +6,47 @@
     },
     "df-extract": {
       "commandName": "Project",
-      "commandLineArgs": "df-extract --dcb \"D:\\StarCitizenExport\\Data\\Game.dcb\" --output \"D:\\out\\dataforge\""
+      "commandLineArgs": "df-extract --dcb \"D:\\out\\Data\\Game.dcb\" --output \"D:\\out\\dataforge\""
     },
     "df-extract-single": {
       "commandName": "Project",
-      "commandLineArgs": "df-extract-single --dcb \"D:\\StarCitizenExport\\Data\\Game.dcb\" --output \"D:\\out\\dataforge\""
+      "commandLineArgs": "df-extract-single --dcb \"D:\\out\\Data\\Game.dcb\" --output \"D:\\out\\dataforge\""
     },
-    "extract-p4k-live": {
+    "p4k-extract": {
       "commandName": "Project",
-      "commandLineArgs": "extract-p4k --p4k \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\LIVE\\Data.p4k\" --output \"D:\\out\""
+      "commandLineArgs": "p4k-extract --p4k \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\LIVE\\Data.p4k\" --output \"D:\\out\""
+    },
+    "chf-download": {
+      "commandName": "Project",
+      "commandLineArgs": "chf-download"
+    },
+    "chf-export-all": {
+      "commandName": "Project",
+      "commandLineArgs": "chf-export-all"
+    },
+    "chf-export-watch": {
+      "commandName": "Project",
+      "commandLineArgs": "chf-export-watch"
+    },
+    "chf-import-all": {
+      "commandName": "Project",
+      "commandLineArgs": "chf-import-all"
+    },
+    "chf-import-watch": {
+      "commandName": "Project",
+      "commandLineArgs": "chf-import-watch"
+    },
+    "chf-process": {
+      "commandName": "Project",
+      "commandLineArgs": "chf-process"
+    },
+    "chf-process-all": {
+      "commandName": "Project",
+      "commandLineArgs": "chf-process-all"
+    },
+    "debug": {
+      "commandName": "Project",
+      "commandLineArgs": "debug"
     }
   }
 }

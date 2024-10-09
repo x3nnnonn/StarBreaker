@@ -5,14 +5,14 @@ namespace StarBreaker.Chf;
 
 public sealed class BodyTypeProperty
 {
-    public static readonly Guid Male = new("25f439d5-146b-4a61-a999-a486dfb68a49");
-    public static readonly Guid Female = new("d0794a94-efb0-4cad-ad38-2558b4d3c253");
+    public static readonly CigGuid Male = new("25f439d5-146b-4a61-a999-a486dfb68a49");
+    public static readonly CigGuid Female = new("d0794a94-efb0-4cad-ad38-2558b4d3c253");
     
     public required BodyType Type { get; init; }
     
     public static BodyTypeProperty Read(ref SpanReader reader)
     {
-        var guid = reader.Read<Guid>();
+        var guid = reader.Read<CigGuid>();
         reader.Expect(Guid.Empty);
         var bodyType = guid switch
         {

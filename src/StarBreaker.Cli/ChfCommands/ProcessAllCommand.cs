@@ -13,7 +13,7 @@ namespace StarBreaker.Chf;
 public class ProcessAllCommand : ICommand
 {
     [CommandOption("input", 'i', Description = "Input Folder to process.")]
-    public string InputFolder { get; set; } = DefaultPaths.Base;
+    public string InputFolder { get; set; } = Path.Combine(DefaultPaths.ResearchFolder, "ptu");
 
     public async ValueTask ExecuteAsync(IConsole console)
     {

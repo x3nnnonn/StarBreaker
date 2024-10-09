@@ -5,6 +5,13 @@ namespace StarBreaker.Chf;
 
 public sealed class DyeProperty
 {
+    public static readonly uint[] DyeKeys =
+    [
+        0x6C836947, 
+        0x078AC8BD, 
+        0x9B274D93
+    ];
+    
     public required DyeType DyeType { get; init; }
     public required uint Unknown { get; init; }
     public required DyeValuesProperty? Values { get; init; }
