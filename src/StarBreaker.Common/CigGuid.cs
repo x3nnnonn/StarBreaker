@@ -117,9 +117,4 @@ public readonly record struct CigGuid
             buffer[offset + 1] = _map[value & 15];
         }
     }
-    
-    public static CigGuid Parse(string input)
-    {
-        return new CigGuid(input);
-    }
 }

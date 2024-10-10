@@ -38,7 +38,7 @@ public class Database
     public readonly DataForgePointer[] WeakValues;
     public readonly DataForgeReference[] ReferenceValues;
 
-    public readonly DataForgeStringId[] EnumOptions;
+    public readonly DataForgeStringId2[] EnumOptions;
 
     private readonly FrozenDictionary<int, string> _cachedStrings;
     private readonly FrozenDictionary<int, string> _cachedStrings2;
@@ -110,7 +110,7 @@ public class Database
         StrongValues = reader.ReadArray<DataForgePointer>(strongValueCount);
         WeakValues = reader.ReadArray<DataForgePointer>(weakValueCount);
         ReferenceValues = reader.ReadArray<DataForgeReference>(referenceValueCount);
-        EnumOptions = reader.ReadArray<DataForgeStringId>(enumOptionCount);
+        EnumOptions = reader.ReadArray<DataForgeStringId2>(enumOptionCount);
 
         _cachedStrings = ReadStringTable(reader.ReadBytes((int)textLength).AsSpan());
         _cachedStrings2 = ReadStringTable(reader.ReadBytes((int)textLength2).AsSpan());

@@ -19,81 +19,100 @@ public sealed class DataForge
         _offsets = ReadOffsets(bytesRead);
     }
 
-    public void Extract(string outputFolder, string? fileNameFilter = null, IProgress<double>? progress = null)
+    private Dictionary<int, int[]> ReadOffsets(int initialOffset)
     {
-        var progressValue = 0;
-        var structsPerFileName = new Dictionary<string, List<DataForgeRecord>>();
+        var instances = new Dictionary<int, int[]>();
+
+        foreach (var mapping in _database.DataMappings)
+        {
+            var arr = new int[mapping.StructCount];
+            var structDef = _database.StructDefinitions[mapping.StructIndex];
+            var structSize = structDef.CalculateSize(_database.StructDefinitions, _database.PropertyDefinitions);
+
+            for (var i = 0; i < mapping.StructCount; i++)
+            {
+                arr[i] = initialOffset;
+                initialOffset += structSize;
+            }
+
+            instances.Add(mapping.StructIndex, arr);
+        }
+
+        return instances;
+    }
+
+    public Dictionary<string, string[]> ExportEnums()
+    {
+        var result = new Dictionary<string, string[]>(_database.EnumDefinitions.Length);
+
+        foreach (var enumDef in _database.EnumDefinitions)
+        {
+            var enumValues = new string[enumDef.ValueCount];
+            for (var i = 0; i < enumDef.ValueCount; i++)
+            {
+                enumValues[i] = _database.GetString2(_database.EnumOptions[enumDef.FirstValueIndex + i]);
+            }
+
+            result.Add(enumDef.GetName(_database), enumValues);
+        }
+
+        return result;
+    }
+
+    public Dictionary<string, DataForgeRecord> GetRecordsByFileName(string? fileNameFilter = null)
+    {
+        var structsPerFileName = new Dictionary<string, DataForgeRecord>();
         foreach (var record in _database.RecordDefinitions)
         {
-            var fileName = _database.GetString(record.FileNameOffset);
+            var fileName = record.GetFileName(_database);
 
             if (fileNameFilter != null && !FileSystemName.MatchesSimpleExpression(fileNameFilter, fileName, true))
                 continue;
 
-            if (!structsPerFileName.TryGetValue(fileName, out var list))
-            {
-                list = [];
-                structsPerFileName.Add(fileName, list);
-            }
-
-            list.Add(record);
+            //this looks a lil wonky, but it's correct.
+            //we will either find only on record for any given name,
+            //or when we find multiple, we only care about the last one.
+            structsPerFileName[fileName] = record;
         }
 
-        var total = structsPerFileName.Count;
+        return structsPerFileName;
+    }
 
-        Parallel.ForEach(structsPerFileName, data =>
+    public void ExtractSingleRecord(TextWriter writer, DataForgeRecord record)
+    {
+        var structDef = _database.StructDefinitions[record.StructIndex];
+        var offset = _offsets[record.StructIndex][record.InstanceIndex];
+
+        var reader = _database.GetReader(offset);
+
+        var node = new XmlNode(structDef.GetName(_database));
+
+        FillNode(node, structDef, ref reader);
+
+        node.WriteTo(writer, 0);
+    }
+
+    public void Extract(string outputFolder, string? fileNameFilter = null, IProgress<double>? progress = null)
+    {
+        var progressValue = 0;
+        var recordsByFileName = GetRecordsByFileName(fileNameFilter);
+        var total = recordsByFileName.Count;
+
+        Parallel.ForEach(recordsByFileName, kvp =>
         {
-            var structs = _database.StructDefinitions.AsSpan();
-            var properties = _database.PropertyDefinitions.AsSpan();
-            var filePath = Path.Combine(outputFolder, data.Key);
+            var (fileName, record) = kvp;
+
+            var filePath = Path.Combine(outputFolder, fileName);
+
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
 
-            if (data.Value.Count == 1)
             {
                 using var writer = new StreamWriter(filePath);
 
-                var record = data.Value[0];
-                var structDef = _database.StructDefinitions[record.StructIndex];
-                var offset = _offsets[record.StructIndex][record.InstanceIndex];
-
-                var reader = _database.GetReader(offset);
-
-                var node = new XmlNode(structDef.GetName(_database));
-
-                FillNode(node, structDef, ref reader);
-
-                node.WriteTo(writer, 0);
-            }
-            else
-            {
-                using var writer = new StreamWriter(filePath);
-
-                writer.Write('<');
-                writer.Write("__root");
-                writer.Write('>');
-                writer.WriteLine();
-
-                foreach (var record in data.Value)
-                {
-                    var structDef = structs[record.StructIndex];
-                    var offset = _offsets[record.StructIndex][record.InstanceIndex];
-
-                    var reader = _database.GetReader(offset);
-
-                    var node = new XmlNode(structDef.GetName(_database));
-
-                    FillNode(node, structDef, ref reader);
-
-                    node.WriteTo(writer, 1);
-                }
-
-                writer.WriteLine();
-                writer.Write("</");
-                writer.Write("__root");
-                writer.Write('>');
+                ExtractSingleRecord(writer, record);
             }
 
-            lock (structsPerFileName)
+            lock (recordsByFileName)
             {
                 var currentProgress = Interlocked.Increment(ref progressValue);
                 //only report progress every 250 records and when we are done
@@ -101,42 +120,6 @@ public sealed class DataForge
                     progress?.Report(currentProgress / (double)total);
             }
         });
-    }
-
-    public void ExtractSingle(string outputFolder, string? fileNameFilter = null, IProgress<double>? progress = null)
-    {
-        var progressValue = 0;
-        var total = _database.RecordDefinitions.Length;
-        if (!Directory.Exists(outputFolder))
-            Directory.CreateDirectory(outputFolder);
-        using var writer = new StreamWriter(Path.Combine(outputFolder, "StarBreaker.Export.xml"), false, Encoding.UTF8, 1024 * 1024);
-        writer.WriteLine("<__root>");
-
-        foreach (var record in _database.RecordDefinitions)
-        {
-            if (fileNameFilter != null)
-            {
-                var fileName = _database.GetString(record.FileNameOffset);
-
-                if (!FileSystemName.MatchesSimpleExpression(fileNameFilter, fileName, true))
-                    continue;
-            }
-
-            var structDef = _database.StructDefinitions[record.StructIndex];
-            var offset = _offsets[record.StructIndex][record.InstanceIndex];
-            var reader = _database.GetReader(offset);
-            var child = new XmlNode(structDef.GetName(_database));
-
-            FillNode(child, structDef, ref reader);
-
-            child.WriteTo(writer, 1);
-
-            ++progressValue;
-            if (progressValue % 250 == 0 || progressValue == total)
-                progress?.Report(progressValue / (double)total);
-        }
-
-        writer.WriteLine("</__root>");
     }
 
     private void FillNode(XmlNode node, DataForgeStructDefinition structDef, ref SpanReader reader)
@@ -352,47 +335,6 @@ public sealed class DataForge
         }
     }
 
-    //verified same as scdatatools
-    private Dictionary<int, int[]> ReadOffsets(int initialOffset)
-    {
-        var instances = new Dictionary<int, int[]>();
-
-        foreach (var mapping in _database.DataMappings)
-        {
-            var arr = new int[mapping.StructCount];
-            var structDef = _database.StructDefinitions[mapping.StructIndex];
-            var structSize = structDef.CalculateSize(_database.StructDefinitions, _database.PropertyDefinitions);
-
-            for (var i = 0; i < mapping.StructCount; i++)
-            {
-                arr[i] = initialOffset;
-                initialOffset += structSize;
-            }
-
-            instances.Add(mapping.StructIndex, arr);
-        }
-
-        return instances;
-    }
-
-    public Dictionary<string, string[]> ExportEnums()
-    {
-        var result = new Dictionary<string, string[]>(_database.EnumDefinitions.Length);
-
-        foreach (var enumDef in _database.EnumDefinitions)
-        {
-            var enumValues = new string[enumDef.ValueCount];
-            for (var i = 0; i < enumDef.ValueCount; i++)
-            {
-                enumValues[i] = _database.GetString(_database.EnumOptions[enumDef.FirstValueIndex + i]);
-            }
-
-            result.Add(enumDef.GetName(_database), enumValues);
-        }
-
-        return result;
-    }
-
     public void WriteTo(TextWriter writer, DataForgeStructDefinition structDef, ref SpanReader reader)
     {
         writer.Write('<');
@@ -584,7 +526,7 @@ public sealed class DataForge
         }
     }
 
-    public void ExtractSingle2(string outputFolder, string? fileNameFilter = null, IProgress<double>? progress = null)
+    public void ExtractSingle(string outputFolder, string? fileNameFilter = null, IProgress<double>? progress = null)
     {
         var progressValue = 0;
         var total = _database.RecordDefinitions.Length;
@@ -597,49 +539,12 @@ public sealed class DataForge
         {
             if (fileNameFilter != null)
             {
-                var s = _database.GetString(record.FileNameOffset);
-                if (!FileSystemName.MatchesSimpleExpression(fileNameFilter, s, true))
+                var fileName = record.GetFileName(_database);
+
+                if (!FileSystemName.MatchesSimpleExpression(fileNameFilter, fileName, true))
                     continue;
             }
 
-            var structDef = _database.StructDefinitions[record.StructIndex];
-            var offset = _offsets[record.StructIndex][record.InstanceIndex];
-            var reader = _database.GetReader(offset);
-
-            WriteTo(writer, structDef, ref reader);
-
-            ++progressValue;
-            if (progressValue % 250 == 0 || progressValue == total)
-                progress?.Report(progressValue / (double)total);
-        }
-
-        writer.WriteLine("</__root>");
-    }
-
-    public void X(string recordFileName, TextWriter writer)
-    {
-        var targetRecords = _database.RecordDefinitions.Where(a => _database.GetString(a.FileNameOffset) == recordFileName).ToArray();
-
-        //assume there are multiple records with the same name.
-        //in this case, the "root" record is always the last one
-        var mainRecord = targetRecords[^1];
-        var structDefMain = _database.StructDefinitions[mainRecord.StructIndex];
-        var offsetMain = _offsets[mainRecord.StructIndex][mainRecord.InstanceIndex];
-        var readerMain = _database.GetReader(offsetMain);
-        
-        var mainNode = new XmlNode(structDefMain.GetName(_database));
-        
-        FillNode(mainNode, structDefMain, ref readerMain);
-        
-        mainNode.WriteTo(writer, 0);
-        
-        return;
-        
-        
-        writer.WriteLine("<Record>");
-
-        foreach (var record in targetRecords)
-        {
             var structDef = _database.StructDefinitions[record.StructIndex];
             var offset = _offsets[record.StructIndex][record.InstanceIndex];
             var reader = _database.GetReader(offset);
@@ -648,8 +553,12 @@ public sealed class DataForge
             FillNode(child, structDef, ref reader);
 
             child.WriteTo(writer, 1);
+
+            ++progressValue;
+            if (progressValue % 250 == 0 || progressValue == total)
+                progress?.Report(progressValue / (double)total);
         }
 
-        writer.WriteLine("</Record>");
+        writer.WriteLine("</__root>");
     }
 }

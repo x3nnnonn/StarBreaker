@@ -16,11 +16,21 @@ public class Tests
     public void TestTagDatabase()
     {
         var forge = new DataForge(@"D:\out\Data\Game.dcb");
+        var tagdatabase = forge.GetRecordsByFileName("*TagDatabase*");
         
-        var stringwriter = new StringWriter();
-        forge.X(@"libs/foundry/records/tagdatabase/tagdatabase.tagdatabase.xml", stringwriter);
+        var writer = new StringWriter();
+        forge.ExtractSingleRecord(writer, tagdatabase.Values.Single());
         
-        var s = stringwriter.ToString();
+        var s = writer.ToString();
         Assert.That(s, Is.EqualTo(_target));
+    }
+    
+    [Test]
+    public void Enums()
+    {
+        var forge = new DataForge(@"D:\out\Data\Game.dcb");
+        var enums = forge.ExportEnums();
+        
+        var writer = new StringWriter();
     }
 }
