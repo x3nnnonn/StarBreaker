@@ -12,9 +12,16 @@ public readonly record struct DataForgeStringId
     public string Name => DebugGlobal.Database.GetString(this);
     public override string ToString() => Name;
 #endif
+}
 
-    public DataForgeStringId(int id)
-    {
-        Id = id;
-    }
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+public readonly record struct DataForgeStringId2
+{
+    // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
+    public readonly int Id;
+    
+#if DEBUG
+    public string Name => DebugGlobal.Database.GetString2(this);
+    public override string ToString() => Name;
+#endif
 }

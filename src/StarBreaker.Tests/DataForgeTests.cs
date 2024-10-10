@@ -15,7 +15,7 @@ public class Tests
     [Test]
     public void TestTagDatabase()
     {
-        var forge = new DataForge(@"D:\StarCitizenExport\Data\Game.dcb");
+        var forge = new DataForge(@"D:\out\Data\Game.dcb");
         
         var stringwriter = new StringWriter();
         forge.X(@"libs/foundry/records/tagdatabase/tagdatabase.tagdatabase.xml", stringwriter);
