@@ -40,7 +40,8 @@ public class Database
 
     public readonly DataForgeStringId[] EnumOptions;
 
-    private readonly FrozenDictionary<int, string> _cachedStringsss;
+    private readonly FrozenDictionary<int, string> _cachedStrings;
+    private readonly FrozenDictionary<int, string> _cachedStrings2;
 
     public Database(ReadOnlySpan<byte> bytes, out int bytesRead)
     {
@@ -75,7 +76,7 @@ public class Database
         var referenceValueCount = reader.ReadInt32();
         var enumOptionCount = reader.ReadInt32();
         var textLength = reader.ReadUInt32();
-        _ = reader.ReadUInt32();
+        var textLength2 = reader.ReadUInt32();
 
         StructDefinitions = reader.ReadSpan<DataForgeStructDefinition>(structDefinitionCount).ToArray();
         PropertyDefinitions = reader.ReadSpan<DataForgePropertyDefinition>(propertyDefinitionCount).ToArray();
@@ -120,7 +121,7 @@ public class Database
             offset += length + 1;
         }
 
-        _cachedStringsss = strings.ToFrozenDictionary();
+        _cachedStrings = strings.ToFrozenDictionary();
         
         bytesRead = reader.Position;
 
@@ -167,7 +168,7 @@ public class Database
         var referenceValueCount = reader.ReadInt32();
         var enumOptionCount = reader.ReadInt32();
         var textLength = reader.ReadUInt32();
-        _ = reader.ReadUInt32();
+        var textLength2 = reader.ReadUInt32();
 
         StructDefinitions = reader.ReadArray<DataForgeStructDefinition>(structDefinitionCount);
         PropertyDefinitions = reader.ReadArray<DataForgePropertyDefinition>(propertyDefinitionCount);
@@ -200,6 +201,7 @@ public class Database
         EnumOptions = reader.ReadArray<DataForgeStringId>(enumOptionCount);
 
         var stringSpan = reader.ReadBytes((int)textLength).AsSpan();
+        var stringSpan2 = reader.ReadBytes((int)textLength2).AsSpan();
 
         var strings = new Dictionary<int, string>();
         var offset = 0;
@@ -211,8 +213,20 @@ public class Database
             strings[offset] = str;
             offset += length + 1;
         }
+        
+        var strings2 = new Dictionary<int, string>();
+        var offset2 = 0;
+        while (offset2 < stringSpan2.Length)
+        {
+            var length = stringSpan2[offset2..].IndexOf((byte)0);
+            var useful = stringSpan2[offset2..(offset2 + length)];
+            var str = Encoding.ASCII.GetString(useful);
+            strings2[offset2] = str;
+            offset2 += length + 1;
+        }
 
-        _cachedStringsss = strings.ToFrozenDictionary();
+        _cachedStrings = strings.ToFrozenDictionary();
+        _cachedStrings2 = strings2.ToFrozenDictionary();
         
         bytesRead = (int)fs.Position;
 
@@ -227,5 +241,6 @@ public class Database
     }
     
     public SpanReader GetReader(int offset) => new(DataSection, offset - DataSectionOffset);
-    public string GetString(DataForgeStringId id) => _cachedStringsss[id.Id];
+    public string GetString(DataForgeStringId id) => _cachedStrings[id.Id];
+    public string GetString2(DataForgeStringId2 id) => _cachedStrings2[id.Id];
 }
