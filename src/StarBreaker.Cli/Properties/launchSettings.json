@@ -14,7 +14,7 @@
     },
     "p4k-extract": {
       "commandName": "Project",
-      "commandLineArgs": "p4k-extract --p4k \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\TECH-PREVIEW\\Data.p4k\" --output \"D:\\out\" --filter *.dcb"
+      "commandLineArgs": "p4k-extract --p4k \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k\" --output \"D:\\out\" --filter *.TagDatabase.xml"
     },
     "chf-download": {
       "commandName": "Project",

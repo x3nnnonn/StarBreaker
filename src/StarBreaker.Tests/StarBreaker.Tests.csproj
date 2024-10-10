@@ -21,8 +21,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="D:\StarCitizenExport\Data\Libs\Foundry\Records\TagDatabase\TagDatabase.TagDatabase.xml">
-        <Link>TagDatabase.TagDatabase.xml</Link>
-      </Content>
+      <Content Include="**/*.xml" CopyToOutputDirectory="PreserveNewest"/>
     </ItemGroup>
 </Project>
