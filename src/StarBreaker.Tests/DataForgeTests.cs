@@ -4,14 +4,9 @@ namespace StarBreaker.Tests;
 
 public class Tests
 {
-    private string _target;
-    
-    [SetUp]
-    public void Setup()
-    {
-        _target = File.ReadAllText(@"D:\StarCitizenExport\Data\Libs\Foundry\Records\TagDatabase\TagDatabase.TagDatabase.xml");
-    }
-
+    /// <summary>
+    /// This test is failing. I use it to figure out how to correctly construct the xml file.
+    /// </summary>
     [Test]
     public void TestTagDatabase()
     {
@@ -21,8 +16,9 @@ public class Tests
         var writer = new StringWriter();
         forge.ExtractSingleRecord(writer, tagdatabase.Values.Single());
         
-        var s = writer.ToString();
-        Assert.That(s, Is.EqualTo(_target));
+        var expected = File.ReadAllText("TagDatabase.TagDatabase.xml");
+        var actual = writer.ToString();
+        Assert.That(actual, Is.EqualTo(expected));
     }
     
     [Test]
@@ -31,6 +27,7 @@ public class Tests
         var forge = new DataForge(@"D:\out\Data\Game.dcb");
         var enums = forge.ExportEnums();
         
-        var writer = new StringWriter();
+        Assert.That(enums, Is.Not.Empty);
+        Assert.That(enums.All(e => e.Value.Length > 0));
     }
 }
