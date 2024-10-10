@@ -84,9 +84,11 @@ public sealed class DataForge
         var offset = _offsets[record.StructIndex][record.InstanceIndex];
 
         var reader = _database.GetReader(offset);
-
-        var node = new XmlNode(structDef.GetName(_database));
-
+        
+        var node = new XmlNode("Record");
+        node.AppendAttribute(new XmlAttribute<string>("__type", structDef.GetName(_database)));
+        node.AppendAttribute(new XmlAttribute<string>("__guid", record.Hash.ToString()));
+        
         FillNode(node, structDef, ref reader);
 
         node.WriteTo(writer, 0);
@@ -223,7 +225,7 @@ public sealed class DataForge
                 var firstIndex = reader.ReadUInt32();
 
                 var arrayNode = new XmlNode(prop.GetName(_database));
-                arrayNode.AppendAttribute(new XmlAttribute<uint>("__count__", count));
+                //arrayNode.AppendAttribute(new XmlAttribute<uint>("__count__", count));
 
                 for (var i = 0; i < count; i++)
                 {
@@ -331,197 +333,6 @@ public sealed class DataForge
                 }
 
                 node.AppendChild(arrayNode);
-            }
-        }
-    }
-
-    public void WriteTo(TextWriter writer, DataForgeStructDefinition structDef, ref SpanReader reader)
-    {
-        writer.Write('<');
-
-        writer.Write(structDef.GetName(_database));
-
-        var properties = structDef.EnumerateProperties(_database.StructDefinitions, _database.PropertyDefinitions);
-        foreach (var property in properties.Where(a => a.IsAttribute))
-        {
-            //these properties are attributes
-            writer.Write(' ');
-            writer.Write(property.GetName(_database));
-            writer.Write('=');
-            writer.Write('"');
-            switch (property.DataType)
-            {
-                case DataType.Boolean:
-                    writer.Write(reader.ReadBoolean());
-                    break;
-                case DataType.Single:
-                    writer.Write(reader.ReadSingle());
-                    break;
-                case DataType.Double:
-                    writer.Write(reader.ReadDouble());
-                    break;
-                case DataType.Guid:
-                    writer.Write(reader.Read<CigGuid>());
-                    break;
-                case DataType.SByte:
-                    writer.Write(reader.ReadSByte());
-                    break;
-                case DataType.UInt16:
-                    writer.Write(reader.ReadUInt16());
-                    break;
-                case DataType.UInt32:
-                    writer.Write(reader.ReadUInt32());
-                    break;
-                case DataType.UInt64:
-                    writer.Write(reader.ReadUInt64());
-                    break;
-                case DataType.Byte:
-                    writer.Write(reader.ReadByte());
-                    break;
-                case DataType.Int16:
-                    writer.Write(reader.ReadInt16());
-                    break;
-                case DataType.Int32:
-                    writer.Write(reader.ReadInt32());
-                    break;
-                case DataType.Int64:
-                    writer.Write(reader.ReadInt64());
-                    break;
-                case DataType.Reference:
-                    writer.Write(reader.Read<DataForgeReference>());
-                    break;
-                case DataType.String:
-                    writer.Write(_database.GetString(reader.Read<DataForgeStringId>()));
-                    break;
-                case DataType.Locale:
-                    writer.Write(_database.GetString(reader.Read<DataForgeStringId>()));
-                    break;
-                case DataType.EnumChoice:
-                    writer.Write(_database.GetString(reader.Read<DataForgeStringId>()));
-                    break;
-                case DataType.WeakPointer:
-                    writer.Write(reader.Read<DataForgePointer>());
-                    break;
-                default:
-                    throw new InvalidOperationException(nameof(DataType));
-            }
-        }
-
-        writer.Write('>');
-
-        foreach (var property in properties.Where(a => !a.IsAttribute))
-        {
-            var count = reader.ReadUInt32();
-            var firstIndex = reader.ReadUInt32();
-
-            writer.Write('<');
-            writer.Write(property.GetName(_database));
-            writer.Write(' ');
-            writer.Write("__count__");
-            writer.Write('=');
-            writer.Write('"');
-            writer.Write(count);
-            writer.Write('"');
-            writer.Write('>');
-
-            for (var i = 0; i < count; i++)
-            {
-                var index = (int)firstIndex + i;
-
-                if (property.DataType == DataType.Class)
-                {
-                    var structDef1 = _database.StructDefinitions[property.StructIndex];
-                    var offset1 = _offsets[property.StructIndex][index];
-                    var reader1 = _database.GetReader(offset1);
-
-                    WriteTo(writer, structDef1, ref reader1);
-                }
-                else if (property.DataType is DataType.StrongPointer /*or DataType.WeakPointer*/)
-                {
-                    var reference = property.DataType switch
-                    {
-                        DataType.StrongPointer => _database.StrongValues[index],
-                        DataType.WeakPointer => _database.WeakValues[index],
-                        _ => throw new InvalidOperationException(nameof(DataType))
-                    };
-
-                    if (reference.StructIndex == 0xFFFFFFFF || reference.InstanceIndex == 0xFFFFFFFF) continue;
-
-                    var structDef2 = _database.StructDefinitions[(int)reference.StructIndex];
-                    var offset2 = _offsets[(int)reference.StructIndex][(int)reference.InstanceIndex];
-                    var reader2 = _database.GetReader(offset2);
-
-                    WriteTo(writer, structDef2, ref reader2);
-                }
-                else
-                {
-                    writer.Write('<');
-                    writer.Write(property.DataType.ToStringFast());
-                    writer.Write(' ');
-                    writer.Write("__value");
-                    writer.Write('=');
-                    writer.Write('"');
-                    switch (property.DataType)
-                    {
-                        case DataType.Byte:
-                            writer.Write(reader.ReadByte());
-                            break;
-                        case DataType.Int16:
-                            writer.Write(reader.ReadInt16());
-                            break;
-                        case DataType.Int32:
-                            writer.Write(reader.ReadInt32());
-                            break;
-                        case DataType.Int64:
-                            writer.Write(reader.ReadInt64());
-                            break;
-                        case DataType.SByte:
-                            writer.Write(reader.ReadSByte());
-                            break;
-                        case DataType.UInt16:
-                            writer.Write(reader.ReadUInt16());
-                            break;
-                        case DataType.UInt32:
-                            writer.Write(reader.ReadUInt32());
-                            break;
-                        case DataType.UInt64:
-                            writer.Write(reader.ReadUInt64());
-                            break;
-                        case DataType.Boolean:
-                            writer.Write(reader.ReadBoolean());
-                            break;
-                        case DataType.Single:
-                            writer.Write(reader.ReadSingle());
-                            break;
-                        case DataType.Double:
-                            writer.Write(reader.ReadDouble());
-                            break;
-                        case DataType.Guid:
-                            writer.Write(reader.Read<CigGuid>());
-                            break;
-                        case DataType.String:
-                            writer.Write(_database.GetString(reader.Read<DataForgeStringId>()));
-                            break;
-                        case DataType.Locale:
-                            writer.Write(_database.GetString(reader.Read<DataForgeStringId>()));
-                            break;
-                        case DataType.EnumChoice:
-                            writer.Write(_database.GetString(reader.Read<DataForgeStringId>()));
-                            break;
-                        case DataType.Reference:
-                            writer.Write(reader.Read<DataForgeReference>());
-                            break;
-                        case DataType.WeakPointer:
-                            writer.Write(reader.Read<DataForgePointer>());
-                            break;
-                        default:
-                            throw new InvalidOperationException(nameof(DataType));
-                    }
-
-                    writer.Write('/');
-
-                    writer.Write('>');
-                }
             }
         }
     }
