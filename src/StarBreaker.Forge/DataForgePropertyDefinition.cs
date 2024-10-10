@@ -5,7 +5,7 @@ namespace StarBreaker.Forge;
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public readonly record struct DataForgePropertyDefinition
 {
-    private readonly DataForgeStringId NameOffset;
+    private readonly DataForgeStringId2 NameOffset;
     public readonly ushort StructIndex;
     public readonly DataType DataType;
     public readonly ConversionType ConversionType;

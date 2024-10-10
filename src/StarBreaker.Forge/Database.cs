@@ -129,7 +129,7 @@ public class Database
 
     public SpanReader GetReader(int offset) => new(DataSection, offset - DataSectionOffset);
     public string GetString(DataForgeStringId id) => _cachedStrings[id.Id];
-    public string GetString2(DataForgeStringId id) => _cachedStrings2[id.Id];
+    public string GetString2(DataForgeStringId2 id) => _cachedStrings2[id.Id];
 
     private static FrozenDictionary<int, string> ReadStringTable(ReadOnlySpan<byte> span)
     {

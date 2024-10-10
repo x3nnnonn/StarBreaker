@@ -29,6 +29,13 @@ public sealed class XmlAttribute<T> : XmlAttribute
         writer.Write('=');
 
         writer.Write('"');
+        WriteValue(writer);
+        writer.Write('"');
+    }
+
+    private void WriteValue(TextWriter writer)
+    {
+        //we do this instead of passing the value directly to the writer to avoid boxing
         switch (Value)
         {
             case sbyte sb:
@@ -84,7 +91,5 @@ public sealed class XmlAttribute<T> : XmlAttribute
             default:
                 throw new NotImplementedException();
         }
-
-        writer.Write('"');
     }
 }

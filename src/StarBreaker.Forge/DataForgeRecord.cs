@@ -6,7 +6,7 @@ namespace StarBreaker.Forge;
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public readonly record struct DataForgeRecord
 {
-    private readonly DataForgeStringId NameOffset;
+    private readonly DataForgeStringId2 NameOffset;
     public readonly DataForgeStringId FileNameOffset;
     public readonly int StructIndex;
     public readonly CigGuid Hash;

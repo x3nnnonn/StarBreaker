@@ -13,17 +13,14 @@ public sealed class XmlNode
     public XmlNode(string name)
     {
         _name = name;
-        _children = new List<XmlNode>();
-        _attributes = new List<XmlAttribute>();
+        _children = [];
+        _attributes = [];
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void AppendChild(XmlNode child) => _children.Add(child);
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void AppendAttribute(XmlAttribute xmlAttribute) => _attributes.Add(xmlAttribute);
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void WriteTo(TextWriter writer, int depth)
     {
         for (var i = 0; i < depth; i++)
