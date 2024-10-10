@@ -8,7 +8,7 @@ using StarBreaker.Common;
 
 namespace StarBreaker.Forge;
 
-public sealed class DataForge : IDataForge
+public sealed class DataForge
 {
     public readonly Database _database;
     private readonly Dictionary<int, int[]> _offsets;
@@ -16,12 +16,6 @@ public sealed class DataForge : IDataForge
     public DataForge(string dcb)
     {
         _database = new Database(dcb, out var bytesRead);
-        _offsets = ReadOffsets(bytesRead);
-    }
-
-    public DataForge(ReadOnlySpan<byte> allBytes)
-    {
-        _database = new Database(allBytes, out var bytesRead);
         _offsets = ReadOffsets(bytesRead);
     }
 
