@@ -21,6 +21,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="**/*.xml" CopyToOutputDirectory="PreserveNewest"/>
+      <Content Include="*.xml" CopyToOutputDirectory="PreserveNewest"/>
     </ItemGroup>
 </Project>
