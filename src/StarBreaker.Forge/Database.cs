@@ -112,33 +112,8 @@ public class Database
         ReferenceValues = reader.ReadArray<DataForgeReference>(referenceValueCount);
         EnumOptions = reader.ReadArray<DataForgeStringId>(enumOptionCount);
 
-        var stringSpan = reader.ReadBytes((int)textLength).AsSpan();
-        var stringSpan2 = reader.ReadBytes((int)textLength2).AsSpan();
-
-        var strings = new Dictionary<int, string>();
-        var offset = 0;
-        while (offset < stringSpan.Length)
-        {
-            var length = stringSpan[offset..].IndexOf((byte)0);
-            var useful = stringSpan[offset..(offset + length)];
-            var str = Encoding.ASCII.GetString(useful);
-            strings[offset] = str;
-            offset += length + 1;
-        }
-
-        var strings2 = new Dictionary<int, string>();
-        var offset2 = 0;
-        while (offset2 < stringSpan2.Length)
-        {
-            var length = stringSpan2[offset2..].IndexOf((byte)0);
-            var useful = stringSpan2[offset2..(offset2 + length)];
-            var str = Encoding.ASCII.GetString(useful);
-            strings2[offset2] = str;
-            offset2 += length + 1;
-        }
-
-        _cachedStrings = strings.ToFrozenDictionary();
-        _cachedStrings2 = strings2.ToFrozenDictionary();
+        _cachedStrings = ReadStringTable(reader.ReadBytes((int)textLength).AsSpan());
+        _cachedStrings2 = ReadStringTable(reader.ReadBytes((int)textLength2).AsSpan());
 
         bytesRead = (int)fs.Position;
 
@@ -154,5 +129,22 @@ public class Database
 
     public SpanReader GetReader(int offset) => new(DataSection, offset - DataSectionOffset);
     public string GetString(DataForgeStringId id) => _cachedStrings[id.Id];
-    public string GetString2(DataForgeStringId2 id) => _cachedStrings2[id.Id];
+    public string GetString2(DataForgeStringId id) => _cachedStrings2[id.Id];
+
+    private static FrozenDictionary<int, string> ReadStringTable(ReadOnlySpan<byte> span)
+    {
+        var strings = new Dictionary<int, string>();
+        var offset = 0;
+        
+        while (offset < span.Length)
+        {
+            var length = span[offset..].IndexOf((byte)0);
+            var useful = span[offset..(offset + length)];
+            var str = Encoding.ASCII.GetString(useful);
+            strings[offset] = str;
+            offset += length + 1;
+        }
+
+        return strings.ToFrozenDictionary();
+    }
 }

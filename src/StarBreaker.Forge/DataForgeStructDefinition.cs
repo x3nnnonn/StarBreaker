@@ -9,11 +9,13 @@ namespace StarBreaker.Forge;
 public readonly record struct DataForgeStructDefinition
 {
     private static readonly ConcurrentDictionary<DataForgeStructDefinition, DataForgePropertyDefinition[]> _propertiesCache = new();
-    public readonly DataForgeStringId NameOffset;
+    private readonly DataForgeStringId NameOffset;
     public readonly uint ParentTypeIndex;
     public readonly ushort AttributeCount;
     public readonly ushort FirstAttributeIndex;
     public readonly uint NodeType;
+    
+    public string GetName(Database db) => db.GetString2(NameOffset);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int CalculateSize(ReadOnlySpan<DataForgeStructDefinition> structs, ReadOnlySpan<DataForgePropertyDefinition> properties)

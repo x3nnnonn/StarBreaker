@@ -58,7 +58,7 @@ public sealed class DataForge
 
                 var reader = _database.GetReader(offset);
 
-                var node = new XmlNode(_database.GetString(structDef.NameOffset));
+                var node = new XmlNode(structDef.GetName(_database));
 
                 FillNode(node, structDef, ref reader);
 
@@ -80,7 +80,7 @@ public sealed class DataForge
 
                     var reader = _database.GetReader(offset);
 
-                    var node = new XmlNode(_database.GetString(structDef.NameOffset));
+                    var node = new XmlNode(structDef.GetName(_database));
 
                     FillNode(node, structDef, ref reader);
 
@@ -125,7 +125,7 @@ public sealed class DataForge
             var structDef = _database.StructDefinitions[record.StructIndex];
             var offset = _offsets[record.StructIndex][record.InstanceIndex];
             var reader = _database.GetReader(offset);
-            var child = new XmlNode(_database.GetString(structDef.NameOffset));
+            var child = new XmlNode(structDef.GetName(_database));
 
             FillNode(child, structDef, ref reader);
 
@@ -150,7 +150,7 @@ public sealed class DataForge
                 {
                     var structDef3 = _database.StructDefinitions[prop.StructIndex];
 
-                    var childClass = new XmlNode(_database.GetString(prop.NameOffset));
+                    var childClass = new XmlNode(prop.GetName(_database));
 
                     FillNode(childClass, structDef3, ref reader);
 
@@ -167,7 +167,7 @@ public sealed class DataForge
 
                     var reader2 = _database.GetReader(offset2);
 
-                    var child = new XmlNode(_database.GetString(prop.NameOffset));
+                    var child = new XmlNode(prop.GetName(_database));
 
                     FillNode(child, structDef2, ref reader2);
 
@@ -175,7 +175,7 @@ public sealed class DataForge
                 }
                 else
                 {
-                    var name1 = _database.GetString(prop.NameOffset);
+                    var name1 = prop.GetName(_database);
                     switch (prop.DataType)
                     {
                         case DataType.Boolean:
@@ -239,7 +239,7 @@ public sealed class DataForge
                 var count = reader.ReadUInt32();
                 var firstIndex = reader.ReadUInt32();
 
-                var arrayNode = new XmlNode(_database.GetString(prop.NameOffset));
+                var arrayNode = new XmlNode(prop.GetName(_database));
                 arrayNode.AppendAttribute(new XmlAttribute<uint>("__count__", count));
 
                 for (var i = 0; i < count; i++)
@@ -252,7 +252,7 @@ public sealed class DataForge
                         var offset1 = _offsets[prop.StructIndex][index];
                         var reader1 = _database.GetReader(offset1);
 
-                        var child = new XmlNode(_database.GetString(structDef1.NameOffset));
+                        var child = new XmlNode(structDef1.GetName(_database));
 
                         FillNode(child, structDef1, ref reader1);
 
@@ -273,7 +273,7 @@ public sealed class DataForge
                         var offset2 = _offsets[(int)reference.StructIndex][(int)reference.InstanceIndex];
                         var reader2 = _database.GetReader(offset2);
 
-                        var child = new XmlNode(_database.GetString(prop.NameOffset));
+                        var child = new XmlNode(prop.GetName(_database));
 
                         FillNode(child, structDef2, ref reader2);
 
@@ -387,7 +387,7 @@ public sealed class DataForge
                 enumValues[i] = _database.GetString(_database.EnumOptions[enumDef.FirstValueIndex + i]);
             }
 
-            result.Add(_database.GetString(enumDef.NameOffset), enumValues);
+            result.Add(enumDef.GetName(_database), enumValues);
         }
 
         return result;
@@ -397,14 +397,14 @@ public sealed class DataForge
     {
         writer.Write('<');
 
-        writer.Write(_database.GetString(structDef.NameOffset));
+        writer.Write(structDef.GetName(_database));
 
         var properties = structDef.EnumerateProperties(_database.StructDefinitions, _database.PropertyDefinitions);
         foreach (var property in properties.Where(a => a.IsAttribute))
         {
             //these properties are attributes
             writer.Write(' ');
-            writer.Write(_database.GetString(property.NameOffset));
+            writer.Write(property.GetName(_database));
             writer.Write('=');
             writer.Write('"');
             switch (property.DataType)
@@ -473,7 +473,7 @@ public sealed class DataForge
             var firstIndex = reader.ReadUInt32();
 
             writer.Write('<');
-            writer.Write(_database.GetString(property.NameOffset));
+            writer.Write(property.GetName(_database));
             writer.Write(' ');
             writer.Write("__count__");
             writer.Write('=');
@@ -627,7 +627,7 @@ public sealed class DataForge
         var offsetMain = _offsets[mainRecord.StructIndex][mainRecord.InstanceIndex];
         var readerMain = _database.GetReader(offsetMain);
         
-        var mainNode = new XmlNode(_database.GetString(structDefMain.NameOffset));
+        var mainNode = new XmlNode(structDefMain.GetName(_database));
         
         FillNode(mainNode, structDefMain, ref readerMain);
         
@@ -643,7 +643,7 @@ public sealed class DataForge
             var structDef = _database.StructDefinitions[record.StructIndex];
             var offset = _offsets[record.StructIndex][record.InstanceIndex];
             var reader = _database.GetReader(offset);
-            var child = new XmlNode(_database.GetString(structDef.NameOffset));
+            var child = new XmlNode(structDef.GetName(_database));
 
             FillNode(child, structDef, ref reader);
 
