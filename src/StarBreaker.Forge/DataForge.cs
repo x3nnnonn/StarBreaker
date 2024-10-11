@@ -337,6 +337,7 @@ public sealed class DataForge
         }
     }
 
+    //this is bad, fix
     public void ExtractSingle(string outputFolder, string? fileNameFilter = null, IProgress<double>? progress = null)
     {
         var progressValue = 0;
