@@ -3,6 +3,7 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using Sc.External.Services.CharacterCustomizer.V1;
 using StarBreaker.Debug;
+using StarBreaker.Grpc;
 
 var scWatcher = new StarCitizenClientWatcher(@"C:\Program Files\Roberts Space Industries\StarCitizen\");
 scWatcher.Start();
@@ -25,8 +26,8 @@ var charClient = new CharacterCustomizerService.CharacterCustomizerServiceClient
 
 const string testChar = @"C:\Users\Diogo\Downloads\default_f_diff_eyecolor.grpc";
 
-var bytes = GrpcToProtoBytes(File.ReadAllBytes(testChar));
-var character = SaveCharacterCustomizationsRequest.Parser.ParseFrom(bytes);
+var bytes = File.ReadAllBytes(testChar);
+var character = SaveCharacterCustomizationsRequest.Parser.ParseFrom(GrpcUtils.GrpcToProtobuf(bytes));
 
 ChangeDna(character);
 ChangeEyeColor(character);
@@ -36,12 +37,6 @@ var response = charClient.SaveCharacterCustomizations(character);
 
 Console.WriteLine(response);
 return;
-
-//TODO: make this not stupid
-byte[] GrpcToProtoBytes(byte[] proto)
-{
-    return proto[5..];
-}
 
 void ChangeDna(SaveCharacterCustomizationsRequest req)
 {
