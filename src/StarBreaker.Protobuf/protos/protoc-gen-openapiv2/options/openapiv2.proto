@@ -1,0 +1,181 @@
+syntax = "proto3";
+option go_package = "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/options";
+
+package grpc.gateway.protoc_gen_openapiv2.options;
+
+import "google/protobuf/struct.proto";
+
+message Swagger {
+  string swagger = 1;
+  Info info = 2;
+  string host = 3;
+  string base_path = 4;
+  repeated Scheme schemes = 5;
+  repeated string consumes = 6;
+  repeated string produces = 7;
+  map<string, Response> responses = 10;
+  SecurityDefinitions security_definitions = 11;
+  repeated SecurityRequirement security = 12;
+  ExternalDocumentation external_docs = 14;
+  map<string, .google.protobuf.Value> extensions = 15;
+
+}
+
+message Operation {
+  repeated string tags = 1;
+  string summary = 2;
+  string description = 3;
+  ExternalDocumentation external_docs = 4;
+  string operation_id = 5;
+  repeated string consumes = 6;
+  repeated string produces = 7;
+  map<string, Response> responses = 9;
+  repeated Scheme schemes = 10;
+  bool deprecated = 11;
+  repeated SecurityRequirement security = 12;
+  map<string, .google.protobuf.Value> extensions = 13;
+
+}
+
+message Response {
+  string description = 1;
+  Schema schema = 2;
+  map<string, string> examples = 4;
+  map<string, .google.protobuf.Value> extensions = 5;
+
+}
+
+message Info {
+  string title = 1;
+  string description = 2;
+  string terms_of_service = 3;
+  Contact contact = 4;
+  License license = 5;
+  string version = 6;
+  map<string, .google.protobuf.Value> extensions = 7;
+
+}
+
+message Contact {
+  string name = 1;
+  string url = 2;
+  string email = 3;
+}
+
+message License {
+  string name = 1;
+  string url = 2;
+}
+
+message ExternalDocumentation {
+  string description = 1;
+  string url = 2;
+}
+
+message Schema {
+  JSONSchema json_schema = 1;
+  string discriminator = 2;
+  bool read_only = 3;
+  ExternalDocumentation external_docs = 5;
+  string example = 6;
+}
+
+message JSONSchema {
+  string ref = 3;
+  string title = 5;
+  string description = 6;
+  string default = 7;
+  bool read_only = 8;
+  double multiple_of = 10;
+  double maximum = 11;
+  bool exclusive_maximum = 12;
+  double minimum = 13;
+  bool exclusive_minimum = 14;
+  uint64 max_length = 15;
+  uint64 min_length = 16;
+  string pattern = 17;
+  uint64 max_items = 20;
+  uint64 min_items = 21;
+  bool unique_items = 22;
+  uint64 max_properties = 24;
+  uint64 min_properties = 25;
+  repeated string required = 26;
+  repeated string array = 34;
+  repeated JSONSchemaSimpleTypes type = 35;
+
+  enum JSONSchemaSimpleTypes {
+    UNKNOWN = 0;
+    ARRAY = 1;
+    BOOLEAN = 2;
+    INTEGER = 3;
+    NULL = 4;
+    NUMBER = 5;
+    OBJECT = 6;
+    STRING = 7;
+  }
+}
+
+message Tag {
+  string description = 2;
+  ExternalDocumentation external_docs = 3;
+}
+
+message SecurityDefinitions {
+  map<string, SecurityScheme> security = 1;
+
+}
+
+message SecurityScheme {
+  Type type = 1;
+  string description = 2;
+  string name = 3;
+  In in = 4;
+  Flow flow = 5;
+  string authorization_url = 6;
+  string token_url = 7;
+  Scopes scopes = 8;
+  map<string, .google.protobuf.Value> extensions = 9;
+
+  enum Type {
+    TYPE_INVALID = 0;
+    TYPE_BASIC = 1;
+    TYPE_API_KEY = 2;
+    TYPE_OAUTH2 = 3;
+  }
+
+  enum In {
+    IN_INVALID = 0;
+    IN_QUERY = 1;
+    IN_HEADER = 2;
+  }
+
+  enum Flow {
+    FLOW_INVALID = 0;
+    FLOW_IMPLICIT = 1;
+    FLOW_PASSWORD = 2;
+    FLOW_APPLICATION = 3;
+    FLOW_ACCESS_CODE = 4;
+  }
+}
+
+message SecurityRequirement {
+  map<string, SecurityRequirementValue> security_requirement = 1;
+
+  message SecurityRequirementValue {
+    repeated string scope = 1;
+  }
+}
+
+message Scopes {
+  map<string, string> scope = 1;
+
+}
+
+enum Scheme {
+  UNKNOWN = 0;
+  HTTP = 1;
+  HTTPS = 2;
+  WS = 3;
+  WSS = 4;
+}
+

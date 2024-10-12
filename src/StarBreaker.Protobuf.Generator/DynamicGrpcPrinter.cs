@@ -6,6 +6,8 @@ using FileOptions = Google.Protobuf.Reflection.FileOptions;
 
 namespace StarBreaker.Protobuf.Generator;
 //https://github.com/xoofx/grpc-curl/blob/main/src/DynamicGrpc/DynamicGrpcPrinter.cs
+//Note: this is a modified version of the original code. I don't really remember what changes make sense or why,
+// but this is working and the whole thing is very brittle so I'm leaving it like this :)
 
 /// <summary>
 /// Extension methods for printing descriptors back to proto language.
@@ -194,6 +196,26 @@ public static class DynamicGrpcPrinter
             ToProtoString(enumDescriptor, context);
             context.WriteLine();
         }
+        
+        // //Dump extensions
+        // //TODO: does ordering matter?
+        // var extendedTypes = file.Extensions.UnorderedExtensions.Select(x => x.ExtendeeType).Distinct();
+        // foreach (var extendedType in extendedTypes)
+        // {
+        //     context.WriteLine();
+        //     context.WriteLine($"// Extensions for {context.GetTypeName(extendedType)}");
+        //     context.WriteLine();
+        //     context.WriteLine($"extend {context.GetTypeName(extendedType)} {{");
+        //     context.Indent();
+        //     
+        //     foreach (var extension in file.Extensions.GetExtensionsInDeclarationOrder(extendedType))
+        //     {
+        //         context.WriteLine($"{context.GetTypeName(extension)} {extension.Name} = {extension.FieldNumber};");
+        //     }
+        //     
+        //     context.UnIndent();
+        //     context.WriteLine("}");
+        // }
 
         context.PopContextName(file.Package);
     }
@@ -319,6 +341,9 @@ public static class DynamicGrpcPrinter
             for (var index = 0; index < message.NestedTypes.Count; index++)
             {
                 var nestedMessageType = message.NestedTypes[index];
+                var oo = nestedMessageType.GetOptions();
+                if (oo != null  && oo.HasMapEntry && oo.MapEntry)
+                    continue;
                 ToProtoString(nestedMessageType, context);
 
                 // Don't output a trailing \n for the last entry
@@ -344,6 +369,31 @@ public static class DynamicGrpcPrinter
                 }
             }
         }
+        
+                
+        //terrible
+        if(message.File.Name == "google/protobuf/descriptor.proto")
+        {
+            string[] names = [
+                "ExtensionRangeOptions ",
+                "FileOptions",
+                "MessageOptions",
+                "FieldOptions",
+                "OneofOptions",
+                "EnumOptions",
+                "EnumValueOptions",
+                "ServiceOptions",
+                "MethodOptions"
+            ];
+            
+            if (names.Contains(message.Name))
+            {
+                context.WriteLine("extensions 1000 to max;");
+            }
+            
+            Console.WriteLine();
+        }
+        
 
         context.UnIndent();
         context.PopContextName(message.Name);
@@ -371,47 +421,47 @@ public static class DynamicGrpcPrinter
     private static void ToProtoString(FileOptions options, DynamicGrpcPrinterContext context)
     {
         // java_package
-        if (options.HasJavaPackage) context.WriteLine($"option java_package = \"{options.JavaPackage}\";");
+        //if (options.HasJavaPackage) context.WriteLine($"option java_package = \"{options.JavaPackage}\";");
         // java_outer_classname
-        if (options.HasJavaOuterClassname) context.WriteLine($"option java_outer_classname = \"{options.JavaOuterClassname}\";");
+        //if (options.HasJavaOuterClassname) context.WriteLine($"option java_outer_classname = \"{options.JavaOuterClassname}\";");
         // java_multiple_files
-        if (options.HasJavaMultipleFiles) context.WriteLine($"option java_multiple_files = {options.JavaMultipleFiles.Bool()};");
+        //if (options.HasJavaMultipleFiles) context.WriteLine($"option java_multiple_files = {options.JavaMultipleFiles.Bool()};");
         // java_generate_equals_and_hash
 #pragma warning disable CS0612 // Type or member is obsolete
-        if (options.HasJavaGenerateEqualsAndHash) context.WriteLine($"option java_generate_equals_and_hash = {options.JavaGenerateEqualsAndHash.Bool()};");
+        //if (options.HasJavaGenerateEqualsAndHash) context.WriteLine($"option java_generate_equals_and_hash = {options.JavaGenerateEqualsAndHash.Bool()};");
 #pragma warning restore CS0612 // Type or member is obsolete
         // java_string_check_utf8
-        if (options.HasJavaStringCheckUtf8) context.WriteLine($"option java_string_check_utf8 = {options.JavaStringCheckUtf8.Bool()};");
+        //if (options.HasJavaStringCheckUtf8) context.WriteLine($"option java_string_check_utf8 = {options.JavaStringCheckUtf8.Bool()};");
         // optimize_for
         if (options.HasOptimizeFor) context.WriteLine($"option optimize_for = {GetEnumName(options.OptimizeFor, typeof(FileOptions.Types.OptimizeMode))};");
         // go_package
-        if (options.HasJavaMultipleFiles) context.WriteLine($"option go_package = {options.JavaMultipleFiles.Bool()};");
+        //if (options.HasGoPackage) context.WriteLine($"option go_package = \"{options.GoPackage}\";");
         // cc_generic_services
-        if (options.HasCcGenericServices) context.WriteLine($"option cc_generic_services = {options.CcGenericServices.Bool()};");
+        //if (options.HasCcGenericServices) context.WriteLine($"option cc_generic_services = {options.CcGenericServices.Bool()};");
         // java_generic_services
-        if (options.HasJavaGenericServices) context.WriteLine($"option java_generic_services = {options.JavaGenericServices.Bool()};");
+        //if (options.HasJavaGenericServices) context.WriteLine($"option java_generic_services = {options.JavaGenericServices.Bool()};");
         // py_generic_services
-        if (options.HasPyGenericServices) context.WriteLine($"option py_generic_services = {options.PyGenericServices.Bool()};");
+        //if (options.HasPyGenericServices) context.WriteLine($"option py_generic_services = {options.PyGenericServices.Bool()};");
         // php_generic_services
-        if (options.HasPhpGenericServices) context.WriteLine($"option php_generic_services = {options.PhpGenericServices.Bool()};");
+        //if (options.HasPhpGenericServices) context.WriteLine($"option php_generic_services = {options.PhpGenericServices.Bool()};");
         // deprecated
         if (options.HasDeprecated) context.WriteLine($"option deprecated = {options.Deprecated.Bool()};");
         // cc_enable_arenas
-        if (options.HasCcEnableArenas) context.WriteLine($"option cc_enable_arenas = {options.CcEnableArenas.Bool()};");
+        //if (options.HasCcEnableArenas) context.WriteLine($"option cc_enable_arenas = {options.CcEnableArenas.Bool()};");
         // objc_class_prefix
-        if (options.HasObjcClassPrefix) context.WriteLine($"option objc_class_prefix = \"{options.ObjcClassPrefix}\";");
+        //if (options.HasObjcClassPrefix) context.WriteLine($"option objc_class_prefix = \"{options.ObjcClassPrefix}\";");
         // csharp_namespace
         if (options.HasCsharpNamespace) context.WriteLine($"option csharp_namespace = \"{options.CsharpNamespace}\";");
         // swift_prefix
-        if (options.HasSwiftPrefix) context.WriteLine($"option swift_prefix = \"{options.SwiftPrefix}\";");
+        //if (options.HasSwiftPrefix) context.WriteLine($"option swift_prefix = \"{options.SwiftPrefix}\";");
         // php_class_prefix
-        if (options.HasPhpClassPrefix) context.WriteLine($"option php_class_prefix = \"{options.PhpClassPrefix}\";");
+        //if (options.HasPhpClassPrefix) context.WriteLine($"option php_class_prefix = \"{options.PhpClassPrefix}\";");
         // php_namespace
-        if (options.HasPhpNamespace) context.WriteLine($"option php_namespace = \"{options.PhpNamespace}\";");
+        //if (options.HasPhpNamespace) context.WriteLine($"option php_namespace = \"{options.PhpNamespace}\";");
         // php_metadata_namespace
-        if (options.HasPhpMetadataNamespace) context.WriteLine($"option php_metadata_namespace = \"{options.PhpMetadataNamespace}\";");
+        //if (options.HasPhpMetadataNamespace) context.WriteLine($"option php_metadata_namespace = \"{options.PhpMetadataNamespace}\";");
         // ruby_package
-        if (options.HasRubyPackage) context.WriteLine($"option ruby_package = \"{options.RubyPackage}\";");
+        //if (options.HasRubyPackage) context.WriteLine($"option ruby_package = \"{options.RubyPackage}\";");
     }
 
     private class DynamicGrpcPrinterContext
@@ -488,18 +538,19 @@ public static class DynamicGrpcPrinter
 
             var builder = new StringBuilder();
             if (field.IsRequired) builder.Append("required ");
-            //else if (field.ContainingOneof == null && !field.IsRepeated && field.File.Syntax != Syntax.Proto3) builder.Append("required ");
+            else if (field.ContainingOneof == null && !field.IsRepeated && field.File.Syntax != Syntax.Proto3) builder.Append("optional ");
             var options = field.GetOptions();
             if (options == null)
             {
-                if (field.File.Syntax == Syntax.Proto3)
+                //if (field.File.Syntax == Syntax.Proto3)
                 {
                     if (field.IsRepeated) builder.Append("repeated ");
                 }
             }
             else
             {
-                if (field.File.Syntax != Syntax.Proto3 && field.IsPacked) builder.Append("packed ");
+                bool hasPackedAndIsTrue = options.HasPacked && options.Packed;
+                if (field.File.Syntax != Syntax.Proto3 && field.IsPacked && !hasPackedAndIsTrue) builder.Append("packed ");
                 if (field.IsRepeated) builder.Append("repeated ");
             }
 
