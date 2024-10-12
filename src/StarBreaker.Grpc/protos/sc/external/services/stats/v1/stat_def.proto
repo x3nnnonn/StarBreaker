@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package sc.external.services.stats.v1;
+
+message AverageType {
+  string numerator_stat_def_id = 1;
+  string denominator_stat_def_id = 2;
+}
+
+message RollingAvergeType {
+  uint32 window = 1;
+  uint32 interval = 2;
+}
+
+message NumberType {
+  uint32 min = 1;
+  uint32 max = 2;
+  uint32 max_change = 3;
+  uint32 default = 4;
+}
+
+message StatDefType {
+  oneof stat_type {
+    .sc.external.services.stats.v1.NumberType gauge = 1;
+    .sc.external.services.stats.v1.NumberType counter = 2;
+    .sc.external.services.stats.v1.AverageType avg = 3;
+    .sc.external.services.stats.v1.RollingAvergeType rolling_avg = 4;
+  }
+}
+
+message StatDef {
+  string id = 1;
+  string game_id = 2;
+  string game_mode = 3;
+  string category = 4;
+  .sc.external.services.stats.v1.StatDefType type = 5;
+  string name = 6;
+  string unit = 7;
+  string display_description = 8;
+  bool rankable = 9;
+}
+

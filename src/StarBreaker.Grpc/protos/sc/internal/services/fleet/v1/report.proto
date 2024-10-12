@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package sc.internal.services.fleet.v1;
+
+import "sc/internal/services/fleet/v1/status.proto";
+import "sc/external/common/network/v1/types.proto";
+
+message ProcessInfo {
+  string hardware_id = 1;
+  string pod = 2;
+  uint32 pid = 3;
+}
+
+message NetworkInfo {
+  string host = 1;
+  uint32 port = 2;
+  repeated string external_routes = 3;
+  string metrics_host = 4;
+  uint32 metrics_port = 5;
+  repeated string internal_routes = 6;
+}
+
+message ScalingInfo {
+  bool protected = 1;
+  string profile = 2;
+}
+
+message UnitReport {
+  string id = 1;
+  string version = 2;
+  .sc.external.common.network.v1.Region region = 4;
+  repeated string fleets = 5;
+  .sc.internal.services.fleet.v1.NetworkInfo network = 6;
+  .sc.internal.services.fleet.v1.ProcessInfo process = 7;
+  .sc.internal.services.fleet.v1.ScalingInfo scaling = 8;
+  repeated .sc.internal.services.fleet.v1.UnitStatus statuses = 11;
+}
+
+message ReportRequest {
+  repeated .sc.internal.services.fleet.v1.UnitReport reports = 1;
+}
+
+message ReportResponse {}
+

@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package sc.internal.services.fleet.v1;
+
+import "sc/external/common/api/v1/pagination.proto";
+import "sc/external/common/api/v1/query.proto";
+import "google/protobuf/any.proto";
+
+message UnitDetail {
+  string id = 1;
+  map<string, string> string_entries = 4;
+  .google.protobuf.Any extension = 5;
+  map<string, bool> boolean_entries = 6;
+  map<string, int32> integer_entries = 7;
+
+}
+
+message UnitRequest {
+  repeated string ids = 1;
+}
+
+message UnitResponse {
+  repeated .sc.internal.services.fleet.v1.UnitDetail units = 1;
+}
+
+message FindUnitRequest {
+  .sc.external.common.api.v1.Query query = 4;
+}
+
+message FindUnitResponse {
+  repeated .sc.internal.services.fleet.v1.UnitDetail results = 1;
+  .sc.external.common.api.v1.PaginationInfo page_info = 2;
+}
+

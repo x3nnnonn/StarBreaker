@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package sc.internal.services.gim.v1;
+
+import "google/api/annotations.proto";
+import "sc/internal/services/gim/v1/types.proto";
+
+service GimService {
+  rpc GetMatchInfo ( .sc.internal.services.gim.v1.GetMatchInfoRequest ) returns ( .sc.internal.services.gim.v1.GetMatchInfoResponse );
+}
+
+message GetMatchInfoRequest {
+  repeated string match_ids = 1;
+  repeated uint64 character_geids = 2;
+}
+
+message GetMatchInfoResponse {
+  repeated .sc.internal.services.gim.v1.MatchInfo match_infos = 1;
+}
+

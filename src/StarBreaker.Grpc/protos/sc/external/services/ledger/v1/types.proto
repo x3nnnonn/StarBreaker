@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package sc.external.services.ledger.v1;
+
+message Ledger {
+  string id = 1;
+  string owner_urn = 2;
+  int32 account_id = 3;
+  string name = 4;
+  .sc.external.services.ledger.v1.Funds funds = 5;
+  uint32 version = 6;
+  string parent_urn = 7;
+  uint64 created_at = 8;
+  uint64 updated_at = 9;
+  repeated string children_urn = 10;
+  string status = 11;
+}
+
+message Transaction {
+  string owner_urn = 1;
+  .sc.external.services.ledger.v1.Funds money = 2;
+  string ledger_name = 3;
+  uint32 version = 4;
+  string log_message = 5;
+  string transaction_type = 11;
+  string transaction_flow = 12;
+  string entity_class_name = 13;
+  uint32 entity_class_crc = 14;
+  uint32 item_quantity = 15;
+}
+
+message Funds {
+  uint64 amount = 1;
+  .sc.external.services.ledger.v1.Currency currency = 2;
+}
+
+message LedgerHistory {
+  string id = 1;
+  string ledger_id = 2;
+  uint64 updated_at = 3;
+  uint64 created_at = 4;
+  uint32 ledger_version = 5;
+  string owner_urn = 6;
+  uint64 funds = 7;
+  uint64 change_in_funds = 8;
+  string event_name = 9;
+  string log_message = 10;
+  string transaction_type = 11;
+  string transaction_flow = 12;
+  string entity_class_name = 13;
+  uint32 entity_class_crc = 14;
+  uint32 item_quantity = 15;
+}
+
+enum Currency {
+  CURRENCY_INVALID_UNSPECIFIED = 0;
+  CURRENCY_UEC = 1;
+  CURRENCY_REC = 2;
+  CURRENCY_AUEC = 3;
+  CURRENCY_MER = 4;
+}
+

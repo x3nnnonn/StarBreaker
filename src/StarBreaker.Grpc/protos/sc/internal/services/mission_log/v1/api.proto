@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package sc.internal.services.mission_log.v1;
+
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "google/api/annotations.proto";
+import "sc/internal/services/mission_log/v1/types.proto";
+
+service MissionLogInternalService {
+  rpc GetLogs ( .sc.internal.services.mission_log.v1.GetLogsRequest ) returns ( .sc.internal.services.mission_log.v1.GetLogsResponse );
+  rpc AddLogs ( .sc.internal.services.mission_log.v1.AddLogsRequest ) returns ( .sc.internal.services.mission_log.v1.AddLogsResponse );
+  rpc EraseLogs ( .sc.internal.services.mission_log.v1.EraseLogsRequest ) returns ( .sc.internal.services.mission_log.v1.EraseLogsResponse );
+}
+
+message GetLogsRequest {
+  uint64 player_id = 1;
+}
+
+message GetLogsResponse {
+  repeated .sc.internal.services.mission_log.v1.MissionLog logs = 2;
+}
+
+message AddLogsRequest {
+  uint64 player_id = 1;
+  repeated .sc.internal.services.mission_log.v1.MissionLog logs = 2;
+}
+
+message AddLogsResponse {}
+
+message EraseLogsRequest {
+  uint64 player_id = 1;
+  repeated .sc.internal.services.mission_log.v1.MissionLog logs = 2;
+}
+
+message EraseLogsResponse {}
+

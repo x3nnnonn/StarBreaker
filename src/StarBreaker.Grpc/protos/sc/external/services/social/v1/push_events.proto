@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package sc.external.services.social.v1;
+
+import "sc/external/services/social/v1/types.proto";
+
+message GroupDestroyed {
+  string group_id = 1;
+}
+
+message GroupRenamed {
+  string group_id = 1;
+  string group_name = 2;
+}
+
+message MemberInvited {
+  .sc.external.services.social.v1.Invitation invitation = 1;
+}
+
+message InvitationDeclined {
+  string invitation_id = 1;
+  string declined_by_urn = 2;
+  string group_id = 3;
+}
+
+message InvitationRevoked {
+  string invitation_id = 1;
+  string revoked_by_urn = 2;
+  string group_id = 3;
+}
+
+message MemberJoined {
+  string group_id = 1;
+  .sc.external.services.social.v1.GroupMember member = 2;
+}
+
+message MemberLeft {
+  string group_id = 1;
+  string member_urn = 2;
+}
+
+message LeadershipTransferred {
+  string group_id = 1;
+  string player_urn = 2;
+}
+
+message MemberMuted {
+  string group_id = 1;
+  string member_urn = 2;
+  bool chat = 3;
+  bool rtc = 4;
+}
+
+message MemberUnmuted {
+  string group_id = 1;
+  string member_urn = 2;
+  bool chat = 3;
+  bool rtc = 4;
+}
+
+message GroupCreated {
+  .sc.external.services.social.v1.Group group = 1;
+}
+
+message InvitationReceived {
+  .sc.external.services.social.v1.Invitation invitation = 1;
+}
+
+message JoinedGroup {
+  .sc.external.services.social.v1.Group group = 1;
+}
+
+message LeftGroup {
+  string group_id = 1;
+  bool kicked = 2;
+}
+

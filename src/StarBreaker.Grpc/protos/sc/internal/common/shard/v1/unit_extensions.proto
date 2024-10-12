@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package sc.internal.common.shard.v1;
+
+import "sc/external/common/network/v1/types.proto";
+import "sc/external/common/game/v1/types.proto";
+import "sc/internal/common/shard/v1/types.proto";
+
+message ShardSupervisorUnitExtension {
+  string id = 1;
+  .sc.external.common.game.v1.Game game = 2;
+  .sc.external.common.game.v1.Mode mode = 3;
+  .sc.external.common.network.v1.Region region = 4;
+  string reservation_endpoint = 5;
+  .sc.internal.common.shard.v1.SeatMap seat_map = 6;
+}
+
