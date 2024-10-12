@@ -1,4 +1,4 @@
-namespace StarBreaker.Protobuf.Generator;
+namespace StarBreaker.Protobuf;
 
 public static class SpanExtensions
 {

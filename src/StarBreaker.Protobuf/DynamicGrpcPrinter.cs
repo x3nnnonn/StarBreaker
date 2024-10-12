@@ -4,7 +4,7 @@ using System.Text;
 using Google.Protobuf.Reflection;
 using FileOptions = Google.Protobuf.Reflection.FileOptions;
 
-namespace StarBreaker.Protobuf.Generator;
+namespace StarBreaker.Protobuf;
 //https://github.com/xoofx/grpc-curl/blob/main/src/DynamicGrpc/DynamicGrpcPrinter.cs
 //Note: this is a modified version of the original code. I don't really remember what changes make sense or why,
 // but this is working and the whole thing is very brittle so I'm leaving it like this :)

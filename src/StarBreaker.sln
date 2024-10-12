@@ -26,9 +26,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarBreaker.Common", "StarB
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarBreaker.Chf", "StarBreaker.Chf\StarBreaker.Chf.csproj", "{955935F7-7406-485D-A213-01E09CB92AA0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarBreaker.Protobuf", "StarBreaker.Protobuf\StarBreaker.Protobuf.csproj", "{475F55DB-ED1C-4C6C-9BC0-8481A96B2803}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarBreaker.Grpc", "StarBreaker.Grpc\StarBreaker.Grpc.csproj", "{475F55DB-ED1C-4C6C-9BC0-8481A96B2803}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarBreaker.Protobuf.Generator", "StarBreaker.Protobuf.Generator\StarBreaker.Protobuf.Generator.csproj", "{DA5C9EDC-DB21-47E1-B276-780DFBCF9085}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarBreaker.Protobuf", "StarBreaker.Protobuf\StarBreaker.Protobuf.csproj", "{DA5C9EDC-DB21-47E1-B276-780DFBCF9085}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
