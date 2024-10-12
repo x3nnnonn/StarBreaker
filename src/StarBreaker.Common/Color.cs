@@ -1,8 +1,7 @@
 ﻿using System.Runtime.InteropServices;
-using System.Text.Json.Serialization;
 
 // ReSharper disable UnassignedGetOnlyAutoProperty
-namespace StarBreaker.Chf;
+namespace StarBreaker.Common;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public readonly struct Color(byte r, byte g, byte b)
