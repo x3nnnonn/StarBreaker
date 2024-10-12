@@ -1,24 +1,23 @@
-﻿using System.Text.Json;
-using Google.Protobuf;
+﻿using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Net.Client;
 using Sc.External.Services.CharacterCustomizer.V1;
+using StarBreaker.Debug;
 
-var env = JsonSerializer.Deserialize<Environment>(File.ReadAllText("env.json"));
-if (env == null || string.IsNullOrWhiteSpace(env.Token) || string.IsNullOrWhiteSpace(env.Url))
-{
-    Console.WriteLine("Failed to read env.json");
-    return;
-}
+var scWatcher = new StarCitizenClientWatcher(@"C:\Program Files\Roberts Space Industries\StarCitizen\");
+scWatcher.Start();
+var loginData = await scWatcher.WaitForLoginData();
+
+Console.WriteLine($"Got Login data for user: \"{loginData.Username}\" on server: \"{loginData.StarNetwork.ServicesEndpoint}\"");
 
 var creds = CallCredentials.FromInterceptor((_, metadata) =>
 {
-    metadata.Add("Authorization", $"Bearer {env.Token}");
+    metadata.Add("Authorization", $"Bearer {loginData.AuthToken}");
 
     return Task.CompletedTask;
 });
 
-var channel = GrpcChannel.ForAddress(env.Url, new GrpcChannelOptions
+var channel = GrpcChannel.ForAddress(new Uri(loginData.StarNetwork.ServicesEndpoint), new GrpcChannelOptions
 {
     Credentials = ChannelCredentials.Create(ChannelCredentials.SecureSsl, creds)
 });
