@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package sc.internal.services.fleet.v1;
+
+message UnitFilter {
+  repeated string products = 1;
+  map<string, string> labels = 2;
+
+}
+

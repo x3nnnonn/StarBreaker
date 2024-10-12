@@ -4,11 +4,9 @@ package sc.internal.services.fleet.v1;
 
 import "sc/internal/services/fleet/v1/metric.proto";
 import "sc/internal/services/fleet/v1/report.proto";
-import "sc/internal/services/fleet/v1/state.proto";
 import "sc/internal/services/fleet/v1/fleet.proto";
 import "sc/internal/services/fleet/v1/unit.proto";
 import "sc/internal/services/fleet/v1/signal.proto";
-import "sc/internal/services/fleet/v1/scaling.proto";
 import "sc/internal/services/fleet/v1/claim.proto";
 import "sc/internal/services/fleet/v1/unhealthy.proto";
 import "google/api/annotations.proto";
@@ -18,13 +16,9 @@ service FleetService {
   rpc Report ( .sc.internal.services.fleet.v1.ReportRequest ) returns ( .sc.internal.services.fleet.v1.ReportResponse );
   rpc MarkUnhealthy ( .sc.internal.services.fleet.v1.MarkUnhealthyRequest ) returns ( .sc.internal.services.fleet.v1.MarkUnhealthyResponse );
   rpc MetricsTargets ( .sc.internal.services.fleet.v1.MetricsTargetsRequest ) returns ( .sc.internal.services.fleet.v1.MetricsTargetsResponse );
-  rpc State ( .sc.internal.services.fleet.v1.StateRequest ) returns ( .sc.internal.services.fleet.v1.StateResponse );
-  rpc Fleet ( .sc.internal.services.fleet.v1.FleetRequest ) returns ( .sc.internal.services.fleet.v1.FleetResponse );
-  rpc FindFleet ( .sc.internal.services.fleet.v1.FindFleetRequest ) returns ( .sc.internal.services.fleet.v1.FindFleetResponse );
-  rpc Unit ( .sc.internal.services.fleet.v1.UnitRequest ) returns ( .sc.internal.services.fleet.v1.UnitResponse );
-  rpc FindUnit ( .sc.internal.services.fleet.v1.FindUnitRequest ) returns ( .sc.internal.services.fleet.v1.FindUnitResponse );
-  rpc Signal ( .sc.internal.services.fleet.v1.SignalRequest ) returns ( .sc.internal.services.fleet.v1.SignalResponse );
-  rpc Scaling ( .sc.internal.services.fleet.v1.ScalingRequest ) returns ( .sc.internal.services.fleet.v1.ScalingResponse );
+  rpc GetFleets ( .sc.internal.services.fleet.v1.GetFleetsRequest ) returns ( .sc.internal.services.fleet.v1.GetFleetsResponse );
+  rpc GetUnits ( .sc.internal.services.fleet.v1.GetUnitsRequest ) returns ( .sc.internal.services.fleet.v1.GetUnitsResponse );
+  rpc SendSignal ( .sc.internal.services.fleet.v1.SendSignalRequest ) returns ( .sc.internal.services.fleet.v1.SendSignalResponse );
   rpc ClaimUnit ( .sc.internal.services.fleet.v1.ClaimUnitRequest ) returns ( .sc.internal.services.fleet.v1.ClaimUnitResponse );
 }
 

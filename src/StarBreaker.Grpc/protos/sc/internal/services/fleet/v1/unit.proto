@@ -2,33 +2,27 @@ syntax = "proto3";
 
 package sc.internal.services.fleet.v1;
 
-import "sc/external/common/api/v1/pagination.proto";
-import "sc/external/common/api/v1/query.proto";
-import "google/protobuf/any.proto";
-
 message UnitDetail {
   string id = 1;
-  map<string, string> string_entries = 4;
-  .google.protobuf.Any extension = 5;
-  map<string, bool> boolean_entries = 6;
-  map<string, int32> integer_entries = 7;
+  string product = 2;
+  map<string, string> labels = 3;
+  .sc.internal.services.fleet.v1.UnitHealth health_status = 4;
 
 }
 
-message UnitRequest {
+message GetUnitsRequest {
   repeated string ids = 1;
 }
 
-message UnitResponse {
+message GetUnitsResponse {
   repeated .sc.internal.services.fleet.v1.UnitDetail units = 1;
 }
 
-message FindUnitRequest {
-  .sc.external.common.api.v1.Query query = 4;
-}
-
-message FindUnitResponse {
-  repeated .sc.internal.services.fleet.v1.UnitDetail results = 1;
-  .sc.external.common.api.v1.PaginationInfo page_info = 2;
+enum UnitHealth {
+  UNIT_HEALTH_UNSPECIFIED = 0;
+  UNIT_HEALTH_HEALTHY = 1;
+  UNIT_HEALTH_UNHEALTHY = 2;
+  UNIT_HEALTH_RETIRED = 3;
+  UNIT_HEALTH_PENDING = 4;
 }
 

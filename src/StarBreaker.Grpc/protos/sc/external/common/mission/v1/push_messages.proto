@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package sc.external.common.mission.v1;
+
+import "sc/external/common/mission/v1/missions.proto";
+
+message MissionActivated {
+  repeated .sc.external.common.mission.v1.MissionActivated.Body missions = 1;
+
+  message Body {
+    string mission_id = 1;
+    string shard_id = 2;
+  }
+}
+
+message MissionEnded {
+  repeated .sc.external.common.mission.v1.MissionEnded.Body missions = 1;
+
+  message Body {
+    string mission_id = 1;
+    .sc.external.common.mission.v1.MissionState mission_state = 2;
+  }
+}
+
+message PlayerJoined {
+  repeated .sc.external.common.mission.v1.PlayerJoined.Body players = 1;
+
+  message Body {
+    string mission_id = 1;
+    string player_urn = 2;
+  }
+}
+
+message PlayerLeft {
+  repeated .sc.external.common.mission.v1.PlayerLeft.Body players = 1;
+
+  message Body {
+    string mission_id = 1;
+    string player_urn = 2;
+  }
+}
+
+message ObjectiveAdded {
+  repeated .sc.external.common.mission.v1.ObjectiveAdded.Body objectives = 1;
+
+  message Body {
+    .sc.external.common.mission.v1.MissionObjective objective = 1;
+  }
+}
+
+message ObjectiveUpdate {
+  repeated .sc.external.common.mission.v1.ObjectiveUpdate.Body objectives = 1;
+
+  message Body {
+    string objective_id = 1;
+    int64 progress = 2;
+  }
+}
+
+message ObjectiveComplete {
+  repeated .sc.external.common.mission.v1.ObjectiveComplete.Body objectives = 1;
+
+  message Body {
+    string objective_id = 1;
+    .sc.external.common.mission.v1.MissionObjectiveState state = 2;
+  }
+}
+

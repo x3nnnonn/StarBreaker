@@ -3,6 +3,7 @@ syntax = "proto3";
 package sc.external.services.entitygraph.v1;
 
 import "google/rpc/status.proto";
+import "google/rpc/error_details.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "sc/external/common/types/v1/localization.proto";
@@ -347,6 +348,18 @@ message EntitySyncNotificationContext {
   }
 }
 
+message EntityStowContext {
+  uint64 entity_id = 1;
+  string parent_urn = 2;
+  uint64 owner_id = 3;
+  bool is_stowed = 4;
+  oneof parent {
+    string shard_id = 5;
+    string inventory_id = 6;
+  }
+  uint32 class_guid_crc = 7;
+}
+
 enum ScopeType {
   SCOPE_TYPE_UNSPECIFIED = 0;
   SCOPE_TYPE_SHARD = 1;
@@ -375,6 +388,7 @@ enum EntityNodeLabel {
   ENTITY_NODE_LABEL_LONGTERM = 9;
   ENTITY_NODE_LABEL_SHARD_STOW = 10;
   ENTITY_NODE_LABEL_SHARD_STOW_NESTING_ELIGIBLE = 11;
+  ENTITY_NODE_LABEL_TRACK_STOW_CONTEXT = 12;
 }
 
 enum EntityEdgeType {

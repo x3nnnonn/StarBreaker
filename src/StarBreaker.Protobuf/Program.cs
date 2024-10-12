@@ -1,6 +1,6 @@
 ﻿using StarBreaker.Protobuf;
 
-const string starCitizenExe = @"C:\Program Files\Roberts Space Industries\StarCitizen\LIVE\Bin64\StarCitizen.exe";
+const string starCitizenExe = @"C:\Program Files\Roberts Space Industries\StarCitizen\PTU\Bin64\StarCitizen.exe";
 const string sourcePath = "../../../../StarBreaker.Grpc/protos";
 
 string[] whitelist =

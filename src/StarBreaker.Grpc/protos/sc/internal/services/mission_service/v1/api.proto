@@ -1,0 +1,166 @@
+syntax = "proto3";
+
+package sc.internal.services.mission_service.v1;
+
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "sc/external/common/mission/v1/missions.proto";
+import "sc/external/common/mission/v1/contracts.proto";
+import "sc/external/common/api/v1/query.proto";
+import "sc/external/common/api/v1/pagination.proto";
+import "sc/external/common/command/v1/types.proto";
+
+service MissionService {
+  rpc CreateMission ( .sc.internal.services.mission_service.v1.CreateMissionRequest ) returns ( .sc.internal.services.mission_service.v1.CreateMissionResponse );
+  rpc AbandonMission ( .sc.internal.services.mission_service.v1.AbandonMissionRequest ) returns ( .sc.internal.services.mission_service.v1.AbandonMissionResponse );
+  rpc OnPlayerJoinShard ( .sc.internal.services.mission_service.v1.OnPlayerJoinShardRequest ) returns ( .sc.internal.services.mission_service.v1.OnPlayerJoinShardResponse );
+  rpc OnPlayerLeaveShard ( .sc.internal.services.mission_service.v1.OnPlayerLeaveShardRequest ) returns ( .sc.internal.services.mission_service.v1.OnPlayerLeaveShardResponse );
+  rpc CreateMissionPhase ( .sc.internal.services.mission_service.v1.CreateMissionPhaseRequest ) returns ( .sc.internal.services.mission_service.v1.CreateMissionPhaseResponse );
+  rpc UpdateMissionPhase ( .sc.internal.services.mission_service.v1.UpdateMissionPhaseRequest ) returns ( .sc.internal.services.mission_service.v1.UpdateMissionPhaseResponse );
+  rpc CompleteMissionPhase ( .sc.internal.services.mission_service.v1.CompleteMissionPhaseRequest ) returns ( .sc.internal.services.mission_service.v1.CompleteMissionPhaseResponse );
+  rpc UpsertObjective ( .sc.internal.services.mission_service.v1.UpsertObjectiveRequest ) returns ( .sc.internal.services.mission_service.v1.UpsertObjectiveResponse );
+  rpc UpdateObjectiveProgress ( .sc.internal.services.mission_service.v1.UpdateObjectiveProgressRequest ) returns ( .sc.internal.services.mission_service.v1.UpdateObjectiveProgressResponse );
+  rpc CompleteObjective ( .sc.internal.services.mission_service.v1.CompleteObjectiveRequest ) returns ( .sc.internal.services.mission_service.v1.CompleteObjectiveResponse );
+  rpc QueryMissions ( .sc.internal.services.mission_service.v1.QueryMissionsRequest ) returns ( .sc.internal.services.mission_service.v1.QueryMissionsResponse );
+  rpc QueryMissionLogs ( .sc.internal.services.mission_service.v1.QueryMissionLogsRequest ) returns ( .sc.internal.services.mission_service.v1.QueryMissionLogsResponse );
+}
+
+message CreateMissionRequest {
+  .sc.external.common.mission.v1.MissionContract contract = 1;
+  string mission_owner_urn = 2;
+  .sc.external.common.command.v1.CommandArguments arguments = 3;
+}
+
+message CreateMissionResponse {
+  string mission_id = 1;
+}
+
+message AbandonMissionRequest {
+  string mission_id = 1;
+  .sc.external.common.mission.v1.MissionState mission_state = 2;
+  string reason = 3;
+  .sc.external.common.command.v1.CommandArguments arguments = 4;
+}
+
+message AbandonMissionResponse {}
+
+message OnPlayerJoinShardRequest {
+  repeated .sc.internal.services.mission_service.v1.OnPlayerJoinShardRequest.Body players = 1;
+  .sc.external.common.command.v1.CommandArguments arguments = 2;
+
+  message Body {
+    string player_urn = 1;
+  }
+}
+
+message OnPlayerJoinShardResponse {}
+
+message OnPlayerLeaveShardRequest {
+  repeated .sc.internal.services.mission_service.v1.OnPlayerLeaveShardRequest.Body players = 1;
+  .sc.external.common.command.v1.CommandArguments arguments = 2;
+
+  message Body {
+    string player_urn = 1;
+  }
+}
+
+message OnPlayerLeaveShardResponse {}
+
+message CreateMissionPhaseRequest {
+  repeated .sc.internal.services.mission_service.v1.CreateMissionPhaseRequest.Body phases = 1;
+  .sc.external.common.command.v1.CommandArguments arguments = 2;
+  string active_mission_key = 3;
+
+  message Body {
+    string mission_phase_guid = 1;
+    .google.protobuf.Timestamp expiry = 2;
+    string autocomplete_objective_id = 3;
+    .sc.external.common.mission.v1.MissionPhaseData data = 4;
+  }
+}
+
+message CreateMissionPhaseResponse {}
+
+message UpdateMissionPhaseRequest {
+  repeated .sc.internal.services.mission_service.v1.UpdateMissionPhaseRequest.Body phases = 1;
+  .sc.external.common.command.v1.CommandArguments arguments = 2;
+  string mission_id = 3;
+
+  message Body {
+    string active_phase_key = 1;
+    .sc.external.common.mission.v1.MissionPhaseData data = 2;
+  }
+}
+
+message UpdateMissionPhaseResponse {}
+
+message CompleteMissionPhaseRequest {
+  repeated .sc.internal.services.mission_service.v1.CompleteMissionPhaseRequest.Body phases = 1;
+  .sc.external.common.command.v1.CommandArguments arguments = 2;
+  string mission_id = 3;
+
+  message Body {
+    .sc.external.common.mission.v1.MissionPhaseData data = 1;
+    string active_phase_key = 2;
+  }
+}
+
+message CompleteMissionPhaseResponse {}
+
+message UpsertObjectiveRequest {
+  repeated .sc.internal.services.mission_service.v1.UpsertObjectiveRequest.Body objectives = 1;
+  .sc.external.common.command.v1.CommandArguments arguments = 2;
+  string active_mission_key = 3;
+
+  message Body {
+    .sc.external.common.mission.v1.MissionObjective objective = 1;
+  }
+}
+
+message UpsertObjectiveResponse {}
+
+message UpdateObjectiveProgressRequest {
+  repeated .sc.internal.services.mission_service.v1.UpdateObjectiveProgressRequest.Body objectives = 1;
+  .sc.external.common.command.v1.CommandArguments arguments = 2;
+  string active_mission_key = 3;
+
+  message Body {
+    string objective_id = 1;
+    int64 progress_delta = 2;
+  }
+}
+
+message UpdateObjectiveProgressResponse {}
+
+message CompleteObjectiveRequest {
+  repeated .sc.internal.services.mission_service.v1.CompleteObjectiveRequest.Body objectives = 1;
+  .sc.external.common.command.v1.CommandArguments arguments = 2;
+  string active_mission_key = 3;
+
+  message Body {
+    string objective_id = 1;
+    .sc.external.common.mission.v1.MissionObjectiveState state = 2;
+  }
+}
+
+message CompleteObjectiveResponse {}
+
+message QueryMissionsRequest {
+  .sc.external.common.api.v1.Query query = 1;
+}
+
+message QueryMissionsResponse {
+  repeated .sc.external.common.mission.v1.ActiveMission missions = 1;
+  .sc.external.common.api.v1.PaginationInfo page_info = 2;
+}
+
+message QueryMissionLogsRequest {
+  .sc.external.common.api.v1.Query query = 1;
+}
+
+message QueryMissionLogsResponse {
+  repeated .sc.external.common.mission.v1.MissionLog logs = 1;
+  .sc.external.common.api.v1.PaginationInfo page_info = 2;
+}
+

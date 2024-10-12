@@ -315,6 +315,24 @@ message InventoryQuery {
   .sc.external.common.api.v1.PaginationSort sort = 4;
 }
 
+message EntityStowContextFilter {
+  oneof filter_type {
+    .sc.external.services.entitygraph.v1.EntityStowContextCompositeFilter composite_filter = 1;
+    .sc.external.services.entitygraph.v1.PropertyFilter property_filter = 2;
+  }
+}
+
+message EntityStowContextCompositeFilter {
+  .sc.external.services.entitygraph.v1.LogicalOperator operator = 1;
+  repeated .sc.external.services.entitygraph.v1.EntityStowContextFilter filters = 2;
+}
+
+message EntityStowContextQuery {
+  .sc.external.services.entitygraph.v1.EntityStowContextFilter filter = 1;
+  .sc.external.common.api.v1.PaginationArguments pagination = 2;
+  .sc.external.common.api.v1.PaginationSort sort = 3;
+}
+
 enum ComparisonOperator {
   COMPARISON_OPERATOR_UNSPECIFIED = 0;
   COMPARISON_OPERATOR_LESS_THAN = 1;

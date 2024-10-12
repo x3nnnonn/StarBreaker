@@ -3,8 +3,6 @@ syntax = "proto3";
 package sc.internal.services.fleet.v1;
 
 import "google/protobuf/any.proto";
-import "sc/internal/services/fleet/v1/status.proto";
-import "sc/external/common/network/v1/types.proto";
 
 message JoinParameters {
   string fleet = 1;
@@ -12,16 +10,17 @@ message JoinParameters {
 }
 
 message Claim {
-  string type = 1;
-  repeated .sc.internal.services.fleet.v1.UnitStatus.Role roles = 2;
-  repeated string profiles = 3;
-  .sc.external.common.network.v1.Region region = 4;
-  .sc.internal.services.fleet.v1.JoinParameters join_parameters = 5;
+  string product = 1;
+  map<string, string> labels = 2;
+  .sc.internal.services.fleet.v1.JoinParameters join_parameters = 3;
+
 }
 
 message ClaimUnitRequest {
   repeated .sc.internal.services.fleet.v1.Claim claims = 1;
 }
 
-message ClaimUnitResponse {}
+message ClaimUnitResponse {
+  repeated string unit_ids = 1;
+}
 

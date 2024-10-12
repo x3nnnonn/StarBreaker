@@ -43,6 +43,7 @@ service EntityGraphService {
   rpc GetOverloadControlMetrics ( .sc.internal.services.entitygraph.v1.GetOverloadControlMetricsRequest ) returns ( .sc.internal.services.entitygraph.v1.GetOverloadControlMetricsResponse );
   rpc ContainerQueryStream ( .sc.internal.services.entitygraph.v1.ContainerQueryStreamRequest ) returns ( .sc.internal.services.entitygraph.v1.ContainerQueryStreamResponse );
   rpc GetEntitiesRoots ( .sc.internal.services.entitygraph.v1.GetEntitiesRootsRequest ) returns ( .sc.internal.services.entitygraph.v1.GetEntitiesRootsResponse );
+  rpc GetEntityStowContexts ( .sc.internal.services.entitygraph.v1.GetEntityStowContextsRequest ) returns ( .sc.internal.services.entitygraph.v1.GetEntityStowContextsResponse );
   rpc MoveAll ( .sc.internal.services.entitygraph.v1.MoveAllRequest ) returns ( .sc.internal.services.entitygraph.v1.MoveAllResponse );
 }
 
@@ -335,6 +336,14 @@ message GetEntitiesRootsRequest {
 
 message GetEntitiesRootsResponse {
   .sc.external.services.entitygraph.v1.GetEntitiesRootsResponseBody body = 1;
+}
+
+message GetEntityStowContextsRequest {
+  .sc.external.services.entitygraph.v1.GetEntityStowContextsRequestBody body = 1;
+}
+
+message GetEntityStowContextsResponse {
+  .sc.external.services.entitygraph.v1.GetEntityStowContextsResponseBody body = 1;
 }
 
 message MoveAllRequest {

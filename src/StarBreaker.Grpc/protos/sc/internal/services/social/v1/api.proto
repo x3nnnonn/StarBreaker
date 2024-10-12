@@ -26,6 +26,8 @@ service SocialService {
   rpc MuteMember ( .sc.internal.services.social.v1.MuteMemberRequest ) returns ( .sc.internal.services.social.v1.MuteMemberResponse );
   rpc UnmuteMember ( .sc.internal.services.social.v1.UnmuteMemberRequest ) returns ( .sc.internal.services.social.v1.UnmuteMemberResponse );
   rpc ListMutes ( .sc.internal.services.social.v1.ListMutesRequest ) returns ( .sc.internal.services.social.v1.ListMutesResponse );
+  rpc AddGroupModerator ( .sc.internal.services.social.v1.AddGroupModeratorRequest ) returns ( .sc.internal.services.social.v1.AddGroupModeratorResponse );
+  rpc RemoveGroupModerator ( .sc.internal.services.social.v1.RemoveGroupModeratorRequest ) returns ( .sc.internal.services.social.v1.RemoveGroupModeratorResponse );
 }
 
 message CreateGroupRequest {
@@ -36,6 +38,7 @@ message CreateGroupRequest {
   .sc.external.services.social.v1.GroupSettings settings = 5;
   repeated .sc.external.services.social.v1.GroupMember members = 6;
   string parent_urn = 7;
+  repeated string moderators = 8;
 }
 
 message CreateGroupResponse {
@@ -181,4 +184,18 @@ message ListMutesRequest {
 message ListMutesResponse {
   repeated .sc.external.services.social.v1.Mute mutes = 1;
 }
+
+message AddGroupModeratorRequest {
+  string group_id = 1;
+  string moderator_urn = 2;
+}
+
+message AddGroupModeratorResponse {}
+
+message RemoveGroupModeratorRequest {
+  string group_id = 1;
+  string moderator_urn = 2;
+}
+
+message RemoveGroupModeratorResponse {}
 

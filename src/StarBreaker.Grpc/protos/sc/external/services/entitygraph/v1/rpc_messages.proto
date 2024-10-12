@@ -3,6 +3,7 @@ syntax = "proto3";
 package sc.external.services.entitygraph.v1;
 
 import "google/rpc/status.proto";
+import "google/rpc/error_details.proto";
 import "sc/external/common/api/v1/pagination.proto";
 import "sc/external/services/entitygraph/v1/entity_commands.proto";
 import "sc/external/services/entitygraph/v1/container_commands.proto";
@@ -375,6 +376,15 @@ message GetEntitiesRootsResponseBody {
     .sc.external.services.entitygraph.v1.Node root = 2;
     .sc.external.services.entitygraph.v1.EntityGraph graph = 3;
   }
+}
+
+message GetEntityStowContextsRequestBody {
+  .sc.external.services.entitygraph.v1.EntityStowContextQuery query = 1;
+}
+
+message GetEntityStowContextsResponseBody {
+  .sc.external.common.api.v1.PaginationInfo page_info = 1;
+  repeated .sc.external.services.entitygraph.v1.EntityStowContext results = 2;
 }
 
 message MoveAllRequestBody {

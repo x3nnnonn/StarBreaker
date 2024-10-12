@@ -37,6 +37,8 @@ message MemberJoined {
 message MemberLeft {
   string group_id = 1;
   string member_urn = 2;
+  bool kicked = 3;
+  string kicked_by_urn = 4;
 }
 
 message LeadershipTransferred {
@@ -62,6 +64,22 @@ message GroupCreated {
   .sc.external.services.social.v1.Group group = 1;
 }
 
+message ModeratorAdded {
+  string group_id = 1;
+  string member_urn = 2;
+}
+
+message ModeratorRemoved {
+  string group_id = 1;
+  string member_urn = 2;
+}
+
+message MemberReadyStatusChanged {
+  string group_id = 1;
+  string member_urn = 2;
+  bool ready = 3;
+}
+
 message InvitationReceived {
   .sc.external.services.social.v1.Invitation invitation = 1;
 }
@@ -73,5 +91,6 @@ message JoinedGroup {
 message LeftGroup {
   string group_id = 1;
   bool kicked = 2;
+  string kicked_by_urn = 3;
 }
 

@@ -5,8 +5,6 @@ package sc.internal.services.fleet.v1;
 message Target {
   string host = 1;
   uint32 port = 2;
-  string uri = 3;
-  string job_label = 4;
 }
 
 message MetricsTargetsRequest {}

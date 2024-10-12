@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package sc.external.services.contract_broker.v1;
+
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "google/api/annotations.proto";
+import "sc/external/common/mission/v1/contracts.proto";
+
+service ContractBrokerService {
+  rpc QueryAvailableContracts ( .sc.external.services.contract_broker.v1.QueryAvailableContractsRequest ) returns ( .sc.external.services.contract_broker.v1.QueryAvailableContractsResponse );
+}
+
+message QueryAvailableContractsRequest {
+  string shard_id = 1;
+  repeated uint32 location_ids = 2;
+  uint64 player_id = 3;
+}
+
+message QueryAvailableContractsResponse {
+  repeated .sc.external.common.mission.v1.MissionContract contracts = 1;
+}
+

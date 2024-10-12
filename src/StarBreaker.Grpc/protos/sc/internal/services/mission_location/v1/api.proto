@@ -1,0 +1,115 @@
+syntax = "proto3";
+
+package sc.internal.services.mission_location.v1;
+
+import "sc/external/common/mission/v1/locations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+service MissionLocationService {
+  rpc MakeReservation ( .sc.internal.services.mission_location.v1.MakeReservationRequest ) returns ( .sc.internal.services.mission_location.v1.MakeReservationResponse );
+  rpc CancelReservation ( .sc.internal.services.mission_location.v1.CancelReservationRequest ) returns ( .sc.internal.services.mission_location.v1.CancelReservationResponse );
+  rpc OccupyReservation ( .sc.internal.services.mission_location.v1.OccupyReservationRequest ) returns ( .sc.internal.services.mission_location.v1.OccupyReservationResponse );
+  rpc AcquireLocation ( .sc.internal.services.mission_location.v1.AcquireLocationRequest ) returns ( .sc.internal.services.mission_location.v1.AcquireLocationResponse );
+  rpc ReleaseLocation ( .sc.internal.services.mission_location.v1.ReleaseLocationRequest ) returns ( .sc.internal.services.mission_location.v1.ReleaseLocationResponse );
+  rpc ReleaseShard ( .sc.internal.services.mission_location.v1.ReleaseShardRequest ) returns ( .sc.internal.services.mission_location.v1.ReleaseShardResponse );
+  rpc QueryLocations ( .sc.internal.services.mission_location.v1.QueryLocationsRequest ) returns ( .sc.internal.services.mission_location.v1.QueryLocationsResponse );
+  rpc QueryLocationsByContract ( .sc.internal.services.mission_location.v1.QueryLocationsByContractRequest ) returns ( .sc.internal.services.mission_location.v1.QueryLocationsByContractResponse );
+}
+
+message MakeReservationRequest {
+  repeated .sc.internal.services.mission_location.v1.MakeReservationRequest.Body reservations = 1;
+
+  message Body {
+    uint64 location_entity_id = 1;
+    string shard_id = 2;
+    string contract_id = 3;
+    string contract_slot_type = 4;
+  }
+}
+
+message MakeReservationResponse {
+  repeated .sc.external.common.mission.v1.MissionLocation locations = 1;
+}
+
+message CancelReservationRequest {
+  repeated .sc.internal.services.mission_location.v1.CancelReservationRequest.Body cancellations = 1;
+
+  message Body {
+    uint64 location_entity_id = 1;
+    string shard_id = 2;
+    string contract_id = 3;
+    string contract_slot_type = 4;
+  }
+}
+
+message CancelReservationResponse {}
+
+message AcquireLocationRequest {
+  repeated .sc.internal.services.mission_location.v1.AcquireLocationRequest.Body acquisions = 1;
+
+  message Body {
+    uint64 location_entity_id = 1;
+    string shard_id = 2;
+    string contract_id = 3;
+    string contract_slot_type = 4;
+    int32 max_contracts_for_slot = 5;
+  }
+}
+
+message AcquireLocationResponse {}
+
+message OccupyReservationRequest {
+  repeated .sc.internal.services.mission_location.v1.OccupyReservationRequest.Body occupations = 1;
+
+  message Body {
+    uint64 location_entity_id = 1;
+    string shard_id = 2;
+    .google.protobuf.Timestamp expiry = 3;
+  }
+}
+
+message OccupyReservationResponse {}
+
+message ReleaseLocationRequest {
+  repeated .sc.internal.services.mission_location.v1.ReleaseLocationRequest.Body releases = 1;
+
+  message Body {
+    uint64 location_entity_id = 1;
+    string shard_id = 2;
+    string contract_id = 3;
+    string contract_slot_type = 4;
+  }
+}
+
+message ReleaseLocationResponse {}
+
+message ReleaseShardRequest {
+  repeated .sc.internal.services.mission_location.v1.ReleaseShardRequest.Body releases = 1;
+
+  message Body {
+    string shard_id = 1;
+  }
+}
+
+message ReleaseShardResponse {}
+
+message QueryLocationsRequest {
+  string shard_id = 1;
+  repeated uint64 location_entity_id = 2;
+}
+
+message QueryLocationsResponse {
+  repeated .sc.external.common.mission.v1.MissionLocation locations = 1;
+}
+
+message QueryLocationsByContractRequest {
+  string shard_id = 1;
+  repeated string contract_id = 2;
+}
+
+message QueryLocationsByContractResponse {
+  repeated .sc.external.common.mission.v1.MissionLocation locations = 1;
+}
+
