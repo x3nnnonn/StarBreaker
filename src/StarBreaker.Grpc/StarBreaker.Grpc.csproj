@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+    <!--Note: Don't add code to this project, keep it just the grpc clients. Otherwise compilation takes ages-->
 
     <PropertyGroup>
-        <OutputType>exe</OutputType>
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
