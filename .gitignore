@@ -200,10 +200,3 @@ src/.idea/
 .vscode/
 
 research/*
-
-#exclude CIG protos, we don't want to get in trouble
-src/StarBreaker.Grpc/protos/*
-
-#un-exclude the ones we need that happen to be in the same folder :)
-!src/StarBreaker.Grpc/protos/google/
-!src/StarBreaker.Grpc/protos/protoc-gen-openapiv2/
