@@ -1,27 +1,25 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <!--Note: Don't add code to this project, keep it just the grpc clients. Otherwise compilation takes ages-->
+  <!--Note: Don't add code to this project, keep it just
+  the grpc clients. Otherwise compilation takes ages-->
 
-    <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <NoWarn>CS8981</NoWarn>
-    </PropertyGroup>
-    
-    <ItemGroup>
-        <Protobuf ProtoRoot="protos" Include="protos\**\*.proto"/>
-    </ItemGroup>
+  <PropertyGroup>
+    <NoWarn>CS8981</NoWarn>
+  </PropertyGroup>
 
-    <ItemGroup>
-        <PackageReference Include="Google.Protobuf" Version="3.18.0" />
-        <PackageReference Include="Grpc.Net.Client" Version="2.52.0" />
-        <PackageReference Include="Grpc.Tools" Version="2.40.0">
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
-    </ItemGroup>
+  <ItemGroup>
+    <Protobuf ProtoRoot="protos" Include="protos\**\*.proto" />
+  </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\StarBreaker.Common\StarBreaker.Common.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.18.0" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.52.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.40.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\StarBreaker.Common\StarBreaker.Common.csproj" />
+  </ItemGroup>
 </Project>
