@@ -207,3 +207,4 @@ src/StarBreaker.Grpc/protos/*
 #un-exclude the ones we need that happen to be in the same folder :)
 !src/StarBreaker.Grpc/protos/google/
 !src/StarBreaker.Grpc/protos/protoc-gen-openapiv2/
+src/StarBreaker.Debug/env.json
