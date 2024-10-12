@@ -26,6 +26,7 @@ message GroupSettings {
   .sc.external.services.social.v1.ChatSettings chat = 8;
   .sc.external.services.social.v1.InviteMode invite_mode = 9;
   bool presence_aware = 10;
+  int32 ttl = 11;
 }
 
 message RTCSettings {
@@ -52,6 +53,9 @@ message Group {
   .sc.external.services.social.v1.GroupSettings settings = 6;
   int64 created_at = 7;
   string parent_urn = 8;
+  repeated string moderators = 10;
+  repeated string ready_members = 11;
+  bool is_ready = 12;
 }
 
 message GroupMemberPreferences {
@@ -72,13 +76,13 @@ message GroupFilters {
   repeated .sc.external.services.social.v1.GroupType types = 1;
 }
 
-message InstanceInfo {
-  string id = 1;
-  string location = 3;
-  uint64 location_id = 2;
-  int32 player_count = 4;
-  int32 total_players = 5;
-  string shard_id = 6;
+message GroupExpiredEvent {
+  string group_id = 1;
+}
+
+message AutoLeaveTriggeredEvent {
+  string group_id = 1;
+  string member_urn = 2;
 }
 
 enum InviteMode {

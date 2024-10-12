@@ -22,11 +22,25 @@ message Transaction {
   string ledger_name = 3;
   uint32 version = 4;
   string log_message = 5;
-  string transaction_type = 11;
-  string transaction_flow = 12;
-  string entity_class_name = 13;
-  uint32 entity_class_crc = 14;
-  uint32 item_quantity = 15;
+  map<string, string> metadata = 6;
+
+}
+
+message TransferTransaction {
+  string id = 1;
+  .sc.external.services.ledger.v1.TransferTransaction.LedgerIdentifier from = 2;
+  .sc.external.services.ledger.v1.TransferTransaction.LedgerIdentifier to = 3;
+  .sc.external.services.ledger.v1.TransferState state = 4;
+  .sc.external.services.ledger.v1.Funds money = 5;
+  uint64 tax = 6;
+  string log_message = 7;
+  map<string, string> metadata = 8;
+
+  message LedgerIdentifier {
+    string owner_urn = 1;
+    string ledger_name = 2;
+    uint32 version = 3;
+  }
 }
 
 message Funds {
@@ -45,11 +59,17 @@ message LedgerHistory {
   uint64 change_in_funds = 8;
   string event_name = 9;
   string log_message = 10;
-  string transaction_type = 11;
-  string transaction_flow = 12;
-  string entity_class_name = 13;
-  uint32 entity_class_crc = 14;
-  uint32 item_quantity = 15;
+  string rollback_log_id = 11;
+  map<string, string> metadata = 12;
+
+}
+
+enum TransferState {
+  TRANSFER_STATE_INVALID_UNSPECIFIED = 0;
+  TRANSFER_STATE_INITALIZED = 1;
+  TRANSFER_STATE_COMMITED = 2;
+  TRANSFER_STATE_FAILED = 3;
+  TRANSFER_STATE_ROLLED_BACK = 4;
 }
 
 enum Currency {

@@ -4,6 +4,7 @@ package sc.external.services.social.v1;
 
 import "google/api/annotations.proto";
 import "sc/external/services/social/v1/types.proto";
+import "sc/external/common/shard/v1/types.proto";
 import "sc/external/common/api/v1/pagination.proto";
 
 service SocialService {
@@ -25,6 +26,9 @@ service SocialService {
   rpc ListPendingInvitations ( .sc.external.services.social.v1.ListPendingInvitationsRequest ) returns ( .sc.external.services.social.v1.ListPendingInvitationsResponse );
   rpc GetInstanceInfo ( .sc.external.services.social.v1.GetInstanceInfoRequest ) returns ( .sc.external.services.social.v1.GetInstanceInfoResponse );
   rpc GetSubscriptionKey ( .sc.external.services.social.v1.GetSubscriptionKeyRequest ) returns ( .sc.external.services.social.v1.GetSubscriptionKeyResponse );
+  rpc AddGroupModerator ( .sc.external.services.social.v1.AddGroupModeratorRequest ) returns ( .sc.external.services.social.v1.AddGroupModeratorResponse );
+  rpc RemoveGroupModerator ( .sc.external.services.social.v1.RemoveGroupModeratorRequest ) returns ( .sc.external.services.social.v1.RemoveGroupModeratorResponse );
+  rpc SetMemberReadyStatus ( .sc.external.services.social.v1.SetMemberReadyStatusRequest ) returns ( .sc.external.services.social.v1.SetMemberReadyStatusResponse );
 }
 
 message CreateDMGroupRequest {
@@ -161,6 +165,27 @@ message GetInstanceInfoRequest {
 }
 
 message GetInstanceInfoResponse {
-  .sc.external.services.social.v1.InstanceInfo instance_info = 1;
+  .sc.external.common.shard.v1.ShardInfo shard_info = 1;
 }
+
+message AddGroupModeratorRequest {
+  string group_id = 1;
+  string moderator_urn = 2;
+}
+
+message AddGroupModeratorResponse {}
+
+message RemoveGroupModeratorRequest {
+  string group_id = 1;
+  string moderator_urn = 2;
+}
+
+message RemoveGroupModeratorResponse {}
+
+message SetMemberReadyStatusRequest {
+  string group_id = 1;
+  bool ready = 2;
+}
+
+message SetMemberReadyStatusResponse {}
 

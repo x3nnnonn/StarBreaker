@@ -4,6 +4,7 @@ package sc.internal.services.entitygraph.v1;
 
 import "google/protobuf/any.proto";
 import "google/rpc/status.proto";
+import "google/rpc/error_details.proto";
 
 message EnqueuedRequest {
   string name = 1;

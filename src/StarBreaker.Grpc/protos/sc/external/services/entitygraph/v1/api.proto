@@ -14,6 +14,7 @@ service EntityGraphService {
   rpc MutateEntities ( .sc.external.services.entitygraph.v1.MutateEntitiesRequest ) returns ( .sc.external.services.entitygraph.v1.MutateEntitiesResponse );
   rpc InventoryQuery ( .sc.external.services.entitygraph.v1.InventoryQueryRequest ) returns ( .sc.external.services.entitygraph.v1.InventoryQueryResponse );
   rpc ContainerQueryStream ( .sc.external.services.entitygraph.v1.ContainerQueryStreamRequest ) returns ( .sc.external.services.entitygraph.v1.ContainerQueryStreamResponse );
+  rpc GetEntityStowContexts ( .sc.external.services.entitygraph.v1.GetEntityStowContextsRequest ) returns ( .sc.external.services.entitygraph.v1.GetEntityStowContextsResponse );
 }
 
 message ContainerQueryRequest {
@@ -70,5 +71,13 @@ message ContainerQueryStreamRequest {
 
 message ContainerQueryStreamResponse {
   .sc.external.services.entitygraph.v1.ContainerQueryStreamResponseBody body = 1;
+}
+
+message GetEntityStowContextsRequest {
+  .sc.external.services.entitygraph.v1.GetEntityStowContextsRequestBody body = 1;
+}
+
+message GetEntityStowContextsResponse {
+  .sc.external.services.entitygraph.v1.GetEntityStowContextsResponseBody body = 1;
 }
 

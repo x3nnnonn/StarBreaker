@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package sc.external.services.mission_service.v1;
+
+import "sc/external/common/mission/v1/missions.proto";
+import "sc/external/common/command/v1/types.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "google/api/annotations.proto";
+
+service MissionService {
+  rpc QueryActiveMissions ( .sc.external.services.mission_service.v1.QueryActiveMissionsRequest ) returns ( .sc.external.services.mission_service.v1.QueryActiveMissionsResponse );
+  rpc QueryMissions ( .sc.external.services.mission_service.v1.QueryMissionsRequest ) returns ( .sc.external.services.mission_service.v1.QueryMissionsResponse );
+  rpc ShareMission ( .sc.external.services.mission_service.v1.ShareMissionRequest ) returns ( .sc.external.services.mission_service.v1.ShareMissionResponse );
+  rpc LeaveMission ( .sc.external.services.mission_service.v1.LeaveMissionRequest ) returns ( .sc.external.services.mission_service.v1.LeaveMissionResponse );
+}
+
+message QueryActiveMissionsRequest {
+  repeated .sc.external.services.mission_service.v1.QueryActiveMissionsRequest.Body queries = 1;
+
+  message Body {
+    string urn = 1;
+  }
+}
+
+message QueryActiveMissionsResponse {
+  repeated .sc.external.services.mission_service.v1.QueryActiveMissionsResponse.Body mission_ids = 1;
+
+  message Body {
+    string mission_id = 1;
+  }
+}
+
+message QueryMissionsRequest {
+  repeated .sc.external.services.mission_service.v1.QueryMissionsRequest.Body queries = 1;
+
+  message Body {
+    string mission_id = 1;
+  }
+}
+
+message QueryMissionsResponse {
+  repeated .sc.external.common.mission.v1.ActiveMissionInfo missions = 1;
+}
+
+message ShareMissionRequest {
+  .sc.external.common.command.v1.CommandArguments arguments = 1;
+  string mission_id = 2;
+  string owner_urn = 3;
+  repeated string player_urns = 4;
+}
+
+message ShareMissionResponse {}
+
+message LeaveMissionRequest {
+  string mission_id = 1;
+  repeated .sc.external.services.mission_service.v1.LeaveMissionRequest.Body missions = 2;
+  .sc.external.common.command.v1.CommandArguments arguments = 3;
+
+  message Body {
+    string player_urn = 1;
+    string reason = 2;
+  }
+}
+
+message LeaveMissionResponse {}
+

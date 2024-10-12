@@ -15,6 +15,7 @@ service LedgerService {
   rpc GetFunds ( .sc.internal.services.ledger.v1.GetFundsRequest ) returns ( .sc.internal.services.ledger.v1.GetFundsResponse );
   rpc Deposit ( .sc.internal.services.ledger.v1.DepositRequest ) returns ( .sc.internal.services.ledger.v1.DepositResponse );
   rpc Withdraw ( .sc.internal.services.ledger.v1.WithdrawRequest ) returns ( .sc.internal.services.ledger.v1.WithdrawResponse );
+  rpc Transfer ( .sc.internal.services.ledger.v1.TransferRequest ) returns ( .sc.internal.services.ledger.v1.TransferResponse );
   rpc Copy ( .sc.internal.services.ledger.v1.CopyRequest ) returns ( .sc.internal.services.ledger.v1.CopyResponse );
   rpc QueryHistory ( .sc.internal.services.ledger.v1.QueryHistoryRequest ) returns ( .sc.internal.services.ledger.v1.QueryHistoryResponse );
 }
@@ -47,6 +48,12 @@ message DepositRequest {
 }
 
 message DepositResponse {}
+
+message TransferRequest {
+  .sc.external.services.ledger.v1.TransferTransaction transaction = 1;
+}
+
+message TransferResponse {}
 
 message WithdrawRequest {
   .sc.external.services.ledger.v1.Transaction transaction = 1;

@@ -172,7 +172,9 @@ message CreateInfractionRequest {
   }
 }
 
-message CreateInfractionResponse {}
+message CreateInfractionResponse {
+  repeated string infraction_ids = 1;
+}
 
 message EraseInfractionRequest {
   repeated .sc.internal.services.discipline.v1.EraseInfractionRequest.Body erasures = 1;

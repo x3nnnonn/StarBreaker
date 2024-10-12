@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package sc.internal.services.entity_subscription.v1;
+
+message SubscriptionGroup {
+  string group_urn = 1;
+  repeated uint64 subscribers = 2;
+  repeated uint64 entities = 3;
+}
+
+message SubscriberEntities {
+  uint64 subscriber = 1;
+  repeated uint64 entities = 2;
+}
+
+message SubscriberEntitiesPushEvent {
+  .sc.internal.services.entity_subscription.v1.PushEventType event_type = 1;
+  uint64 subscriber = 2;
+  repeated uint64 entities = 3;
+}
+
+enum PushEventType {
+  PUSH_EVENT_TYPE_INVALID_UNSPECIFIED = 0;
+  PUSH_EVENT_TYPE_ADDED = 1;
+  PUSH_EVENT_TYPE_REMOVED = 2;
+}
+
