@@ -14,46 +14,32 @@ public class ReadFromBinary
 
         _file = file;
     }
+    
+    private static bool IsRelevant(FileDescriptor f)
+    {
+        //sc and cig are fairly obvious, the other one seems to be arena commander statistics of some kind? a bit odd that it's different.
+        return f.Package.StartsWith("sc", StringComparison.InvariantCultureIgnoreCase) ||
+               f.Package.StartsWith("cig", StringComparison.InvariantCultureIgnoreCase) ||
+               string.Equals(f.Package, "service_statistics", StringComparison.InvariantCultureIgnoreCase);
+    }
 
     public void Generate(string protoPath)
     {
         var protos = GetDescriptorsFromFile();
         var fileDescriptors = FromFileDescriptorProtos(protos);
-
         var targetFolder = Directory.CreateDirectory(protoPath);
         
-        foreach (var fileDescriptor in fileDescriptors)
+        foreach (var fileDescriptor in fileDescriptors.Where(IsRelevant))
         {
             var path = Path.Combine(targetFolder.FullName, fileDescriptor.Name);
             var dir = Path.GetDirectoryName(path);
             if (!string.IsNullOrWhiteSpace(dir)) Directory.CreateDirectory(dir);
-            var protoText = fileDescriptor.ToProtoString();
+            var protoText = fileDescriptor.ToProtoString(new DynamicGrpcPrinterOptions()
+            {
+                FullyQualified = true
+            });
             File.WriteAllText(path, protoText);
         }
-
-        // var xyz = fileDescriptors.Select(x => x.ToProtoString()).ToArray();
-        // Console.WriteLine($"Found {protos.Count} protos");
-
-        // var set = new FileDescriptorSet();
-        // foreach (var proto in protos)
-        // {
-        //     proto.IncludeInOutput = true;
-        //     set.Files.Add(proto);
-        // }
-        //
-        // set.Process();
-        //
-        // var codeFiles = CSharpCodeGenerator.Default.Generate(set).ToArray();
-        //
-        // //TODO: this is pretty broken sadly :(
-        // //the upper part works though!
-        // foreach (var codeFile in codeFiles)
-        // {
-        //     var path = Path.Combine(protoPath, codeFile.Name);
-        //     var dir = Path.GetDirectoryName(path);
-        //     if (!string.IsNullOrWhiteSpace(dir)) Directory.CreateDirectory(dir);
-        //     File.WriteAllText(path, FixCodeFile(codeFile.Text));
-        // }
     }
 
     private List<FileDescriptorProto> GetDescriptorsFromFile()
@@ -141,50 +127,5 @@ public class ReadFromBinary
 
         // Step 2 - Build FileDescriptor from properly ordered list
         return FileDescriptor.BuildFromByteStrings(orderedList);
-    }
-
-    private static string FixCodeFile(string codeFile)
-    {
-        var lines = codeFile.Split(Environment.NewLine);
-        for (var i = 0; i < lines.Length; i++)
-        {
-            var line = lines[i];
-            if (line.Contains("public ."))
-            {
-                lines[i] = line.Replace("public .", "public ");
-            }
-
-            if (line.Contains("private ."))
-            {
-                lines[i] = line.Replace("private .", "private ");
-            }
-
-            if (line.Contains("List<."))
-            {
-                lines[i] = line.Replace("List<.", "List<");
-            }
-
-            if (line.Contains("(."))
-            {
-                lines[i] = line.Replace("(.", "(");
-            }
-
-            if (line.Contains(", ."))
-            {
-                lines[i] = line.Replace(", .", ", ");
-            }
-
-            if (line.Contains("sc.internal."))
-            {
-                lines[i] = line.Replace("sc.internal.", "sc.@internal.");
-            }
-
-            if (line.Contains("this ."))
-            {
-                lines[i] = line.Replace("this .", "this ");
-            }
-        }
-
-        return string.Join("\n", lines);
     }
 }

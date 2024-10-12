@@ -4,17 +4,14 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <NoWarn>CS8981</NoWarn>
     </PropertyGroup>
     
     <ItemGroup>
-        <Protobuf Include="protos\**\*.proto" />
+        <Protobuf ProtoRoot="protos" Include="protos\**\*.proto"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="protobuf-net" Version="3.2.30" />
-        <PackageReference Include="protobuf-net.Core" Version="3.2.30" />
-        <PackageReference Include="protobuf-net.Reflection" Version="3.2.12" />
-
         <PackageReference Include="Google.Protobuf" Version="3.18.0" />
         <PackageReference Include="Grpc.Net.Client" Version="2.52.0" />
         <PackageReference Include="Grpc.Tools" Version="2.40.0">
@@ -22,8 +19,6 @@
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
     </ItemGroup>
-    
-    
 
     <ItemGroup>
       <ProjectReference Include="..\StarBreaker.Common\StarBreaker.Common.csproj" />
