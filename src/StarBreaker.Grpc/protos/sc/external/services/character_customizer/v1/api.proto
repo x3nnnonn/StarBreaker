@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package sc.external.services.character_customizer.v1;
+
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "sc/external/common/types/v1/customization.proto";
+
+service CharacterCustomizerService {
+  rpc SaveCharacterCustomizations ( .sc.external.services.character_customizer.v1.SaveCharacterCustomizationsRequest ) returns ( .sc.external.services.character_customizer.v1.SaveCharacterCustomizationsResponse );
+}
+
+message SaveCharacterCustomizationsRequest {
+  .sc.external.common.types.v1.CharacterCustomization character_customizations = 1;
+}
+
+message SaveCharacterCustomizationsResponse {}
+

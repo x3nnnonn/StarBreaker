@@ -1,0 +1,118 @@
+syntax = "proto3";
+
+package sc.external.services.reputation.v1;
+
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "google/api/annotations.proto";
+import "sc/external/services/reputation/v1/types.proto";
+import "sc/external/common/api/v1/pagination.proto";
+import "sc/external/common/api/v1/query.proto";
+
+service ReputationService {
+  rpc Get ( .sc.external.services.reputation.v1.GetRequest ) returns ( .sc.external.services.reputation.v1.GetResponse );
+  rpc QueryReputations ( .sc.external.services.reputation.v1.QueryReputationsRequest ) returns ( .sc.external.services.reputation.v1.QueryReputationsResponse );
+  rpc QueryFavorites ( .sc.external.services.reputation.v1.QueryFavoritesRequest ) returns ( .sc.external.services.reputation.v1.QueryFavoritesResponse );
+  rpc GetPreferences ( .sc.external.services.reputation.v1.GetPreferencesRequest ) returns ( .sc.external.services.reputation.v1.GetPreferencesResponse );
+  rpc SetPairs ( .sc.external.services.reputation.v1.SetPairsRequest ) returns ( .sc.external.services.reputation.v1.SetPairsResponse );
+  rpc AddFavorites ( .sc.external.services.reputation.v1.AddFavoritesRequest ) returns ( .sc.external.services.reputation.v1.AddFavoritesResponse );
+  rpc RemoveFavorites ( .sc.external.services.reputation.v1.RemoveFavoritesRequest ) returns ( .sc.external.services.reputation.v1.RemoveFavoritesResponse );
+  rpc AddFavoriteEntities ( .sc.external.services.reputation.v1.AddFavoriteEntitiesRequest ) returns ( .sc.external.services.reputation.v1.AddFavoriteEntitiesResponse );
+  rpc RemoveFavoriteEntities ( .sc.external.services.reputation.v1.RemoveFavoriteEntitiesRequest ) returns ( .sc.external.services.reputation.v1.RemoveFavoriteEntitiesResponse );
+  rpc GetScoreHistory ( .sc.external.services.reputation.v1.GetScoreHistoryRequest ) returns ( .sc.external.services.reputation.v1.GetScoreHistoryResponse );
+}
+
+message GetRequest {
+  string entity = 1;
+  string scope = 2;
+}
+
+message GetResponse {
+  .sc.external.services.reputation.v1.VersionedReputation reputation = 1;
+}
+
+message QueryReputationsRequest {
+  .sc.external.common.api.v1.Query query = 4;
+}
+
+message QueryReputationsResponse {
+  repeated .sc.external.services.reputation.v1.VersionedReputation results = 1;
+  .sc.external.common.api.v1.PaginationInfo page_info = 2;
+}
+
+message QueryFavoritesRequest {
+  .sc.external.common.api.v1.Query query = 4;
+}
+
+message QueryFavoritesResponse {
+  repeated .sc.external.services.reputation.v1.VersionedReputation results = 1;
+  .sc.external.common.api.v1.PaginationInfo page_info = 2;
+}
+
+message GetPreferencesRequest {}
+
+message GetPreferencesResponse {
+  .sc.external.services.reputation.v1.GetPreferencesResponse.PlayerPreferences preferences = 1;
+
+  message PlayerPreferences {
+    string id = 1;
+    string player = 2;
+    .sc.external.services.reputation.v1.Favorites favorites = 3;
+    map<string, string> preference_pairs = 4;
+
+  }
+}
+
+message SetPairsRequest {
+  map<string, string> preference_pairs = 1;
+
+}
+
+message SetPairsResponse {}
+
+message AddFavoritesRequest {
+  repeated string favorite_reputations = 1;
+}
+
+message AddFavoritesResponse {}
+
+message RemoveFavoritesRequest {
+  repeated string favorite_reputations = 1;
+}
+
+message RemoveFavoritesResponse {}
+
+message AddFavoriteEntitiesRequest {
+  repeated string favorite_entities = 1;
+}
+
+message AddFavoriteEntitiesResponse {}
+
+message RemoveFavoriteEntitiesRequest {
+  repeated string favorite_entities = 1;
+}
+
+message RemoveFavoriteEntitiesResponse {}
+
+message GetScoreHistoryRequest {
+  repeated .sc.external.services.reputation.v1.GetScoreHistoryRequest.ScoreHistory reputation_scores = 1;
+
+  message ScoreHistory {
+    string reputation_id = 1;
+    uint32 days = 2;
+  }
+}
+
+message GetScoreHistoryResponse {
+  repeated .sc.external.services.reputation.v1.GetScoreHistoryResponse.ScoresHistory reputation_scores = 1;
+
+  message ScoresHistory {
+    string reputation_id = 1;
+    repeated .sc.external.services.reputation.v1.GetScoreHistoryResponse.ScoresHistory.Score scores = 2;
+
+    message Score {
+      uint64 score = 1;
+      uint32 timestamp = 2;
+    }
+  }
+}
+

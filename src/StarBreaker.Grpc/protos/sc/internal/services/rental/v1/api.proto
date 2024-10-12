@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package sc.internal.services.rental.v1;
+
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "sc/internal/services/rental/v1/types.proto";
+import "sc/external/common/api/v1/pagination.proto";
+import "sc/external/common/command/v1/types.proto";
+import "sc/external/common/api/v1/query.proto";
+import "sc/external/services/entitlement/v1/types.proto";
+import "sc/external/services/rental/v1/types.proto";
+
+service RentalService {
+  rpc Rent ( .sc.internal.services.rental.v1.RentRequest ) returns ( .sc.internal.services.rental.v1.RentResponse );
+  rpc Cancel ( .sc.internal.services.rental.v1.CancelRequest ) returns ( .sc.internal.services.rental.v1.CancelResponse );
+  rpc Renew ( .sc.internal.services.rental.v1.RenewRequest ) returns ( .sc.internal.services.rental.v1.RenewResponse );
+  rpc Query ( .sc.internal.services.rental.v1.QueryRequest ) returns ( .sc.internal.services.rental.v1.QueryResponse );
+  rpc QueryHistory ( .sc.internal.services.rental.v1.QueryHistoryRequest ) returns ( .sc.internal.services.rental.v1.QueryHistoryResponse );
+}
+
+message RentRequest {
+  .sc.external.common.command.v1.CommandArguments arguments = 1;
+  .sc.internal.services.rental.v1.RentRequest.Body body = 2;
+
+  message Body {
+    string account_urn = 1;
+    string player_urn = 2;
+    .sc.external.services.entitlement.v1.EntitlementSource source = 3;
+    string name = 4;
+    string entity_class_guid = 5;
+    uint32 duration = 6;
+    bool start_now = 8;
+    string log_message = 9;
+    string target_inventory = 10;
+    .sc.external.services.entitlement.v1.NewEntityConfiguration entity_config = 11;
+  }
+}
+
+message RentResponse {
+  string id = 1;
+  string entitlement_urn = 2;
+}
+
+message CancelRequest {
+  .sc.external.common.command.v1.CommandArguments arguments = 1;
+  .sc.internal.services.rental.v1.CancelRequest.Body body = 2;
+
+  message Body {
+    string id = 1;
+    string log_message = 2;
+  }
+}
+
+message CancelResponse {}
+
+message RenewRequest {
+  .sc.external.common.command.v1.CommandArguments arguments = 1;
+  .sc.internal.services.rental.v1.RenewRequest.Body body = 2;
+
+  message Body {
+    string id = 1;
+    uint32 duration = 2;
+    string log_message = 3;
+  }
+}
+
+message RenewResponse {}
+
+message QueryRequest {
+  .sc.external.common.api.v1.Query query = 2;
+}
+
+message QueryResponse {
+  .sc.external.common.api.v1.PaginationInfo page_info = 1;
+  repeated .sc.external.services.rental.v1.Rental results = 2;
+}
+
+message QueryHistoryRequest {
+  .sc.external.common.api.v1.Query query = 2;
+}
+
+message QueryHistoryResponse {
+  .sc.external.common.api.v1.PaginationInfo page_info = 1;
+  repeated .sc.internal.services.rental.v1.RentalHistory results = 2;
+}
+

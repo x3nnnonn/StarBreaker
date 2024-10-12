@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package sc.external.services.stats.v1;
+
+import "sc/external/services/stats/v1/stat_def.proto";
+
+message LeaderboardRow {
+  string subject = 1;
+  repeated uint32 values = 2;
+  uint32 rank = 3;
+}
+
+message Leaderboard {
+  string sorted_stat_def_id = 1;
+  repeated .sc.external.services.stats.v1.LeaderboardRow rows = 2;
+  repeated .sc.external.services.stats.v1.StatDef stat_defs = 3;
+}
+
+message LeaderboardRequest {
+  string sorted_stat_def_id = 1;
+  repeated string column_stat_def_ids = 2;
+  string season = 3;
+  bool include_stat_defs = 4;
+}
+

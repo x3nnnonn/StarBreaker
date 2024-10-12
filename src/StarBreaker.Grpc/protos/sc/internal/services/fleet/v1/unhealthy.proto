@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package sc.internal.services.fleet.v1;
+
+message MarkUnhealthyRequest {
+  string unit_id = 1;
+}
+
+message MarkUnhealthyResponse {}
+

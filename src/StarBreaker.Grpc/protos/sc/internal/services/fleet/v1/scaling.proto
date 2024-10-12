@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package sc.internal.services.fleet.v1;
+
+message Scale {
+  uint32 replicas = 1;
+  string role = 2;
+  repeated string profiles = 3;
+}
+
+message ScalingProposal {
+  string fleet_id = 1;
+  repeated .sc.internal.services.fleet.v1.Scale current = 2;
+  repeated .sc.internal.services.fleet.v1.Scale target = 3;
+  repeated .sc.internal.services.fleet.v1.Scale proactive = 4;
+}
+
+message ScalingRequest {
+  repeated string fleet_ids = 1;
+}
+
+message ScalingResponse {
+  repeated .sc.internal.services.fleet.v1.ScalingProposal proposals = 1;
+}
+

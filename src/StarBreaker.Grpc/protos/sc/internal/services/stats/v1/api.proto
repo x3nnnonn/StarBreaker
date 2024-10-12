@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package sc.internal.services.stats.v1;
+
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "google/protobuf/empty.proto";
+import "sc/external/services/stats/v1/stat.proto";
+import "sc/external/services/stats/v1/stat_def.proto";
+import "sc/external/services/stats/v1/leaderboard.proto";
+import "sc/external/common/api/v1/pagination.proto";
+import "sc/external/common/api/v1/query.proto";
+
+service StatsService {
+  rpc CreateStatDefs ( .sc.internal.services.stats.v1.CreateStatDefsRequest ) returns ( .google.protobuf.Empty );
+  rpc DeleteStatDefs ( .sc.internal.services.stats.v1.DeleteStatDefsRequest ) returns ( .google.protobuf.Empty );
+  rpc UpdateStatDefs ( .sc.internal.services.stats.v1.UpdateStatDefsRequest ) returns ( .google.protobuf.Empty );
+  rpc FindStatDefs ( .sc.internal.services.stats.v1.FindStatDefsRequest ) returns ( .sc.internal.services.stats.v1.FindStatDefsResponse );
+  rpc GetLeaderboard ( .sc.internal.services.stats.v1.GetLeaderboardRequest ) returns ( .sc.internal.services.stats.v1.GetLeaderboardResponse );
+  rpc CheckoutStats ( .sc.internal.services.stats.v1.CheckoutStatsRequest ) returns ( .sc.internal.services.stats.v1.CheckoutStatsResponse );
+  rpc CheckInStats ( .sc.internal.services.stats.v1.CheckInStatsRequest ) returns ( .google.protobuf.Empty );
+}
+
+message CreateStatDefsRequest {
+  repeated .sc.external.services.stats.v1.StatDef stat_defs = 1;
+  string log_message = 2;
+}
+
+message DeleteStatDefsRequest {
+  repeated string ids = 1;
+  string log_message = 2;
+}
+
+message UpdateStatDefsRequest {
+  repeated .sc.external.services.stats.v1.StatDef stat_defs = 1;
+  string log_message = 2;
+}
+
+message FindStatDefsRequest {
+  .sc.external.common.api.v1.Query query = 4;
+}
+
+message FindStatDefsResponse {
+  repeated .sc.external.services.stats.v1.StatDef results = 1;
+  .sc.external.common.api.v1.PaginationInfo page_info = 2;
+}
+
+message CheckoutStatsRequest {
+  repeated string subjects = 1;
+  repeated string stat_def_ids = 2;
+  string season = 3;
+}
+
+message CheckoutStatsResponse {
+  repeated .sc.external.services.stats.v1.StatTable stat_table = 1;
+  string season = 2;
+}
+
+message CheckInStatsRequest {
+  repeated .sc.external.services.stats.v1.StatTable stat_table = 1;
+  string season = 2;
+}
+
+message GetLeaderboardRequest {
+  .sc.external.common.api.v1.PaginationArguments pagination = 1;
+  .sc.external.services.stats.v1.LeaderboardRequest leaderboard_request = 2;
+}
+
+message GetLeaderboardResponse {
+  .sc.external.services.stats.v1.Leaderboard results = 1;
+  .sc.external.common.api.v1.PaginationInfo page_info = 2;
+}
+
