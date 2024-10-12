@@ -1,7 +1,7 @@
 ﻿using Google.Protobuf;
 using Google.Protobuf.Reflection;
 
-namespace StarBreaker.Protobuf.Generator;
+namespace StarBreaker.Protobuf;
 
 public class ReadFromBinary
 {
