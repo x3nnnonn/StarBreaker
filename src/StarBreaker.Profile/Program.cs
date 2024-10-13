@@ -1,7 +1,12 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Globalization;
 using System.IO.Compression;
+using Humanizer;
+using StarBreaker.Common;
 using StarBreaker.CryChunkFile;
 using StarBreaker.CryXmlB;
+using StarBreaker.Forge;
 using StarBreaker.P4k;
 
 // ReSharper disable UnusedMember.Local
@@ -21,7 +26,8 @@ public static class Program
 
         //ExtrackSocPak();
         //TimeP4kExtract();
-        ExtractChunkFiles();
+        //ExtractChunkFiles();
+        FindStringCrc32();
     }
 
     private static void ExtractChunkFiles()
@@ -64,7 +70,7 @@ public static class Program
             }
         }
     }
-    
+
     private static void ExtrackSocPak()
     {
         using var zip = new ZipArchive(File.OpenRead(socpak));
@@ -88,12 +94,12 @@ public static class Program
         var sw1 = Stopwatch.StartNew();
         var p4kFile = new P4kFile(p4k);
         sw1.Stop();
-        
+
         Console.WriteLine($"Took {sw1.ElapsedMilliseconds}ms to load {p4kFile.Entries.Length} entries");
     }
-    
+
     private static void TimeZipNode()
-    {        
+    {
         var p4kFile = new P4kFile(p4k);
 
         var times = new List<long>();
@@ -105,5 +111,92 @@ public static class Program
         }
 
         Console.WriteLine($"Average: {times.Average()}ms");
+    }
+
+    private static void FindStringCrc32()
+    {
+        var uintsToTest = File.ReadAllLines("keys.txt").Select(z => uint.Parse(z[2..], NumberStyles.HexNumber)).Distinct().ToArray();
+        
+        var forge = new DataForge(@"D:\out\Data\Game.dcb");
+        var enums = forge.ExportEnums();
+        List<string> stringsToTest = new();
+        stringsToTest.AddRange(File.ReadAllLines("strings.txt").Where(x => x.Length > 4));
+        stringsToTest.AddRange(forge._database.EnumerateStrings1());
+        stringsToTest.AddRange(forge._database.EnumerateStrings2());
+        stringsToTest.AddRange(enums.Select(x => x.Key));
+        stringsToTest.AddRange(enums.SelectMany(x => x.Value));
+        foreach (var (enumName, values) in enums)
+        {
+            stringsToTest.AddRange(values.Select(x => $"{enumName}.{x}"));
+        }
+
+        var tested = 0;
+        var dict = new ConcurrentDictionary<uint, List<string>>();
+
+        var haystack = stringsToTest.SelectMany(GetVariations).ToArray();
+        var dangerous = haystack.SelectMany(x => haystack, (x, y) => $"{x}{y}");
+        
+        foreach (var str in haystack.AsParallel())
+        {
+            Interlocked.Increment(ref tested);
+            var crc = Crc32c.FromString(str);
+            if (uintsToTest.Contains(crc))
+            {
+                if (dict.TryGetValue(crc, out var list))
+                {
+                    list.Add(str);
+                }
+                else
+                {
+                    dict.TryAdd(crc, [str]);
+                }
+            }
+
+            if (tested % 5000000 == 0)
+            {
+                Console.WriteLine($"Tested {tested} strings with {dict.Count} matches");
+                foreach (var (key, value) in dict)
+                {
+                    Console.WriteLine($"0x{key:X8} [{string.Join(", ", value)}]");
+                }
+            }
+        }
+        
+        var missing = uintsToTest.Except(dict.Keys).ToArray();
+        
+        foreach (var key in missing)
+        {
+            Console.WriteLine($"Missing 0x{key:x8}");
+        }
+        
+        foreach (var (key, value) in dict)
+        {
+            Console.WriteLine($"0x{key:X8} [{string.Join(", ", value)}]");
+        }
+        
+        Console.WriteLine($"Tested {tested} strings");
+        Console.WriteLine($"Found {dict.Count} matches");
+        Console.WriteLine($"Missing {missing.Length} matches");
+
+        return;
+
+        IEnumerable<string> GetVariations(string str)
+        {
+            yield return str.ToLower();
+            // yield return str.ToUpper();
+            // yield return str.Humanize();
+            // yield return str.Dehumanize();
+            //return this last so it gets replaced in the dictionary if it matches
+            yield return str;
+        }
+
+        IEnumerable<string> GetNumbered(string str)
+        {
+            yield return str;
+            for (var i = 0; i < 10; i++)
+            {
+                yield return $"{str}{i}";
+            }
+        }
     }
 }

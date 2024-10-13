@@ -38,36 +38,35 @@ public sealed class FaceInfoChunk
             throw new Exception("Unexpected FaceInfoChunk count: " + count);
         reader.Expect<uint>(0);
         
-        var freckleAmount = reader.ReadKeyedValue<float>(0xe87727e2);
-        var freckleOpacity = reader.ReadKeyedValue<float>(0x9361cb58);
-        var sunSpotsAmount = reader.ReadKeyedValue<float>(0x554ad20f);
-        var sunSpotOpacity = reader.ReadKeyedValue<float>(0xcfc41264);
-        var eyeMetallic1 = reader.ReadKeyedValue<float>(0xb95883b0);
-        var eyeMetallic2 = reader.ReadKeyedValue<float>(0x9cf750c3);
-        var eyeMetallic3 = reader.ReadKeyedValue<float>(0xa90644df);
-        var eyeSmoothness1 = reader.ReadKeyedValue<float>(0xc871a987);
-        var eyeSmoothness2 = reader.ReadKeyedValue<float>(0xedde7af4);
-        var eyeSmoothness3 = reader.ReadKeyedValue<float>(0xd82f6ee8);
-        var eyeOpacity = reader.ReadKeyedValue<float>(0xcae526ba);
-        var cheekMetallic1 = reader.ReadKeyedValue<float>(0x0526ed02);
-        var cheekMetallic2 = reader.ReadKeyedValue<float>(0x20893e71);
-        var cheekMetallic3 = reader.ReadKeyedValue<float>(0x15782a6d);
-        var cheekSmoothness1 = reader.ReadKeyedValue<float>(0x9be3d5d7);
-        var cheekSmoothness2 = reader.ReadKeyedValue<float>(0xbe4c06a4);
-        var cheekSmoothness3 = reader.ReadKeyedValue<float>(0x8bbd12b8);
-        var cheekOpacity = reader.ReadKeyedValue<float>(0x11a1a1d3);
-        var lipMetallic1 = reader.ReadKeyedValue<float>(0x92571ac3);
-        var lipMetallic2 = reader.ReadKeyedValue<float>(0xb7f8c9b0);
-        var lipMetallic3 = reader.ReadKeyedValue<float>(0x8209ddac);
-        var lipSmoothness1 = reader.ReadKeyedValue<float>(0xaa9201e7);
-        var lipSmoothness2 = reader.ReadKeyedValue<float>(0x8f3dd294);
-        var lipSmoothness3 = reader.ReadKeyedValue<float>(0xbaccc688);
-        var lipOpacity = reader.ReadKeyedValue<float>(0x589ddcf4);
+        var freckleAmount = reader.ReadKeyedValue<float>("FrecklesAmount");
+        var freckleOpacity = reader.ReadKeyedValue<float>("FrecklesOpacity");
+        var sunSpotsAmount = reader.ReadKeyedValue<float>("SunSpotsAmount");
+        var sunSpotOpacity = reader.ReadKeyedValue<float>("SunSpotsOpacity");
+        var eyeMetallic1 = reader.ReadKeyedValue<float>("Makeup1MetalnessR");
+        var eyeMetallic2 = reader.ReadKeyedValue<float>("Makeup1MetalnessG");
+        var eyeMetallic3 = reader.ReadKeyedValue<float>("Makeup1MetalnessB");
+        var eyeSmoothness1 = reader.ReadKeyedValue<float>("Makeup1SmoothnessR");
+        var eyeSmoothness2 = reader.ReadKeyedValue<float>("Makeup1SmoothnessG");
+        var eyeSmoothness3 = reader.ReadKeyedValue<float>("Makeup1SmoothnessB");
+        var eyeOpacity = reader.ReadKeyedValue<float>("Makeup1Opacity");
+        var cheekMetallic1 = reader.ReadKeyedValue<float>("Makeup2MetalnessR");
+        var cheekMetallic2 = reader.ReadKeyedValue<float>("Makeup2MetalnessG");
+        var cheekMetallic3 = reader.ReadKeyedValue<float>("Makeup2MetalnessB");
+        var cheekSmoothness1 = reader.ReadKeyedValue<float>("Makeup2SmoothnessR");
+        var cheekSmoothness2 = reader.ReadKeyedValue<float>("Makeup2SmoothnessG");
+        var cheekSmoothness3 = reader.ReadKeyedValue<float>("Makeup2SmoothnessB");
+        var cheekOpacity = reader.ReadKeyedValue<float>("Makeup2Opacity");
+        var lipMetallic1 = reader.ReadKeyedValue<float>("Makeup3MetalnessR");
+        var lipMetallic2 = reader.ReadKeyedValue<float>("Makeup3MetalnessG");
+        var lipMetallic3 = reader.ReadKeyedValue<float>("Makeup3MetalnessB");
+        var lipSmoothness1 = reader.ReadKeyedValue<float>("Makeup3SmoothnessR");
+        var lipSmoothness2 = reader.ReadKeyedValue<float>("Makeup3SmoothnessG");
+        var lipSmoothness3 = reader.ReadKeyedValue<float>("Makeup3SmoothnessB");
+        var lipOpacity = reader.ReadKeyedValue<float>("Makeup3Opacity");
         if (count == 27)
         {
-            var unknownExtraFloat = reader.ReadKeyedValue<float>(0x64C1127);
-            var unknownExtraFloat2 = reader.ReadKeyedValue<float>(0xEC67C07D);
-            
+            var unknownExtraFloat = reader.ReadKeyedValue<float>("TattooAge");
+            var unknownExtraFloat2 = reader.ReadKeyedValue<float>("TattooHueRotation");
         }
         return new FaceInfoChunk
         {

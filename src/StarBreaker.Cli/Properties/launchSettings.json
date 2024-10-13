@@ -14,7 +14,7 @@
     },
     "p4k-extract": {
       "commandName": "Project",
-      "commandLineArgs": "p4k-extract --p4k \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k\" --output \"D:\\out\" --filter *.TagDatabase.xml"
+      "commandLineArgs": "p4k-extract --p4k \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k\" --output \"D:\\out\" --filter *.dcb"
     },
     "chf-download": {
       "commandName": "Project",
@@ -38,7 +38,7 @@
     },
     "chf-process": {
       "commandName": "Project",
-      "commandLineArgs": "chf-process"
+      "commandLineArgs": "chf-process \"C:\\Development\\StarBreaker\\research\\localCharacters\\everything\\everything.chf\""
     },
     "chf-process-all": {
       "commandName": "Project",

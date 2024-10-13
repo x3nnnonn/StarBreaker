@@ -28,13 +28,13 @@ public sealed class DyeValuesChunk
         if (count != 7)
             throw new Exception($"Expected 7 floats, got {count}");
 
-        var f01 = reader.ReadKeyedValue<float>(0x4af6c15a);
-        var f02 = reader.ReadKeyedValue<float>(0xc3370bd9);
-        var f03 = reader.ReadKeyedValue<float>(0xb9fa00a3);
-        var f04 = reader.ReadKeyedValue<float>(0x62fbf0af);
-        var f05 = reader.ReadKeyedValue<float>(0x06084076);
-        var f06 = reader.ReadKeyedValue<float>(0xa59aa7c8);
-        var f07 = reader.ReadKeyedValue<float>(0x027eb674);
+        var f01 = reader.ReadKeyedValue<float>("DyeAmount");
+        var f02 = reader.ReadKeyedValue<float>("DyeFadeout");
+        var f03 = reader.ReadKeyedValue<float>("BaseMelanin");
+        var f04 = reader.ReadKeyedValue<float>("BaseMelaninRedness");
+        var f05 = reader.ReadKeyedValue<float>("DyePigmentVariation");
+        var f06 = reader.ReadKeyedValue<float>("BaseMelaninVariation");
+        var f07 = reader.ReadKeyedValue<float>("DyeShift");
 
         return new DyeValuesChunk
         {

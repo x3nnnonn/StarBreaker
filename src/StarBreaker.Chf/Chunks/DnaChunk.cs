@@ -19,8 +19,8 @@ public sealed class DnaChunk
         var dnaString = Convert.ToHexString(dnaBytes);
 
         var childReader = new SpanReader(dnaBytes);
-        
-        childReader.Expect(0xFCD09394);
+
+        childReader.Expect(Crc32c.FromString("dna matrix 1.0"));
         childReader.ExpectAny([0xDD6C67F6, 0x9EF4EB54]);
         childReader.ExpectAny([0x65E740D3, 0x65D75204, 0x66EBFAD1, 0x66DF165F]);
         childReader.Expect(0);

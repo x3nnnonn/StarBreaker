@@ -13,7 +13,7 @@ public sealed class StarCitizenCharacter
     public required EyeMaterialChunk EyeMaterial { get; init; }
     public required BodyMaterialChunk BodyMaterial { get; init; }
 
-    public static StarCitizenCharacter FromBytes(ReadOnlySpan<byte> data)
+    public static StarCitizenCharacter FromBytesOld(ReadOnlySpan<byte> data)
     {
         var reader = new SpanReader(data);
 
@@ -163,4 +163,38 @@ public sealed class StarCitizenCharacter
             Dyes = props
         };
     }
+    
+    public static StarCitizenCharacter FromBytes(ReadOnlySpan<byte> data)
+    {
+        var reader = new SpanReader(data);
+
+        reader.Expect<uint>(2);
+        reader.Expect<uint>(7);
+
+        var gender = BodyTypeChunk.Read(ref reader);
+        var dnaProperty = DnaChunk.Read(ref reader);
+        var totalCount = reader.ReadUInt32();
+        var someOtherCount = reader.ReadUInt32();
+        var bodyaaa = ItemPort.Read(ref reader);
+        
+        var totalChildren = 1 + bodyaaa.TotalChildren();
+        if (totalChildren != totalCount)
+            throw new Exception($"Total children mismatch: {totalChildren} != {totalCount}");
+        
+        var custommaterialparamscount = reader.ReadUInt32(); //total guess in the dark.
+        Console.WriteLine($"CustomMaterialParamsCount: {custommaterialparamscount}");
+        var someOtherItemPort = MaterialItemPort.Read(ref reader);
+        return new StarCitizenCharacter()
+        {
+            Body = null,
+            BodyMaterial = null,
+            BodyType = null,
+            Dna = null,
+            Dyes = null,
+            EyeMaterial = null,
+            FaceMaterial = null,
+            HeadMaterial = null
+        };
+    }
+
 }
