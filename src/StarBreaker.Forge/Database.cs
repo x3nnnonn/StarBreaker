@@ -147,4 +147,7 @@ public class Database
 
         return strings.ToFrozenDictionary();
     }
+    
+    public IEnumerable<string> EnumerateStrings1() => _cachedStrings.Values;
+    public IEnumerable<string> EnumerateStrings2() => _cachedStrings2.Values;
 }

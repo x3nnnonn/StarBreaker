@@ -29,6 +29,10 @@ const string testChar = @"C:\Users\Diogo\Downloads\default_f_diff_eyecolor.grpc"
 var bytes = File.ReadAllBytes(testChar);
 var character = SaveCharacterCustomizationsRequest.Parser.ParseFrom(GrpcUtils.GrpcToProtobuf(bytes));
 
+var json = character.ToString();
+Console.WriteLine(json);
+return;
+
 ChangeDna(character);
 ChangeEyeColor(character);
 ChangeBodyColor(character);

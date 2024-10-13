@@ -1,5 +1,4 @@
-﻿using System.Numerics;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using StarBreaker.Common;
 using ZstdSharp;
 
@@ -48,8 +47,8 @@ public class ChfFile(byte[] data, bool isModded)
         var expectedCrc = reader.Read<uint>();
         var compressedSize = reader.Read<uint>();
         var uncompressedSize = reader.Read<uint>();
-        
-        var actualCrc = Crc32C(reader.RemainingBytes);
+
+        var actualCrc = Crc32c.FromSpan(reader.RemainingBytes);
         if (actualCrc != expectedCrc)
             throw new Exception("CRC32 does not match");
         
@@ -104,8 +103,8 @@ public class ChfFile(byte[] data, bool isModded)
         //Insert our magic at the end so we can tell if it's a modded character.
         if (Modded)
             MyMagic.CopyTo(span[(Size - MyMagic.Length)..]);
-        
-        var crc = Crc32C(span[16..]);
+
+        var crc = Crc32c.FromSpan(span[16..]);
         
         BitConverter.TryWriteBytes(span[4..8], crc);
         
@@ -116,15 +115,5 @@ public class ChfFile(byte[] data, bool isModded)
     {
         ReadOnlySpan<byte> zeroes = [0, 0, 0, 0, 0, 0, 0, 0];
         return data.EndsWith(MyMagic) || data.EndsWith(zeroes);
-    }
-    
-    private static uint Crc32C(ReadOnlySpan<byte> data)
-    {
-        var acc = 0xFFFFFFFFu;
-        foreach (ref readonly var t in data)
-        {
-            acc = BitOperations.Crc32C(acc, t);
-        }
-        return ~acc;
     }
 }

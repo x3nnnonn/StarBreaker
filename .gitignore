@@ -200,3 +200,4 @@ src/.idea/
 .vscode/
 
 research/*
+src/StarBreaker.Profile/strings.txt

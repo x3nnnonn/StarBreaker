@@ -15,6 +15,7 @@ public sealed class HeadMaterialChunk
         reader.Expect(Key);
         var guid = reader.Read<CigGuid>();
         var additionalParams = reader.Read<uint>();
+        Console.WriteLine($"{additionalParams:X8}");
 
         var type = guid switch
         {

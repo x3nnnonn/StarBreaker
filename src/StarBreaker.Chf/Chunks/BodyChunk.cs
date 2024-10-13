@@ -15,7 +15,10 @@ public sealed class BodyChunk
     {
         reader.Expect(Key);
         reader.Expect(Body);
-        reader.Expect<ulong>(1);
+        var childCount = reader.Read<ulong>();
+        
+        if (childCount != 1)
+            throw new Exception("BodyChunk child count is not 1");
         
         var head = HeadChunk.Read(ref reader);
 
