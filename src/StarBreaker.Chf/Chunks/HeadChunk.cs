@@ -6,7 +6,7 @@ namespace StarBreaker.Chf;
 public sealed class HeadChunk
 {
     public static readonly CigGuid Head = new("1d5cfab3-bf80-4550-b4ab-39e896a7086e");
-    public const uint Key = 0x47010DB9;
+    public static readonly uint Key = ItemPortKeys.GetUIntKey("head_itemport");
 
     public required ulong ChildCount { get; init; }
     public required EyesChunk? Eyes { get; init; }
@@ -14,6 +14,7 @@ public sealed class HeadChunk
     public required EyebrowChunk? Eyebrow { get; init; }
     public required EyelashChunk? Eyelash { get; init; }
     public required FacialHairChunk? FacialHair { get; init; }
+    public required PiercingChunk? Piercing { get; init; }
 
     public static HeadChunk Read(ref SpanReader reader)
     {
@@ -27,37 +28,38 @@ public sealed class HeadChunk
         EyebrowChunk? eyebrow = null;
         EyelashChunk? eyelash = null;
         FacialHairChunk? facialHair = null;
+        PiercingChunk? piercing = null;
 
         for (var i = 0; i < (int)childCount; i++)
         {
-            switch (reader.Peek<uint>())
+            var k = reader.Peek<uint>();
+            if (k == EyesChunk.Key)
             {
-                case EyesChunk.Key:
-                    eyes = EyesChunk.Read(ref reader);
-                    break;
-                case HairChunk.Key:
-                    hair = HairChunk.Read(ref reader);
-                    break;
-                case EyebrowChunk.Key:
-                    eyebrow = EyebrowChunk.Read(ref reader);
-                    break;
-                case EyelashChunk.Key:
-                    eyelash = EyelashChunk.Read(ref reader);
-                    break;
-                case FacialHairChunk.Key:
-                    facialHair = FacialHairChunk.Read(ref reader);
-                    break;
-                default:
-                {
-                    if (PiercingChunk.Keys.Contains(reader.Peek<uint>()))
-                    {
-                        var piercing = PiercingChunk.Read(ref reader);
-                        Console.WriteLine("New Piercing Chunk with Guid: " + piercing.Guid);
-                        break;
-                    }
-
-                    throw new Exception("Unknown HeadChunk child chunk");
-                }
+                eyes = EyesChunk.Read(ref reader);
+            }
+            else if (k == HairChunk.Key)
+            {
+                hair = HairChunk.Read(ref reader);
+            }
+            else if (k == EyebrowChunk.Key)
+            {
+                eyebrow = EyebrowChunk.Read(ref reader);
+            }
+            else if (k == EyelashChunk.Key)
+            {
+                eyelash = EyelashChunk.Read(ref reader);
+            }
+            else if (k == FacialHairChunk.Key)
+            {
+                facialHair = FacialHairChunk.Read(ref reader);
+            }
+            else if (PiercingChunk.Keys.Contains(k))
+            {
+                piercing = PiercingChunk.Read(ref reader);
+            }
+            else
+            {
+                throw new Exception("Unknown HeadChunk child chunk");
             }
         }
 
@@ -68,7 +70,8 @@ public sealed class HeadChunk
             Eyelash = eyelash ?? throw new Exception("EyelashProperty is required"),
             Hair = hair ?? new HairChunk { HairType = HairType.None, Modifier = null },
             Eyebrow = eyebrow ?? new EyebrowChunk { EyebrowType = EyebrowType.None, ChildCount = 0 },
-            FacialHair = facialHair ?? new FacialHairChunk { FacialHairType = FacialHairType.None, Modifier = null }
+            FacialHair = facialHair ?? new FacialHairChunk { FacialHairType = FacialHairType.None, Modifier = null },
+            Piercing = piercing ?? new PiercingChunk { Guid = CigGuid.Empty }
         };
     }
 }

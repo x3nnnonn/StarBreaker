@@ -21,7 +21,7 @@ public sealed class DnaChunk
         var childReader = new SpanReader(dnaBytes);
 
         childReader.Expect(Crc32c.FromString("dna matrix 1.0"));
-        childReader.ExpectAny([0xDD6C67F6, 0x9EF4EB54]);
+        childReader.ExpectAnyKey(["protos_human_male_face_t1_pu", "protos_human_female_face_t1_pu"]);
         childReader.ExpectAny([0x65E740D3, 0x65D75204, 0x66EBFAD1, 0x66DF165F]);
         childReader.Expect(0);
         childReader.Expect<byte>(0x0c);
@@ -42,10 +42,10 @@ public sealed class DnaChunk
 
         foreach (var (k, v) in perBodyPart)
         {
-            if (Math.Abs(v.Sum(x => x.Percent) - 100) > 5f)//it's fiiiine
+            if (Math.Abs(v.Sum(x => x.Percent) - 100) > 5f) //it's fiiiine
                 throw new Exception($"Invalid part percent for {k}");
         }
-        
+
         return new DnaChunk
         {
             DnaString = dnaString,

@@ -2,7 +2,8 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
-using Humanizer;
+using System.Numerics;
+using System.Text;
 using StarBreaker.Common;
 using StarBreaker.CryChunkFile;
 using StarBreaker.CryXmlB;
@@ -115,77 +116,64 @@ public static class Program
 
     private static void FindStringCrc32()
     {
-        var uintsToTest = File.ReadAllLines("keys.txt").Select(z => uint.Parse(z[2..], NumberStyles.HexNumber)).Distinct().ToArray();
-        
+        var dict = new ConcurrentDictionary<uint, HashSet<string>>();
+        var tested = 0;
+
+        var uintsToTest = ReadKeys("keys.txt");
+
         var forge = new DataForge(@"D:\out\Data\Game.dcb");
         var enums = forge.ExportEnums();
-        List<string> stringsToTest = new();
-        stringsToTest.AddRange(File.ReadAllLines("strings.txt").Where(x => x.Length > 4));
-        stringsToTest.AddRange(forge._database.EnumerateStrings1());
-        stringsToTest.AddRange(forge._database.EnumerateStrings2());
-        stringsToTest.AddRange(enums.Select(x => x.Key));
-        stringsToTest.AddRange(enums.SelectMany(x => x.Value));
-        foreach (var (enumName, values) in enums)
-        {
-            stringsToTest.AddRange(values.Select(x => $"{enumName}.{x}"));
-        }
 
-        var tested = 0;
-        var dict = new ConcurrentDictionary<uint, List<string>>();
+        IEnumerable<string> haystack = new List<string>();
 
-        var haystack = stringsToTest.SelectMany(GetVariations).ToArray();
-        var dangerous = haystack.SelectMany(x => haystack, (x, y) => $"{x}{y}");
-        
-        foreach (var str in haystack.AsParallel())
-        {
-            Interlocked.Increment(ref tested);
-            var crc = Crc32c.FromString(str);
-            if (uintsToTest.Contains(crc))
-            {
-                if (dict.TryGetValue(crc, out var list))
-                {
-                    list.Add(str);
-                }
-                else
-                {
-                    dict.TryAdd(crc, [str]);
-                }
-            }
+        haystack = haystack.Concat(forge._database.EnumerateStrings1().Concat(forge._database.EnumerateStrings2()));
+        haystack = haystack.Concat(["head_eyedetail"]);
+        haystack = haystack.Concat(enums.Select(x => x.Key));
+        haystack = haystack.Concat(enums.SelectMany(x => x.Value));
+        haystack = haystack.Concat(StreamLines("strings.txt"));
+        //haystack = haystack.Concat(StreamLines(@"D:\New folder\oof2.txt"));
+        haystack = haystack.Concat(StreamLines("mats.txt"));
+        haystack = haystack.Concat(StreamLines("working.txt"));
+        haystack = haystack.Concat(Directory.EnumerateFiles(@"D:\out", "*", SearchOption.AllDirectories).Select(Path.GetFileNameWithoutExtension));
+        haystack = haystack.SelectMany(GetVariations);
 
-            if (tested % 5000000 == 0)
-            {
-                Console.WriteLine($"Tested {tested} strings with {dict.Count} matches");
-                foreach (var (key, value) in dict)
-                {
-                    Console.WriteLine($"0x{key:X8} [{string.Join(", ", value)}]");
-                }
-            }
-        }
-        
-        var missing = uintsToTest.Except(dict.Keys).ToArray();
-        
-        foreach (var key in missing)
-        {
-            Console.WriteLine($"Missing 0x{key:x8}");
-        }
-        
-        foreach (var (key, value) in dict)
+        var result = BruteForce(uintsToTest, haystack);
+
+        foreach (var (key, value) in result.OrderBy(x => x.Value.Count))
         {
             Console.WriteLine($"0x{key:X8} [{string.Join(", ", value)}]");
         }
-        
-        Console.WriteLine($"Tested {tested} strings");
-        Console.WriteLine($"Found {dict.Count} matches");
-        Console.WriteLine($"Missing {missing.Length} matches");
 
+        Console.WriteLine($"Number of found keys: {result.Values.Count(x => x.Count > 0)}");
+        Console.WriteLine($"Number of missing keys: {result.Values.Count(x => x.Count == 0)}");
+        Console.WriteLine($"Number of tested strings: {tested}");
         return;
 
         IEnumerable<string> GetVariations(string str)
         {
+            foreach (var s in str.Split('/'))
+            {
+                yield return s;
+            }
+            
+            foreach (var s in str.Split('_'))
+            {
+                yield return s;
+            }
+            
+            foreach (var s in str.Split('-'))
+            {
+                yield return s;
+            }
+            
+            foreach (var s in str.Split(' '))
+            {
+                yield return s;
+            }
+            
             yield return str.ToLower();
-            // yield return str.ToUpper();
-            // yield return str.Humanize();
-            // yield return str.Dehumanize();
+            yield return str.ToUpper();
+
             //return this last so it gets replaced in the dictionary if it matches
             yield return str;
         }
@@ -193,10 +181,83 @@ public static class Program
         IEnumerable<string> GetNumbered(string str)
         {
             yield return str;
-            for (var i = 0; i < 10; i++)
+            for (var i = 0; i < 2; i++)
             {
                 yield return $"{str}{i}";
             }
         }
+
+        uint[] ReadKeys(string file)
+        {
+            var lines = File.ReadAllLines(file);
+            var keys = new List<uint>();
+
+            foreach (var line in lines)
+            {
+                if (line.StartsWith("0x") &&
+                    uint.TryParse(line[2..], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var key))
+                {
+                    keys.Add(key);
+                }
+            }
+
+            return keys.Distinct().Order().ToArray();
+        }
+    }
+
+    private static IEnumerable<string> StreamLines(string filePath)
+    {
+        using var reader = new StreamReader(File.OpenRead(filePath));
+
+        while (reader.ReadLine() is { } line)
+            yield return line;
+    }
+
+    /// <summary>
+    ///     Brute force all possible combinations of strings and keys
+    /// </summary>
+    /// <param name="keys">crc32c results to test</param>
+    /// <param name="strings">Original strings to modify and test against</param>
+    private static ConcurrentDictionary<uint, HashSet<string>> BruteForce(uint[] keys, IEnumerable<string> strings)
+    {
+        var dict = new ConcurrentDictionary<uint, HashSet<string>>(keys.ToDictionary(key => key, _ => new HashSet<string>()));
+        var tested = 0;
+
+        var buffer = new byte[4096];
+
+        foreach (var str in strings)
+        {
+            Interlocked.Increment(ref tested);
+            var byteLength = Encoding.ASCII.GetBytes(str, buffer);
+            var acc = 0xFFFFFFFFu;
+
+            for (var i = 0; i < byteLength; i++)
+            {
+                acc = BitOperations.Crc32C(acc, buffer[i]);
+                var crc = ~acc;
+                if (keys.Contains(crc))
+                {
+                    dict[crc].Add(str[..(i + 1)]);
+                }
+            }
+
+            // for (var i = byteLength - 1; i >= 0; i--)
+            // {
+            //     acc = 0xFFFFFFFFu;
+            //     for (var j = 0; j < byteLength; j++)
+            //     {
+            //         if (j == i) continue;
+            //         acc = BitOperations.Crc32C(acc, buffer[j]);
+            //     }
+            //
+            //     var crc = ~acc;
+            //     if (keys.Contains(crc))
+            //     {
+            //         dict[crc].Add(str.Substring(0, i));
+            //     }
+            // }
+        }
+
+        return dict;
     }
 }

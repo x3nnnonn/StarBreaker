@@ -5,7 +5,8 @@ namespace StarBreaker.Chf;
 
 public sealed class HeadMaterialChunk
 {
-    public const uint Key = 0xA98BEB34;
+    public static readonly uint Key = 0xA98BEB34;
+    //todo: we don't know what this is yet. Best guess: ItemPortKeys.GetUIntKey("head_material");
 
     public required HeadMaterialType Material { get; init; }
     public required uint AdditionalParams { get; init; }
@@ -15,7 +16,6 @@ public sealed class HeadMaterialChunk
         reader.Expect(Key);
         var guid = reader.Read<CigGuid>();
         var additionalParams = reader.Read<uint>();
-        Console.WriteLine($"{additionalParams:X8}");
 
         var type = guid switch
         {

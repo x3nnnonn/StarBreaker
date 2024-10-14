@@ -1,4 +1,6 @@
-﻿using System.Numerics;
+﻿using System.Buffers;
+using System.Collections;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -10,13 +12,13 @@ public static class Crc32c
     public static uint FromSpan(ReadOnlySpan<byte> data)
     {
         var acc = 0xFFFFFFFFu;
+        
         foreach (ref readonly var t in data)
         {
             acc = BitOperations.Crc32C(acc, t);
         }
-        var x = ~acc;
 
-        return x;
+        return ~acc;
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
