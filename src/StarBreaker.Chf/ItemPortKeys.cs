@@ -86,6 +86,8 @@ public static class ItemPortKeys
         dict[0x27424D58] = "body_material";
         dict[0xA047885E] = "eye_material";
         dict[0xA98BEB34] = "head_material";
+        dict[0x72129E8E] = "shader_head";
+        dict[0xA87A7C66] = "female23";
 
         _reverseCrc32c = dict.ToFrozenDictionary();
     }

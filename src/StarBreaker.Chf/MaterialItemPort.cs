@@ -23,6 +23,15 @@ public class MaterialItemPort
         
         var childreCount = reader.ReadUInt32();
         var anotherCount = reader.ReadUInt32(); //what is this
+        
+        var children = new MaterialItemPort[childreCount];
+        Console.WriteLine($"MaterialItemPort childCount: {childreCount}, anotherCount: {anotherCount}, next key: {reader.Peek<uint>():X8}");
+       
+        //TODO: wrong
+        for (int i = 0; i < anotherCount; i++)
+        {
+            children[i] = MaterialItemPort.Read(ref reader);
+        }
 
         return new MaterialItemPort
         {
