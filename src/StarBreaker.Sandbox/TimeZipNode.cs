@@ -1,6 +1,28 @@
-﻿using StarBreaker.P4k;
+﻿using System.Diagnostics;
+using StarBreaker.P4k;
 
-namespace StarBreaker.Profile;
+namespace StarBreaker.Sandbox;
+
+public static class TimeZipNode
+{
+    private const string p4k = @"C:\Program Files\Roberts Space Industries\StarCitizen\LIVE\Data.p4k";
+
+    public static void Run()
+    {
+        var p4kFile = new P4kFile(p4k);
+
+        var times = new List<long>();
+        for (var i = 0; i < 8; i++)
+        {
+            var sw = Stopwatch.StartNew();
+            var tree = new ZipNode(p4kFile.Entries);
+            times.Add(sw.ElapsedMilliseconds);
+        }
+
+        Console.WriteLine($"Average: {times.Average()}ms");
+    }
+}
+
 
 public class ZipNode
 {

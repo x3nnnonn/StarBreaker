@@ -1,23 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using StarBreaker.Chf;
-using CliFx;
-using CliFx.Attributes;
-using CliFx.Infrastructure;
-using StarBreaker.Cli;
+﻿using System.Text;
 using StarBreaker.Common;
 
 namespace StarBreaker.Chf;
 
-//TODO: remove this? make these tests? something else?
-[Command("debug")]
-public class DebugCommand : ICommand
+public class DebugCommand
 {
-    public async ValueTask ExecuteAsync(IConsole console)
+    public async ValueTask ExecuteAsync()
     {
         await FixDnaStrings();
         
@@ -189,4 +177,17 @@ public class DebugCommand : ICommand
         
         return stringBuilder.ToString();
     }
+}
+
+//todo remove this
+public static class DefaultPaths
+{
+    public static readonly string StarCitizenFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Roberts Space Industries", "StarCitizen");
+    public static readonly string StarCitizenCharactersFolder = Path.Combine(StarCitizenFolder, "PTU", "user", "client", "0", "CustomCharacters");
+
+    public static readonly string ResearchFolder = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "..", "..", "..", "..", "..", "research"));
+
+    public static readonly string WebsiteCharacters = Path.Combine(ResearchFolder, "websiteCharacters");
+    public static readonly string LocalCharacters = Path.Combine(ResearchFolder, "localCharacters");
+    public static readonly string ModdedCharacters = Path.Combine(ResearchFolder, "moddedCharacters");
 }

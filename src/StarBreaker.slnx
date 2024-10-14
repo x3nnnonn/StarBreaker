@@ -2,17 +2,17 @@
   <Folder Name="/Solution Items/">
     <File Path="Directory.Build.props" />
     <File Path="..\README.md" />
+    <File Path="..\.gitignore" />
   </Folder>
   <Project Path="StarBreaker.Chf\StarBreaker.Chf.csproj" />
   <Project Path="StarBreaker.Cli\StarBreaker.Cli.csproj" />
   <Project Path="StarBreaker.Common\StarBreaker.Common.csproj" />
   <Project Path="StarBreaker.CryChunkFile\StarBreaker.CryChunkFile.csproj" />
   <Project Path="StarBreaker.CryXmlB\StarBreaker.CryXmlB.csproj" />
-  <Project Path="StarBreaker.Debug\StarBreaker.Debug.csproj" />
   <Project Path="StarBreaker.Forge\StarBreaker.Forge.csproj" />
   <Project Path="StarBreaker.Grpc\StarBreaker.Grpc.csproj" />
   <Project Path="StarBreaker.P4k\StarBreaker.P4k.csproj" />
-  <Project Path="StarBreaker.Profile\StarBreaker.Profile.csproj" />
   <Project Path="StarBreaker.Protobuf\StarBreaker.Protobuf.csproj" />
+  <Project Path="StarBreaker.Sandbox\StarBreaker.Sandbox.csproj" />
   <Project Path="StarBreaker.Tests\StarBreaker.Tests.csproj" />
 </Solution>
