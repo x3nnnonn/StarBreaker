@@ -1,7 +1,6 @@
 ﻿using System.Globalization;
 using System.Runtime.InteropServices;
 using StarBreaker.Common;
-using StarBreaker.Forge;
 
 namespace StarBreaker.Tests;
 
@@ -12,20 +11,20 @@ public class CigGuidTests
     private const string GUID_BYTES = "BD-41-0B-D9-FC-5B-EE-66-59-E3-EF-B3-A2-E0-2E-AD";
     
     [Test]
-    public void TestParseCigGuid()
+    public async Task TestParseCigGuid()
     {
         var actualBytes = GUID_BYTES.Split('-').Select(x => byte.Parse(x, NumberStyles.HexNumber)).ToArray();
 
         var directCig = MemoryMarshal.Read<CigGuid>(actualBytes);
 
-        Assert.That(directCig.ToString(), Is.EqualTo(GUID_STRING));
+        await Assert.That(directCig.ToString()).IsEqualTo(GUID_STRING);
     }
     
     [Test]
-    public void TestParseCigGuid2()
+    public async Task TestParseCigGuid2()
     {
         var cigguid = new CigGuid(GUID_STRING);
         var stringrepresentation = cigguid.ToString();
-        Assert.That(stringrepresentation, Is.EqualTo(GUID_STRING));
+        await Assert.That(stringrepresentation).IsEqualTo(GUID_STRING);
     }
 }
