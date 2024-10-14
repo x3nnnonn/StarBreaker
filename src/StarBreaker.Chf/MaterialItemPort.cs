@@ -11,30 +11,25 @@ public class MaterialItemPort
     public CigGuid Id { get; init; }
     public ItemPort[] Children { get; init; }
 
-    public static ItemPort Read(ref SpanReader reader)
+    public static MaterialItemPort Read(ref SpanReader reader)
     {
         var key = reader.Read<uint>();
         var name = ItemPortKeys.TryGetKey(key, out var n) ? n : "";
         if (name == "")
             Console.WriteLine($"Unknown ItemPort key: {key:X8}");
         var id = reader.Read<CigGuid>();
-        var childCount = reader.ReadUInt32();
+        var param = reader.ReadUInt32();
+        reader.Expect(CigGuid.Empty);//???
+        
+        var childreCount = reader.ReadUInt32();
         var anotherCount = reader.ReadUInt32(); //what is this
 
-        Console.WriteLine($"ItemPort: {name} with {childCount} children ({anotherCount})");
-
-        var children = new ItemPort[childCount];
-        for (var i = 0; i < (int)childCount; i++)
-        {
-            children[i] = Read(ref reader);
-        }
-
-        return new ItemPort
+        return new MaterialItemPort
         {
             Key = key,
             Name = name,
             Id = id,
-            Children = children
+            Children = []
         };
     }
     

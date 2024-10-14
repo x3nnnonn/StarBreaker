@@ -13,9 +13,7 @@
   <ItemGroup>
     <Content Include="strings.txt" CopyToOutputDirectory="PreserveNewest"/>
     <Content Include="keys.txt" CopyToOutputDirectory="PreserveNewest"/>
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Humanizer" Version="2.14.1" />
+    <Content Include="mats.txt" CopyToOutputDirectory="PreserveNewest"/>
+    <Content Include="working.txt" CopyToOutputDirectory="PreserveNewest"/>
   </ItemGroup>
 </Project>

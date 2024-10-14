@@ -60,14 +60,39 @@ public ref struct SpanReader
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void ExpectAny<T>(ReadOnlySpan<T> values) where T : unmanaged, IEquatable<T>
+    public void ExpectAny<T>(scoped ReadOnlySpan<T> values) where T : unmanaged, IEquatable<T>
     {
         var actual = Read<T>();
         if (!values.Contains(actual))
             throw new Exception($"Expected {values.ToString()}, got {actual}");
     }
 
-    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void ExpectAny<T>(scoped Span<T> values) where T : unmanaged, IEquatable<T>
+    {
+        var actual = Read<T>();
+        if (!values.Contains(actual))
+            throw new Exception($"Expected {values.ToString()}, got {actual}");
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void ExpectKey(string key)
+    {
+        var uintKey = Crc32c.FromString(key);
+        Expect(uintKey);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void ExpectAnyKey(scoped Span<string> keys)
+    {
+        Span<uint> uintKeys = stackalloc uint[keys.Length];
+        
+        for (var i = 0; i < keys.Length; i++)
+            uintKeys[i] = Crc32c.FromString(keys[i]);
+        
+        ExpectAny(uintKeys);
+    }
+
     public int Length => _span.Length;
 
     // ReSharper disable once ConvertToAutoPropertyWithPrivateSetter

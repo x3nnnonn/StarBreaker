@@ -43,18 +43,18 @@ public sealed class FaceColorsChunk
         var data29 = reader.ReadKeyedValue<Color>(0x7d86e792);
         var data30 = reader.ReadKeyedValue<Color>(0x2c3ef42d);
         var data31 = reader.ReadKeyedValue<Color>(0xe1dd1d34);
-        var data32 = reader.ReadKeyedValue<uint>(0x64a583ec);
-        var data33 = reader.ReadKeyedValue<uint>(0x77f57018);
-        var data34 = reader.ReadKeyedValue<uint>(0xe9f3e598);
-        var data35 = reader.ReadKeyedValue<uint>(0xfaa3166c);
-        var data36 = reader.ReadKeyedValue<uint>(0x3cb379f2);
-        var data37 = reader.ReadKeyedValue<uint>(0x2fe38a06);
-        var data38 = reader.ReadKeyedValue<uint>(0x32b762f1);
-        var data39 = reader.ReadKeyedValue<uint>(0x21e79105);
-        var data40 = reader.ReadKeyedValue<uint>(0xf7e50257);
-        var data41 = reader.ReadKeyedValue<uint>(0xe4b5f1a3);
-        var data42 = reader.ReadKeyedValue<uint>(0x7b8b1fd6);
-        var data43 = reader.ReadKeyedValue<uint>(0x68dbec22);
+        var data32 = reader.ReadKeyedValue<uint>("Makeup1NumTilesU");
+        var data33 = reader.ReadKeyedValue<uint>("Makeup1NumTilesV");
+        var data34 = reader.ReadKeyedValue<uint>("Makeup1OffsetU");
+        var data35 = reader.ReadKeyedValue<uint>("Makeup1OffsetV");
+        var data36 = reader.ReadKeyedValue<uint>("Makeup2NumTilesU");
+        var data37 = reader.ReadKeyedValue<uint>("Makeup2NumTilesV");
+        var data38 = reader.ReadKeyedValue<uint>("Makeup2OffsetU");
+        var data39 = reader.ReadKeyedValue<uint>("Makeup2OffsetV");
+        var data40 = reader.ReadKeyedValue<uint>("Makeup3NumTilesU");
+        var data41 = reader.ReadKeyedValue<uint>("Makeup3NumTilesV");
+        var data42 = reader.ReadKeyedValue<uint>("Makeup3OffsetU");
+        var data43 = reader.ReadKeyedValue<uint>("Makeup3OffsetV");
         
         return new FaceColorsChunk
         {

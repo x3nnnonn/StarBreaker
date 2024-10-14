@@ -8,7 +8,7 @@ public sealed class BodyChunk
 {
     public static readonly CigGuid Body = new("dbaa8a7d-755f-4104-8b24-7b58fd1e76f6");
 
-    public const uint Key = 0xAB6341AC;
+    public static readonly uint Key = ItemPortKeys.GetUIntKey("body_itemport");
     public required HeadChunk Head { get; init; }
     
     public static BodyChunk Read(ref SpanReader reader)
@@ -27,5 +27,4 @@ public sealed class BodyChunk
             Head = head,
         };
     }
-    
 }

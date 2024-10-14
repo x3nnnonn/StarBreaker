@@ -13,7 +13,7 @@ public sealed class StarCitizenCharacter
     public required EyeMaterialChunk EyeMaterial { get; init; }
     public required BodyMaterialChunk BodyMaterial { get; init; }
 
-    public static StarCitizenCharacter FromBytesOld(ReadOnlySpan<byte> data)
+    public static StarCitizenCharacter FromBytes(ReadOnlySpan<byte> data)
     {
         var reader = new SpanReader(data);
 
@@ -31,125 +31,47 @@ public sealed class StarCitizenCharacter
         BodyMaterialChunk? bodyMaterial = null;
         var props = new List<DyeChunk>();
         var objs = new List<object>();
-        for (ulong i = 0; i < totalCount; i++)
-        {
-            var key = reader.Peek<uint>();
-            switch (key)
-            {
-                case BodyChunk.Key:
-                {
-                    body = BodyChunk.Read(ref reader);
-                    objs.Add(body);
-                    break;
-                }
-                case HeadMaterialChunk.Key:
-                {
-                    headMaterial = HeadMaterialChunk.Read(ref reader);
-                    objs.Add(headMaterial);
-                    break;
-                }
-                case EyeMaterialChunk.Key:
-                {
-                    eyeMaterial = EyeMaterialChunk.Read(ref reader);
-                    objs.Add(eyeMaterial);
-                    break;
-                }
-                case BodyMaterialChunk.Key:
-                {
-                    bodyMaterial = BodyMaterialChunk.Read(ref reader);
-                    objs.Add(bodyMaterial);
-                    break;
-                }
-                default:
-                {
-                    if (FaceMaterialChunk.Keys.Contains(key))
-                    {
-                        faceMaterial = FaceMaterialChunk.Read(ref reader);
-                        objs.Add(faceMaterial);
-                        //TODO: do we need to scan for dye chunks here?
-                        break;
-                    }
-
-                    if (DyeChunk.DyeKeys.Contains(key))
-                    {
-                        var dye = DyeChunk.Read(ref reader);
-                        props.Add(dye);
-                        objs.Add(dye);
-                        break;
-                    }
-
-                    objs.Add(null);
-                    Console.WriteLine($"Unexpected key: {key}");
-                    break;
-                }
-            }
-        }
-
-        //var body = BodyChunk.Read(ref reader);
-        //var headMaterial = HeadMaterialChunk.Read(ref reader);
-        //var faceMaterial = FaceMaterialChunk.Read(ref reader);
-        while (reader.Remaining > 0 && DyeChunk.DyeKeys.Contains(reader.Peek<uint>()))
-        {
-            try
-            {
-                props.Add(DyeChunk.Read(ref reader));
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
-        }
-
         while (reader.Remaining > 0)
         {
             var key = reader.Peek<uint>();
-            if (key == EyeMaterialChunk.Key)
+            
+            if (key == BodyChunk.Key)
+            {
+                body = BodyChunk.Read(ref reader);
+                objs.Add(body);
+            }
+            else if (key == HeadMaterialChunk.Key)
+            {
+                headMaterial = HeadMaterialChunk.Read(ref reader);
+                objs.Add(headMaterial);
+            }
+            else if (key == EyeMaterialChunk.Key)
             {
                 eyeMaterial = EyeMaterialChunk.Read(ref reader);
-                break;
+                objs.Add(eyeMaterial);
             }
-
-            if (key == BodyMaterialChunk.Key)
+            else if (key == BodyMaterialChunk.Key)
             {
                 bodyMaterial = BodyMaterialChunk.Read(ref reader);
-                break;
+                objs.Add(bodyMaterial);
             }
-            
-            Console.WriteLine($"Unexpected key: {key:X8}");
-            throw new Exception($"Unexpected key: {key:X8}");
+            else if (FaceMaterialChunk.Keys.Contains(key))
+            {
+                faceMaterial = FaceMaterialChunk.Read(ref reader);
+                objs.Add(faceMaterial);
+            }
+            else if (DyeChunk.DyeKeys.Contains(key))
+            {
+                var dye = DyeChunk.Read(ref reader);
+                props.Add(dye);
+                objs.Add(dye);
+            }
+            else
+            {
+                objs.Add(null);
+                Console.WriteLine($"Unexpected key: {key}");
+            }
         }
-
-
-        //Console.WriteLine($"Unexpected data at the end of the file: {reader.Remaining} bytes.Next Key: 0x{reader.Peek<uint>():X8}");
-
-
-        //sometimes we don't have eye material.
-        //var eyeMaterial = EyeMaterialChunk.Read(ref reader);
-        //var bodyMaterial = BodyMaterialChunk.Read(ref reader);
-
-        // if (reader.Remaining != 0)
-        // {
-        //     var props2 = new List<DyeChunk>();
-        //
-        //     try
-        //     {
-        //         Console.WriteLine($"Unexpected data at the end of the file: {reader.Remaining} bytes");
-        //         reader.Expect(5);
-        //         var eyemat = EyeMaterialChunk.Read(ref reader);
-        //         while (DyeChunk.DyeKeys.Contains(reader.Peek<uint>()))
-        //         {
-        //             props2.Add(DyeChunk.Read(ref reader));
-        //         }
-        //
-        //         Console.WriteLine($"Unexpected data at the end of the file: {reader.Remaining} bytes");
-        //     }
-        //     catch (Exception e)
-        //     {
-        //         Console.WriteLine(e);
-        //         throw;
-        //     }
-        // }
 
         return new StarCitizenCharacter
         {
@@ -164,7 +86,7 @@ public sealed class StarCitizenCharacter
         };
     }
     
-    public static StarCitizenCharacter FromBytes(ReadOnlySpan<byte> data)
+    public static StarCitizenCharacter FromBytesNew(ReadOnlySpan<byte> data)
     {
         var reader = new SpanReader(data);
 
@@ -175,14 +97,14 @@ public sealed class StarCitizenCharacter
         var dnaProperty = DnaChunk.Read(ref reader);
         var totalCount = reader.ReadUInt32();
         var someOtherCount = reader.ReadUInt32();
-        var bodyaaa = ItemPort.Read(ref reader);
+        var bodyItemPort = ItemPort.Read(ref reader);
         
-        var totalChildren = 1 + bodyaaa.TotalChildren();
+        var totalChildren = 1 + bodyItemPort.TotalChildren();
         if (totalChildren != totalCount)
             throw new Exception($"Total children mismatch: {totalChildren} != {totalCount}");
         
-        var custommaterialparamscount = reader.ReadUInt32(); //total guess in the dark.
-        Console.WriteLine($"CustomMaterialParamsCount: {custommaterialparamscount}");
+        var custommaterialparamscount = reader.ReadUInt32(); //total guess in the dark. is always 5.
+        Console.WriteLine($"CustomMaterialParamsCount: {custommaterialparamscount}. next key: {reader.Peek<uint>():X8}");
         var someOtherItemPort = MaterialItemPort.Read(ref reader);
         return new StarCitizenCharacter()
         {
@@ -196,5 +118,4 @@ public sealed class StarCitizenCharacter
             HeadMaterial = null
         };
     }
-
 }

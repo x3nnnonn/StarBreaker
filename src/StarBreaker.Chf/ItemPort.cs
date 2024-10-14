@@ -21,8 +21,6 @@ public class ItemPort
         var childCount = reader.ReadUInt32();
         var anotherCount = reader.ReadUInt32(); //what is this
 
-        Console.WriteLine($"ItemPort: {name} with {childCount} children ({anotherCount})");
-
         var children = new ItemPort[childCount];
         for (var i = 0; i < (int)childCount; i++)
         {

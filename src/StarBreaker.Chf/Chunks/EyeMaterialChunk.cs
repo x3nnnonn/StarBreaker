@@ -5,7 +5,8 @@ namespace StarBreaker.Chf;
 
 public sealed class EyeMaterialChunk
 {
-    public const uint Key = 0xA047885E;
+    public static readonly uint Key = 0xA047885E;
+    //i dont know the name of this. Best guess: ItemPortKeys.GetUIntKey("eye_material");
     
     public required ColorsChunk EyeColors { get; init; }
     
@@ -29,6 +30,7 @@ public sealed class EyeMaterialChunk
         reader.Expect(Guid.Empty);
         reader.Expect(1);
         reader.Expect(5);
+        //shader_eyeinner | shader_eyeInner  == attention to the uppercase I. These are basically the same.
         reader.ExpectAny([0x9736C44B,0x8C9E711C]);
         reader.Expect<uint>(0);
         reader.Expect<uint>(0);
