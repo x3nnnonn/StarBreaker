@@ -8,7 +8,7 @@ public class Tests
     /// This test is failing. I use it to figure out how to correctly construct the xml file.
     /// </summary>
     [Test]
-    public void TestTagDatabase()
+    public async Task TestTagDatabase()
     {
         var forge = new DataForge(@"D:\out\Data\Game.dcb");
         var tagdatabase = forge.GetRecordsByFileName("*TagDatabase*");
@@ -16,18 +16,18 @@ public class Tests
         var writer = new StringWriter();
         forge.ExtractSingleRecord(writer, tagdatabase.Values.Single());
         
-        var expected = File.ReadAllText("TagDatabase.TagDatabase.xml");
+        var expected = await File.ReadAllTextAsync("TagDatabase.TagDatabase.xml");
         var actual = writer.ToString();
-        Assert.That(actual, Is.EqualTo(expected));
+        await Assert.That(actual).IsEqualTo(expected);
     }
-    
+
     [Test]
-    public void Enums()
+    public async Task Enums()
     {
         var forge = new DataForge(@"D:\out\Data\Game.dcb");
         var enums = forge.ExportEnums();
-        
-        Assert.That(enums, Is.Not.Empty);
-        Assert.That(enums.All(e => e.Value.Length > 0));
+
+        await Assert.That(enums).IsNotEmpty();
+        await Assert.That(enums.All(e => e.Value.Length > 0)).IsTrue();
     }
 }
