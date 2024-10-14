@@ -200,7 +200,7 @@ src/.idea/
 .vscode/
 
 research/*
-src/StarBreaker.Profile/strings.txt
-src/StarBreaker.Profile/working.txt
-src/StarBreaker.Profile/mats.txt
-src/StarBreaker.Profile/keys.txt
+src/StarBreaker.Sandbox/strings.txt
+src/StarBreaker.Sandbox/working.txt
+src/StarBreaker.Sandbox/mats.txt
+src/StarBreaker.Sandbox/keys.txt
