@@ -6,15 +6,15 @@
     },
     "df-extract": {
       "commandName": "Project",
-      "commandLineArgs": "df-extract --dcb \"D:\\out\\Data\\Game.dcb\" --output \"D:\\out\\dataforge\""
+      "commandLineArgs": "df-extract --dcb \"C:\\Scratch\\StarCitizen\\p4k\\Data\\Game.dcb\" --output C:\\Scratch\\StarCitizen\\dataforge"
     },
     "df-extract-single": {
       "commandName": "Project",
-      "commandLineArgs": "df-extract-single --dcb \"D:\\out\\Data\\Game.dcb\" --output \"D:\\out\\dataforge\""
+      "commandLineArgs": "df-extract-single --dcb \"C:\\Scratch\\StarCitizen\\p4k\\Data\\Game.dcb\" --output C:\\Scratch\\StarCitizen\\dataforge"
     },
     "p4k-extract": {
       "commandName": "Project",
-      "commandLineArgs": "p4k-extract --p4k \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k\" --output \"D:\\out\""
+      "commandLineArgs": "p4k-extract --p4k \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k\" --output \"C:\\Scratch\\StarCitizen\\p4k\""
     },
     "chf-download": {
       "commandName": "Project",

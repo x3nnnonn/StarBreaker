@@ -5,7 +5,7 @@ namespace StarBreaker.Sandbox;
 
 public static class ExtractSocPak
 {
-    private const string socpak = @"D:\StarCitizenExport\Data\ObjectContainers\PU\loc\flagship\stanton\newbab\newbab_all.socpak";
+    private const string socpak = @"C:\Scratch\StarCitizen\p4k\Data\ObjectContainers\PU\loc\flagship\stanton\newbab\newbab_all.socpak";
 
     public static void Run()
     {
