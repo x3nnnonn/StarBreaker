@@ -4,7 +4,7 @@ namespace StarBreaker.Sandbox;
 
 public static class ExtractChunkFiles
 {
-    private const string depot = @"D:\StarCitizenExport";
+    private const string depot = @"C:\Scratch\StarCitizen\p4k";
 
     public static void Run()
     {

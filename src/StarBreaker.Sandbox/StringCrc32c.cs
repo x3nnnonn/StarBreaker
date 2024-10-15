@@ -15,7 +15,7 @@ public static class StringCrc32c
 
         var uintsToTest = ReadKeys("keys.txt");
 
-        var forge = new DataForge(@"D:\out\Data\Game.dcb");
+        var forge = new DataForge(@"C:\Scratch\StarCitizen\p4k\Data\Game.dcb");
         var enums = forge.ExportEnums();
 
         IEnumerable<string> haystack = new List<string>();
@@ -24,12 +24,14 @@ public static class StringCrc32c
         haystack = haystack.Concat(["head_eyedetail"]);
         haystack = haystack.Concat(enums.Select(x => x.Key));
         haystack = haystack.Concat(enums.SelectMany(x => x.Value));
-        haystack = haystack.Concat(StreamLines("strings.txt"));
+        //haystack = haystack.Concat(StreamLines("strings.txt"));
         //haystack = haystack.Concat(StreamLines(@"D:\New folder\oof2.txt"));
-        haystack = haystack.Concat(StreamLines("mats.txt"));
-        haystack = haystack.Concat(StreamLines("working.txt"));
-        haystack = haystack.Concat(Directory.EnumerateFiles(@"D:\out", "*", SearchOption.AllDirectories).Select(Path.GetFileNameWithoutExtension));
+        //haystack = haystack.Concat(StreamLines("mats.txt"));
+        //haystack = haystack.Concat(StreamLines("working.txt"));
+
+        haystack = haystack.Concat(Directory.EnumerateFiles(@"C:\Scratch\StarCitizen\p4k", "*", SearchOption.AllDirectories).Select(Path.GetFileNameWithoutExtension));
         haystack = haystack.SelectMany(GetVariations);
+        //TODO: charactercustomizer_pu.socpak
 
         var result = BruteForce(uintsToTest, haystack);
 
