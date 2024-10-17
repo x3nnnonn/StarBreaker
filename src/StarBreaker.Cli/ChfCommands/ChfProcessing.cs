@@ -10,7 +10,6 @@ namespace StarBreaker.Cli;
 
 public static class ChfProcessing
 {
-    private static readonly JsonSerializerOptions opts = new() { WriteIndented = true, Converters = { new JsonStringEnumConverter() } };
 
     public static async Task ProcessCharacter(string chf)
     {
@@ -24,7 +23,8 @@ public static class ChfProcessing
         var json = Path.ChangeExtension(chf, ".json");
         var data = await File.ReadAllBytesAsync(bin);
         var character = StarCitizenCharacter.FromBytes(data);
-        var jsonString = JsonSerializer.Serialize(character, opts);
+        var jsonString = JsonSerializer.Serialize(character, StarBreakerSerializerContext.Default.StarCitizenCharacter);
         await File.WriteAllTextAsync(json, jsonString);
     }
 }
+
