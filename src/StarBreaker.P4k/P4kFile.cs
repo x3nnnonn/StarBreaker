@@ -132,6 +132,14 @@ public sealed class P4kFile
         var processedEntries = 0;
 
         progress?.Report(0);
+        
+        //TODO: Preprocessing step:
+        // 1. start with the list of total files
+        // 2. run the following according to the filter:
+        // 3. find one-shot single file procesors
+        // 4. find file -> multiple file processors
+        // 5. find multiple file -> single file unsplit processors - remove from the list so we don't double process
+        // run it!
 
         Parallel.ForEach(filteredEntries, entry =>
             {

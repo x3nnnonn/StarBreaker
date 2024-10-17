@@ -10,11 +10,11 @@ public sealed class ZipFileProcessor : IFileProcessor
         return entryName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase);
     }
 
-    public void ProcessEntry(string outputRootFolder, string entryName, Stream stream)
+    public void ProcessEntry(string outputRootFolder, string entryName, Stream entryStream)
     {
         var entryPath = Path.Combine(outputRootFolder, Path.ChangeExtension(entryName, "unzipped"));
-        
-        using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
+
+        using var archive = new ZipArchive(entryStream, ZipArchiveMode.Read, leaveOpen: true);
         foreach (var childEntry in archive.Entries)
         {
             if (childEntry.Length == 0)

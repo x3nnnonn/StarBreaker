@@ -5,7 +5,7 @@
 //ExtractChunkFiles.Run();
 //ExtractSocPak.Run();
 //await GrpcClient.RunAsync();
-//TimeP4kExtract.Run();
+TimeP4kExtract.Run();
 //TimeZipNode.Run();
 
-StringCrc32c.Run();
+//StringCrc32c.Run();
