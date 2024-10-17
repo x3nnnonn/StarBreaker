@@ -12,6 +12,16 @@ public static class GrpcClient
 {
     public static async Task RunAsync()
     {
+        
+        const string testChar = @"C:\Users\Diogo\Downloads\everything.grpc";
+
+        var bytes = File.ReadAllBytes(testChar);
+        var character = SaveCharacterCustomizationsRequest.Parser.ParseFrom(GrpcUtils.GrpcToProtobuf(bytes));
+
+        var json = character.ToString();
+        Console.WriteLine(json);
+        return;
+        
         var scWatcher = new StarCitizenClientWatcher(@"C:\Program Files\Roberts Space Industries\StarCitizen\");
         scWatcher.Start();
         var loginData = await scWatcher.WaitForLoginData();
@@ -30,15 +40,6 @@ public static class GrpcClient
             Credentials = ChannelCredentials.Create(ChannelCredentials.SecureSsl, creds)
         });
         var charClient = new CharacterCustomizerService.CharacterCustomizerServiceClient(channel);
-
-        const string testChar = @"C:\Users\Diogo\Downloads\default_f_diff_eyecolor.grpc";
-
-        var bytes = File.ReadAllBytes(testChar);
-        var character = SaveCharacterCustomizationsRequest.Parser.ParseFrom(GrpcUtils.GrpcToProtobuf(bytes));
-
-        var json = character.ToString();
-        Console.WriteLine(json);
-        return;
 
         ChangeDna(character);
         ChangeEyeColor(character);
@@ -117,7 +118,7 @@ public class StarCitizenClientWatcher : IDisposable
 
     private void OnChanged(object sender, FileSystemEventArgs e)
     {
-        var loginData = JsonSerializer.Deserialize<LoginData>(File.ReadAllText(e.FullPath));
+        var loginData = JsonSerializer.Deserialize(File.ReadAllText(e.FullPath), JsonContext.Default.LoginData);
 
         if (loginData == null)
             return;
@@ -132,7 +133,7 @@ public class StarCitizenClientWatcher : IDisposable
         {
             try
             {
-                var loginData = JsonSerializer.Deserialize<LoginData>(await File.ReadAllTextAsync(targetFile));
+                var loginData = JsonSerializer.Deserialize(await File.ReadAllTextAsync(targetFile), JsonContext.Default.LoginData);
                 if (loginData != null)
                     return loginData;
             }
@@ -175,3 +176,8 @@ public record LoginData
     
     [JsonPropertyName("star_network")] public StarNetwork StarNetwork { get; init; } = null!;
 }
+
+[JsonSourceGenerationOptions(WriteIndented = true)]
+[JsonSerializable(typeof(LoginData))]
+[JsonSerializable(typeof(StarNetwork))]
+public partial class JsonContext : JsonSerializerContext;
