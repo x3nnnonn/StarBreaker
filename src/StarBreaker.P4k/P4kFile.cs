@@ -45,7 +45,7 @@ public sealed class P4kFile
         _entries = new ZipEntry[eocd64.EntriesOnDisk];
 
         reader.BaseStream.Seek((long)eocd64.CentralDirectoryOffset, SeekOrigin.Begin);
-        
+
         for (var i = 0; i < (int)eocd64.TotalEntries; i++)
         {
             var header = reader.Read<CentralDirectoryFileHeader>();
@@ -85,7 +85,7 @@ public sealed class P4kFile
 
                 if (reader2.Read<ushort>() != 0x5000)
                     throw new Exception("Invalid extra field id");
-                
+
                 var extra0x5000Size = reader2.Read<ushort>();
                 reader2.Advance(extra0x5000Size - 4);
 
@@ -93,12 +93,12 @@ public sealed class P4kFile
                     throw new Exception("Invalid extra field id");
                 if (reader2.Read<ushort>() != 6)
                     throw new Exception("Invalid extra field size");
-                
+
                 var isCrypted = reader2.Read<ushort>() == 1;
 
                 if (reader2.Read<ushort>() != 0x5003)
                     throw new Exception("Invalid extra field id");
-                
+
                 var extra0x5003Size = reader2.Read<ushort>();
                 reader2.Advance(extra0x5003Size - 4);
 
@@ -126,7 +126,7 @@ public sealed class P4kFile
     public void Extract(string outputDir, string? filter = null, IProgress<double>? progress = null)
     {
         var filteredEntries = filter is null ? _entries : _entries.Where(entry => FileSystemName.MatchesSimpleExpression(filter, entry.Name, true)).ToArray();
-        
+
         var numberOfEntries = filteredEntries.Length;
         var fivePercent = numberOfEntries / 20;
         var processedEntries = 0;

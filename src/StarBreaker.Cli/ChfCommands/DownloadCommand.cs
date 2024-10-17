@@ -38,8 +38,10 @@ public class DownloadCommand : ICommand
 
         while (true)
         {
-            var response = await http.GetFromJsonAsync<SccRoot>(
-                $"https://www.star-citizen-characters.com/api/heads?page={page++}&orderBy=latest");
+            var response = await http.GetFromJsonAsync(
+                $"https://www.star-citizen-characters.com/api/heads?page={page++}&orderBy=latest",
+                StarBreakerSerializerContext.Default.SccRoot
+            );
             rowsList.AddRange(response!.body!.rows!);
             if (response.body.hasNextPage == false)
                 break;
@@ -47,7 +49,7 @@ public class DownloadCommand : ICommand
 
         await console.Output.WriteLineAsync("Downloaded metadata");
         await console.Output.WriteLineAsync("Downloading all missing characters...");
-        
+
         foreach (var row in rowsList)
         {
             try
@@ -69,9 +71,9 @@ public class DownloadCommand : ICommand
                     await console.Output.WriteLineAsync($"Skipping {row.title}, already downloaded");
                     continue;
                 }
-                
+
                 await console.Output.WriteLineAsync($"Downloading {row.title}...");
-                
+
                 await Task.WhenAll(DownloadFileAsync(http, row.dnaUrl, dnaFile), DownloadFileAsync(http, row.previewUrl, imageFile));
 
                 await console.Output.WriteLineAsync($"Downloaded {row.title}");
