@@ -3,6 +3,7 @@
     <File Path="Directory.Build.props" />
     <File Path="..\README.md" />
     <File Path="..\.gitignore" />
+    <File Path="..\crc32c.html" />
   </Folder>
   <Project Path="StarBreaker.Chf\StarBreaker.Chf.csproj" />
   <Project Path="StarBreaker.Cli\StarBreaker.Cli.csproj" />

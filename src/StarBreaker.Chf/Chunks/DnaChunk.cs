@@ -20,7 +20,7 @@ public sealed class DnaChunk
 
         var childReader = new SpanReader(dnaBytes);
 
-        childReader.Expect(Crc32c.FromString("dna matrix 1.0"));
+        childReader.ExpectKey("dna matrix 1.0");
         childReader.ExpectAnyKey(["protos_human_male_face_t1_pu", "protos_human_female_face_t1_pu"]);
         childReader.ExpectAny([0x65E740D3, 0x65D75204, 0x66EBFAD1, 0x66DF165F]);
         childReader.Expect(0);
