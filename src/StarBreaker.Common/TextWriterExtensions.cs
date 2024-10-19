@@ -1,11 +1,9 @@
-using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace StarBreaker.Common;
 
 public static class TextWriterExtensions
 {
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int WriteString(this TextWriter writer, ReadOnlySpan<byte> data, int offset)
     {
         var relevantData = data[offset..];

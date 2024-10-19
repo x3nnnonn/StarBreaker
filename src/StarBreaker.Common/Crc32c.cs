@@ -8,7 +8,6 @@ namespace StarBreaker.Common;
 
 public static class Crc32c
 {
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint FromSpan(ReadOnlySpan<byte> data)
     {
         var acc = 0xFFFFFFFFu;
@@ -21,10 +20,8 @@ public static class Crc32c
         return ~acc;
     }
     
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint FromSpan(Span<byte> data) => FromSpan((ReadOnlySpan<byte>)data);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    
     public static uint FromString(string data)
     {
         var length = Encoding.UTF8.GetByteCount(data);

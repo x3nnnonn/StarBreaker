@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using StarBreaker.Common;
 
 namespace StarBreaker.CryChunkFile;
@@ -54,13 +55,14 @@ public sealed class ChunkFile
         switch (signature)
         {
             case CrChMagic:
-                WriteChCfTo(writer, ref reader);
+                //WriteChCfTo(writer, ref reader);
                 break;
             case IvoMagic:
                 WriteIvoTo(writer, ref reader);
                 break;
             default:
-                throw new Exception("Invalid signature");
+                //throw new Exception("Invalid signature");
+                break;
         }
     }
 
@@ -146,10 +148,12 @@ public sealed class ChunkFile
     {
         return chunkTypeIvo switch
         {
-            //TODO: fill in
             ChunkTypeIvo.CompiledBonesIvo320 => CompiledBoneChunk.Read(ref reader),
             ChunkTypeIvo.MtlNameIvo320 => MaterialNameChunk.Read(ref reader),
-            ChunkTypeIvo.CompiledPhysicalBonesUnknown => ProbablyCustomBonesChunk.Read(ref reader),
+            ChunkTypeIvo.PhysicalHierarchy => PhysicalHierarchyChunk.Read(ref reader),
+            ChunkTypeIvo.Unknown05 => UnknownChunk5.Read(ref reader),
+            ChunkTypeIvo.MeshIvo320 => MeshIvo320.Read(ref reader),
+            ChunkTypeIvo.IvoSkin2 => IvoSkin2.Read(ref reader),
             _ => UnknownChunk.Read(ref reader)
         };
     }
