@@ -18,17 +18,14 @@ public sealed class ZipEntry
         CompressionMethod = compressionMethod;
         IsCrypted = isCrypted;
         Offset = offset;
-        LastModified = ParseDosDateTime(lastModifiedDate, lastModifiedTime);
-    }
-
-    private static DateTime ParseDosDateTime(ushort dosDate, ushort dosTime)
-    {
-        var year = (dosDate >> 9) + 1980;
-        var month = (dosDate >> 5) & 0xF;
-        var day = dosDate & 0x1F;
-        var hour = dosTime >> 11;
-        var minute = (dosTime >> 5) & 0x3F;
-        var second = (dosTime & 0x1F) * 2;
-        return new DateTime(year, month, day, hour, minute, second);
+        
+        var year = (lastModifiedDate >> 9) + 1980;
+        var month = (lastModifiedDate >> 5) & 0xF;
+        var day = lastModifiedDate & 0x1F;
+        var hour = lastModifiedTime >> 11;
+        var minute = (lastModifiedTime >> 5) & 0x3F;
+        var second = (lastModifiedTime & 0x1F) * 2;
+        
+        LastModified = new DateTime(year, month, day, hour, minute, second);
     }
 }

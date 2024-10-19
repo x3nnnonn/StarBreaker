@@ -2,7 +2,7 @@
 
 namespace StarBreaker.CryChunkFile;
 
-public class ProbablyCustomBonesChunk : IChunk
+public class PhysicalHierarchyChunk : IChunk
 {
     public static IChunk Read(ref SpanReader reader)
     {
@@ -20,7 +20,7 @@ public class ProbablyCustomBonesChunk : IChunk
         //TODO
         
         
-        return new ProbablyCustomBonesChunk();
+        return new PhysicalHierarchyChunk();
     }
 
     public void WriteXmlTo(TextWriter writer)

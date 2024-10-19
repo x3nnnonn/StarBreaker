@@ -7,7 +7,6 @@ namespace StarBreaker.Common;
 
 public static class BinaryReaderExtensions
 {
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T Read<T>(this BinaryReader br) where T : unmanaged
     {
         var size = Unsafe.SizeOf<T>();
@@ -23,7 +22,6 @@ public static class BinaryReaderExtensions
         return MemoryMarshal.Read<T>(span);
     }
     
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T[] ReadArray<T>(this BinaryReader reader, int count) where T : unmanaged
     {
         var items = new T[count];
@@ -66,7 +64,6 @@ public static class BinaryReaderExtensions
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string ReadStringOfLength(this BinaryReader br, int length)
     {
         if (length >= 0xffff)

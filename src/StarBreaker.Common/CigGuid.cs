@@ -62,8 +62,7 @@ public readonly record struct CigGuid
         _8 = ParseHexDigit(span, 34);
         
         return;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         static byte ParseHexDigit(ReadOnlySpan<char> input, int offset)
         {
             if (!byte.TryParse(input.Slice(offset, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var result))
@@ -80,7 +79,6 @@ public readonly record struct CigGuid
         return str.ToString();
     }
     
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void WriteInto(TextWriter writer)
     {
         Span<char> buffer = stackalloc char[36];
@@ -110,7 +108,6 @@ public readonly record struct CigGuid
         
         return;
         
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static void WriteHexDigit(Span<char> buffer, byte value, int offset)
         {
             buffer[offset] = _map[value >> 4];
