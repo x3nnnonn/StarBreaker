@@ -10,21 +10,21 @@ public static class ExtractChunkFiles
     {
         var exts = new[]
         {
-            "aim",
-            "caf",
-            "chr",
-            "dba",
-            "img",
-            "skin",
-            "skinm",
+            // "aim",
+            // "caf",
+            // "chr",
+            // "dba",
+            // "img",
+            // "skin",
+            // "skinm",
             "cga",
             "cgam",
-            "cgf",
-            "cgfm",
-            "cigvoxel",
-            "cigvoxelheader",
-            "dst",
-            "soc",
+            //"cgf",
+            // "cgfm",
+            // "cigvoxel",
+            // "cigvoxelheader",
+            // "dst",
+            // "soc",
         };
 
         var filteredFiles = Directory.EnumerateFiles(depot, "*", SearchOption.AllDirectories)
@@ -32,16 +32,17 @@ public static class ExtractChunkFiles
 
         foreach (var file in filteredFiles)
         {
+           var  file2 = @"C:\Scratch\StarCitizen\p4k\Data\Objects\Spaceships\Ships\AEGS\Gladius\AEGS_Gladius.cgam";
             try
             {
-                if (!ChunkFile.TryOpen(File.ReadAllBytes(file), out var chunkFile))
+                if (!ChunkFile.TryOpen(File.ReadAllBytes(file2), out var chunkFile))
                     throw new Exception("Failed to open chunk file");
 
                 chunkFile!.WriteXmlTo(Console.Out);
             }
             catch (Exception e)
             {
-                Console.WriteLine(file);
+                Console.WriteLine(file2);
                 Console.WriteLine(e);
             }
         }

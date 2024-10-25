@@ -1,14 +1,13 @@
 ﻿using System.Runtime.InteropServices;
 
-// ReSharper disable UnassignedGetOnlyAutoProperty
 namespace StarBreaker.Common;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public readonly struct Color(byte r, byte g, byte b)
+public readonly struct ColorBgra(byte r, byte g, byte b)
 {
-    public byte R { get; } = r;
-    public byte G { get; } = g;
     public byte B { get; } = b;
+    public byte G { get; } = g;
+    public byte R { get; } = r;
 
     //Alpha seems to be unused. Keep it for alignment.
     private readonly byte _A;

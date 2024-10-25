@@ -4,6 +4,7 @@ using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Net.Client;
 using Sc.External.Services.CharacterCustomizer.V1;
+using Sc.External.Services.Entitygraph.V1;
 using StarBreaker.Grpc;
 
 namespace StarBreaker.Sandbox;
@@ -12,8 +13,11 @@ public static class GrpcClient
 {
     public static async Task RunAsync()
     {
-        
+        const string testEntity = @"C:\Users\Diogo\Downloads\EntityQuery.grpc";
         const string testChar = @"C:\Users\Diogo\Downloads\everything.grpc";
+        
+        var enity = EntityQueryResponse.Parser.ParseFrom(GrpcUtils.GrpcToProtobuf(File.ReadAllBytes(testEntity)));
+        return;
 
         var bytes = File.ReadAllBytes(testChar);
         var character = SaveCharacterCustomizationsRequest.Parser.ParseFrom(GrpcUtils.GrpcToProtobuf(bytes));
