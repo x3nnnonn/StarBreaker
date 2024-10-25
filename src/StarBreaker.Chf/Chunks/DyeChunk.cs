@@ -16,8 +16,8 @@ public sealed class DyeChunk
     public required DyeType DyeType { get; init; }
     public required uint Unknown { get; init; }
     public required DyeValuesChunk? Values { get; init; }
-    public required Color? RootDyeColor { get; init; }
-    public required Color? TipDyeColor { get; init; }
+    public required ColorRgba? RootDyeColor { get; init; }
+    public required ColorRgba? TipDyeColor { get; init; }
 
     public static DyeChunk Read(ref SpanReader reader)
     {

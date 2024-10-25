@@ -18,8 +18,8 @@ public sealed class EyeMaterialChunk
             {
                 EyeColors = new ColorsChunk()
                 {
-                    Color01 = new Color(),
-                    Color02 = new Color(),
+                    Color01 = new ColorRgba(),
+                    Color02 = new ColorRgba(),
                 }
             };
         }

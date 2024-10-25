@@ -5,16 +5,16 @@ namespace StarBreaker.Chf;
 
 public sealed class FaceColorsChunk
 {
-    public required Color HeadColor { get; init; }
-    public required Color EyeMakeupColor1 { get; init; }
-    public required Color EyeMakeupColor2 { get; init; }
-    public required Color EyeMakeupColor3 { get; init; }
-    public required Color CheekMakeupColor1 { get; init; }
-    public required Color CheekMakeupColor2 { get; init; }
-    public required Color CheekMakeupColor3 { get; init; }
-    public required Color LipMakeupColor1 { get; init; }
-    public required Color LipMakeupColor2 { get; init; }
-    public required Color LipMakeupColor3 { get; init; }
+    public required ColorRgba HeadColor { get; init; }
+    public required ColorRgba EyeMakeupColor1 { get; init; }
+    public required ColorRgba EyeMakeupColor2 { get; init; }
+    public required ColorRgba EyeMakeupColor3 { get; init; }
+    public required ColorRgba CheekMakeupColor1 { get; init; }
+    public required ColorRgba CheekMakeupColor2 { get; init; }
+    public required ColorRgba CheekMakeupColor3 { get; init; }
+    public required ColorRgba LipMakeupColor1 { get; init; }
+    public required ColorRgba LipMakeupColor2 { get; init; }
+    public required ColorRgba LipMakeupColor3 { get; init; }
     public required uint Data10 { get; init; }
     public required uint Data11 { get; init; }
     public required uint Data12 { get; init; }
@@ -33,16 +33,16 @@ public sealed class FaceColorsChunk
         //note: the uints here are either a bitfield or a bool, not sure.
         reader.Expect<ulong>(0x16);
         
-        var data22 = reader.ReadKeyedValue<Color>(0xbd530797);
-        var data23 = reader.ReadKeyedValue<Color>(0xb29b1d90);
-        var data24 = reader.ReadKeyedValue<Color>(0xe3230e2f);
-        var data25 = reader.ReadKeyedValue<Color>(0x2ec0e736);
-        var data26 = reader.ReadKeyedValue<Color>(0x1a081a93);
-        var data27 = reader.ReadKeyedValue<Color>(0x4bb0092c);
-        var data28 = reader.ReadKeyedValue<Color>(0x8653e035);
-        var data29 = reader.ReadKeyedValue<Color>(0x7d86e792);
-        var data30 = reader.ReadKeyedValue<Color>(0x2c3ef42d);
-        var data31 = reader.ReadKeyedValue<Color>(0xe1dd1d34);
+        var data22 = reader.ReadKeyedValue<ColorRgba>(0xbd530797);
+        var data23 = reader.ReadKeyedValue<ColorRgba>(0xb29b1d90);
+        var data24 = reader.ReadKeyedValue<ColorRgba>(0xe3230e2f);
+        var data25 = reader.ReadKeyedValue<ColorRgba>(0x2ec0e736);
+        var data26 = reader.ReadKeyedValue<ColorRgba>(0x1a081a93);
+        var data27 = reader.ReadKeyedValue<ColorRgba>(0x4bb0092c);
+        var data28 = reader.ReadKeyedValue<ColorRgba>(0x8653e035);
+        var data29 = reader.ReadKeyedValue<ColorRgba>(0x7d86e792);
+        var data30 = reader.ReadKeyedValue<ColorRgba>(0x2c3ef42d);
+        var data31 = reader.ReadKeyedValue<ColorRgba>(0xe1dd1d34);
         var data32 = reader.ReadKeyedValue<uint>("Makeup1NumTilesU");
         var data33 = reader.ReadKeyedValue<uint>("Makeup1NumTilesV");
         var data34 = reader.ReadKeyedValue<uint>("Makeup1OffsetU");

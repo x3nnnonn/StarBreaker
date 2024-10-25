@@ -11,8 +11,8 @@ public sealed class BodyMaterialChunk
     //i dont know the name of this. Best guess: ItemPortKeys.GetUIntKey("body_material");
 
     public required uint AdditionalParams { get; init; }
-    public required Color TorsoColor { get; init; }
-    public required Color LimbColor { get; init; }
+    public required ColorRgba TorsoColor { get; init; }
+    public required ColorRgba LimbColor { get; init; }
 
     public static BodyMaterialChunk Read(ref SpanReader reader)
     {
@@ -43,7 +43,7 @@ public sealed class BodyMaterialChunk
         reader.Expect<uint>(0);
         reader.Expect<uint>(1);
         reader.Expect<uint>(0);
-        var torsoColor = reader.ReadKeyedValue<Color>(0xbd530797);
+        var torsoColor = reader.ReadKeyedValue<ColorRgba>(0xbd530797);
         reader.Expect<uint>(5);
         //limbs_m | f_limbs_m
         reader.Expect(isMan ? 0xA41FA12C : 0x8A5B66DB);
@@ -52,7 +52,7 @@ public sealed class BodyMaterialChunk
         reader.Expect<uint>(0);
         reader.Expect<uint>(1);
         reader.Expect<uint>(0);
-        var limbColor = reader.ReadKeyedValue<Color>(0xbd530797);
+        var limbColor = reader.ReadKeyedValue<ColorRgba>(0xbd530797);
         //todo: why
         if (reader.Remaining >= 4)
             reader.Expect<uint>(5);
