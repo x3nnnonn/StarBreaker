@@ -9,7 +9,7 @@ public static class TimeZipNode
 
     public static void Run()
     {
-        var p4kFile = new P4kFile(p4k);
+        var p4kFile = P4kFile.FromFile(p4k);
 
         var times = new List<long>();
         for (var i = 0; i < 8; i++)

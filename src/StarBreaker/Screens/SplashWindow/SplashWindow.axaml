@@ -1,0 +1,71 @@
+﻿<windowing:AppWindow xmlns="https://github.com/avaloniaui"
+                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                     xmlns:vm="clr-namespace:StarBreaker.Screens"
+                     xmlns:local="clr-namespace:StarBreaker"
+                     xmlns:windowing="clr-namespace:FluentAvalonia.UI.Windowing;assembly=FluentAvalonia"
+                     mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="400"
+                     x:Class="StarBreaker.Screens.SplashWindow"
+                     d:DataContext="{x:Static local:DesignData.SplashWindowViewModel}"
+                     x:DataType="vm:SplashWindowViewModel"
+                     Width="400" Height="400"
+                     CanResize="False"
+                     WindowStartupLocation="CenterScreen"
+                     Title="StarBreaker">
+    <Grid>
+        <StackPanel
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            IsVisible="{Binding Progress, Converter={x:Static ObjectConverters.IsNull}}">
+            <TextBlock
+                Margin="10"
+                FontSize="24"
+                HorizontalAlignment="Center"
+                Text="Pick a Data.p4k file to begin" />
+            <Separator />
+            <TextBlock
+                Margin="10"
+                FontSize="16"
+                HorizontalAlignment="Center"
+                Text="Detected P4k files" />
+
+            <ItemsControl ItemsSource="{Binding Installations}" HorizontalAlignment="Center">
+                <ItemsControl.DataTemplates>
+                    <DataTemplate x:DataType="vm:StarCitizenInstallationViewModel">
+                        <!-- ReSharper disable once Xaml.PossibleNullReferenceException -->
+                        <Button
+                            Margin="10"
+                            ToolTip.Tip="{Binding Path}"
+                            Content="{Binding ChannelName}"
+                            Command="{Binding $parent[ItemsControl].((vm:SplashWindowViewModel)DataContext).ClickP4kLocationCommand}"
+                            CommandParameter="{Binding Path}" />
+                    </DataTemplate>
+                </ItemsControl.DataTemplates>
+            </ItemsControl>
+            <Separator></Separator>
+
+            <TextBlock
+                Margin="10"
+                FontSize="16"
+                HorizontalAlignment="Center"
+                Text="Custom P4k file" />
+            <Button Command="{Binding PickP4k}" VerticalAlignment="Bottom" HorizontalAlignment="Center">
+                Pick custom file
+            </Button>
+        </StackPanel>
+        <StackPanel
+            Margin="50"
+            VerticalAlignment="Center"
+            IsVisible="{Binding Progress, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <TextBlock
+                Margin="10"
+                FontSize="24"
+                HorizontalAlignment="Center"
+                Text="Loading p4k file..." />
+            <ProgressBar
+                Minimum="0" Maximum="1"
+                Value="{Binding Progress}" />
+        </StackPanel>
+    </Grid>
+</windowing:AppWindow>

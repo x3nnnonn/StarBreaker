@@ -1,0 +1,45 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sty="using:FluentAvalonia.Styling"
+             xmlns:starBreaker="clr-namespace:StarBreaker"
+             x:Class="StarBreaker.App"
+             RequestedThemeVariant="Default">
+    <Application.DataTemplates>
+        <starBreaker:ViewLocator />
+    </Application.DataTemplates>
+
+    <Application.Styles>
+        <sty:FluentAvaloniaTheme UseSystemFontOnWindows="True" />
+        <StyleInclude Source="avares://Avalonia.Controls.TreeDataGrid/Themes/Fluent.axaml"/>
+        <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+        <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />
+        <StyleInclude Source="avares://AvaloniaHex/Themes/Simple/AvaloniaHex.axaml"/>
+    </Application.Styles>
+    
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Default">
+                    <SolidColorBrush x:Key="TreeDataGridGridLinesBrush" Color="Black" Opacity="0.1" />
+                    <SolidColorBrush x:Key="TreeDataGridHeaderBackgroundPointerOverBrush" Color="Black" Opacity="0.1" />
+                    <SolidColorBrush x:Key="TreeDataGridHeaderBackgroundPressedBrush" Color="Black" Opacity="0.6" />
+                    <SolidColorBrush x:Key="TreeDataGridHeaderBorderBrushPointerOverBrush" Color="Transparent" />
+                    <SolidColorBrush x:Key="TreeDataGridHeaderBorderBrushPressedBrush" Color="Transparent" />
+                    <SolidColorBrush x:Key="TreeDataGridHeaderForegroundPointerOverBrush" Color="Black" />
+                    <SolidColorBrush x:Key="TreeDataGridHeaderForegroundPressedBrush" Color="Black" />
+                    <SolidColorBrush x:Key="TreeDataGridSelectedCellBackgroundBrush" Color="Black" Opacity="0.4" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="TreeDataGridGridLinesBrush" Color="White" Opacity="0.1" />
+                    <SolidColorBrush x:Key="TreeDataGridHeaderBackgroundPointerOverBrush" Color="White" Opacity="0.1" />
+                    <SolidColorBrush x:Key="TreeDataGridHeaderBackgroundPressedBrush" Color="White" Opacity="0.6" />
+                    <SolidColorBrush x:Key="TreeDataGridHeaderBorderBrushPointerOverBrush" Color="Transparent" />
+                    <SolidColorBrush x:Key="TreeDataGridHeaderBorderBrushPressedBrush" Color="Transparent" />
+                    <SolidColorBrush x:Key="TreeDataGridHeaderForegroundPointerOverBrush" Color="White" />
+                    <SolidColorBrush x:Key="TreeDataGridHeaderForegroundPressedBrush" Color="White" />
+                    <SolidColorBrush x:Key="TreeDataGridSelectedCellBackgroundBrush" Color="White" Opacity="0.4" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

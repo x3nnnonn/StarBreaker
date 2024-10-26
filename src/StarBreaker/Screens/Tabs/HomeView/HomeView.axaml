@@ -1,0 +1,47 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:starBreaker="clr-namespace:StarBreaker"
+             xmlns:screens="clr-namespace:StarBreaker.Screens"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:DataType="screens:HomeViewModel"
+             d:DataContext="{x:Static starBreaker:DesignData.HomeViewModel}"
+             x:Class="StarBreaker.Screens.HomeView">
+    <Grid
+        Name="root">
+        <Grid
+            Name="content"
+            IsVisible="{Binding Progress, Converter={x:Static ObjectConverters.IsNull}}"
+            VerticalAlignment="Stretch"
+            HorizontalAlignment="Stretch"
+            ColumnDefinitions="*,4,*">
+            <ScrollViewer Grid.Column="0">
+                <TreeDataGrid Source="{Binding Source}" />
+            </ScrollViewer>
+            <GridSplitter
+                Grid.Column="1"
+                ResizeDirection="Columns" />
+            <TextBlock
+                Grid.Column="2"
+                IsVisible="{Binding Progress, Converter={x:Static ObjectConverters.IsNull}}"
+                Text="add preview screen here :)"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center" />
+        </Grid>
+
+        <StackPanel
+            Name="loadingscreen"
+            IsVisible="{Binding Progress, Converter={x:Static ObjectConverters.IsNotNull}}"
+            VerticalAlignment="Center"
+            HorizontalAlignment="Center">
+            <TextBlock
+                Text="Loading P4k entries..."
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center" />
+            <ProgressBar
+                Minimum="0" Maximum="1"
+                Value="{Binding Progress}" />
+        </StackPanel>
+    </Grid>
+</UserControl>
