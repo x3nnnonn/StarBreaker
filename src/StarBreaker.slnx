@@ -16,4 +16,5 @@
   <Project Path="StarBreaker.Protobuf\StarBreaker.Protobuf.csproj" />
   <Project Path="StarBreaker.Sandbox\StarBreaker.Sandbox.csproj" />
   <Project Path="StarBreaker.Tests\StarBreaker.Tests.csproj" />
+  <Project Path="StarBreaker\StarBreaker.csproj" Type="Classic C#" />
 </Solution>

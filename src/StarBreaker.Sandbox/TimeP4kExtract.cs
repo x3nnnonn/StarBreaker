@@ -10,7 +10,7 @@ public static class TimeP4kExtract
     public static void Run()
     {
         var sw1 = Stopwatch.StartNew();
-        var p4kFile = new P4kFile(p4k);
+        var p4kFile = P4kFile.FromFile(p4k);
         sw1.Stop();
 
         Console.WriteLine($"Took {sw1.ElapsedMilliseconds}ms to load {p4kFile.Entries.Length} entries");

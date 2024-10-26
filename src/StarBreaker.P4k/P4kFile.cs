@@ -15,10 +15,16 @@ public sealed class P4kFile
 
     public ZipEntry[] Entries => _entries;
 
-    public P4kFile(string filePath)
+    private P4kFile(string path, ZipEntry[] entries)
     {
-        P4KPath = filePath;
-        using var reader = new BinaryReader(new FileStream(P4KPath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 1024), Encoding.UTF8, false);
+        P4KPath = path;
+        _entries = entries;
+    }
+
+    public static P4kFile FromFile(string filePath, IProgress<double>? progress = null)
+    {
+        progress?.Report(0);
+        using var reader = new BinaryReader(new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 1024), Encoding.UTF8, false);
 
         var eocdLocation = reader.Locate(EOCDRecord.Magic);
         reader.BaseStream.Seek(eocdLocation, SeekOrigin.Begin);
@@ -42,8 +48,8 @@ public sealed class P4kFile
         if (eocd64.Signature != BitConverter.ToUInt32(EOCD64Record.Magic))
             throw new Exception("Invalid zip64 end of central directory locator");
 
-        _entries = new ZipEntry[eocd64.EntriesOnDisk];
-
+        var _entries = new ZipEntry[eocd64.EntriesOnDisk];
+        var reportInterval = (int)Math.Max(eocd64.TotalEntries / 50, 1);
         reader.BaseStream.Seek((long)eocd64.CentralDirectoryOffset, SeekOrigin.Begin);
 
         for (var i = 0; i < (int)eocd64.TotalEntries; i++)
@@ -115,12 +121,19 @@ public sealed class P4kFile
                     header.LastModifiedTime,
                     header.LastModifiedDate
                 );
+
+                if (i % reportInterval == 0)
+                    progress?.Report(i / (double)eocd64.TotalEntries);
             }
             finally
             {
                 ArrayPool<byte>.Shared.Return(rent);
             }
         }
+
+        progress?.Report(1);
+
+        return new P4kFile(filePath, _entries);
     }
 
     public void Extract(string outputDir, string? filter = null, IProgress<double>? progress = null)
@@ -132,7 +145,7 @@ public sealed class P4kFile
         var processedEntries = 0;
 
         progress?.Report(0);
-        
+
         //TODO: Preprocessing step:
         // 1. start with the list of total files
         // 2. run the following according to the filter:
