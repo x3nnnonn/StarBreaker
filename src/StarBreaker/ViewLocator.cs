@@ -12,6 +12,9 @@ public class ViewLocator : IDataTemplate
         Register<SplashWindowViewModel, SplashWindow>();
         Register<HomeViewModel, HomeView>();
         Register<AboutViewModel, AboutView>();
+        Register<HexPreviewViewModel, HexPreviewView>();
+        Register<TextPreviewViewModel, TextPreviewView>();
+        Register<DdsPreviewViewModel, DdsPreviewView>();
     }
     
     private static readonly Dictionary<Type, Func<Control>> Registration = new();

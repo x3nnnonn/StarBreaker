@@ -48,7 +48,7 @@ public sealed class P4kFile
         if (eocd64.Signature != BitConverter.ToUInt32(EOCD64Record.Magic))
             throw new Exception("Invalid zip64 end of central directory locator");
 
-        var _entries = new ZipEntry[eocd64.EntriesOnDisk];
+        var p4k = new P4kFile(filePath, new ZipEntry[eocd64.TotalEntries]);
         var reportInterval = (int)Math.Max(eocd64.TotalEntries / 50, 1);
         reader.BaseStream.Seek((long)eocd64.CentralDirectoryOffset, SeekOrigin.Begin);
 
@@ -111,7 +111,8 @@ public sealed class P4kFile
                 if (header.FileCommentLength != 0)
                     throw new Exception("File comment not supported");
 
-                _entries[i] = new ZipEntry(
+                p4k.Entries[i] = new ZipEntry(
+                    p4k,
                     fileName,
                     compressedSize,
                     uncompressedSize,
@@ -133,7 +134,7 @@ public sealed class P4kFile
 
         progress?.Report(1);
 
-        return new P4kFile(filePath, _entries);
+        return p4k;
     }
 
     public void Extract(string outputDir, string? filter = null, IProgress<double>? progress = null)
@@ -169,29 +170,7 @@ public sealed class P4kFile
                 var entryPath = Path.Combine(outputDir, entry.Name);
                 Directory.CreateDirectory(Path.GetDirectoryName(entryPath) ?? throw new InvalidOperationException());
 
-                // part of the file stream that contains the compressed data
-                Stream entryStream = new StreamSegment(p4kStream, p4kStream.Position, (long)entry.CompressedSize);
-
-                // if the file is encrypted, decrypt it
-                if (entry.IsCrypted)
-                    entryStream = GetDecryptStream(entryStream);
-
-                if (entry.CompressionMethod == 100)
-                {
-                    entryStream = new DecompressionStream(entryStream);
-                }
-                else if (entry.CompressionMethod == 0)
-                {
-                    if (entry.CompressedSize != entry.UncompressedSize)
-                    {
-                        throw new Exception("Invalid stored file");
-                    }
-                    //leave entryStream as is
-                }
-                else
-                {
-                    throw new Exception("Invalid compression method");
-                }
+                var entryStream = Open(entry, p4kStream);
 
                 using var writeStream = new FileStream(entryPath, FileMode.Create, FileAccess.Write, FileShare.None);
 
@@ -259,5 +238,44 @@ public sealed class P4kFile
         }
 
         return fields;
+    }
+
+    private static Stream Open(ZipEntry entry, Stream p4kStream)
+    {
+        p4kStream.Seek((long)entry.Offset, SeekOrigin.Begin);
+        if (p4kStream.Read<uint>() is not 0x14034B50 and not 0x04034B50)
+            throw new Exception("Invalid local file header");
+
+        var localHeader = p4kStream.Read<LocalFileHeader>();
+
+        p4kStream.Seek(localHeader.FileNameLength + localHeader.ExtraFieldLength, SeekOrigin.Current);
+        Stream entryStream = new StreamSegment(p4kStream, p4kStream.Position, (long)entry.CompressedSize, false);
+
+        if (entry.IsCrypted)
+            entryStream = GetDecryptStream(entryStream);
+
+        if (entry.CompressionMethod == 100)
+        {
+            entryStream = new DecompressionStream(entryStream);
+        }
+        else if (entry.CompressionMethod == 0)
+        {
+            if (entry.CompressedSize != entry.UncompressedSize)
+            {
+                throw new Exception("Invalid stored file");
+            }
+        }
+        else
+        {
+            throw new Exception("Invalid compression method");
+        }
+
+        return entryStream;
+    }
+
+    public Stream Open(ZipEntry entry)
+    {
+        var fs = new FileStream(P4KPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        return Open(entry, fs);
     }
 }

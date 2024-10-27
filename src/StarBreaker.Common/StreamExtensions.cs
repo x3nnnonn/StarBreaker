@@ -19,4 +19,16 @@ public static class StreamExtensions
         
         return MemoryMarshal.Read<T>(span);
     }
+    
+    public static void ReadToEnd(this Stream stream, Span<byte> buffer)
+    {
+        var read = 0;
+        while (read < buffer.Length)
+        {
+            var n = stream.Read(buffer[read..]);
+            if (n == 0)
+                throw new Exception("Failed to read from stream");
+            read += n;
+        }
+    }
 }
