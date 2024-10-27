@@ -2,9 +2,9 @@
 
 namespace StarBreaker.Screens;
 
-public partial class HomeView : UserControl
+public partial class TextPreviewView : UserControl
 {
-    public HomeView()
+    public TextPreviewView()
     {
         InitializeComponent();
     }

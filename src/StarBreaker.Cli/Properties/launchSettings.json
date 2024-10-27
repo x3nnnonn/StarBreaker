@@ -14,7 +14,7 @@
     },
     "p4k-extract": {
       "commandName": "Project",
-      "commandLineArgs": "p4k-extract --p4k \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k\" --output \"C:\\Scratch\\StarCitizen\\p4k\""
+      "commandLineArgs": "p4k-extract --p4k \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\LIVE\\Data.p4k\" --output \"C:\\Scratch\\StarCitizen\\p4k\""
     },
     "chf-download": {
       "commandName": "Project",

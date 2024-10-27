@@ -32,9 +32,18 @@
         <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.1" />
+        <PackageReference Include="Pfim" Version="0.11.3" />
+        <PackageReference Include="System.IO.Hashing" Version="8.0.0" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\StarBreaker.P4k\StarBreaker.P4k.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Update="Screens\Tabs\HomeView\Previews\HexPreview\HexPreviewView.axaml.cs">
+        <DependentUpon>HexPreviewView.axaml</DependentUpon>
+        <SubType>Code</SubType>
+      </Compile>
     </ItemGroup>
 </Project>
