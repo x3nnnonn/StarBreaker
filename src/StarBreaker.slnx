@@ -10,6 +10,7 @@
   <Project Path="StarBreaker.Common\StarBreaker.Common.csproj" />
   <Project Path="StarBreaker.CryChunkFile\StarBreaker.CryChunkFile.csproj" />
   <Project Path="StarBreaker.CryXmlB\StarBreaker.CryXmlB.csproj" />
+  <Project Path="StarBreaker.Dds\StarBreaker.Dds.csproj" Type="Classic C#" />
   <Project Path="StarBreaker.Forge\StarBreaker.Forge.csproj" />
   <Project Path="StarBreaker.Grpc\StarBreaker.Grpc.csproj" />
   <Project Path="StarBreaker.P4k\StarBreaker.P4k.csproj" />
