@@ -10,8 +10,8 @@ public class ViewLocator : IDataTemplate
     {
         Register<MainWindowViewModel, MainWindow>();
         Register<SplashWindowViewModel, SplashWindow>();
-        Register<HomeViewModel, HomeView>();
-        Register<AboutViewModel, AboutView>();
+        Register<P4kTabViewModel, P4kTabView>();
+        Register<DataCoreTabViewModel, DataCoreTabView>();
         Register<HexPreviewViewModel, HexPreviewView>();
         Register<TextPreviewViewModel, TextPreviewView>();
         Register<DdsPreviewViewModel, DdsPreviewView>();

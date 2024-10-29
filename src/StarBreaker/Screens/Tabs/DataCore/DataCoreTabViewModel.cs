@@ -6,15 +6,15 @@ using StarBreaker.Services;
 
 namespace StarBreaker.Screens;
 
-public sealed partial class AboutViewModel : PageViewModelBase
+public sealed partial class DataCoreTabViewModel : PageViewModelBase
 {
     private const string dataCorePath = "Data\\Game.dcb";
-    public override string Name => "About";
-    public override string Icon => "Info";
+    public override string Name => "DataCore";
+    public override string Icon => "ViewAll";
 
     private readonly IP4kService _p4KService;
 
-    public AboutViewModel(IP4kService p4kService)
+    public DataCoreTabViewModel(IP4kService p4kService)
     {
         _p4KService = p4kService;
         Forge = null;
