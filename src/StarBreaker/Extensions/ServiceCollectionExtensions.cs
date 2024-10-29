@@ -12,8 +12,8 @@ public static class ServiceCollectionExtensions
         services.AddLogging(b => { b.AddSimpleConsole(options => { options.SingleLine = true; }); });
         services.AddTransient<MainWindowViewModel>();
         services.AddTransient<SplashWindowViewModel>();
-        services.AddTransient<HomeViewModel>();
-        services.AddTransient<AboutViewModel>();
+        services.AddTransient<P4kTabViewModel>();
+        services.AddTransient<DataCoreTabViewModel>();
         services.AddSingleton<IP4kService, P4kService>();
     }
 }

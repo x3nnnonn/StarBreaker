@@ -1,5 +1,8 @@
-﻿namespace StarBreaker.P4k;
+﻿using System.Diagnostics;
 
+namespace StarBreaker.P4k;
+
+[DebuggerDisplay("{Name}")]
 public sealed class ZipNode
 {
     private static readonly Dictionary<int, ZipNode> _empty = new();
@@ -53,10 +56,5 @@ public sealed class ZipNode
 
             current = value;
         }
-    }
-
-    public override string ToString()
-    {
-        return $"{Name} | {Children.Count}";
     }
  }

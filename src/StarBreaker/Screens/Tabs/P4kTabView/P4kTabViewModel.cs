@@ -11,10 +11,10 @@ using StarBreaker.Services;
 
 namespace StarBreaker.Screens;
 
-public sealed partial class HomeViewModel : PageViewModelBase
+public sealed partial class P4kTabViewModel : PageViewModelBase
 {
-    public override string Name => "Home";
-    public override string Icon => "Home";
+    public override string Name => "P4k";
+    public override string Icon => "ZipFolder";
 
     private readonly IP4kService _p4KService;
     
@@ -27,7 +27,7 @@ public sealed partial class HomeViewModel : PageViewModelBase
     private static readonly string[] ddsLodExtensions = [".dds"];
     //, ".dds.1", ".dds.2", ".dds.3", ".dds.4", ".dds.5", ".dds.6", ".dds.7", ".dds.8", ".dds.9"];
 
-    public HomeViewModel(IP4kService p4kService)
+    public P4kTabViewModel(IP4kService p4kService)
     {
         _p4KService = p4kService;
         Source = new HierarchicalTreeDataGridSource<ZipNode>(Array.Empty<ZipNode>())

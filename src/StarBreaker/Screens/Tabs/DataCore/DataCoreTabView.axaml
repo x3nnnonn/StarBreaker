@@ -4,8 +4,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:screens="clr-namespace:StarBreaker.Screens"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:DataType="screens:AboutViewModel"
-             x:Class="StarBreaker.Screens.AboutView">
+             x:DataType="screens:DataCoreTabViewModel"
+             x:Class="StarBreaker.Screens.DataCoreTabView">
     <Grid Name="Root">
         <Grid
             Name="Content"

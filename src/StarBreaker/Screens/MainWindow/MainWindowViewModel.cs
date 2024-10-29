@@ -13,8 +13,8 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         Pages =
         [
-            App.Current.Services.GetRequiredService<HomeViewModel>(),
-            App.Current.Services.GetRequiredService<AboutViewModel>(),
+            App.Current.Services.GetRequiredService<P4kTabViewModel>(),
+            App.Current.Services.GetRequiredService<DataCoreTabViewModel>(),
         ];
         
         CurrentPage = _pages.First();
