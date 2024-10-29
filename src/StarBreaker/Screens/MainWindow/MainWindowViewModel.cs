@@ -21,8 +21,8 @@ public partial class MainWindowViewModel : ViewModelBase
     }
     
     [ObservableProperty]
-    private IPageViewModel _currentPage;
+    private PageViewModelBase _currentPage;
 
     [ObservableProperty] 
-    private ObservableCollection<IPageViewModel> _pages;
+    private ObservableCollection<PageViewModelBase> _pages;
 }
