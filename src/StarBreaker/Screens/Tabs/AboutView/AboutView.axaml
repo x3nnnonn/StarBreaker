@@ -2,7 +2,32 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:screens="clr-namespace:StarBreaker.Screens"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:DataType="screens:AboutViewModel"
              x:Class="StarBreaker.Screens.AboutView">
-    ABOUT VIEW
+    <Grid Name="Root">
+        <Grid
+            Name="Content"
+            IsVisible="{Binding Forge, Converter={x:Static ObjectConverters.IsNotNull}}"
+            VerticalAlignment="Stretch"
+            HorizontalAlignment="Stretch">
+            <TextBlock Text="{Binding Yes}" />
+        </Grid>
+
+        <StackPanel
+            Name="LoadingScreen"
+            IsVisible="{Binding Forge, Converter={x:Static ObjectConverters.IsNull}}"
+            VerticalAlignment="Center"
+            HorizontalAlignment="Center">
+            <TextBlock
+                Text="Loading DataCore..."
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center" />
+            <ProgressBar
+                Minimum="0" Maximum="1"
+                IsIndeterminate="True" />
+        </StackPanel>
+    </Grid>
+
 </UserControl>

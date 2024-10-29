@@ -1,8 +1,9 @@
-﻿using System.Buffers;
+﻿#define USE_PARALLEL
+
+using System.Buffers;
 using System.IO.Enumeration;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 using StarBreaker.Common;
 using ZstdSharp;
 
@@ -10,6 +11,16 @@ namespace StarBreaker.P4k;
 
 public sealed class P4kFile
 {
+    private static readonly byte[] _key =
+    [
+        0x5E, 0x7A, 0x20, 0x02,
+        0x30, 0x2E, 0xEB, 0x1A,
+        0x3B, 0xB6, 0x17, 0xC3,
+        0x0F, 0xDE, 0x1E, 0x47
+    ];
+
+    private readonly Aes _aes;
+
     public string P4KPath { get; }
     private readonly ZipEntry[] _entries;
 
@@ -19,6 +30,12 @@ public sealed class P4kFile
     {
         P4KPath = path;
         _entries = entries;
+
+        _aes = Aes.Create();
+        _aes.Key = _key;
+        _aes.IV = new byte[16];
+        _aes.Mode = CipherMode.CBC;
+        _aes.Padding = PaddingMode.Zeros;
     }
 
     public static P4kFile FromFile(string filePath, IProgress<double>? progress = null)
@@ -139,7 +156,10 @@ public sealed class P4kFile
 
     public void Extract(string outputDir, string? filter = null, IProgress<double>? progress = null)
     {
-        var filteredEntries = filter is null ? _entries : _entries.Where(entry => FileSystemName.MatchesSimpleExpression(filter, entry.Name, true)).ToArray();
+        var filteredEntries = filter is null
+            ? _entries
+            : _entries.Where(entry => FileSystemName.MatchesSimpleExpression(filter, entry.Name, true))
+                .ToArray();
 
         var numberOfEntries = filteredEntries.Length;
         var fivePercent = numberOfEntries / 20;
@@ -154,29 +174,16 @@ public sealed class P4kFile
         // 4. find file -> multiple file processors
         // 5. find multiple file -> single file unsplit processors - remove from the list so we don't double process
         // run it!
-
         Parallel.ForEach(filteredEntries, entry =>
             {
-                using var p4kStream = new FileStream(P4KPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-
-                p4kStream.Seek((long)entry.Offset, SeekOrigin.Begin);
-
-                if (p4kStream.Read<uint>() is not 0x14034B50 and not 0x04034B50)
-                    throw new Exception("Invalid local file header");
-
-                var header = p4kStream.Read<LocalFileHeader>();
-                p4kStream.Seek(header.FileNameLength + header.ExtraFieldLength, SeekOrigin.Current);
-
                 var entryPath = Path.Combine(outputDir, entry.Name);
+
                 Directory.CreateDirectory(Path.GetDirectoryName(entryPath) ?? throw new InvalidOperationException());
 
-                var entryStream = Open(entry, p4kStream);
-
-                using var writeStream = new FileStream(entryPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                using var entryStream = Open(entry);
+                using var writeStream = new FileStream(entryPath, FileMode.Create, FileAccess.Write, FileShare.None,1024 * 1024, FileOptions.WriteThrough);
 
                 entryStream.CopyTo(writeStream);
-
-                entryStream.Dispose();
 
                 lock (filteredEntries)
                 {
@@ -188,39 +195,77 @@ public sealed class P4kFile
         );
     }
 
-    private static readonly byte[] _key =
-    [
-        0x5E, 0x7A, 0x20, 0x02,
-        0x30, 0x2E, 0xEB, 0x1A,
-        0x3B, 0xB6, 0x17, 0xC3,
-        0x0F, 0xDE, 0x1E, 0x47
-    ];
-
-    private static Stream GetDecryptStream(Stream entryStream)
+    public Stream Open(ZipEntry entry)
     {
-        using var aes = Aes.Create();
-        aes.Key = _key;
-        aes.IV = new byte[16];
-        aes.Mode = CipherMode.CBC;
-        aes.Padding = PaddingMode.None;
+        var p4kStream = new FileStream(P4KPath, FileMode.Open, FileAccess.Read, FileShare.Read);
 
-        var cipher = aes.CreateDecryptor();
+        p4kStream.Seek((long)entry.Offset, SeekOrigin.Begin);
+        if (p4kStream.Read<uint>() is not 0x14034B50 and not 0x04034B50)
+            throw new Exception("Invalid local file header");
 
-        var crypto = new CryptoStream(entryStream, cipher, CryptoStreamMode.Read);
-        //return crypto;
+        var localHeader = p4kStream.Read<LocalFileHeader>();
 
-        var buffer = new MemoryStream();
-        crypto.CopyTo(buffer);
+        p4kStream.Seek(localHeader.FileNameLength + localHeader.ExtraFieldLength, SeekOrigin.Current);
+        Stream entryStream = new StreamSegment(p4kStream, p4kStream.Position, (long)entry.CompressedSize, false);
 
-        // Trim NULL off end of stream
-        buffer.Seek(-1, SeekOrigin.End);
-        while (buffer.Position > 1 && buffer.ReadByte() == 0) buffer.Seek(-2, SeekOrigin.Current);
-        buffer.SetLength(buffer.Position);
+        return entry switch
+        {
+            { IsCrypted: true, CompressionMethod: 100 } => GetDecryptStream(entryStream, entry.UncompressedSize),
+            { IsCrypted: false, CompressionMethod: 100 } => GetDecompressionStream(entryStream, entry.UncompressedSize),
+            { IsCrypted: false, CompressionMethod: 0 } when entry.CompressedSize != entry.UncompressedSize => throw new Exception("Invalid stored file"),
+            { IsCrypted: false, CompressionMethod: 0 } => entryStream,
+            _ => throw new Exception("Invalid compression method")
+        };
+    }
+
+    private MemoryStream GetDecryptStream(Stream entryStream, ulong uncompressedSize)
+    {
+        using var transform = _aes.CreateDecryptor();
+
+        var rent = ArrayPool<byte>.Shared.Rent((int)entryStream.Length);
+        try
+        {
+            using var rented = new MemoryStream(rent, 0, (int)entryStream.Length, true, true);
+            using (var crypto = new CryptoStream(entryStream, transform, CryptoStreamMode.Read))
+            {
+                crypto.CopyTo(rented);
+            }
+
+            // Trim NULL off end of stream
+            rented.Seek(-1, SeekOrigin.End);
+            while (rented.Position > 1 && rented.ReadByte() == 0)
+                rented.Seek(-2, SeekOrigin.Current);
+            rented.SetLength(rented.Position);
+
+            rented.Seek(0, SeekOrigin.Begin);
+
+            using var decompressionStream = new DecompressionStream(rented, leaveOpen: true);
+            var finalStream = new MemoryStream((int)uncompressedSize);
+            decompressionStream.CopyTo(finalStream);
+
+            finalStream.Seek(0, SeekOrigin.Begin);
+
+            return finalStream;
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(rent);
+        }
+    }
+
+    private static MemoryStream GetDecompressionStream(Stream entryStream, ulong uncompressedSize)
+    {
+        // We need to make a new memoryStream and copy the data over.
+        // This is because the decompression stream doesn't support seeking/position/length.
+        using var decompressionStream = new DecompressionStream(entryStream);
+
+        var buffer = new MemoryStream((int)uncompressedSize);
+
+        decompressionStream.CopyTo(buffer);
 
         buffer.Seek(0, SeekOrigin.Begin);
 
-        entryStream = buffer;
-        return entryStream;
+        return buffer;
     }
 
     public static List<ZipExtraField> ReadExtraFields(BinaryReader br, ushort length)
@@ -238,44 +283,5 @@ public sealed class P4kFile
         }
 
         return fields;
-    }
-
-    private static Stream Open(ZipEntry entry, Stream p4kStream)
-    {
-        p4kStream.Seek((long)entry.Offset, SeekOrigin.Begin);
-        if (p4kStream.Read<uint>() is not 0x14034B50 and not 0x04034B50)
-            throw new Exception("Invalid local file header");
-
-        var localHeader = p4kStream.Read<LocalFileHeader>();
-
-        p4kStream.Seek(localHeader.FileNameLength + localHeader.ExtraFieldLength, SeekOrigin.Current);
-        Stream entryStream = new StreamSegment(p4kStream, p4kStream.Position, (long)entry.CompressedSize, false);
-
-        if (entry.IsCrypted)
-            entryStream = GetDecryptStream(entryStream);
-
-        if (entry.CompressionMethod == 100)
-        {
-            entryStream = new DecompressionStream(entryStream);
-        }
-        else if (entry.CompressionMethod == 0)
-        {
-            if (entry.CompressedSize != entry.UncompressedSize)
-            {
-                throw new Exception("Invalid stored file");
-            }
-        }
-        else
-        {
-            throw new Exception("Invalid compression method");
-        }
-
-        return entryStream;
-    }
-
-    public Stream Open(ZipEntry entry)
-    {
-        var fs = new FileStream(P4KPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        return Open(entry, fs);
     }
 }

@@ -10,7 +10,7 @@ public class Tests
     [Test]
     public async Task TestTagDatabase()
     {
-        var forge = new DataForge(@"C:\Scratch\StarCitizen\p4k\Data\Game.dcb");
+        var forge = new DataForge(File.OpenRead(@"C:\Scratch\StarCitizen\p4k\Data\Game.dcb"));
         var tagdatabase = forge.GetRecordsByFileName("*TagDatabase*");
         
         var writer = new StringWriter();
@@ -24,7 +24,7 @@ public class Tests
     [Test]
     public async Task Enums()
     {
-        var forge = new DataForge(@"C:\Scratch\StarCitizen\p4k\Data\Game.dcb");
+        var forge = new DataForge(File.OpenRead(@"C:\Scratch\StarCitizen\p4k\Data\Game.dcb"));
         var enums = forge.ExportEnums();
 
         await Assert.That(enums).IsNotEmpty();

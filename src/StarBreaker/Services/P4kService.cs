@@ -5,15 +5,16 @@ namespace StarBreaker.Services;
 
 public interface IP4kService
 {
-    P4kFile? P4kFile { get; }
+    P4kFile P4kFile { get; }
     void OpenP4k(string path, IProgress<double> progress);
 }
 
 public class P4kService : IP4kService
 {
     private readonly ILogger<P4kService> _logger;
+    private P4kFile? _p4KFile;
 
-    public P4kFile? P4kFile { get; private set; }
+    public P4kFile P4kFile => _p4KFile ?? throw new InvalidOperationException("P4k file not open");
 
     public P4kService(ILogger<P4kService> logger)
     {
@@ -22,13 +23,11 @@ public class P4kService : IP4kService
 
     public void OpenP4k(string path, IProgress<double> progress)
     {
-        if (P4kFile != null)
+        if (_p4KFile != null)
         {
             _logger.LogWarning("P4k file already open");
             return;
         }
-        P4kFile = P4kFile.FromFile(path, progress);
+        _p4KFile = P4kFile.FromFile(path, progress);
     }
-
-    public int FileCount => P4kFile?.Entries.Length ?? 0;
 }

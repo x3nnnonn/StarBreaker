@@ -22,7 +22,7 @@ public class DataForgeExtractSingleCommand : ICommand
     
     public ValueTask ExecuteAsync(IConsole console)
     {
-        var dataForge = new DataForge(DataForgeBinary);
+        var dataForge = new DataForge(File.OpenRead(DataForgeBinary));
 
         console.Output.WriteLine("DataForge loaded.");
         console.Output.WriteLine("Exporting...");
