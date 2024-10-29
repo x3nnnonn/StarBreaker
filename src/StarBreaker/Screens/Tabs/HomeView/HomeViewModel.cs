@@ -1,14 +1,12 @@
-using System.Buffers;
-using System.Runtime.Intrinsics.Arm;
 using System.Text;
 using Avalonia.Controls;
 using Avalonia.Controls.Models.TreeDataGrid;
 using Avalonia.Controls.Selection;
-using Avalonia.Markup.Xaml.Templates;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using StarBreaker.Common;
-using StarBreaker.Models;
+using StarBreaker.Extensions;
+using StarBreaker.P4k;
 using StarBreaker.Services;
 
 namespace StarBreaker.Screens;
@@ -31,8 +29,8 @@ public sealed partial class HomeViewModel : PageViewModelBase
                     new TextColumn<ZipNode, string>("File Name", x => x.Name, options: new TextColumnOptions<ZipNode>()),
                     x => x.Children.Values
                 ),
-                new TextColumn<ZipNode, string>("Size", x => x.SizeUi),
-                new TextColumn<ZipNode, string>("Date", x => x.DateModifiedUi),
+                new TextColumn<ZipNode, string>("Size", x => x.GetSize()),
+                new TextColumn<ZipNode, string>("Date", x => x.GetModifiedDate()),
                 // new TextColumn<ZipNode, string>("Compression", x => x.CompressionMethodUi),
                 // new TextColumn<ZipNode, string>("Encrypted", x => x.EncryptedUi)
             },
@@ -40,7 +38,7 @@ public sealed partial class HomeViewModel : PageViewModelBase
 
         Source.RowSelection!.SingleSelect = true;
         Source.RowSelection.SelectionChanged += SelectionChanged;
-        Initialize();
+        Source.Items = _p4KService.P4kFile.Root.Children.Values;
     }
 
     private void SelectionChanged(object? sender, TreeSelectionModelSelectionChangedEventArgs<ZipNode> e)
@@ -73,7 +71,7 @@ public sealed partial class HomeViewModel : PageViewModelBase
         Preview = null;
         Task.Run(() =>
         {
-            var stream = selectedEntry.ZipEntry.Open();
+            var stream = _p4KService.P4kFile.Open(selectedEntry.ZipEntry);
             var buffer = new byte[(int)selectedEntry.ZipEntry.UncompressedSize];
             stream.ReadToEnd(buffer);
             stream.Dispose();
@@ -110,25 +108,6 @@ public sealed partial class HomeViewModel : PageViewModelBase
     [ObservableProperty] private double? _progress;
 
     [ObservableProperty] private FilePreviewViewModel? _preview;
-
-    private void Initialize()
-    {
-        if (_p4KService.P4kFile == null)
-            throw new InvalidOperationException("P4K file is not loaded");
-
-        Progress = 0.0f;
-
-        Task.Run(() =>
-        {
-            var progress = new Progress<double>(value => Dispatcher.UIThread.InvokeAsync(() => Progress = (float)value));
-            var zipFileEntries = new ZipNode(_p4KService.P4kFile.Entries, progress);
-            Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                Source.Items = zipFileEntries.Children.Values;
-                Progress = null;
-            });
-        });
-    }
 
     private static readonly string[] plaintextExtensions = [".cfg", ".xml", ".txt", ".json"];
 

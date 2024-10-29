@@ -24,8 +24,8 @@ public sealed partial class AboutViewModel : PageViewModelBase
 
     private void Initialize()
     {
-        var entry = _p4KService.P4kFile.Entries.First(e => e.Name == dataCorePath);
-        var stream = entry.Open();
+        var entry = _p4KService.P4kFile.Entries[dataCorePath];
+        var stream = _p4KService.P4kFile.Open(entry);
         var forge = new DataForge(stream);
         stream.Dispose();
         

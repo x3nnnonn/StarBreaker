@@ -5,7 +5,6 @@ namespace StarBreaker.P4k;
 
 public sealed class ZipEntry
 {
-    private readonly P4kFile _parent;
     public string Name { get; }
     public ulong CompressedSize { get; }
     public ulong UncompressedSize { get; }
@@ -14,7 +13,7 @@ public sealed class ZipEntry
     public ulong Offset { get; }
     public DateTime LastModified { get; }
 
-    public ZipEntry(P4kFile parent,
+    public ZipEntry(
         string name,
         ulong compressedSize,
         ulong uncompressedSize,
@@ -25,7 +24,6 @@ public sealed class ZipEntry
         ushort lastModifiedDate
     )
     {
-        _parent = parent;
         Name = name;
         CompressedSize = compressedSize;
         UncompressedSize = uncompressedSize;
@@ -42,6 +40,4 @@ public sealed class ZipEntry
 
         LastModified = new DateTime(year, month, day, hour, minute, second);
     }
-
-    public Stream Open() => _parent.Open(this);
 }
