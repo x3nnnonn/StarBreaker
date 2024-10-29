@@ -8,41 +8,24 @@
              x:DataType="screens:HomeViewModel"
              d:DataContext="{x:Static starBreaker:DesignData.HomeViewModel}"
              x:Class="StarBreaker.Screens.HomeView">
-    <Grid Name="Root">
-        <Grid
-            Name="Content"
-            IsVisible="{Binding Progress, Converter={x:Static ObjectConverters.IsNull}}"
-            VerticalAlignment="Stretch"
-            HorizontalAlignment="Stretch"
-            ColumnDefinitions="*,4,*">
-            <ScrollViewer Grid.Column="0">
-                <TreeDataGrid Source="{Binding Source}" />
-            </ScrollViewer>
-            <GridSplitter
-                Grid.Column="1"
-                ResizeDirection="Columns" />
-            <Grid Grid.Column="2">
-                <ProgressBar
-                    IsVisible="{Binding Preview, Converter={x:Static ObjectConverters.IsNull}}"
-                    IsIndeterminate="True" />
-                <ContentControl
-                    IsVisible="{Binding Preview, Converter={x:Static ObjectConverters.IsNotNull}}"
-                    Content="{Binding Preview}" />
-            </Grid>
-        </Grid>
-
-        <StackPanel
-            Name="LoadingScreen"
-            IsVisible="{Binding Progress, Converter={x:Static ObjectConverters.IsNotNull}}"
-            VerticalAlignment="Center"
-            HorizontalAlignment="Center">
-            <TextBlock
-                Text="Loading P4k entries..."
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center" />
+    <Grid
+        VerticalAlignment="Stretch"
+        HorizontalAlignment="Stretch"
+        ColumnDefinitions="*,4,*">
+        <ScrollViewer Grid.Column="0">
+            <TreeDataGrid Source="{Binding Source}" />
+        </ScrollViewer>
+        <GridSplitter
+            Grid.Column="1"
+            ResizeDirection="Columns" />
+        <Grid Grid.Column="2">
             <ProgressBar
-                Minimum="0" Maximum="1"
-                Value="{Binding Progress}" />
-        </StackPanel>
+                IsVisible="{Binding Preview, Converter={x:Static ObjectConverters.IsNull}}"
+                IsIndeterminate="True" />
+            <ContentControl
+                IsVisible="{Binding Preview, Converter={x:Static ObjectConverters.IsNotNull}}"
+                Content="{Binding Preview}" />
+        </Grid>
     </Grid>
+
 </UserControl>

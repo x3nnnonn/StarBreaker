@@ -17,6 +17,15 @@ public sealed partial class HomeViewModel : PageViewModelBase
     public override string Icon => "Home";
 
     private readonly IP4kService _p4KService;
+    
+    [ObservableProperty] private HierarchicalTreeDataGridSource<ZipNode> _source;
+
+    [ObservableProperty] private FilePreviewViewModel? _preview;
+
+    private static readonly string[] plaintextExtensions = [".cfg", ".xml", ".txt", ".json"];
+
+    private static readonly string[] ddsLodExtensions = [".dds"];
+    //, ".dds.1", ".dds.2", ".dds.3", ".dds.4", ".dds.5", ".dds.6", ".dds.7", ".dds.8", ".dds.9"];
 
     public HomeViewModel(IP4kService p4kService)
     {
@@ -102,15 +111,4 @@ public sealed partial class HomeViewModel : PageViewModelBase
             Dispatcher.UIThread.Post(() => Preview = preview);
         });
     }
-
-    [ObservableProperty] private HierarchicalTreeDataGridSource<ZipNode> _source;
-
-    [ObservableProperty] private double? _progress;
-
-    [ObservableProperty] private FilePreviewViewModel? _preview;
-
-    private static readonly string[] plaintextExtensions = [".cfg", ".xml", ".txt", ".json"];
-
-    private static readonly string[] ddsLodExtensions = [".dds"];
-    //, ".dds.1", ".dds.2", ".dds.3", ".dds.4", ".dds.5", ".dds.6", ".dds.7", ".dds.8", ".dds.9"];
 }

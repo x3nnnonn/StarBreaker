@@ -22,7 +22,7 @@
         IsBackButtonVisible="False"
         IsSettingsVisible="False">
         <ui:NavigationView.MenuItemTemplate>
-            <DataTemplate DataType="vm:IPageViewModel">
+            <DataTemplate DataType="vm:PageViewModelBase">
                 <ui:NavigationViewItem
                     Content="{Binding Name}"
                     IconSource="{Binding Icon}"
