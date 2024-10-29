@@ -8,9 +8,9 @@
              x:DataType="screens:HomeViewModel"
              d:DataContext="{x:Static starBreaker:DesignData.HomeViewModel}"
              x:Class="StarBreaker.Screens.HomeView">
-    <Grid Name="root">
+    <Grid Name="Root">
         <Grid
-            Name="content"
+            Name="Content"
             IsVisible="{Binding Progress, Converter={x:Static ObjectConverters.IsNull}}"
             VerticalAlignment="Stretch"
             HorizontalAlignment="Stretch"
@@ -32,7 +32,7 @@
         </Grid>
 
         <StackPanel
-            Name="loadingscreen"
+            Name="LoadingScreen"
             IsVisible="{Binding Progress, Converter={x:Static ObjectConverters.IsNotNull}}"
             VerticalAlignment="Center"
             HorizontalAlignment="Center">

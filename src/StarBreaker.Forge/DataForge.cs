@@ -12,10 +12,12 @@ public sealed class DataForge
 {
     public readonly Database _database;
     private readonly Dictionary<int, int[]> _offsets;
+    
+    public Database Database => _database;
 
-    public DataForge(string dcb)
+    public DataForge(Stream fs)
     {
-        _database = new Database(dcb, out var bytesRead);
+        _database = new Database(fs, out var bytesRead);
         _offsets = ReadOffsets(bytesRead);
     }
 

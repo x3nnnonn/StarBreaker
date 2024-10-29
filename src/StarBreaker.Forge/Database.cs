@@ -43,9 +43,8 @@ public class Database
     private readonly FrozenDictionary<int, string> _cachedStrings;
     private readonly FrozenDictionary<int, string> _cachedStrings2;
 
-    public Database(string filePath, out int bytesRead)
+    public Database(Stream fs, out int bytesRead)
     {
-        using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
         using var reader = new BinaryReader(fs);
 
         _ = reader.ReadUInt32();
@@ -135,7 +134,7 @@ public class Database
     {
         var strings = new Dictionary<int, string>();
         var offset = 0;
-        
+
         while (offset < span.Length)
         {
             var length = span[offset..].IndexOf((byte)0);
@@ -147,7 +146,7 @@ public class Database
 
         return strings.ToFrozenDictionary();
     }
-    
+
     public IEnumerable<string> EnumerateStrings1() => _cachedStrings.Values;
     public IEnumerable<string> EnumerateStrings2() => _cachedStrings2.Values;
 }

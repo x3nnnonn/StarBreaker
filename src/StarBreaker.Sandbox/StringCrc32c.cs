@@ -15,7 +15,7 @@ public static class StringCrc32c
 
         var uintsToTest = ReadKeys("keys.txt");
 
-        var forge = new DataForge(@"C:\Scratch\StarCitizen\p4k\Data\Game.dcb");
+        var forge = new DataForge(File.OpenRead(@"C:\Scratch\StarCitizen\p4k\Data\Game.dcb"));
         var enums = forge.ExportEnums();
 
         IEnumerable<string> haystack = new List<string>();

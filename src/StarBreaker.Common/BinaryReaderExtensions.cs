@@ -16,8 +16,7 @@ public static class BinaryReaderExtensions
         
         Span<byte> span = stackalloc byte[size];
         
-        if (br.Read(span) != size)
-            throw new Exception("Failed to read from stream");
+        br.BaseStream.ReadExactly(span);
         
         return MemoryMarshal.Read<T>(span);
     }
@@ -27,9 +26,8 @@ public static class BinaryReaderExtensions
         var items = new T[count];
         
         var bytes = MemoryMarshal.Cast<T, byte>(items);
-        
-        if (reader.Read(bytes) != bytes.Length)
-            throw new Exception("Failed to read from stream");
+
+        reader.BaseStream.ReadExactly(bytes);
         
         return items;
     }

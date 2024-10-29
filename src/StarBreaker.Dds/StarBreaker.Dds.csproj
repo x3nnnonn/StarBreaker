@@ -3,4 +3,7 @@
     <PackageReference Include="Pfim" Version="0.11.3" />
     <PackageReference Include="SkiaSharp" Version="2.88.8" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\StarBreaker.Common\StarBreaker.Common.csproj" />
+  </ItemGroup>
 </Project>
