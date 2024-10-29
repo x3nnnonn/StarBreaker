@@ -1,6 +1,4 @@
-﻿#define USE_PARALLEL
-
-using System.Buffers;
+﻿using System.Buffers;
 using System.IO.Enumeration;
 using System.Security.Cryptography;
 using System.Text;
@@ -21,15 +19,15 @@ public sealed class P4kFile
 
     private readonly Aes _aes;
 
+    public Dictionary<string, ZipEntry> Entries { get; }
     public string P4KPath { get; }
-    private readonly ZipEntry[] _entries;
+    public ZipNode Root { get; }
 
-    public ZipEntry[] Entries => _entries;
-
-    private P4kFile(string path, ZipEntry[] entries)
+    private P4kFile(string path, Dictionary<string, ZipEntry> entries, ZipNode root)
     {
         P4KPath = path;
-        _entries = entries;
+        Root = root;
+        Entries = entries;
 
         _aes = Aes.Create();
         _aes.Key = _key;
@@ -41,7 +39,7 @@ public sealed class P4kFile
     public static P4kFile FromFile(string filePath, IProgress<double>? progress = null)
     {
         progress?.Report(0);
-        using var reader = new BinaryReader(new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 1024), Encoding.UTF8, false);
+        using var reader = new BinaryReader(new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.None, 65536), Encoding.UTF8, false);
 
         var eocdLocation = reader.Locate(EOCDRecord.Magic);
         reader.BaseStream.Seek(eocdLocation, SeekOrigin.Begin);
@@ -65,11 +63,25 @@ public sealed class P4kFile
         if (eocd64.Signature != BitConverter.ToUInt32(EOCD64Record.Magic))
             throw new Exception("Invalid zip64 end of central directory locator");
 
-        var p4k = new P4kFile(filePath, new ZipEntry[eocd64.TotalEntries]);
         var reportInterval = (int)Math.Max(eocd64.TotalEntries / 50, 1);
         reader.BaseStream.Seek((long)eocd64.CentralDirectoryOffset, SeekOrigin.Begin);
 
+        var dict = new Dictionary<string, ZipEntry>(eocd.TotalEntries);
+        var root = new ZipNode("_root_");
         for (var i = 0; i < (int)eocd64.TotalEntries; i++)
+        {
+            var entry = ReadEntry();
+            dict[entry.Name] = entry;
+            root.Insert(entry);
+
+            if (i % reportInterval == 0)
+                progress?.Report(i / (double)eocd64.TotalEntries);
+        }
+
+        progress?.Report(1);
+        return new P4kFile(filePath, dict, root);
+
+        ZipEntry ReadEntry()
         {
             var header = reader.Read<CentralDirectoryFileHeader>();
             var length = header.FileNameLength + header.ExtraFieldLength + header.FileCommentLength;
@@ -78,8 +90,7 @@ public sealed class P4kFile
             {
                 var bytes = rent.AsSpan(0, length);
 
-                if (reader.Read(bytes) != length)
-                    throw new Exception("Failed to read central directory file header");
+                reader.BaseStream.ReadExactly(bytes);
 
                 var reader2 = new SpanReader(bytes);
 
@@ -92,44 +103,43 @@ public sealed class P4kFile
                 if (reader2.ReadUInt16() != 1)
                     throw new Exception("Invalid version needed to extract");
 
-                var zip64HeaderSize = reader2.Read<ushort>();
+                var zip64HeaderSize = reader2.ReadUInt16();
 
                 if (uncompressedSize == uint.MaxValue)
-                    uncompressedSize = reader2.Read<ulong>();
+                    uncompressedSize = reader2.ReadUInt64();
 
                 if (compressedSize == uint.MaxValue)
-                    compressedSize = reader2.Read<ulong>();
+                    compressedSize = reader2.ReadUInt64();
 
                 if (localHeaderOffset == uint.MaxValue)
-                    localHeaderOffset = reader2.Read<ulong>();
+                    localHeaderOffset = reader2.ReadUInt64();
 
                 if (diskNumberStart == ushort.MaxValue)
-                    diskNumberStart = reader2.Read<uint>();
+                    diskNumberStart = reader2.ReadUInt32();
 
-                if (reader2.Read<ushort>() != 0x5000)
+                if (reader2.ReadUInt16() != 0x5000)
                     throw new Exception("Invalid extra field id");
 
-                var extra0x5000Size = reader2.Read<ushort>();
+                var extra0x5000Size = reader2.ReadUInt16();
                 reader2.Advance(extra0x5000Size - 4);
 
-                if (reader2.Read<ushort>() != 0x5002)
+                if (reader2.ReadUInt16() != 0x5002)
                     throw new Exception("Invalid extra field id");
-                if (reader2.Read<ushort>() != 6)
+                if (reader2.ReadUInt16() != 6)
                     throw new Exception("Invalid extra field size");
 
-                var isCrypted = reader2.Read<ushort>() == 1;
+                var isCrypted = reader2.ReadUInt16() == 1;
 
-                if (reader2.Read<ushort>() != 0x5003)
+                if (reader2.ReadUInt16() != 0x5003)
                     throw new Exception("Invalid extra field id");
 
-                var extra0x5003Size = reader2.Read<ushort>();
+                var extra0x5003Size = reader2.ReadUInt16();
                 reader2.Advance(extra0x5003Size - 4);
 
                 if (header.FileCommentLength != 0)
                     throw new Exception("File comment not supported");
 
-                p4k.Entries[i] = new ZipEntry(
-                    p4k,
+                return new ZipEntry(
                     fileName,
                     compressedSize,
                     uncompressedSize,
@@ -139,33 +149,27 @@ public sealed class P4kFile
                     header.LastModifiedTime,
                     header.LastModifiedDate
                 );
-
-                if (i % reportInterval == 0)
-                    progress?.Report(i / (double)eocd64.TotalEntries);
             }
             finally
             {
                 ArrayPool<byte>.Shared.Return(rent);
             }
         }
-
-        progress?.Report(1);
-
-        return p4k;
     }
 
     public void Extract(string outputDir, string? filter = null, IProgress<double>? progress = null)
     {
-        var filteredEntries = filter is null
-            ? _entries
-            : _entries.Where(entry => FileSystemName.MatchesSimpleExpression(filter, entry.Name, true))
-                .ToArray();
+        var filteredEntries = (filter is null
+            ? Entries.Values
+            : Entries.Values.Where(entry => FileSystemName.MatchesSimpleExpression(filter, entry.Name))).ToArray();
 
         var numberOfEntries = filteredEntries.Length;
         var fivePercent = numberOfEntries / 20;
         var processedEntries = 0;
 
         progress?.Report(0);
+
+        var lockObject = new object();
 
         //TODO: Preprocessing step:
         // 1. start with the list of total files
@@ -181,11 +185,11 @@ public sealed class P4kFile
                 Directory.CreateDirectory(Path.GetDirectoryName(entryPath) ?? throw new InvalidOperationException());
 
                 using var entryStream = Open(entry);
-                using var writeStream = new FileStream(entryPath, FileMode.Create, FileAccess.Write, FileShare.None,1024 * 1024, FileOptions.WriteThrough);
+                using var writeStream = new FileStream(entryPath, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024, FileOptions.WriteThrough);
 
                 entryStream.CopyTo(writeStream);
 
-                lock (filteredEntries)
+                lock (lockObject)
                 {
                     processedEntries++;
                     if (processedEntries == numberOfEntries || processedEntries % fivePercent == 0)
