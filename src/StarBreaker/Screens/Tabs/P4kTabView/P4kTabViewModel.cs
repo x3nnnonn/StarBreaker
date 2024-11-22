@@ -1,4 +1,5 @@
 using System.Text;
+using System.Xml;
 using Avalonia.Controls;
 using Avalonia.Controls.Models.TreeDataGrid;
 using Avalonia.Controls.Selection;
@@ -80,18 +81,18 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
         Preview = null;
         Task.Run(() =>
         {
-            var stream = _p4KService.P4kFile.Open(selectedEntry.ZipEntry);
-            var buffer = new byte[(int)selectedEntry.ZipEntry.UncompressedSize];
-            stream.ReadToEnd(buffer);
-            stream.Dispose();
+            //TODO: move this to a service?
+            byte[] buffer;
+            using (var stream = _p4KService.P4kFile.Open(selectedEntry.ZipEntry))
+                buffer = stream.ToArray();
 
             FilePreviewViewModel preview;
 
             //check cryxml before extension since ".xml" sometimes is cxml sometimes plaintext
-            if (CryXmlB.CryXml.TryOpen(buffer, out var c))
+            if (CryXmlB.CryXml.TryOpen(new MemoryStream(buffer), out var c))
             {
                 var stringwriter = new StringWriter();
-                c.WriteXml(stringwriter);
+                c.WriteXml(XmlWriter.Create(stringwriter));
                 preview = new TextPreviewViewModel(stringwriter.ToString());
             }
             else if (plaintextExtensions.Any(p => selectedEntry.Name.EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
