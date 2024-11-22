@@ -9,6 +9,10 @@ using StarBreaker.Grpc;
 
 namespace StarBreaker.Sandbox;
 
+/// <summary>
+/// This is here mostly so I can stop referencing the grpc project in actually useful ones.
+///  It takes ages to compile and I don't want to do it every time I make a change to the protos.
+/// </summary>
 public static class GrpcClient
 {
     public static async Task RunAsync()
