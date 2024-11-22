@@ -1,46 +1,20 @@
 using System.Diagnostics;
 using System.IO.Enumeration;
-using System.Runtime.InteropServices;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Xml;
 using StarBreaker.Common;
 
 namespace StarBreaker.Forge;
 
-public sealed class DataForge
+public sealed partial class DataForge
 {
     public readonly Database _database;
-    private readonly Dictionary<int, int[]> _offsets;
-    
+
     public Database Database => _database;
 
     public DataForge(Stream fs)
     {
-        _database = new Database(fs, out var bytesRead);
-        _offsets = ReadOffsets(bytesRead);
-    }
-
-    private Dictionary<int, int[]> ReadOffsets(int initialOffset)
-    {
-        var instances = new Dictionary<int, int[]>();
-
-        foreach (var mapping in _database.DataMappings)
-        {
-            var arr = new int[mapping.StructCount];
-            var structDef = _database.StructDefinitions[mapping.StructIndex];
-            var structSize = structDef.CalculateSize(_database.StructDefinitions, _database.PropertyDefinitions);
-
-            for (var i = 0; i < mapping.StructCount; i++)
-            {
-                arr[i] = initialOffset;
-                initialOffset += structSize;
-            }
-
-            instances.Add(mapping.StructIndex, arr);
-        }
-
-        return instances;
+        _database = new Database(fs);
     }
 
     public Dictionary<string, string[]> ExportEnums()
@@ -68,7 +42,7 @@ public sealed class DataForge
         {
             var fileName = record.GetFileName(_database);
 
-            if (fileNameFilter != null && !FileSystemName.MatchesSimpleExpression(fileNameFilter, fileName, true))
+            if (fileNameFilter != null && !FileSystemName.MatchesSimpleExpression(fileNameFilter, fileName))
                 continue;
 
             //this looks a lil wonky, but it's correct.
@@ -83,14 +57,14 @@ public sealed class DataForge
     public void ExtractSingleRecord(TextWriter writer, DataForgeRecord record)
     {
         var structDef = _database.StructDefinitions[record.StructIndex];
-        var offset = _offsets[record.StructIndex][record.InstanceIndex];
+        var offset = _database.Offsets[record.StructIndex][record.InstanceIndex];
 
         var reader = _database.GetReader(offset);
-        
+
         var node = new XmlNode("Record");
         node.AppendAttribute(new XmlAttribute<string>("__type", structDef.GetName(_database)));
         node.AppendAttribute(new XmlAttribute<string>("__guid", record.Hash.ToString()));
-        
+
         FillNode(node, structDef, ref reader);
 
         node.WriteTo(writer, 0);
@@ -109,7 +83,6 @@ public sealed class DataForge
             var filePath = Path.Combine(outputFolder, fileName);
 
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-
             {
                 using var writer = new StreamWriter(filePath);
 
@@ -150,7 +123,7 @@ public sealed class DataForge
                     if (ptr.StructIndex == 0xFFFFFFFF || ptr.InstanceIndex == 0xFFFFFFFF) continue;
 
                     var structDef2 = _database.StructDefinitions[(int)ptr.StructIndex];
-                    var offset2 = _offsets[(int)ptr.StructIndex][(int)ptr.InstanceIndex];
+                    var offset2 = _database.Offsets[(int)ptr.StructIndex][(int)ptr.InstanceIndex];
 
                     var reader2 = _database.GetReader(offset2);
 
@@ -236,7 +209,7 @@ public sealed class DataForge
                     if (prop.DataType == DataType.Class)
                     {
                         var structDef1 = _database.StructDefinitions[prop.StructIndex];
-                        var offset1 = _offsets[prop.StructIndex][index];
+                        var offset1 = _database.Offsets[prop.StructIndex][index];
                         var reader1 = _database.GetReader(offset1);
 
                         var child = new XmlNode(structDef1.GetName(_database));
@@ -257,7 +230,7 @@ public sealed class DataForge
                         if (reference.StructIndex == 0xFFFFFFFF || reference.InstanceIndex == 0xFFFFFFFF) continue;
 
                         var structDef2 = _database.StructDefinitions[(int)reference.StructIndex];
-                        var offset2 = _offsets[(int)reference.StructIndex][(int)reference.InstanceIndex];
+                        var offset2 = _database.Offsets[(int)reference.StructIndex][(int)reference.InstanceIndex];
                         var reader2 = _database.GetReader(offset2);
 
                         var child = new XmlNode(prop.GetName(_database));
@@ -360,7 +333,7 @@ public sealed class DataForge
             }
 
             var structDef = _database.StructDefinitions[record.StructIndex];
-            var offset = _offsets[record.StructIndex][record.InstanceIndex];
+            var offset = _database.Offsets[record.StructIndex][record.InstanceIndex];
             var reader = _database.GetReader(offset);
             var child = new XmlNode(structDef.GetName(_database));
 

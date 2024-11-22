@@ -39,11 +39,14 @@ public class Database
     public readonly DataForgeReference[] ReferenceValues;
 
     public readonly DataForgeStringId2[] EnumOptions;
+    
+    public readonly FrozenDictionary<int, int[]> Offsets;
 
     private readonly FrozenDictionary<int, string> _cachedStrings;
     private readonly FrozenDictionary<int, string> _cachedStrings2;
 
-    public Database(Stream fs, out int bytesRead)
+
+    public Database(Stream fs)
     {
         using var reader = new BinaryReader(fs);
 
@@ -113,9 +116,10 @@ public class Database
 
         _cachedStrings = ReadStringTable(reader.ReadBytes((int)textLength).AsSpan());
         _cachedStrings2 = ReadStringTable(reader.ReadBytes((int)textLength2).AsSpan());
+        
+        var bytesRead = (int)fs.Position;
 
-        bytesRead = (int)fs.Position;
-
+        Offsets = ReadOffsets(bytesRead, DataMappings, StructDefinitions, PropertyDefinitions);
         DataSectionOffset = bytesRead;
         DataSection = new byte[fs.Length - bytesRead];
         if (reader.Read(DataSection, 0, DataSection.Length) != DataSection.Length)
@@ -145,6 +149,32 @@ public class Database
         }
 
         return strings.ToFrozenDictionary();
+    }
+
+    private static FrozenDictionary<int, int[]> ReadOffsets(
+        int initialOffset,
+        Span<DataForgeDataMapping> mappings,
+        ReadOnlySpan<DataForgeStructDefinition> structDefs,
+        ReadOnlySpan<DataForgePropertyDefinition> propDefs)
+    {
+        var instances = new Dictionary<int, int[]>();
+
+        foreach (var mapping in mappings)
+        {
+            var arr = new int[mapping.StructCount];
+            var structDef = structDefs[mapping.StructIndex];
+            var structSize = structDef.CalculateSize(structDefs, propDefs);
+
+            for (var i = 0; i < mapping.StructCount; i++)
+            {
+                arr[i] = initialOffset;
+                initialOffset += structSize;
+            }
+
+            instances.Add(mapping.StructIndex, arr);
+        }
+
+        return instances.ToFrozenDictionary();
     }
 
     public IEnumerable<string> EnumerateStrings1() => _cachedStrings.Values;
