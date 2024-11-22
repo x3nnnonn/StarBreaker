@@ -112,17 +112,17 @@ public readonly struct CryXml
         }
 
         writer.Write('<');
-        if (writer.WriteString(_stringData, (int)node.TagStringOffset) == 0)
+        if (writer.WriteXmlString(_stringData, (int)node.TagStringOffset) == 0)
             writer.Write("__unknown__");
 
         var attributes = _attributes.AsSpan(node.FirstAttributeIndex, node.AttributeCount);
         foreach (var attribute in attributes)
         {
             writer.Write(' ');
-            writer.WriteString(_stringData, (int)attribute.KeyStringOffset);
+            writer.WriteXmlString(_stringData, (int)attribute.KeyStringOffset);
             writer.Write('=');
             writer.Write('\"');
-            writer.WriteString(_stringData, (int)attribute.ValueStringOffset);
+            writer.WriteXmlString(_stringData, (int)attribute.ValueStringOffset);
             writer.Write('\"');
         }
 
@@ -142,10 +142,10 @@ public readonly struct CryXml
 
         if (hasStringElement && !hasChildren)
         {
-            writer.WriteString(_stringData, (int)node.ItemType);
+            writer.WriteXmlString(_stringData, (int)node.ItemType);
             writer.Write('<');
             writer.Write('/');
-            writer.WriteString(_stringData, (int)node.TagStringOffset);
+            writer.WriteXmlString(_stringData, (int)node.TagStringOffset);
             writer.WriteLine('>');
             return;
         }
@@ -153,7 +153,7 @@ public readonly struct CryXml
         if (hasStringElement)
         {
             writer.WriteLine();
-            writer.WriteString(_stringData, (int)node.ItemType);
+            writer.WriteXmlString(_stringData, (int)node.ItemType);
             writer.WriteLine();
         }
 
@@ -176,7 +176,7 @@ public readonly struct CryXml
 
         writer.Write('<');
         writer.Write('/');
-        writer.WriteString(_stringData, (int)node.TagStringOffset);
+        writer.WriteXmlString(_stringData, (int)node.TagStringOffset);
 
         if (nodeIndex == 0)
             writer.Write('>');

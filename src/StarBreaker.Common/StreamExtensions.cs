@@ -21,18 +21,6 @@ public static class StreamExtensions
         return MemoryMarshal.Read<T>(span);
     }
 
-    public static void ReadToEnd(this Stream stream, Span<byte> buffer)
-    {
-        var read = 0;
-        while (read < buffer.Length)
-        {
-            var n = stream.Read(buffer[read..]);
-            if (n == 0)
-                throw new Exception("Failed to read from stream");
-            read += n;
-        }
-    }
-
     public static void CopyAmountTo(this Stream source, Stream destination, int byteCount)
     {
         var buffer = ArrayPool<byte>.Shared.Rent(byteCount);
@@ -50,6 +38,27 @@ public static class StreamExtensions
         finally
         {
             ArrayPool<byte>.Shared.Return(buffer);
+        }
+    }
+    
+    public static byte[] ToArray(this Stream stream)
+    {
+        if (stream is MemoryStream ms)
+            return ms.ToArray();
+
+        try
+        {
+            var count = stream.Position;
+            var buffer = new byte[count];
+            stream.Position = 0;
+            stream.ReadExactly(buffer, 0, buffer.Length);
+            return buffer;
+        }
+        catch (NotSupportedException)
+        {
+            using var m = new MemoryStream();
+            stream.CopyTo(m);
+            return m.ToArray();
         }
     }
 }
