@@ -32,7 +32,7 @@ public class ExtractP4kCommand : ICommand
         sw.Stop();
 
         console.Output.WriteLine();
-        console.Output.WriteLine($"Export completed in {sw.ElapsedMilliseconds}ms.");
+        console.Output.WriteLine($"Export completed in {sw}");
 
         return default;
     }
