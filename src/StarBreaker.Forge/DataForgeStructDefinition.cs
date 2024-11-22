@@ -16,7 +16,6 @@ public readonly record struct DataForgeStructDefinition
     public readonly uint NodeType;
 
     public string GetName(Database db) => db.GetString2(NameOffset);
-
     
     public int CalculateSize(ReadOnlySpan<DataForgeStructDefinition> structs, ReadOnlySpan<DataForgePropertyDefinition> properties)
     {
@@ -34,8 +33,8 @@ public readonly record struct DataForgeStructDefinition
             size += attribute.DataType switch
             {
                 DataType.Reference => Unsafe.SizeOf<DataForgeReference>(),
-                DataType.WeakPointer => Unsafe.SizeOf<uint>() * 2,
-                DataType.StrongPointer => Unsafe.SizeOf<uint>() * 2,
+                DataType.WeakPointer => Unsafe.SizeOf<DataForgePointer>(),
+                DataType.StrongPointer => Unsafe.SizeOf<DataForgePointer>(),
                 DataType.EnumChoice => Unsafe.SizeOf<DataForgeStringId>(),
                 DataType.Guid => Unsafe.SizeOf<CigGuid>(),
                 DataType.Locale => Unsafe.SizeOf<DataForgeStringId>(),
@@ -86,5 +85,6 @@ public readonly record struct DataForgeStructDefinition
 #if DEBUG
     public DataForgePropertyDefinition[] Properties => EnumerateProperties(DebugGlobal.Database.StructDefinitions, DebugGlobal.Database.PropertyDefinitions);
     public DataForgeStructDefinition? Parent => ParentTypeIndex == 0xffffffff ? null : DebugGlobal.Database.StructDefinitions[(int)ParentTypeIndex];
+    public string Name => GetName(DebugGlobal.Database);
 #endif
 }
