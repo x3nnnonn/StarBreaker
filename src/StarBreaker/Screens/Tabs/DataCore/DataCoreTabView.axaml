@@ -6,9 +6,8 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:DataType="screens:DataCoreTabViewModel"
              x:Class="StarBreaker.Screens.DataCoreTabView">
-    <Grid Name="Root">
+    <Grid>
         <Grid
-            Name="Content"
             IsVisible="{Binding Forge, Converter={x:Static ObjectConverters.IsNotNull}}"
             VerticalAlignment="Stretch"
             HorizontalAlignment="Stretch">
@@ -16,7 +15,6 @@
         </Grid>
 
         <StackPanel
-            Name="LoadingScreen"
             IsVisible="{Binding Forge, Converter={x:Static ObjectConverters.IsNull}}"
             VerticalAlignment="Center"
             HorizontalAlignment="Center">

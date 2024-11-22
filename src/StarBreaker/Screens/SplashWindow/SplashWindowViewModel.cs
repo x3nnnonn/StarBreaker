@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -79,11 +81,29 @@ public sealed partial class SplashWindowViewModel : ViewModelBase
                 _logger.LogError("Failed to get directory name for {Path}", p4k);
                 continue;
             }
+            
+            BuildManifest? manifest = null;
+            try
+            {
+                if (File.Exists(Path.Combine(directoryName, Constants.BuildManifest)))
+                {
+                    manifest = JsonSerializer.Deserialize(
+                        File.ReadAllText(Path.Combine(directoryName, Constants.BuildManifest)),
+                        StarBreakerSerializerContext.Default.BuildManifest
+                    );
+                }
+            }
+            catch
+            {
+                //fine to ignore
+                
+            }
 
             Installations.Add(new StarCitizenInstallationViewModel
             {
                 ChannelName = new DirectoryInfo(directoryName).Name,
-                Path = p4k
+                Path = p4k,
+                Manifest = manifest
             });
         }
     }
@@ -100,4 +120,29 @@ public sealed class StarCitizenInstallationViewModel
 {
     public required string ChannelName { get; init; }
     public required string Path { get; init; }
+    public BuildManifest? Manifest { get; set; }
+    
+    public string DisplayVersion => $"{ChannelName} - {Manifest?.Data.Branch}-{Manifest?.Data.RequestedP4ChangeNum}";
 }
+
+public class BuildManifest
+{
+    public BuildManifestData Data { get; set; }
+}
+
+public class BuildManifestData
+{
+    public string? Branch { get; set; }
+    public string? BuildDateStamp { get; set; }
+    public string? BuildId { get; set; }
+    public string? BuildTimeStamp { get; set; }
+    public string? Config { get; set; }
+    public string? Platform { get; set; }
+    public string? RequestedP4ChangeNum { get; set; }
+    public string? Shelved_Change { get; set; }
+    public string? Tag { get; set; }
+    public string? Version { get; set; }
+}
+
+[JsonSerializable(typeof(BuildManifest))]
+internal partial class StarBreakerSerializerContext : JsonSerializerContext;
