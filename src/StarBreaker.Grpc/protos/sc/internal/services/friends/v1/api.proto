@@ -5,7 +5,6 @@ package sc.internal.services.friends.v1;
 import "google/api/annotations.proto";
 import "sc/external/services/friends/v1/types.proto";
 import "sc/external/common/api/v1/pagination.proto";
-import "sc/external/common/api/v1/query.proto";
 
 service FriendService {
   rpc GetFriendList ( .sc.internal.services.friends.v1.GetFriendListRequest ) returns ( .sc.internal.services.friends.v1.GetFriendListResponse );
@@ -13,7 +12,7 @@ service FriendService {
 }
 
 message GetFriendListRequest {
-  .sc.external.common.api.v1.Query query = 1;
+  uint32 account_id = 1;
   .sc.external.common.api.v1.PaginationArguments pagination = 2;
 }
 
@@ -23,7 +22,7 @@ message GetFriendListResponse {
 }
 
 message GetPendingFriendRequestRequest {
-  .sc.external.common.api.v1.Query query = 1;
+  uint32 account_id = 1;
   .sc.external.common.api.v1.PaginationArguments pagination = 2;
 }
 

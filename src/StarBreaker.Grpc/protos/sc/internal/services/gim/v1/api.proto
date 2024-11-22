@@ -6,7 +6,23 @@ import "google/api/annotations.proto";
 import "sc/internal/services/gim/v1/types.proto";
 
 service GimService {
+  rpc GetGameModeSettings ( .sc.internal.services.gim.v1.GetGameModeSettingsRequest ) returns ( .sc.internal.services.gim.v1.GetGameModeSettingsResponse );
   rpc GetMatchInfo ( .sc.internal.services.gim.v1.GetMatchInfoRequest ) returns ( .sc.internal.services.gim.v1.GetMatchInfoResponse );
+  rpc FindMatchStart ( .sc.internal.services.gim.v1.FindMatchStartRequest ) returns ( .sc.internal.services.gim.v1.FindMatchStartResponse );
+  rpc GameEndedAutoRequeue ( .sc.internal.services.gim.v1.GameEndedAutoRequeueRequest ) returns ( .sc.internal.services.gim.v1.GameEndedAutoRequeueResponse );
+}
+
+message GetGameModeSettingsRequest {
+  bool get_all = 1;
+  int32 game_type = 2;
+}
+
+message GetGameModeSettingsResponse {
+  int32 code = 1;
+  int32 success = 2;
+  map<string, .sc.internal.services.gim.v1.GameModeSetting> game_mode_settings = 3;
+  repeated .sc.internal.services.gim.v1.GameType game_types = 4;
+
 }
 
 message GetMatchInfoRequest {
@@ -16,5 +32,42 @@ message GetMatchInfoRequest {
 
 message GetMatchInfoResponse {
   repeated .sc.internal.services.gim.v1.MatchInfo match_infos = 1;
+}
+
+message FindMatchStartRequest {
+  string group_id = 1;
+  uint64 leader_geid = 2;
+  bool any_map_flag = 3;
+  string map = 4;
+  int32 game_type = 5;
+  int32 level_variant = 6;
+  int32 time_limit = 7;
+  int32 target_score = 8;
+  int32 starting_tickets = 9;
+  int32 max_players = 10;
+  bool public_server = 11;
+  bool no_dynamic_join = 12;
+  repeated .sc.internal.services.gim.v1.PlayerInfo group_members = 13;
+  int32 max_spectators = 14;
+  repeated .sc.internal.services.gim.v1.PlayerInfo spectators = 15;
+}
+
+message FindMatchStartResponse {
+  bool success = 1;
+  string gim_group_uuid = 2;
+  string msg = 3;
+  int32 max_squad_size = 4;
+  int32 validation_error_code = 5;
+}
+
+message GameEndedAutoRequeueRequest {
+  uint64 leader_geid = 1;
+  bool any_map_flag = 2;
+}
+
+message GameEndedAutoRequeueResponse {
+  bool success = 1;
+  bool gim_group_found = 2;
+  bool leader_geid_was_valid = 3;
 }
 
