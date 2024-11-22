@@ -17,9 +17,9 @@ public sealed class ChunkFile
         _data = data;
     }
     
-    public static bool IsChunkFile(string path)
+    public static bool IsChunkFile(Stream fs)
     {
-        using var stream = new BinaryReader(File.OpenRead(path));
+        using var stream = new BinaryReader(fs);
         
         if (stream.BaseStream.Length < 4)
             return false;
