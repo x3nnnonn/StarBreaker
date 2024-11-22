@@ -18,15 +18,9 @@ public readonly record struct DataForgePropertyDefinition
                                DataType != DataType.StrongPointer;
     
 #if DEBUG
-    public DataForgeStructDefinition? Struct => IsAttribute ? null :
-        DebugGlobal.Database.StructDefinitions[(int)StructIndex];
-
-    public object? Value => !IsAttribute
-        ? null
-        : DataType switch
-        {
-            _ => "test"
-            
-        };
+    public string Name => DebugGlobal.Database.GetString2(NameOffset);
+    public DataForgeStructDefinition? Struct => IsAttribute 
+        ? null 
+        : DebugGlobal.Database.StructDefinitions[StructIndex];
 #endif
 }
