@@ -37,7 +37,7 @@
                         <Button
                             Margin="10"
                             ToolTip.Tip="{Binding Path}"
-                            Content="{Binding ChannelName}"
+                            Content="{Binding DisplayVersion}"
                             Command="{Binding $parent[ItemsControl].((vm:SplashWindowViewModel)DataContext).ClickP4kLocationCommand}"
                             CommandParameter="{Binding Path}" />
                     </DataTemplate>
