@@ -184,16 +184,21 @@ public sealed class P4kFile
 
                 Directory.CreateDirectory(Path.GetDirectoryName(entryPath) ?? throw new InvalidOperationException());
 
-                using var entryStream = Open(entry);
-                using var writeStream = new FileStream(entryPath, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024, FileOptions.WriteThrough);
-
-                entryStream.CopyTo(writeStream);
-
-                lock (lockObject)
+                using (var writeStream = new FileStream(entryPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 131072, useAsync: true))
                 {
-                    processedEntries++;
-                    if (processedEntries == numberOfEntries || processedEntries % fivePercent == 0)
+                    using (var entryStream = Open(entry))
+                    {
+                        entryStream.CopyTo(writeStream);
+                    }
+                }
+
+                Interlocked.Increment(ref processedEntries);
+                if (processedEntries == numberOfEntries || processedEntries % fivePercent == 0)
+                {
+                    lock (lockObject)
+                    {
                         progress?.Report(processedEntries / (double)numberOfEntries);
+                    }
                 }
             }
         );
@@ -201,7 +206,7 @@ public sealed class P4kFile
 
     public Stream Open(ZipEntry entry)
     {
-        var p4kStream = new FileStream(P4KPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        var p4kStream = new FileStream(P4KPath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 131072, useAsync: false);
 
         p4kStream.Seek((long)entry.Offset, SeekOrigin.Begin);
         if (p4kStream.Read<uint>() is not 0x14034B50 and not 0x04034B50)
@@ -261,11 +266,12 @@ public sealed class P4kFile
     {
         // We need to make a new memoryStream and copy the data over.
         // This is because the decompression stream doesn't support seeking/position/length.
-        using var decompressionStream = new DecompressionStream(entryStream);
 
         var buffer = new MemoryStream((int)uncompressedSize);
 
-        decompressionStream.CopyTo(buffer);
+        //close the entryStream (p4k file probably) when we're done with it
+        using (var decompressionStream = new DecompressionStream(entryStream, leaveOpen: false))
+            decompressionStream.CopyTo(buffer);
 
         buffer.Seek(0, SeekOrigin.Begin);
 
