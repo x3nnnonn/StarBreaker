@@ -12,6 +12,6 @@ public static class TimeP4kExtract
     {
         var sw = Stopwatch.StartNew();
         var p4kFile = P4kFile.FromFile(p4k);
-        Console.WriteLine($"Took {sw.ElapsedMilliseconds}ms to load {p4kFile.Entries.Count} entries");
+        Console.WriteLine($"Took {sw.ElapsedMilliseconds}ms to load {p4kFile.Entries.Length} entries");
     }
 }
