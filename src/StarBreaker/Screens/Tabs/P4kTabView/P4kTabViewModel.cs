@@ -92,7 +92,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             if (CryXmlB.CryXml.TryOpen(new MemoryStream(buffer), out var c))
             {
                 var stringwriter = new StringWriter();
-                c.WriteXml(XmlWriter.Create(stringwriter));
+                c.WriteXml(XmlWriter.Create(stringwriter, new XmlWriterSettings(){Indent = true}));
                 preview = new TextPreviewViewModel(stringwriter.ToString());
             }
             else if (plaintextExtensions.Any(p => selectedEntry.Name.EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
