@@ -2,6 +2,7 @@
 using System.IO.Enumeration;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Channels;
 using StarBreaker.Common;
 using ZstdSharp;
 
@@ -9,31 +10,29 @@ namespace StarBreaker.P4k;
 
 public sealed class P4kFile
 {
-    private static readonly byte[] _key =
-    [
-        0x5E, 0x7A, 0x20, 0x02,
-        0x30, 0x2E, 0xEB, 0x1A,
-        0x3B, 0xB6, 0x17, 0xC3,
-        0x0F, 0xDE, 0x1E, 0x47
-    ];
-
     private readonly Aes _aes;
 
-    public Dictionary<string, ZipEntry> Entries { get; }
+    public ZipEntry[] Entries { get; }
     public string P4KPath { get; }
     public ZipNode Root { get; }
 
-    private P4kFile(string path, Dictionary<string, ZipEntry> entries, ZipNode root)
+    private P4kFile(string path, ZipEntry[] entries, ZipNode root)
     {
         P4KPath = path;
         Root = root;
         Entries = entries;
 
         _aes = Aes.Create();
-        _aes.Key = _key;
-        _aes.IV = new byte[16];
         _aes.Mode = CipherMode.CBC;
         _aes.Padding = PaddingMode.Zeros;
+        _aes.IV = new byte[16];
+        _aes.Key =
+        [
+            0x5E, 0x7A, 0x20, 0x02,
+            0x30, 0x2E, 0xEB, 0x1A,
+            0x3B, 0xB6, 0x17, 0xC3,
+            0x0F, 0xDE, 0x1E, 0x47
+        ];
     }
 
     public static P4kFile FromFile(string filePath, IProgress<double>? progress = null)
@@ -66,102 +65,121 @@ public sealed class P4kFile
         var reportInterval = (int)Math.Max(eocd64.TotalEntries / 50, 1);
         reader.BaseStream.Seek((long)eocd64.CentralDirectoryOffset, SeekOrigin.Begin);
 
-        var dict = new Dictionary<string, ZipEntry>(eocd.TotalEntries);
-        var root = new ZipNode("_root_");
+        var entries = new ZipEntry[eocd64.TotalEntries];
+
+        var channel = Channel.CreateUnbounded<ZipEntry>();
+
+        var channelInsertTask = Task.Run(async () =>
+        {
+            var fileSystem = new ZipNode("_root_");
+
+            await foreach (var entry in channel.Reader.ReadAllAsync())
+            {
+                fileSystem.Insert(entry);
+            }
+
+            return fileSystem;
+        });
+
         for (var i = 0; i < (int)eocd64.TotalEntries; i++)
         {
-            var entry = ReadEntry();
-            dict[entry.Name] = entry;
-            root.Insert(entry);
+            var entry = ReadEntry(reader);
+            entries[i] = entry;
+            channel.Writer.TryWrite(entry);
 
             if (i % reportInterval == 0)
                 progress?.Report(i / (double)eocd64.TotalEntries);
         }
 
+        channel.Writer.Complete();
+
+        channelInsertTask.Wait();
+        var fileSystem = channelInsertTask.Result;
+
         progress?.Report(1);
-        return new P4kFile(filePath, dict, root);
+        return new P4kFile(filePath, entries, fileSystem);
+    }
 
-        ZipEntry ReadEntry()
+    private static ZipEntry ReadEntry(BinaryReader reader)
+    {
+        var header = reader.Read<CentralDirectoryFileHeader>();
+        var length = header.FileNameLength + header.ExtraFieldLength + header.FileCommentLength;
+        var rent = ArrayPool<byte>.Shared.Rent(length);
+        try
         {
-            var header = reader.Read<CentralDirectoryFileHeader>();
-            var length = header.FileNameLength + header.ExtraFieldLength + header.FileCommentLength;
-            var rent = ArrayPool<byte>.Shared.Rent(length);
-            try
-            {
-                var bytes = rent.AsSpan(0, length);
+            var bytes = rent.AsSpan(0, length);
 
-                reader.BaseStream.ReadExactly(bytes);
+            reader.BaseStream.ReadExactly(bytes);
 
-                var reader2 = new SpanReader(bytes);
+            var reader2 = new SpanReader(bytes);
 
-                var fileName = reader2.ReadStringOfLength(header.FileNameLength);
-                ulong compressedSize = header.CompressedSize;
-                ulong uncompressedSize = header.UncompressedSize;
-                ulong localHeaderOffset = header.LocalFileHeaderOffset;
-                ulong diskNumberStart = header.DiskNumberStart;
+            var fileName = reader2.ReadStringOfLength(header.FileNameLength);
+            ulong compressedSize = header.CompressedSize;
+            ulong uncompressedSize = header.UncompressedSize;
+            ulong localHeaderOffset = header.LocalFileHeaderOffset;
+            ulong diskNumberStart = header.DiskNumberStart;
 
-                if (reader2.ReadUInt16() != 1)
-                    throw new Exception("Invalid version needed to extract");
+            if (reader2.ReadUInt16() != 1)
+                throw new Exception("Invalid version needed to extract");
 
-                var zip64HeaderSize = reader2.ReadUInt16();
+            var zip64HeaderSize = reader2.ReadUInt16();
 
-                if (uncompressedSize == uint.MaxValue)
-                    uncompressedSize = reader2.ReadUInt64();
+            if (uncompressedSize == uint.MaxValue)
+                uncompressedSize = reader2.ReadUInt64();
 
-                if (compressedSize == uint.MaxValue)
-                    compressedSize = reader2.ReadUInt64();
+            if (compressedSize == uint.MaxValue)
+                compressedSize = reader2.ReadUInt64();
 
-                if (localHeaderOffset == uint.MaxValue)
-                    localHeaderOffset = reader2.ReadUInt64();
+            if (localHeaderOffset == uint.MaxValue)
+                localHeaderOffset = reader2.ReadUInt64();
 
-                if (diskNumberStart == ushort.MaxValue)
-                    diskNumberStart = reader2.ReadUInt32();
+            if (diskNumberStart == ushort.MaxValue)
+                diskNumberStart = reader2.ReadUInt32();
 
-                if (reader2.ReadUInt16() != 0x5000)
-                    throw new Exception("Invalid extra field id");
+            if (reader2.ReadUInt16() != 0x5000)
+                throw new Exception("Invalid extra field id");
 
-                var extra0x5000Size = reader2.ReadUInt16();
-                reader2.Advance(extra0x5000Size - 4);
+            var extra0x5000Size = reader2.ReadUInt16();
+            reader2.Advance(extra0x5000Size - 4);
 
-                if (reader2.ReadUInt16() != 0x5002)
-                    throw new Exception("Invalid extra field id");
-                if (reader2.ReadUInt16() != 6)
-                    throw new Exception("Invalid extra field size");
+            if (reader2.ReadUInt16() != 0x5002)
+                throw new Exception("Invalid extra field id");
+            if (reader2.ReadUInt16() != 6)
+                throw new Exception("Invalid extra field size");
 
-                var isCrypted = reader2.ReadUInt16() == 1;
+            var isCrypted = reader2.ReadUInt16() == 1;
 
-                if (reader2.ReadUInt16() != 0x5003)
-                    throw new Exception("Invalid extra field id");
+            if (reader2.ReadUInt16() != 0x5003)
+                throw new Exception("Invalid extra field id");
 
-                var extra0x5003Size = reader2.ReadUInt16();
-                reader2.Advance(extra0x5003Size - 4);
+            var extra0x5003Size = reader2.ReadUInt16();
+            reader2.Advance(extra0x5003Size - 4);
 
-                if (header.FileCommentLength != 0)
-                    throw new Exception("File comment not supported");
+            if (header.FileCommentLength != 0)
+                throw new Exception("File comment not supported");
 
-                return new ZipEntry(
-                    fileName,
-                    compressedSize,
-                    uncompressedSize,
-                    header.CompressionMethod,
-                    isCrypted,
-                    localHeaderOffset,
-                    header.LastModifiedTime,
-                    header.LastModifiedDate
-                );
-            }
-            finally
-            {
-                ArrayPool<byte>.Shared.Return(rent);
-            }
+            return new ZipEntry(
+                fileName,
+                compressedSize,
+                uncompressedSize,
+                header.CompressionMethod,
+                isCrypted,
+                localHeaderOffset,
+                header.LastModifiedTime,
+                header.LastModifiedDate
+            );
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(rent);
         }
     }
 
     public void Extract(string outputDir, string? filter = null, IProgress<double>? progress = null)
     {
         var filteredEntries = (filter is null
-            ? Entries.Values
-            : Entries.Values.Where(entry => FileSystemName.MatchesSimpleExpression(filter, entry.Name))).ToArray();
+            ? Entries
+            : Entries.Where(entry => FileSystemName.MatchesSimpleExpression(filter, entry.Name))).ToArray();
 
         var numberOfEntries = filteredEntries.Length;
         var fivePercent = numberOfEntries / 20;

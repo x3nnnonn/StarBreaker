@@ -20,34 +20,31 @@ public sealed class ZipNode
         _zipEntry = null;
         _children = [];
     }
-    
-    public ZipNode(ZipEntry file)
+
+    public ZipNode(ZipEntry file, string name)
     {
-        _name = file.Name;
+        _name = name;
         _zipEntry = file;
         _children = _empty;
     }
 
     public void Insert(ZipEntry zipEntry)
     {
-        Span<Range> ranges = stackalloc Range[20];
-
         var current = this;
         var name = zipEntry.Name.AsSpan();
-        var rangeCount = name.Split(ranges, '\\');
-
-        for (var index = 0; index < rangeCount; index++)
+        
+        foreach (var range in name.Split('\\'))
         {
-            var part = name[ranges[index]];
+            var part = name[range];
             var partHashCode = string.GetHashCode(part);
-            
-            if (index == rangeCount - 1)
+
+            if (range.End.Value == name.Length)
             {
                 // If this is the last part, we're at the file
-                current._children[partHashCode] = new ZipNode(zipEntry);
+                current._children[partHashCode] = new ZipNode(zipEntry, part.ToString());
                 return;
             }
-                
+
             if (!current._children.TryGetValue(partHashCode, out var value))
             {
                 value = new ZipNode(part.ToString());
@@ -57,4 +54,53 @@ public sealed class ZipNode
             current = value;
         }
     }
- }
+
+    public IEnumerable<string> GetDirectories(string path)
+    {
+        Span<Range> ranges = stackalloc Range[20];
+        var span = path.AsSpan();
+        var partsCount = span.Split(ranges, '\\');
+        var current = this;
+
+        for (var index = 0; index < partsCount; index++)
+        {
+            var part = ranges[index];
+            if (!current._children.TryGetValue(string.GetHashCode(span[part]), out var value))
+            {
+                yield break;
+            }
+
+            current = value;
+        }
+
+        foreach (var child in current._children.Values.Where(x => x.ZipEntry == null))
+        {
+            yield return child.Name;
+        }
+    }
+
+    public IEnumerable<string> GetFiles(string path)
+    {
+        Span<Range> ranges = stackalloc Range[20];
+        var span = path.AsSpan();
+        var partsCount = span.Split(ranges, '\\');
+
+        var current = this;
+
+        for (var index = 0; index < partsCount; index++)
+        {
+            var part = ranges[index];
+            if (!current._children.TryGetValue(string.GetHashCode(span[part]), out var value))
+            {
+                yield break;
+            }
+
+            current = value;
+        }
+
+        foreach (var child in current._children.Values.Where(x => x.ZipEntry != null))
+        {
+            yield return child.Name;
+        }
+    }
+}
