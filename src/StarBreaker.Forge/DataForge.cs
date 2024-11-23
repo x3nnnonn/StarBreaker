@@ -76,6 +76,8 @@ public sealed partial class DataForge
         var recordsByFileName = GetRecordsByFileName(fileNameFilter);
         var total = recordsByFileName.Count;
 
+        var lockObj = new Lock();
+
         Parallel.ForEach(recordsByFileName, kvp =>
         {
             var (fileName, record) = kvp;
@@ -89,7 +91,7 @@ public sealed partial class DataForge
                 ExtractSingleRecord(writer, record);
             }
 
-            lock (recordsByFileName)
+            using (lockObj.EnterScope())
             {
                 var currentProgress = Interlocked.Increment(ref progressValue);
                 //only report progress every 250 records and when we are done
