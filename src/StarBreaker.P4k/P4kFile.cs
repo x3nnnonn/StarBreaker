@@ -187,7 +187,7 @@ public sealed class P4kFile
 
         progress?.Report(0);
 
-        var lockObject = new object();
+        var lockObject = new Lock();
 
         //TODO: Preprocessing step:
         // 1. start with the list of total files
@@ -213,7 +213,7 @@ public sealed class P4kFile
                 Interlocked.Increment(ref processedEntries);
                 if (processedEntries == numberOfEntries || processedEntries % fivePercent == 0)
                 {
-                    lock (lockObject)
+                    using (lockObject.EnterScope())
                     {
                         progress?.Report(processedEntries / (double)numberOfEntries);
                     }
