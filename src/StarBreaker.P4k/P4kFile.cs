@@ -8,7 +8,7 @@ using ZstdSharp;
 
 namespace StarBreaker.P4k;
 
-public sealed class P4kFile
+public sealed partial class P4kFile
 {
     private readonly Aes _aes;
 
@@ -67,6 +67,7 @@ public sealed class P4kFile
 
         var entries = new ZipEntry[eocd64.TotalEntries];
 
+        //use a channel so we can read entries and build the file system in parallel
         var channel = Channel.CreateUnbounded<ZipEntry>();
 
         var channelInsertTask = Task.Run(async () =>
@@ -224,7 +225,7 @@ public sealed class P4kFile
 
     public Stream Open(ZipEntry entry)
     {
-        var p4kStream = new FileStream(P4KPath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 131072, useAsync: false);
+        var p4kStream = new FileStream(P4KPath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: (int)entry.UncompressedSize, useAsync: false);
 
         p4kStream.Seek((long)entry.Offset, SeekOrigin.Begin);
         if (p4kStream.Read<uint>() is not 0x14034B50 and not 0x04034B50)

@@ -7,5 +7,6 @@
   <ItemGroup>
     <ProjectReference Include="..\StarBreaker.Common\StarBreaker.Common.csproj" />
     <ProjectReference Include="..\StarBreaker.CryXmlB\StarBreaker.CryXmlB.csproj" />
+    <ProjectReference Include="..\StarBreaker.FileSystem\StarBreaker.FileSystem.csproj" />
   </ItemGroup>
 </Project>
