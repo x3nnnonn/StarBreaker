@@ -5,6 +5,7 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using Sc.External.Services.CharacterCustomizer.V1;
 using Sc.External.Services.Entitygraph.V1;
+using Sc.External.Services.Ledger.V1;
 using StarBreaker.Grpc;
 
 namespace StarBreaker.Sandbox;
@@ -17,10 +18,17 @@ public static class GrpcClient
 {
     public static async Task RunAsync()
     {
-        const string testEntity = @"C:\Users\Diogo\Downloads\EntityQuery.grpc";
+        const string testEntity = @"C:\Users\Diogo\Downloads\EntityQuery (1)";
+        const string testFunds = @"C:\Users\Diogo\Downloads\GetFunds.grpc";
         const string testChar = @"C:\Users\Diogo\Downloads\everything.grpc";
+        const string testContainer = @"C:\Users\Diogo\Downloads\ContainerQueryStream.grpc";
         
+        var containerQuery = ContainerQueryStreamResponse.Parser.ParseFrom(GrpcUtils.GrpcToProtobuf(File.ReadAllBytes(testContainer)));
+        var ledger = GetFundsResponse.Parser.ParseFrom(GrpcUtils.GrpcToProtobuf(File.ReadAllBytes(testFunds)));
         var enity = EntityQueryResponse.Parser.ParseFrom(GrpcUtils.GrpcToProtobuf(File.ReadAllBytes(testEntity)));
+
+        var xx = containerQuery.ToString();
+        
         return;
 
         var bytes = File.ReadAllBytes(testChar);

@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <PackageReference Include="ZstdSharp.Port" Version="0.8.1" />
+    <PackageReference Include="ZstdSharp.Port" Version="0.8.3" />
   </ItemGroup>
 
   <ItemGroup>
