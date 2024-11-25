@@ -24,13 +24,11 @@ public sealed partial class DataCoreTabViewModel : PageViewModelBase
 
     private void Initialize()
     {
-        // //TODO: use IFileSystem for this
-        // var entry = _p4KService.P4kFile.Entries.FirstOrDefault(e => e.Name == dataCorePath);
-        // var stream = _p4KService.P4kFile.Open(entry);
-        // var forge = new DataForge(stream);
-        // stream.Dispose();
-        //
-        // Dispatcher.UIThread.InvokeAsync(() => Forge = forge);
+        var entry = _p4KService.P4kFile.OpenRead(dataCorePath);
+        var forge = new DataForge(entry);
+        entry.Dispose();
+        
+        Dispatcher.UIThread.InvokeAsync(() => Forge = forge);
     }
 
     [ObservableProperty] 
