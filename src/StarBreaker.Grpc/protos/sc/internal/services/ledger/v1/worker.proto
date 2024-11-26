@@ -10,18 +10,18 @@ message Account {
 }
 
 message Money {
-  .sc.internal.services.ledger.v1.PlatformCurrency currency = 1;
+  PlatformCurrency currency = 1;
   int32 amount = 2;
 }
 
 message MoneyCredited {
-  .sc.internal.services.ledger.v1.Money money = 1;
-  .sc.internal.services.ledger.v1.Account account = 2;
+  Money money = 1;
+  Account account = 2;
 }
 
 message MoneyDebited {
-  .sc.internal.services.ledger.v1.Money money = 1;
-  .sc.internal.services.ledger.v1.Account account = 2;
+  Money money = 1;
+  Account account = 2;
 }
 
 enum PlatformCurrency {

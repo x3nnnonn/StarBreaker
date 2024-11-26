@@ -14,11 +14,11 @@ message LeaderboardPlayerStats {
 }
 
 message PlayerSessionInfo {
-  required .cig.Protocols.Common.PlayerSessionInfo session_info = 1;
+  required PlayerSessionInfo session_info = 1;
   optional int32 team_assignment = 2;
-  optional .cig.Protocols.Common.Uuid group_id = 3;
-  optional .cig.Protocols.Common.Uuid group_token = 4;
-  optional .cig.Protocols.Common.gim.LeaderboardPlayerStats leaderboard_player_stats = 5;
+  optional Uuid group_id = 3;
+  optional Uuid group_token = 4;
+  optional LeaderboardPlayerStats leaderboard_player_stats = 5;
   optional int32 is_spectator = 6;
   optional int32 is_disconnect_recovery = 7;
 }
@@ -32,6 +32,6 @@ message ShipSeatData {
 message ShipData {
   required string ship_archetype_name = 1;
   required string unique_suffix = 2;
-  repeated .cig.Protocols.Common.gim.ShipSeatData seat_list = 3;
+  repeated ShipSeatData seat_list = 3;
 }
 

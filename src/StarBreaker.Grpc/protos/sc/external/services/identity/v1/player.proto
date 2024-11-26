@@ -8,7 +8,7 @@ message Player {
   uint64 geid = 3;
   uint32 account_id = 4;
   string name = 5;
-  .sc.external.services.identity.v1.Player.State state = 6;
+  State state = 6;
   bool is_fulfilled = 8;
 
   enum State {

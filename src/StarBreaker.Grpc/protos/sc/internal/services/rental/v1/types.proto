@@ -6,7 +6,7 @@ import "sc/external/services/entitlement/v1/types.proto";
 
 message Rental {
   string id = 1;
-  .sc.internal.services.rental.v1.RentalStatus status = 2;
+  RentalStatus status = 2;
   uint64 created_at = 3;
   uint64 began_at = 4;
   uint64 expire_at = 5;
@@ -22,11 +22,11 @@ message RentalHistory {
   string account_urn = 2;
   string player_urn = 3;
   string entitlement_urn = 4;
-  .sc.external.services.entitlement.v1.EntitlementSource source = 5;
+  external.services.entitlement.v1.EntitlementSource source = 5;
   string name = 6;
   string entity_class_guid = 7;
   uint64 created_at = 8;
-  .sc.internal.services.rental.v1.RentalLogAction log_action = 9;
+  RentalLogAction log_action = 9;
   string log_message = 10;
 }
 

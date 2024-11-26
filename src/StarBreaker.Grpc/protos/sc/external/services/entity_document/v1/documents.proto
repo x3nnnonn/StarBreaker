@@ -7,30 +7,30 @@ import "sc/external/common/types/v1/transforms.proto";
 import "sc/external/common/types/v1/loadout.proto";
 
 message EntityDocument {
-  .sc.external.services.entity_document.v1.DocumentHeader header = 1;
-  .sc.external.services.entity_document.v1.EntityDocumentBody body = 2;
+  DocumentHeader header = 1;
+  EntityDocumentBody body = 2;
 }
 
 message EntityDocumentBody {
   oneof class {
-    .sc.external.services.entity_document.v1.EntityTestDocument test = 1;
-    .sc.external.services.entity_document.v1.EntityClassArenaCommanderLoadoutsDocument entity_class_loadouts_ac = 2;
-    .sc.external.services.entity_document.v1.EntityClassStarMarineLoadoutsDocument entity_class_loadouts_ea = 3;
-    .sc.external.services.entity_document.v1.EntityClassCharacterCustomizerDocument character_customizer_loadouts = 4;
-    .sc.external.services.entity_document.v1.PlayerHomeLocationDocument player_home_location = 5;
-    .sc.external.services.entity_document.v1.PlayerSpawnLocationDocument player_spawn_location = 6;
-    .sc.external.services.entity_document.v1.PlayerTutorialDocument player_tutorial = 7;
-    .sc.external.services.entity_document.v1.ShopLicensesDocument shop_licenses = 8;
-    .sc.external.services.entity_document.v1.PlayerCombatLogout combat_logout = 9;
-    .sc.external.services.entity_document.v1.PlayerWarehouseOrderDocument player_warehouse_order = 11;
+    EntityTestDocument test = 1;
+    EntityClassArenaCommanderLoadoutsDocument entity_class_loadouts_ac = 2;
+    EntityClassStarMarineLoadoutsDocument entity_class_loadouts_ea = 3;
+    EntityClassCharacterCustomizerDocument character_customizer_loadouts = 4;
+    PlayerHomeLocationDocument player_home_location = 5;
+    PlayerSpawnLocationDocument player_spawn_location = 6;
+    PlayerTutorialDocument player_tutorial = 7;
+    ShopLicensesDocument shop_licenses = 8;
+    PlayerCombatLogout combat_logout = 9;
+    PlayerWarehouseOrderDocument player_warehouse_order = 11;
   }
 }
 
 message EntityTestDocument {
   string id = 1;
   string name = 2;
-  .sc.external.services.entity_document.v1.EntityTestDocument.Record sub = 3;
-  .sc.external.services.entity_document.v1.EntityTestDocument.Meta meta = 4;
+  Record sub = 3;
+  Meta meta = 4;
 
   message Sub {
     string name = 1;
@@ -39,8 +39,8 @@ message EntityTestDocument {
   message Record {
     string property = 1;
     repeated string locations = 2;
-    .sc.external.services.entity_document.v1.EntityTestDocument.Sub main_sub = 3;
-    repeated .sc.external.services.entity_document.v1.EntityTestDocument.Sub subs = 4;
+    Sub main_sub = 3;
+    repeated Sub subs = 4;
   }
   message Meta {
     oneof class {
@@ -51,26 +51,26 @@ message EntityTestDocument {
 }
 
 message EntityClassStarMarineLoadoutsDocument {
-  .sc.external.common.types.v1.EntityClassLoadout elimination = 1;
-  .sc.external.common.types.v1.EntityClassLoadout marine = 2;
-  .sc.external.common.types.v1.EntityClassLoadout slaver = 3;
-  .sc.external.common.types.v1.EntityClassLoadout pilot = 4;
-  .sc.external.common.types.v1.EntityClassLoadout marine_soldier = 5;
-  .sc.external.common.types.v1.EntityClassLoadout marine_assault = 6;
-  .sc.external.common.types.v1.EntityClassLoadout marine_sniper = 7;
-  .sc.external.common.types.v1.EntityClassLoadout marine_antivehicle = 8;
-  .sc.external.common.types.v1.EntityClassLoadout outlaw_soldier = 9;
-  .sc.external.common.types.v1.EntityClassLoadout outlaw_assault = 10;
-  .sc.external.common.types.v1.EntityClassLoadout outlaw_sniper = 11;
-  .sc.external.common.types.v1.EntityClassLoadout outlaw_antivehicle = 12;
+  common.types.v1.EntityClassLoadout elimination = 1;
+  common.types.v1.EntityClassLoadout marine = 2;
+  common.types.v1.EntityClassLoadout slaver = 3;
+  common.types.v1.EntityClassLoadout pilot = 4;
+  common.types.v1.EntityClassLoadout marine_soldier = 5;
+  common.types.v1.EntityClassLoadout marine_assault = 6;
+  common.types.v1.EntityClassLoadout marine_sniper = 7;
+  common.types.v1.EntityClassLoadout marine_antivehicle = 8;
+  common.types.v1.EntityClassLoadout outlaw_soldier = 9;
+  common.types.v1.EntityClassLoadout outlaw_assault = 10;
+  common.types.v1.EntityClassLoadout outlaw_sniper = 11;
+  common.types.v1.EntityClassLoadout outlaw_antivehicle = 12;
 }
 
 message EntityClassArenaCommanderLoadoutsDocument {
-  .sc.external.common.types.v1.EntityClassLoadout base = 1;
+  common.types.v1.EntityClassLoadout base = 1;
 }
 
 message EntityClassCharacterCustomizerDocument {
-  .sc.external.common.types.v1.EntityClassLoadout customization = 1;
+  common.types.v1.EntityClassLoadout customization = 1;
 }
 
 message PlayerHomeLocationDocument {
@@ -79,15 +79,15 @@ message PlayerHomeLocationDocument {
 
 message PlayerSpawnLocationDocument {
   oneof spawn_info {
-    .sc.external.services.entity_document.v1.PlayerSpawnLocationDocument.PlayerSpawnZonePosition spawn_zone_position = 1;
-    .sc.external.services.entity_document.v1.PlayerSpawnLocationDocument.PlayerSpawnLocation spawn_location = 2;
-    .sc.external.services.entity_document.v1.PlayerSpawnLocationDocument.PlayerSpawnInShip spawn_in_ship = 3;
-    .sc.external.services.entity_document.v1.PlayerSpawnLocationDocument.PlayerSpawnInPlace spawn_in_place = 4;
+    PlayerSpawnZonePosition spawn_zone_position = 1;
+    PlayerSpawnLocation spawn_location = 2;
+    PlayerSpawnInShip spawn_in_ship = 3;
+    PlayerSpawnInPlace spawn_in_place = 4;
   }
 
   message PlayerSpawnZonePosition {
-    .sc.external.common.types.v1.Quatd orientation = 2;
-    .sc.external.common.types.v1.Vec3d position = 3;
+    common.types.v1.Quatd orientation = 2;
+    common.types.v1.Vec3d position = 3;
     uint32 location_id = 4;
   }
   message PlayerSpawnLocation {
@@ -96,22 +96,22 @@ message PlayerSpawnLocationDocument {
   message PlayerSpawnInShip {
     uint64 ship_id = 1;
     uint64 logout_entity_id = 3;
-    .sc.external.common.types.v1.Quatd orientation = 4;
-    .sc.external.common.types.v1.Vec3d position = 5;
-    .sc.external.services.entity_document.v1.PlayerSpawnLocationDocument.PlayerSpawnLocation fallback_location = 6;
+    common.types.v1.Quatd orientation = 4;
+    common.types.v1.Vec3d position = 5;
+    PlayerSpawnLocation fallback_location = 6;
     uint32 location_id = 7;
   }
   message PlayerSpawnInPlace {
     string logout_shard_id = 1;
     uint64 logout_parent_entity_id = 2;
-    .sc.external.common.types.v1.Quatd logout_orientation = 3;
-    .sc.external.common.types.v1.Vec3d logout_position = 4;
+    common.types.v1.Quatd logout_orientation = 3;
+    common.types.v1.Vec3d logout_position = 4;
     uint64 logout_zone_host_id = 5;
     uint64 stowed_vehicle_id = 6;
-    .sc.external.common.types.v1.Quatd stowed_vehicle_orientation = 7;
-    .sc.external.common.types.v1.Vec3d stowed_vehicle_position = 8;
+    common.types.v1.Quatd stowed_vehicle_orientation = 7;
+    common.types.v1.Vec3d stowed_vehicle_position = 8;
     uint32 stowed_vehicle_location_id = 9;
-    .sc.external.services.entity_document.v1.PlayerSpawnLocationDocument.PlayerSpawnLocation fallback_location = 10;
+    PlayerSpawnLocation fallback_location = 10;
   }
 }
 
@@ -147,7 +147,7 @@ message PlayerWarehouseOrder {
 }
 
 message PlayerWarehouseOrderDocument {
-  repeated .sc.external.services.entity_document.v1.PlayerWarehouseOrder orders = 1;
+  repeated PlayerWarehouseOrder orders = 1;
 }
 
 message ShopLicensesDocument {

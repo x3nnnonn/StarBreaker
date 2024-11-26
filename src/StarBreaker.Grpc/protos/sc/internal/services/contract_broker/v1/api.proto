@@ -12,20 +12,20 @@ import "sc/external/common/api/v1/pagination.proto";
 import "sc/external/common/command/v1/types.proto";
 
 service ContractBrokerService {
-  rpc CreateContracts ( .sc.internal.services.contract_broker.v1.CreateContractsRequest ) returns ( .sc.internal.services.contract_broker.v1.CreateContractsResponse );
-  rpc DestroyContracts ( .sc.internal.services.contract_broker.v1.DestroyContractsRequest ) returns ( .sc.internal.services.contract_broker.v1.DestroyContractsResponse );
-  rpc DestroyAllContracts ( .sc.internal.services.contract_broker.v1.DestroyAllContractsRequest ) returns ( .sc.internal.services.contract_broker.v1.DestroyAllContractsResponse );
-  rpc AcceptContract ( .sc.internal.services.contract_broker.v1.AcceptContractRequest ) returns ( .sc.internal.services.contract_broker.v1.AcceptContractResponse );
-  rpc QueryAllAvailableContracts ( .sc.internal.services.contract_broker.v1.QueryAllAvailableContractsRequest ) returns ( .sc.internal.services.contract_broker.v1.QueryAllAvailableContractsResponse );
-  rpc QueryContracts ( .sc.internal.services.contract_broker.v1.QueryContractsRequest ) returns ( .sc.internal.services.contract_broker.v1.QueryContractsResponse );
+  rpc CreateContracts ( CreateContractsRequest ) returns ( CreateContractsResponse );
+  rpc DestroyContracts ( DestroyContractsRequest ) returns ( DestroyContractsResponse );
+  rpc DestroyAllContracts ( DestroyAllContractsRequest ) returns ( DestroyAllContractsResponse );
+  rpc AcceptContract ( AcceptContractRequest ) returns ( AcceptContractResponse );
+  rpc QueryAllAvailableContracts ( QueryAllAvailableContractsRequest ) returns (stream QueryAllAvailableContractsResponse );
+  rpc QueryContracts ( QueryContractsRequest ) returns ( QueryContractsResponse );
 }
 
 message CreateContractsRequest {
-  repeated .sc.internal.services.contract_broker.v1.CreateContractsRequest.Body contracts = 1;
+  repeated Body contracts = 1;
 
   message Body {
-    .sc.external.common.mission.v1.MissionTemplate mission_template = 1;
-    .sc.external.common.mission.v1.ContractPrerequisites prerequisites = 2;
+    external.common.mission.v1.MissionTemplate mission_template = 1;
+    external.common.mission.v1.ContractPrerequisites prerequisites = 2;
     uint32 location_id = 4;
     .google.protobuf.Timestamp expiration_time = 6;
     bool reserve_locations = 7;
@@ -51,7 +51,7 @@ message AcceptContractRequest {
   string shard_id = 2;
   repeated uint32 location_ids = 3;
   uint64 player_id = 4;
-  .sc.external.common.command.v1.CommandArguments arguments = 5;
+  external.common.command.v1.CommandArguments arguments = 5;
 }
 
 message AcceptContractResponse {
@@ -64,15 +64,15 @@ message QueryAllAvailableContractsRequest {
 }
 
 message QueryAllAvailableContractsResponse {
-  repeated .sc.external.common.mission.v1.MissionContract contracts = 1;
+  repeated external.common.mission.v1.MissionContract contracts = 1;
 }
 
 message QueryContractsRequest {
-  .sc.external.common.api.v1.Query query = 1;
+  external.common.api.v1.Query query = 1;
 }
 
 message QueryContractsResponse {
-  repeated .sc.external.common.mission.v1.MissionContract contracts = 1;
-  .sc.external.common.api.v1.PaginationInfo page_info = 2;
+  repeated external.common.mission.v1.MissionContract contracts = 1;
+  external.common.api.v1.PaginationInfo page_info = 2;
 }
 

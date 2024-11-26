@@ -6,14 +6,14 @@ import "google/api/annotations.proto";
 import "sc/external/services/push/v1/messages.proto";
 
 service PushService {
-  rpc Listen ( .sc.external.services.push.v1.ListenRequest ) returns ( .sc.external.services.push.v1.ListenResponse );
+  rpc Listen (stream ListenRequest ) returns (stream ListenResponse );
 }
 
 message ListenRequest {
-  repeated .sc.external.services.push.v1.PushCommand commands = 1;
+  repeated PushCommand commands = 1;
 }
 
 message ListenResponse {
-  repeated .sc.external.services.push.v1.PushEnvelope envelopes = 1;
+  repeated PushEnvelope envelopes = 1;
 }
 

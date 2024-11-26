@@ -12,12 +12,12 @@ message JoinParameters {
 message Claim {
   string product = 1;
   map<string, string> labels = 2;
-  .sc.internal.services.fleet.v1.JoinParameters join_parameters = 3;
+  JoinParameters join_parameters = 3;
 
 }
 
 message ClaimUnitRequest {
-  repeated .sc.internal.services.fleet.v1.Claim claims = 1;
+  repeated Claim claims = 1;
 }
 
 message ClaimUnitResponse {

@@ -16,7 +16,7 @@ message Reputation {
   string scope = 6;
   int32 score = 7;
   uint64 last_drifted_at = 8;
-  .sc.external.services.reputation.v1.ReputationLock lock = 9;
+  ReputationLock lock = 9;
 }
 
 message Drift {
@@ -28,7 +28,7 @@ message ReputationHistory {
   string id = 1;
   uint32 change_in_score = 2;
   uint64 created_at = 3;
-  .sc.external.services.reputation.v1.LogContext log_context = 4;
+  LogContext log_context = 4;
   uint32 current_score = 5;
 }
 
@@ -37,19 +37,19 @@ message Standing {
   string name = 2;
   string description = 3;
   int32 min = 4;
-  .sc.external.services.reputation.v1.Drift drift = 5;
+  Drift drift = 5;
   bool gated = 6;
 }
 
 message Standings {
   string id = 1;
-  .sc.external.services.reputation.v1.Standings.Status state = 2;
+  Status state = 2;
   uint64 updated_at = 3;
   string name = 4;
   uint32 initial = 5;
   uint32 ceiling = 6;
   uint32 floor = 7;
-  repeated .sc.external.services.reputation.v1.Standing standings = 8;
+  repeated Standing standings = 8;
 
   enum Status {
     STATUS_INVALID_UNSPECIFIED = 0;
@@ -63,18 +63,18 @@ message ReputationInitialized {
   string entity = 2;
   string scope = 3;
   bool initialized = 4;
-  .sc.external.services.reputation.v1.ReputationLock lock = 5;
+  ReputationLock lock = 5;
 }
 
 message VersionedReputation {
-  .sc.external.services.reputation.v1.Reputation reputation = 1;
-  .sc.external.services.reputation.v1.Standing standing = 2;
+  Reputation reputation = 1;
+  Standing standing = 2;
   uint32 version = 3;
 }
 
 message ReputationPushEvent {
-  .sc.external.services.reputation.v1.PushEventType event_type = 1;
-  .sc.external.services.reputation.v1.VersionedReputation versioned_reputation = 2;
+  PushEventType event_type = 1;
+  VersionedReputation versioned_reputation = 2;
   repeated string standings_achieved = 3;
 }
 
@@ -100,8 +100,8 @@ message Favorites {
 }
 
 message RankedReputation {
-  .sc.external.services.reputation.v1.Reputation reputation = 1;
-  .sc.external.services.reputation.v1.Standing standing = 2;
+  Reputation reputation = 1;
+  Standing standing = 2;
 }
 
 enum PushEventType {

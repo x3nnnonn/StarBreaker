@@ -17,9 +17,9 @@ message RetryState {
 }
 
 message RetryEnvelope {
-  .sc.internal.services.retry.v1.RetryConfiguration configuration = 1;
-  .sc.internal.services.retry.v1.RetryState state = 2;
+  RetryConfiguration configuration = 1;
+  RetryState state = 2;
   .google.protobuf.Any payload = 3;
-  .sc.external.common.trace.v1.TraceContext trace_context = 4;
+  external.common.trace.v1.TraceContext trace_context = 4;
 }
 

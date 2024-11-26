@@ -11,8 +11,8 @@ message CMsgPlayerLoginEvent {
   required string display_name = 4;
   required string nickname = 5;
   required string tracking_metrics_id = 6;
-  repeated .cig.Protocols.Common.RSIItemInfo rsi_item_info = 7;
-  repeated .cig.Protocols.Common.RSIItemInfo rsi_rented_item_info = 8;
+  repeated Common.RSIItemInfo rsi_item_info = 7;
+  repeated Common.RSIItemInfo rsi_rented_item_info = 8;
   repeated int32 badges = 9;
 }
 

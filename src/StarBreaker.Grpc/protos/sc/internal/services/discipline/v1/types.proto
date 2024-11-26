@@ -17,9 +17,9 @@ message WatchListEntry {
   string watchlist_id = 1;
   string target_urn = 2;
   string author_id = 3;
-  .sc.internal.services.discipline.v1.WatchListReasonType reason = 4;
+  WatchListReasonType reason = 4;
   string details = 5;
-  .sc.external.services.discipline.v1.InputNotes notes = 6;
+  external.services.discipline.v1.InputNotes notes = 6;
 }
 
 message Note {
@@ -30,8 +30,8 @@ message Note {
   string parent_id = 5;
   string target_urn = 6;
   string subject_urn = 7;
-  .sc.external.services.discipline.v1.InputNotes note = 8;
-  repeated .sc.internal.services.discipline.v1.Note replies = 9;
+  external.services.discipline.v1.InputNotes note = 8;
+  repeated Note replies = 9;
 }
 
 message PlayerReport {
@@ -39,9 +39,9 @@ message PlayerReport {
   string target_urn = 2;
   uint64 time_created = 3;
   uint64 time_modified = 4;
-  .sc.internal.services.discipline.v1.InfractionScope scope = 5;
-  .sc.internal.services.discipline.v1.InfractionType type = 6;
-  .sc.internal.services.discipline.v1.InfractionSeverity severity = 7;
+  InfractionScope scope = 5;
+  InfractionType type = 6;
+  InfractionSeverity severity = 7;
   string description = 8;
 }
 
@@ -51,10 +51,10 @@ message Infraction {
   uint64 time_created = 3;
   uint64 time_modified = 4;
   string author_id = 5;
-  .sc.internal.services.discipline.v1.InfractionScope scope = 6;
-  .sc.internal.services.discipline.v1.InfractionType type = 7;
-  .sc.internal.services.discipline.v1.InfractionSeverity severity = 8;
-  .sc.external.services.discipline.v1.InputNotes notes = 9;
+  InfractionScope scope = 6;
+  InfractionType type = 7;
+  InfractionSeverity severity = 8;
+  external.services.discipline.v1.InputNotes notes = 9;
 }
 
 enum WatchListReasonType {

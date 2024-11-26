@@ -6,8 +6,8 @@ package sc.external.services.trace.v1;
 import "google/api/annotations.proto";
 
 service TraceService {
-  rpc Collect ( .sc.external.services.trace.v1.CollectRequest ) returns ( .sc.external.services.trace.v1.CollectResponse );
-  rpc CollectionStream ( .sc.external.services.trace.v1.CollectionStreamRequest ) returns ( .sc.external.services.trace.v1.CollectionStreamResponse );
+  rpc Collect ( CollectRequest ) returns ( CollectResponse );
+  rpc CollectionStream (stream CollectionStreamRequest ) returns ( CollectionStreamResponse );
 }
 
 message CollectRequest {

@@ -22,11 +22,11 @@ message EditorTag {
 }
 
 message EditorTagList {
-  repeated .sc.game.editor.mightybridge.v1.EditorTag tags = 1;
+  repeated EditorTag tags = 1;
 }
 
 message EditorLayer {
-  .sc.game.editor.mightybridge.v1.EditorGuid guid = 1;
+  EditorGuid guid = 1;
   string name = 2;
   string layer_path = 3;
 }
@@ -38,46 +38,46 @@ message EditorRGBColor {
 }
 
 message EditorArrayObjectBaseInfo {
-  repeated .sc.game.editor.mightybridge.v1.EditorObjectBaseInfo objects = 1;
+  repeated EditorObjectBaseInfo objects = 1;
 }
 
 message EditorSpawnParameters {
-  .sc.game.editor.mightybridge.v1.EditorLayer layer = 1;
-  .sc.game.editor.mightybridge.v1.EditorGuid hto_guid = 2;
+  EditorLayer layer = 1;
+  EditorGuid hto_guid = 2;
   string object_name = 3;
-  .sc.game.editor.mightybridge.v1.Transformf transform = 4;
-  .sc.game.editor.mightybridge.v1.EditorRGBColor color = 5;
+  Transformf transform = 4;
+  EditorRGBColor color = 5;
   string tint_palette_path = 6;
   string material_path = 7;
-  repeated .sc.game.editor.mightybridge.v1.EditorProperty properties = 8;
+  repeated EditorProperty properties = 8;
 }
 
 message EditorSpawnObjectCommand {
-  .sc.game.editor.mightybridge.v1.EditorSpawnParameters spawn_parameters = 1;
+  EditorSpawnParameters spawn_parameters = 1;
   string object_type = 2;
   string object_sub_type = 3;
 }
 
 message EditorSpawnObjectResult {
-  .sc.game.editor.mightybridge.v1.EditorGuid new_guid = 1;
+  EditorGuid new_guid = 1;
 }
 
 message EditorSpawnBrushCommand {
-  .sc.game.editor.mightybridge.v1.EditorSpawnParameters spawn_parameters = 1;
+  EditorSpawnParameters spawn_parameters = 1;
   string brush_path = 2;
 }
 
 message EditorSpawnBrushResult {
-  .sc.game.editor.mightybridge.v1.EditorGuid new_guid = 1;
+  EditorGuid new_guid = 1;
 }
 
 message EditorSpawnObjectContainerCommand {
-  .sc.game.editor.mightybridge.v1.EditorSpawnParameters spawn_parameters = 1;
+  EditorSpawnParameters spawn_parameters = 1;
   string object_container_path = 2;
 }
 
 message EditorSpawnObjectContainerResult {
-  .sc.game.editor.mightybridge.v1.EditorGuid new_guid = 1;
+  EditorGuid new_guid = 1;
 }
 
 message EditorEntityBoolParameter {
@@ -101,10 +101,10 @@ message EditorEntityStringParameter {
 }
 
 message EditorObjectBaseInfo {
-  .sc.game.editor.mightybridge.v1.EditorGuid guid = 1;
+  EditorGuid guid = 1;
   string type = 2;
   string name = 3;
-  .sc.game.editor.mightybridge.v1.Transformf transform = 4;
+  Transformf transform = 4;
   int32 lowest_lod_level = 5;
   int32 highest_lod_level = 6;
   string sub_type = 7;
@@ -112,15 +112,15 @@ message EditorObjectBaseInfo {
 
 message EditorMesh {
   oneof message {
-    .sc.game.editor.mightybridge.v1.EditorGeometry geometry = 1;
-    .sc.game.editor.mightybridge.v1.EditorSubObjects sub_objects = 2;
+    EditorGeometry geometry = 1;
+    EditorSubObjects sub_objects = 2;
   }
   int32 lod_level = 3;
   float lod_range_factor = 4;
 }
 
 message EditorSubObjects {
-  repeated .sc.game.editor.mightybridge.v1.EditorMeshSubObject mesh_sub_objects = 1;
+  repeated EditorMeshSubObject mesh_sub_objects = 1;
   string material_path = 2;
 }
 
@@ -132,105 +132,105 @@ message EditorGeometry {
   repeated float uvs = 5;
   repeated float normals = 6;
   string material_path = 7;
-  repeated .sc.game.editor.mightybridge.v1.EditorMeshSubset sub_sets = 8;
+  repeated EditorMeshSubset sub_sets = 8;
   string name = 9;
 }
 
 message EditorSpawnEntityCommand {
-  .sc.game.editor.mightybridge.v1.EditorSpawnParameters spawn_parameters = 1;
+  EditorSpawnParameters spawn_parameters = 1;
   string entity_path = 2;
-  repeated .sc.game.editor.mightybridge.v1.EditorEntityBoolParameter bool_parameters = 3;
-  repeated .sc.game.editor.mightybridge.v1.EditorEntityFloatParameter float_parameters = 4;
-  repeated .sc.game.editor.mightybridge.v1.EditorEntityIntParameter int_parameters = 5;
-  repeated .sc.game.editor.mightybridge.v1.EditorEntityStringParameter string_parameters = 6;
+  repeated EditorEntityBoolParameter bool_parameters = 3;
+  repeated EditorEntityFloatParameter float_parameters = 4;
+  repeated EditorEntityIntParameter int_parameters = 5;
+  repeated EditorEntityStringParameter string_parameters = 6;
 }
 
 message EditorSpawnEntityResult {
-  .sc.game.editor.mightybridge.v1.EditorGuid new_guid = 1;
+  EditorGuid new_guid = 1;
 }
 
 message EditorSpawnPrefabCommand {
-  .sc.game.editor.mightybridge.v1.EditorSpawnParameters spawn_parameters = 1;
+  EditorSpawnParameters spawn_parameters = 1;
   string prefab_name = 2;
   string prefab_library_name = 3;
 }
 
 message EditorSpawnPrefabResult {
-  .sc.game.editor.mightybridge.v1.EditorGuid new_guid = 1;
+  EditorGuid new_guid = 1;
 }
 
 message EditorSpawnAreaBoxCommand {
-  .sc.game.editor.mightybridge.v1.EditorSpawnParameters spawn_parameters = 1;
-  .sc.game.editor.mightybridge.v1.Vec3f size = 2;
+  EditorSpawnParameters spawn_parameters = 1;
+  Vec3f size = 2;
   bool filled = 3;
 }
 
 message EditorSpawnAreaBoxResult {
-  .sc.game.editor.mightybridge.v1.EditorGuid new_guid = 1;
+  EditorGuid new_guid = 1;
 }
 
 message EditorSpawnNavigationAreaCommand {
-  .sc.game.editor.mightybridge.v1.EditorSpawnParameters spawn_parameters = 1;
-  repeated .sc.game.editor.mightybridge.v1.Vec3f shape = 2;
+  EditorSpawnParameters spawn_parameters = 1;
+  repeated Vec3f shape = 2;
   float height = 3;
 }
 
 message EditorSpawnNavigationAreaResult {
-  .sc.game.editor.mightybridge.v1.EditorGuid new_guid = 1;
+  EditorGuid new_guid = 1;
 }
 
 message EditorSpawnVisAreaCommand {
-  .sc.game.editor.mightybridge.v1.EditorSpawnParameters spawn_parameters = 1;
-  repeated .sc.game.editor.mightybridge.v1.Vec3f shape = 2;
+  EditorSpawnParameters spawn_parameters = 1;
+  repeated Vec3f shape = 2;
   bool is_portal = 3;
   float height = 4;
 }
 
 message EditorSpawnVisAreaResult {
-  .sc.game.editor.mightybridge.v1.EditorGuid new_guid = 1;
+  EditorGuid new_guid = 1;
 }
 
 message EditorClearHtoSpawnedObjectsCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid hto_guid = 1;
+  EditorGuid hto_guid = 1;
 }
 
 message EditorRemoveObjectsCommand {
-  repeated .sc.game.editor.mightybridge.v1.EditorGuid object_guids = 1;
+  repeated EditorGuid object_guids = 1;
 }
 
 message EditorPrintCommand {
   string text = 1;
-  .sc.game.editor.mightybridge.v1.EditorLogLevel log_level = 2;
+  EditorLogLevel log_level = 2;
   string context = 3;
 }
 
 message EditorClearLayerCommand {
-  .sc.game.editor.mightybridge.v1.EditorLayer layer = 1;
+  EditorLayer layer = 1;
 }
 
 message EditorReloadLayerCommand {
-  .sc.game.editor.mightybridge.v1.EditorLayer layer = 1;
+  EditorLayer layer = 1;
 }
 
 message EditorBoundingBox {
-  .sc.game.editor.mightybridge.v1.Vec3f min = 1;
-  .sc.game.editor.mightybridge.v1.Vec3f max = 2;
-  .sc.game.editor.mightybridge.v1.Transformf transform = 3;
+  Vec3f min = 1;
+  Vec3f max = 2;
+  Transformf transform = 3;
 }
 
 message EditorGetCameraTransformCommand {}
 
 message EditorGetCameraTransformResult {
-  .sc.game.editor.mightybridge.v1.Transformf transform = 1;
+  Transformf transform = 1;
 }
 
 message EditorGetObjectBoundingBoxCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid object_guid = 1;
+  EditorGuid object_guid = 1;
 }
 
 message EditorGetObjectBoundingBoxResult {
-  .sc.game.editor.mightybridge.v1.EditorBoundingBox oobb = 1;
-  .sc.game.editor.mightybridge.v1.EditorBoundingBox aabb = 2;
+  EditorBoundingBox oobb = 1;
+  EditorBoundingBox aabb = 2;
 }
 
 message EditorGetBrushBoundingBoxCommand {
@@ -238,17 +238,17 @@ message EditorGetBrushBoundingBoxCommand {
 }
 
 message EditorGetBrushBoundingBoxResult {
-  .sc.game.editor.mightybridge.v1.EditorBoundingBox bounding_box = 1;
+  EditorBoundingBox bounding_box = 1;
 }
 
 message EditorSplinePoint {
-  .sc.game.editor.mightybridge.v1.Transformf transform = 1;
+  Transformf transform = 1;
   float length = 2;
   float pre_tension = 3;
   float post_tension = 4;
   bool custom_tangent_rotation = 5;
-  .sc.game.editor.mightybridge.v1.EditorSplinePoint.RotationMode rotation_mode = 6;
-  .sc.game.editor.mightybridge.v1.Quatf entity_rotation = 7;
+  RotationMode rotation_mode = 6;
+  Quatf entity_rotation = 7;
   float speed = 8;
   string trigger_name = 9;
   bool force_rotation = 10;
@@ -261,63 +261,63 @@ message EditorSplinePoint {
 }
 
 message EditorSpawnSplineCommand {
-  .sc.game.editor.mightybridge.v1.EditorSpawnParameters spawn_parameters = 1;
-  repeated .sc.game.editor.mightybridge.v1.EditorSplinePoint spline_points = 2;
+  EditorSpawnParameters spawn_parameters = 1;
+  repeated EditorSplinePoint spline_points = 2;
 }
 
 message EditorSpawnSplineResult {
-  .sc.game.editor.mightybridge.v1.EditorGuid new_guid = 1;
+  EditorGuid new_guid = 1;
 }
 
 message EditorGetSplinePointsCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid object_guid = 1;
+  EditorGuid object_guid = 1;
 }
 
 message EditorGetSplinePointsResult {
-  repeated .sc.game.editor.mightybridge.v1.EditorSplinePoint spline_points = 1;
-  .sc.game.editor.mightybridge.v1.EditorObjectBaseInfo object_info = 2;
+  repeated EditorSplinePoint spline_points = 1;
+  EditorObjectBaseInfo object_info = 2;
 }
 
 message EditorSetSplinePointsCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid object_guid = 1;
-  repeated .sc.game.editor.mightybridge.v1.EditorSplinePoint spline_points = 2;
+  EditorGuid object_guid = 1;
+  repeated EditorSplinePoint spline_points = 2;
 }
 
 message EditorGetSelectedObjectsCommand {}
 
 message EditorGetSelectedObjectsResult {
-  repeated .sc.game.editor.mightybridge.v1.EditorObjectBaseInfo objects = 1;
+  repeated EditorObjectBaseInfo objects = 1;
 }
 
 message EditorGenerateDebugMeshCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid existing_debug_mesh_guid = 1;
-  .sc.game.editor.mightybridge.v1.EditorGuid parent_guid = 2;
-  .sc.game.editor.mightybridge.v1.Transformf transform = 3;
+  EditorGuid existing_debug_mesh_guid = 1;
+  EditorGuid parent_guid = 2;
+  Transformf transform = 3;
   string label = 4;
-  .sc.game.editor.mightybridge.v1.EditorGuid redirect_to_obj_guid = 5;
-  .sc.game.editor.mightybridge.v1.EditorHoudiniMesh houdini_mesh = 6;
+  EditorGuid redirect_to_obj_guid = 5;
+  EditorHoudiniMesh houdini_mesh = 6;
 }
 
 message EditorGenerateDebugMeshResult {
-  .sc.game.editor.mightybridge.v1.EditorGuid new_mesh_guid = 1;
+  EditorGuid new_mesh_guid = 1;
 }
 
 message EditorClearDebugMeshesCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid parent_guid = 1;
-  .sc.game.editor.mightybridge.v1.EditorGuid debug_mesh_guid = 2;
+  EditorGuid parent_guid = 1;
+  EditorGuid debug_mesh_guid = 2;
 }
 
 message EditorGetObjectsInVolumeCommand {
-  .sc.game.editor.mightybridge.v1.EditorBoundingBox bounding_box = 1;
+  EditorBoundingBox bounding_box = 1;
   bool fully_included = 2;
 }
 
 message EditorGetObjectsInVolumeResult {
-  repeated .sc.game.editor.mightybridge.v1.EditorObjectBaseInfo bounded_objects = 1;
+  repeated EditorObjectBaseInfo bounded_objects = 1;
 }
 
 message EditorGetTerrainGeometryCommand {
-  .sc.game.editor.mightybridge.v1.Vec3f direction = 1;
+  Vec3f direction = 1;
   float radius = 2;
   uint32 lod = 3;
   uint32 payload_max_size = 4;
@@ -355,18 +355,18 @@ message EditorGetTerrainInfoResult {
 }
 
 message EditorGetBiomeInstancesCommand {
-  .sc.game.editor.mightybridge.v1.Vec3f direction = 1;
+  Vec3f direction = 1;
   float cull_radius = 2;
   bool get_brushes = 3;
   bool get_ground_covers = 4;
 }
 
 message EditorGetBiomeInstancesResult {
-  .sc.game.editor.mightybridge.v1.Vec3w instances_pivot = 1;
-  repeated .sc.game.editor.mightybridge.v1.EditorGetBiomeInstancesResult.Model brush_models = 2;
-  repeated .sc.game.editor.mightybridge.v1.EditorGetBiomeInstancesResult.BrushInstance brush_instances = 3;
-  repeated .sc.game.editor.mightybridge.v1.EditorGetBiomeInstancesResult.Model ground_cover_models = 4;
-  repeated .sc.game.editor.mightybridge.v1.EditorGetBiomeInstancesResult.GroundCoverInstance ground_cover_instances = 5;
+  Vec3w instances_pivot = 1;
+  repeated Model brush_models = 2;
+  repeated BrushInstance brush_instances = 3;
+  repeated Model ground_cover_models = 4;
+  repeated GroundCoverInstance ground_cover_instances = 5;
 
   message Model {
     string brush_path = 1;
@@ -374,16 +374,16 @@ message EditorGetBiomeInstancesResult {
   }
   message BrushInstance {
     uint32 model_index = 1;
-    .sc.game.editor.mightybridge.v1.Transformf transform = 2;
+    Transformf transform = 2;
   }
   message GroundCoverInstance {
     uint32 model_index = 1;
-    .sc.game.editor.mightybridge.v1.Transformf transform = 2;
+    Transformf transform = 2;
   }
 }
 
 message EditorGetGeometryCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid object_guid = 1;
+  EditorGuid object_guid = 1;
   int32 cut = 2;
   int32 lod_level = 3;
   bool is_colors_wanted = 4;
@@ -394,8 +394,8 @@ message EditorGetGeometryCommand {
 }
 
 message EditorGetGeometryResult {
-  .sc.game.editor.mightybridge.v1.EditorObjectBaseInfo base_info = 1;
-  .sc.game.editor.mightybridge.v1.EditorHoudiniMesh houdini_mesh = 2;
+  EditorObjectBaseInfo base_info = 1;
+  EditorHoudiniMesh houdini_mesh = 2;
 }
 
 message EditorMeshSubset {
@@ -412,13 +412,13 @@ message EditorMeshSubObject {
   int32 index = 1;
   string name = 2;
   string material_name = 3;
-  .sc.game.editor.mightybridge.v1.EditorGeometry geometry = 4;
+  EditorGeometry geometry = 4;
 }
 
 message EditorBrush {
   string material_path = 1;
   int32 sub_object_count = 2;
-  repeated .sc.game.editor.mightybridge.v1.EditorMeshSubObject sub_objects = 3;
+  repeated EditorMeshSubObject sub_objects = 3;
 }
 
 message EditorEntity {
@@ -429,15 +429,15 @@ message EditorPrefab {
   int32 sub_object_count = 1;
   string library_name = 2;
   string library_file_name = 3;
-  repeated .sc.game.editor.mightybridge.v1.EditorEntity entities = 4;
-  repeated .sc.game.editor.mightybridge.v1.EditorBrush brushes = 5;
-  repeated .sc.game.editor.mightybridge.v1.EditorPrefab prefabs = 6;
-  repeated .sc.game.editor.mightybridge.v1.EditorBrush designer_solids = 7;
+  repeated EditorEntity entities = 4;
+  repeated EditorBrush brushes = 5;
+  repeated EditorPrefab prefabs = 6;
+  repeated EditorBrush designer_solids = 7;
 }
 
 message EditorGetHierarchyCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid object_guid = 1;
-  .sc.game.editor.mightybridge.v1.EditorGetHierarchyCommand.LevelType level = 2;
+  EditorGuid object_guid = 1;
+  LevelType level = 2;
 
   enum LevelType {
     LEVEL_TYPE_UNSPECIFIED = 0;
@@ -458,33 +458,33 @@ message EditorGetOCHierarchyCommand {
 }
 
 message EditorGetOCHierarchyResult {
-  .sc.game.editor.mightybridge.v1.EditorHierarchyNode root = 1;
+  EditorHierarchyNode root = 1;
 }
 
 message EditorGetHierarchyResult {
-  .sc.game.editor.mightybridge.v1.EditorHierarchyNode root = 1;
+  EditorHierarchyNode root = 1;
 }
 
 message EditorHierarchyNode {
-  .sc.game.editor.mightybridge.v1.EditorObjectBaseInfo base = 1;
-  .sc.game.editor.mightybridge.v1.EditorObjectAdditionalInfo additional_info = 2;
-  repeated .sc.game.editor.mightybridge.v1.EditorHierarchyNode children = 3;
+  EditorObjectBaseInfo base = 1;
+  EditorObjectAdditionalInfo additional_info = 2;
+  repeated EditorHierarchyNode children = 3;
 }
 
 message EditorObjectAdditionalInfo {
   oneof type {
-    .sc.game.editor.mightybridge.v1.EditorBrush brush = 1;
-    .sc.game.editor.mightybridge.v1.EditorEntity entity = 2;
-    .sc.game.editor.mightybridge.v1.EditorPrefab prefab = 3;
-    .sc.game.editor.mightybridge.v1.EditorLayer layer = 5;
+    EditorBrush brush = 1;
+    EditorEntity entity = 2;
+    EditorPrefab prefab = 3;
+    EditorLayer layer = 5;
   }
-  repeated .sc.game.editor.mightybridge.v1.EditorObjectVariable attributes = 4;
+  repeated EditorObjectVariable attributes = 4;
   string additional_info = 6;
 }
 
 message EditorSelectObjectsByGUIDsCommand {
-  repeated .sc.game.editor.mightybridge.v1.EditorGuid objects_guids = 1;
-  .sc.game.editor.mightybridge.v1.EditorSelectObjectsByGUIDsCommand.Mode mode = 2;
+  repeated EditorGuid objects_guids = 1;
+  Mode mode = 2;
 
   enum Mode {
     MODE_UNSPECIFIED = 0;
@@ -494,34 +494,34 @@ message EditorSelectObjectsByGUIDsCommand {
 }
 
 message EditorCookHTOCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid hto_guid = 1;
-  repeated .sc.game.editor.mightybridge.v1.HoudiniParmValue hda_parameters = 2;
+  EditorGuid hto_guid = 1;
+  repeated HoudiniParmValue hda_parameters = 2;
 }
 
 message EditorSpawnHTOCommand {
-  .sc.game.editor.mightybridge.v1.EditorSpawnParameters spawn_parameters = 1;
+  EditorSpawnParameters spawn_parameters = 1;
   string hda_name = 2;
-  repeated .sc.game.editor.mightybridge.v1.HoudiniParmValue hda_parameters = 3;
+  repeated HoudiniParmValue hda_parameters = 3;
   bool cook_on_create = 4;
   string hda_version = 5;
 }
 
 message EditorSpawnHTOResult {
-  .sc.game.editor.mightybridge.v1.EditorGuid new_hto_guid = 1;
+  EditorGuid new_hto_guid = 1;
 }
 
 message EditorRefreshHTOParamsCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid hto_guid = 1;
-  repeated .sc.game.editor.mightybridge.v1.HoudiniParmValue hda_parameters = 2;
+  EditorGuid hto_guid = 1;
+  repeated HoudiniParmValue hda_parameters = 2;
 }
 
 message EditorReparentHTOCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid child_guid = 1;
-  .sc.game.editor.mightybridge.v1.EditorGuid parent_guid = 2;
+  EditorGuid child_guid = 1;
+  EditorGuid parent_guid = 2;
 }
 
 message EditorGetHTONodePathCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid hto_guid = 1;
+  EditorGuid hto_guid = 1;
 }
 
 message EditorGetHTONodePathResult {
@@ -529,67 +529,67 @@ message EditorGetHTONodePathResult {
 }
 
 message EditorRenameLayerCommand {
-  .sc.game.editor.mightybridge.v1.EditorLayer layer = 1;
+  EditorLayer layer = 1;
   string new_name = 2;
 }
 
 message EditorCreateLayerCommand {
-  .sc.game.editor.mightybridge.v1.EditorLayerProperties layer_properties = 1;
+  EditorLayerProperties layer_properties = 1;
 }
 
 message EditorCreateLayerResult {
-  .sc.game.editor.mightybridge.v1.EditorLayer layer = 1;
+  EditorLayer layer = 1;
   bool already_existing_layer = 2;
 }
 
 message EditorDeleteLayerCommand {
-  .sc.game.editor.mightybridge.v1.EditorLayer layer = 1;
+  EditorLayer layer = 1;
 }
 
 message EditorHideShowLayerCommand {
-  .sc.game.editor.mightybridge.v1.EditorLayer layer = 1;
+  EditorLayer layer = 1;
   bool is_visible = 2;
 }
 
 message EditorReparentLayerCommand {
-  .sc.game.editor.mightybridge.v1.EditorLayer layer = 1;
-  .sc.game.editor.mightybridge.v1.EditorLayer new_parent_layer = 2;
+  EditorLayer layer = 1;
+  EditorLayer new_parent_layer = 2;
 }
 
 message EditorGetObjectsInLayerCommand {
-  .sc.game.editor.mightybridge.v1.EditorLayer layer = 1;
+  EditorLayer layer = 1;
   bool include_sub_layers = 2;
 }
 
 message EditorGetObjectsInLayerResult {
-  repeated .sc.game.editor.mightybridge.v1.EditorObjectBaseInfo objects = 1;
+  repeated EditorObjectBaseInfo objects = 1;
 }
 
 message EditorMoveObjectsToLayerCommand {
-  .sc.game.editor.mightybridge.v1.EditorLayer layer = 1;
-  repeated .sc.game.editor.mightybridge.v1.EditorGuid object_guids = 2;
+  EditorLayer layer = 1;
+  repeated EditorGuid object_guids = 2;
 }
 
 message EditorSetActiveLayerCommand {
-  .sc.game.editor.mightybridge.v1.EditorLayer layer = 1;
+  EditorLayer layer = 1;
 }
 
 message EditorGetActiveLayerCommand {}
 
 message EditorGetActiveLayerResult {
-  .sc.game.editor.mightybridge.v1.EditorLayer layer = 1;
+  EditorLayer layer = 1;
 }
 
 message EditorExpandLayerCommand {
-  .sc.game.editor.mightybridge.v1.EditorLayer layer = 1;
+  EditorLayer layer = 1;
 }
 
 message EditorCollapseLayerCommand {
-  .sc.game.editor.mightybridge.v1.EditorLayer layer = 1;
+  EditorLayer layer = 1;
 }
 
 message EditorSaveLayerCommand {
-  .sc.game.editor.mightybridge.v1.EditorLayer layer = 1;
+  EditorLayer layer = 1;
   bool is_recursive = 2;
 }
 
@@ -598,11 +598,11 @@ message EditorImportLayerCommand {
 }
 
 message EditorImportLayerResult {
-  .sc.game.editor.mightybridge.v1.EditorLayer layer = 1;
+  EditorLayer layer = 1;
 }
 
 message EditorSpawnDecalCommand {
-  .sc.game.editor.mightybridge.v1.EditorSpawnParameters spawn_parameters = 1;
+  EditorSpawnParameters spawn_parameters = 1;
   int32 sort_priority = 2;
   int32 view_dist_ratio = 3;
   float bounding_box_z_scale = 4;
@@ -610,44 +610,44 @@ message EditorSpawnDecalCommand {
 }
 
 message EditorSpawnDecalResult {
-  .sc.game.editor.mightybridge.v1.EditorGuid new_guid = 1;
+  EditorGuid new_guid = 1;
 }
 
 message EditorOpenPrefabCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid object_guid = 1;
+  EditorGuid object_guid = 1;
 }
 
 message EditorClosePrefabCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid object_guid = 1;
+  EditorGuid object_guid = 1;
 }
 
 message EditorTestCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid guid = 1;
+  EditorGuid guid = 1;
   string message = 2;
-  .sc.game.editor.mightybridge.v1.Transformf transform = 3;
+  Transformf transform = 3;
   repeated float numbers = 4;
   repeated int32 bytes = 5;
 }
 
 message EditorTestResult {
-  .sc.game.editor.mightybridge.v1.EditorGuid guid = 1;
+  EditorGuid guid = 1;
   string message = 2;
-  .sc.game.editor.mightybridge.v1.Transformf transform = 3;
+  Transformf transform = 3;
   repeated float numbers = 4;
   repeated int32 bytes = 5;
 }
 
 message EditorOpenObjectContainerCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid guid = 1;
+  EditorGuid guid = 1;
 }
 
 message EditorOpenObjectContainerResult {
-  .sc.game.editor.mightybridge.v1.EditorLayer layer = 1;
-  repeated .sc.game.editor.mightybridge.v1.EditorObjectBaseInfo objects = 2;
+  EditorLayer layer = 1;
+  repeated EditorObjectBaseInfo objects = 2;
 }
 
 message EditorCloseObjectContainerCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid guid = 1;
+  EditorGuid guid = 1;
   bool save_and_export = 2;
   bool force_overwrite = 3;
 }
@@ -657,27 +657,27 @@ message EditorCloseObjectContainerResult {
 }
 
 message EditorExportLayerToObjectContainerCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid layer_guid = 1;
+  EditorGuid layer_guid = 1;
   string socpak_path = 2;
   bool set_layer_as_oc = 3;
 }
 
 message EditorGenerateCGFCommand {
   string cgf_path = 1;
-  repeated .sc.game.editor.mightybridge.v1.EditorHoudiniMesh houdini_meshes = 2;
-  .sc.game.editor.mightybridge.v1.EditorPhysics object_physics = 4;
+  repeated EditorHoudiniMesh houdini_meshes = 2;
+  EditorPhysics object_physics = 4;
 }
 
 message EditorSetGeometryInstancerCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid entity_guid = 1;
-  .sc.game.editor.mightybridge.v1.EditorSetGeometryInstancerCommand.Compression compression = 2;
-  .sc.game.editor.mightybridge.v1.EditorSetGeometryInstancerCommand.Rendering rendering = 3;
+  EditorGuid entity_guid = 1;
+  Compression compression = 2;
+  Rendering rendering = 3;
   bool enable_shadows = 4;
   bool enable_physics = 5;
   string geometry_path = 6;
   string material_path = 7;
-  repeated .sc.game.editor.mightybridge.v1.Vec3f positions = 8;
-  repeated .sc.game.editor.mightybridge.v1.Quatf rotations = 9;
+  repeated Vec3f positions = 8;
+  repeated Quatf rotations = 9;
   repeated float scales = 10;
 
   enum Rendering {
@@ -696,14 +696,14 @@ message EditorSetGeometryInstancerCommand {
 }
 
 message EditorGetGeometryInstancerCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid entity_guid = 1;
+  EditorGuid entity_guid = 1;
 }
 
 message EditorGetGeometryInstancerResult {
   string geometry_path = 1;
   string material_path = 2;
-  repeated .sc.game.editor.mightybridge.v1.Vec3f positions = 3;
-  repeated .sc.game.editor.mightybridge.v1.Quatf rotations = 4;
+  repeated Vec3f positions = 3;
+  repeated Quatf rotations = 4;
   repeated float scales = 5;
 }
 
@@ -714,46 +714,46 @@ message EditorGetCGFInfoCommand {
 
 message EditorGetCGFInfoResult {
   string name = 1;
-  .sc.game.editor.mightybridge.v1.EditorHoudiniMesh houdini_mesh = 2;
+  EditorHoudiniMesh houdini_mesh = 2;
 }
 
 message EditorGetLayerHierarchyCommand {
-  .sc.game.editor.mightybridge.v1.EditorLayer layer = 1;
+  EditorLayer layer = 1;
 }
 
 message EditorGetLayerHierarchyResult {
-  repeated .sc.game.editor.mightybridge.v1.EditorHierarchyNode root_layers = 1;
+  repeated EditorHierarchyNode root_layers = 1;
 }
 
 message EditorSpawnShapeObjectCommand {
   string object_type = 1;
-  .sc.game.editor.mightybridge.v1.EditorSpawnParameters spawn_parameters = 2;
-  repeated .sc.game.editor.mightybridge.v1.Vec3f shape = 3;
+  EditorSpawnParameters spawn_parameters = 2;
+  repeated Vec3f shape = 3;
 }
 
 message EditorSpawnShapeObjectResult {
-  .sc.game.editor.mightybridge.v1.EditorGuid new_guid = 1;
+  EditorGuid new_guid = 1;
 }
 
 message EditorGetObjectShapeCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid object_guid = 1;
+  EditorGuid object_guid = 1;
 }
 
 message EditorGetObjectShapeResult {
-  repeated .sc.game.editor.mightybridge.v1.Vec3f shape = 1;
-  .sc.game.editor.mightybridge.v1.EditorObjectBaseInfo object_info = 2;
+  repeated Vec3f shape = 1;
+  EditorObjectBaseInfo object_info = 2;
 }
 
 message EditorSetObjectShapeCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid object_guid = 1;
-  .sc.game.editor.mightybridge.v1.Vec3f pos = 2;
-  repeated .sc.game.editor.mightybridge.v1.Vec3f shape = 3;
+  EditorGuid object_guid = 1;
+  Vec3f pos = 2;
+  repeated Vec3f shape = 3;
 }
 
 message EditorSetObjectShapeResult {}
 
 message EditorExpandObjectCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid object_guid = 1;
+  EditorGuid object_guid = 1;
   bool propagate = 2;
   int32 propagate_depth = 3;
 }
@@ -761,7 +761,7 @@ message EditorExpandObjectCommand {
 message EditorExpandObjectResult {}
 
 message EditorCollapseObjectCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid object_guid = 1;
+  EditorGuid object_guid = 1;
 }
 
 message EditorCollapseObjectResult {}
@@ -772,19 +772,19 @@ message EditorEntityPropertyValue {
     float float_value = 2;
     int32 int_value = 3;
     string string_value = 4;
-    .sc.game.editor.mightybridge.v1.EditorGuid guid_value = 5;
+    EditorGuid guid_value = 5;
   }
 }
 
 message EditorEntityProperty {
   string path = 1;
-  .sc.game.editor.mightybridge.v1.EditorEntityPropertyValue value = 2;
-  .sc.game.editor.mightybridge.v1.EditorEntityPropertyValue default_value = 3;
+  EditorEntityPropertyValue value = 2;
+  EditorEntityPropertyValue default_value = 3;
 }
 
 message EditorEntityArrayProperty {
   string path = 1;
-  repeated .sc.game.editor.mightybridge.v1.EditorEntityPropertyValue value = 2;
+  repeated EditorEntityPropertyValue value = 2;
 }
 
 message EditorEntityEnumProperty {
@@ -798,15 +798,15 @@ message EditorObjectProperty {
     string name = 1;
     string tint_palette_path = 2;
     string material_path = 3;
-    .sc.game.editor.mightybridge.v1.Transformf transform = 4;
-    .sc.game.editor.mightybridge.v1.EditorGuid layer_guid = 5;
-    .sc.game.editor.mightybridge.v1.EditorGuid hto_guid = 6;
-    .sc.game.editor.mightybridge.v1.EditorRGBColor color = 7;
+    Transformf transform = 4;
+    EditorGuid layer_guid = 5;
+    EditorGuid hto_guid = 6;
+    EditorRGBColor color = 7;
   }
 }
 
 message EditorObjectTagList {
-  repeated .sc.game.editor.mightybridge.v1.EditorTagList tag_lists = 1;
+  repeated EditorTagList tag_lists = 1;
 }
 
 message EditorObjectVariable {
@@ -814,21 +814,21 @@ message EditorObjectVariable {
   oneof value {
     bool bool_value = 2;
     float float_value = 3;
-    .sc.game.editor.mightybridge.v1.Vec2f vec2_value = 4;
-    .sc.game.editor.mightybridge.v1.Vec3f vec3_value = 5;
-    .sc.game.editor.mightybridge.v1.Vec4f vec4_value = 6;
-    .sc.game.editor.mightybridge.v1.Quatf quat_value = 7;
+    Vec2f vec2_value = 4;
+    Vec3f vec3_value = 5;
+    Vec4f vec4_value = 6;
+    Quatf quat_value = 7;
     string string_value = 8;
     int32 int_value = 9;
-    .sc.game.editor.mightybridge.v1.EditorObjectTagList tag_list_value = 10;
+    EditorObjectTagList tag_list_value = 10;
   }
 }
 
 message EditorHTOProperty {
-  .sc.game.editor.mightybridge.v1.EditorHTOProperty.HTOProperty name = 1;
+  HTOProperty name = 1;
   oneof value {
-    .sc.game.editor.mightybridge.v1.EditorObjectBaseInfo object_value = 2;
-    .sc.game.editor.mightybridge.v1.EditorArrayObjectBaseInfo objects_value = 3;
+    EditorObjectBaseInfo object_value = 2;
+    EditorArrayObjectBaseInfo objects_value = 3;
     string string_value = 4;
     bool bool_value = 5;
     float float_value = 6;
@@ -854,29 +854,29 @@ message EditorHTOProperty {
 
 message EditorEntityLink {
   string name = 1;
-  .sc.game.editor.mightybridge.v1.EditorGuid object_guid = 2;
+  EditorGuid object_guid = 2;
 }
 
 message EditorEnergyLink {
   string name = 1;
-  .sc.game.editor.mightybridge.v1.EditorGuid object_guid = 2;
+  EditorGuid object_guid = 2;
   string pipe_class = 3;
 }
 
 message EditorInteractionLink {
   string name = 1;
-  .sc.game.editor.mightybridge.v1.EditorGuid object_guid = 2;
+  EditorGuid object_guid = 2;
   uint32 source_slot_index = 3;
   uint32 target_slot_index = 4;
 }
 
 message EditorEntityLinksProperty {
-  .sc.game.editor.mightybridge.v1.EditorEntityLinksProperty.EntityLinksPropertySetOption set_entity_links_option = 1;
-  repeated .sc.game.editor.mightybridge.v1.EditorEntityLink entity_links = 2;
-  .sc.game.editor.mightybridge.v1.EditorEntityLinksProperty.EntityLinksPropertySetOption set_energy_links_option = 3;
-  repeated .sc.game.editor.mightybridge.v1.EditorEnergyLink energy_links = 4;
-  .sc.game.editor.mightybridge.v1.EditorEntityLinksProperty.EntityLinksPropertySetOption set_interaction_links_option = 5;
-  repeated .sc.game.editor.mightybridge.v1.EditorInteractionLink interaction_links = 6;
+  EntityLinksPropertySetOption set_entity_links_option = 1;
+  repeated EditorEntityLink entity_links = 2;
+  EntityLinksPropertySetOption set_energy_links_option = 3;
+  repeated EditorEnergyLink energy_links = 4;
+  EntityLinksPropertySetOption set_interaction_links_option = 5;
+  repeated EditorInteractionLink interaction_links = 6;
 
   enum EntityLinksPropertySetOption {
     ENTITY_LINKS_PROPERTY_SET_OPTION_UNSPECIFIED = 0;
@@ -887,9 +887,9 @@ message EditorEntityLinksProperty {
 }
 
 message EditorPrefabProperty {
-  .sc.game.editor.mightybridge.v1.EditorPrefabProperty.PrefabProperty name = 1;
+  PrefabProperty name = 1;
   oneof value {
-    .sc.game.editor.mightybridge.v1.EditorArrayObjectBaseInfo objects_value = 2;
+    EditorArrayObjectBaseInfo objects_value = 2;
     string string_value = 3;
     bool bool_value = 4;
   }
@@ -904,20 +904,20 @@ message EditorPrefabProperty {
 
 message EditorProperty {
   oneof property {
-    .sc.game.editor.mightybridge.v1.EditorObjectProperty object_property = 1;
-    .sc.game.editor.mightybridge.v1.EditorObjectVariable object_variable = 2;
-    .sc.game.editor.mightybridge.v1.EditorEntityProperty entity_property = 3;
-    .sc.game.editor.mightybridge.v1.EditorEntityArrayProperty entity_array_property = 4;
-    .sc.game.editor.mightybridge.v1.EditorEntityEnumProperty entity_enum_property = 5;
-    .sc.game.editor.mightybridge.v1.EditorHTOProperty hto_property = 6;
-    .sc.game.editor.mightybridge.v1.HoudiniParmValue hda_parameter = 7;
-    .sc.game.editor.mightybridge.v1.EditorEntityLinksProperty entity_links_property = 8;
-    .sc.game.editor.mightybridge.v1.EditorPrefabProperty prefab_property = 9;
+    EditorObjectProperty object_property = 1;
+    EditorObjectVariable object_variable = 2;
+    EditorEntityProperty entity_property = 3;
+    EditorEntityArrayProperty entity_array_property = 4;
+    EditorEntityEnumProperty entity_enum_property = 5;
+    EditorHTOProperty hto_property = 6;
+    HoudiniParmValue hda_parameter = 7;
+    EditorEntityLinksProperty entity_links_property = 8;
+    EditorPrefabProperty prefab_property = 9;
   }
 }
 
 message EditorShaderProperty {
-  repeated .sc.game.editor.mightybridge.v1.EditorShaderProperty.Shader properties = 1;
+  repeated Shader properties = 1;
 
   message Shader {
     string category_name = 1;
@@ -927,10 +927,10 @@ message EditorShaderProperty {
     oneof value {
       string string_value = 5;
       float float_value = 6;
-      .sc.game.editor.mightybridge.v1.Vec3f rgb_value = 7;
+      Vec3f rgb_value = 7;
       int32 int_value = 9;
       int32 short_value = 10;
-      .sc.game.editor.mightybridge.v1.Vec3f vector_value = 11;
+      Vec3f vector_value = 11;
       bool bool_value = 12;
       uint32 uint_value = 13;
     }
@@ -938,7 +938,7 @@ message EditorShaderProperty {
 }
 
 message EditorTextureProperty {
-  repeated .sc.game.editor.mightybridge.v1.EditorTextureProperty.Texture properties = 1;
+  repeated Texture properties = 1;
 
   message Texture {
     string display_name = 1;
@@ -947,7 +947,7 @@ message EditorTextureProperty {
 }
 
 message EditorShaderLayers {
-  repeated .sc.game.editor.mightybridge.v1.EditorShaderLayers.Layer properties = 1;
+  repeated Layer properties = 1;
 
   message Layer {
     string category_name = 1;
@@ -957,8 +957,8 @@ message EditorShaderLayers {
     oneof value {
       string string_value = 5;
       float float_value = 6;
-      .sc.game.editor.mightybridge.v1.EditorRGBColor rgb_value = 7;
-      .sc.game.editor.mightybridge.v1.Vec3f vec3_value = 8;
+      EditorRGBColor rgb_value = 7;
+      Vec3f vec3_value = 8;
       uint32 uint_value = 9;
       int32 byte_value = 10;
       int32 short_value = 11;
@@ -969,12 +969,12 @@ message EditorShaderLayers {
 
 message EditorVertexDeformation {
   int32 type = 1;
-  .sc.game.editor.mightybridge.v1.Vec3f noise_scale = 2;
+  Vec3f noise_scale = 2;
   float wave_length = 3;
-  .sc.game.editor.mightybridge.v1.EditorVertexDeformation.WaveInfo wave_x = 4;
-  .sc.game.editor.mightybridge.v1.EditorVertexDeformation.WaveInfo wave_y = 5;
-  .sc.game.editor.mightybridge.v1.EditorVertexDeformation.WaveInfo wave_z = 6;
-  .sc.game.editor.mightybridge.v1.EditorVertexDeformation.WaveInfo wave_w = 7;
+  WaveInfo wave_x = 4;
+  WaveInfo wave_y = 5;
+  WaveInfo wave_z = 6;
+  WaveInfo wave_w = 7;
 
   message WaveInfo {
     int32 type = 1;
@@ -986,7 +986,7 @@ message EditorVertexDeformation {
 }
 
 message EditorShaderGenParams {
-  repeated .sc.game.editor.mightybridge.v1.EditorShaderGenParams.GenParams properties = 1;
+  repeated GenParams properties = 1;
 
   message GenParams {
     string display_name = 1;
@@ -995,7 +995,7 @@ message EditorShaderGenParams {
 }
 
 message EditorMaterialSettings {
-  .sc.game.editor.mightybridge.v1.EditorMaterialSettings.Setting name = 1;
+  Setting name = 1;
   string property = 2;
 
   enum Setting {
@@ -1006,7 +1006,7 @@ message EditorMaterialSettings {
 }
 
 message EditorMaterialOpacitySettings {
-  .sc.game.editor.mightybridge.v1.EditorMaterialOpacitySettings.Setting name = 1;
+  Setting name = 1;
   oneof property {
     float float_value = 2;
     bool bool_value = 3;
@@ -1022,9 +1022,9 @@ message EditorMaterialOpacitySettings {
 }
 
 message EditorMaterialLightingSettings {
-  .sc.game.editor.mightybridge.v1.EditorMaterialLightingSettings.Setting name = 1;
+  Setting name = 1;
   oneof property {
-    .sc.game.editor.mightybridge.v1.EditorRGBColor rgb_value = 2;
+    EditorRGBColor rgb_value = 2;
     float float_value = 3;
   }
 
@@ -1038,7 +1038,7 @@ message EditorMaterialLightingSettings {
 }
 
 message EditorMaterialAdvanced {
-  .sc.game.editor.mightybridge.v1.EditorMaterialAdvanced.Advanced name = 1;
+  Advanced name = 1;
   oneof property {
     bool bool_value = 2;
     string string_value = 3;
@@ -1063,17 +1063,17 @@ message EditorMaterialAdvanced {
 }
 
 message EditorMaterialProperty {
-  .sc.game.editor.mightybridge.v1.EditorMaterialProperty.MaterialProperty category = 1;
+  MaterialProperty category = 1;
   oneof property {
-    .sc.game.editor.mightybridge.v1.EditorMaterialAdvanced advanced = 2;
-    .sc.game.editor.mightybridge.v1.EditorMaterialLightingSettings lighting = 3;
-    .sc.game.editor.mightybridge.v1.EditorMaterialOpacitySettings opacity = 4;
-    .sc.game.editor.mightybridge.v1.EditorMaterialSettings setting = 5;
-    .sc.game.editor.mightybridge.v1.EditorShaderProperty shader = 6;
-    .sc.game.editor.mightybridge.v1.EditorTextureProperty texture = 7;
-    .sc.game.editor.mightybridge.v1.EditorShaderLayers shader_layers = 8;
-    .sc.game.editor.mightybridge.v1.EditorVertexDeformation vertex_deformation = 9;
-    .sc.game.editor.mightybridge.v1.EditorShaderGenParams shade_generation_params = 10;
+    EditorMaterialAdvanced advanced = 2;
+    EditorMaterialLightingSettings lighting = 3;
+    EditorMaterialOpacitySettings opacity = 4;
+    EditorMaterialSettings setting = 5;
+    EditorShaderProperty shader = 6;
+    EditorTextureProperty texture = 7;
+    EditorShaderLayers shader_layers = 8;
+    EditorVertexDeformation vertex_deformation = 9;
+    EditorShaderGenParams shade_generation_params = 10;
   }
 
   enum MaterialProperty {
@@ -1092,46 +1092,46 @@ message EditorMaterialProperty {
 message EditorMaterial {
   string material_path = 1;
   string name = 2;
-  repeated .sc.game.editor.mightybridge.v1.EditorMaterial sub_materials = 3;
-  repeated .sc.game.editor.mightybridge.v1.EditorMaterialProperty properties = 4;
+  repeated EditorMaterial sub_materials = 3;
+  repeated EditorMaterialProperty properties = 4;
 }
 
 message EditorGetMaterialPropertiesCommand {
   string material_path = 1;
-  .sc.game.editor.mightybridge.v1.EditorGuid material_guid = 2;
-  repeated .sc.game.editor.mightybridge.v1.EditorMaterialProperty properties = 3;
+  EditorGuid material_guid = 2;
+  repeated EditorMaterialProperty properties = 3;
 }
 
 message EditorGetMaterialPropertiesResult {
-  .sc.game.editor.mightybridge.v1.EditorMaterial material = 1;
+  EditorMaterial material = 1;
 }
 
 message EditorSetPropertiesCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid object_guid = 1;
-  repeated .sc.game.editor.mightybridge.v1.EditorProperty properties = 2;
+  EditorGuid object_guid = 1;
+  repeated EditorProperty properties = 2;
 }
 
 message EditorGetPropertiesCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid object_guid = 1;
-  repeated .sc.game.editor.mightybridge.v1.EditorProperty properties = 2;
+  EditorGuid object_guid = 1;
+  repeated EditorProperty properties = 2;
 }
 
 message EditorGetPropertiesResult {
-  .sc.game.editor.mightybridge.v1.EditorObjectBaseInfo object_info = 1;
-  repeated .sc.game.editor.mightybridge.v1.EditorProperty properties = 2;
+  EditorObjectBaseInfo object_info = 1;
+  repeated EditorProperty properties = 2;
 }
 
 message EditorGetAllPropertiesCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid object_guid = 1;
+  EditorGuid object_guid = 1;
 }
 
 message EditorGetAllPropertiesResult {
-  .sc.game.editor.mightybridge.v1.EditorObjectBaseInfo object_info = 1;
-  repeated .sc.game.editor.mightybridge.v1.EditorProperty properties = 2;
+  EditorObjectBaseInfo object_info = 1;
+  repeated EditorProperty properties = 2;
 }
 
 message EditorGetCGAPathsFromEntityCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid object_guid = 1;
+  EditorGuid object_guid = 1;
 }
 
 message EditorGetCGAPathsFromEntityResult {
@@ -1140,13 +1140,13 @@ message EditorGetCGAPathsFromEntityResult {
 }
 
 message EditorLayerProperties {
-  .sc.game.editor.mightybridge.v1.EditorLayer layer = 1;
-  .sc.game.editor.mightybridge.v1.EditorLayer parent_layer = 2;
+  EditorLayer layer = 1;
+  EditorLayer parent_layer = 2;
   bool external = 3;
   bool exportable = 4;
   bool frozen = 5;
   bool visible = 6;
-  .sc.game.editor.mightybridge.v1.EditorRGBColor color = 7;
+  EditorRGBColor color = 7;
   bool have_physics = 8;
   string prefab_path = 9;
   bool modified = 10;
@@ -1161,7 +1161,7 @@ message EditorLayerProperties {
 }
 
 message EditorGetLayerPropertiesCommand {
-  .sc.game.editor.mightybridge.v1.EditorLayer layer = 1;
+  EditorLayer layer = 1;
   bool parent_layer = 2;
   bool external = 3;
   bool exportable = 4;
@@ -1182,11 +1182,11 @@ message EditorGetLayerPropertiesCommand {
 }
 
 message EditorGetLayerPropertiesResult {
-  .sc.game.editor.mightybridge.v1.EditorLayerProperties layer_properties = 1;
+  EditorLayerProperties layer_properties = 1;
 }
 
 message EditorSetLayerPropertiesCommand {
-  .sc.game.editor.mightybridge.v1.EditorLayerProperties layer_properties = 1;
+  EditorLayerProperties layer_properties = 1;
   bool set_parent_layer = 2;
   bool set_external = 3;
   bool set_exportable = 4;
@@ -1207,55 +1207,55 @@ message EditorSetLayerPropertiesCommand {
 }
 
 message EditorHoudiniMesh {
-  .sc.game.editor.mightybridge.v1.HoudiniMeshPrimitives primitives = 1;
-  .sc.game.editor.mightybridge.v1.HoudiniMeshVertices vertices = 2;
-  .sc.game.editor.mightybridge.v1.HoudiniMeshPoints points = 3;
+  HoudiniMeshPrimitives primitives = 1;
+  HoudiniMeshVertices vertices = 2;
+  HoudiniMeshPoints points = 3;
   string source_filename = 4;
   string source_datetime = 5;
 }
 
 message EditorGeneratePreviewMeshCommand {
-  repeated .sc.game.editor.mightybridge.v1.EditorHoudiniMesh houdini_meshes = 1;
-  .sc.game.editor.mightybridge.v1.EditorGuid existing_preview_mesh_guid = 2;
-  .sc.game.editor.mightybridge.v1.EditorGuid parent_guid = 3;
-  .sc.game.editor.mightybridge.v1.Transformf transform = 4;
+  repeated EditorHoudiniMesh houdini_meshes = 1;
+  EditorGuid existing_preview_mesh_guid = 2;
+  EditorGuid parent_guid = 3;
+  Transformf transform = 4;
   string label = 5;
-  .sc.game.editor.mightybridge.v1.EditorGuid redirect_to_obj_guid = 6;
+  EditorGuid redirect_to_obj_guid = 6;
 }
 
 message EditorGeneratePreviewMeshResult {
-  .sc.game.editor.mightybridge.v1.EditorGuid new_mesh_guid = 1;
+  EditorGuid new_mesh_guid = 1;
 }
 
 message EditorRaycastPhysicsCommand {
-  repeated .sc.game.editor.mightybridge.v1.Vec3w ray_start_positions = 1;
-  repeated .sc.game.editor.mightybridge.v1.Vec3w ray_end_positions = 2;
+  repeated Vec3w ray_start_positions = 1;
+  repeated Vec3w ray_end_positions = 2;
   bool use_back_faces = 3;
 }
 
 message EditorRaycastPhysicsResult {
   repeated bool hit_successes = 1;
-  repeated .sc.game.editor.mightybridge.v1.Vec3w hit_positions = 2;
-  repeated .sc.game.editor.mightybridge.v1.Vec3f hit_normals = 3;
+  repeated Vec3w hit_positions = 2;
+  repeated Vec3f hit_normals = 3;
   repeated int32 hit_surfaces = 4;
-  repeated .sc.game.editor.mightybridge.v1.EditorGuid hit_object_guids = 5;
+  repeated EditorGuid hit_object_guids = 5;
 }
 
 message EditorUpdateTinyMachineGraphCommand {
   string graph_content_json = 1;
-  .sc.game.editor.mightybridge.v1.EditorGuid entity_guid = 2;
+  EditorGuid entity_guid = 2;
 }
 
 message EditorUpdateTinyMachineGraphResult {
-  .sc.game.editor.mightybridge.v1.EditorUpdateTinyMachineGraphResult.CompilationReport compilation_report = 1;
-  .sc.game.editor.mightybridge.v1.EditorUpdateTinyMachineGraphResult.RuntimeReport runtime_report = 2;
+  CompilationReport compilation_report = 1;
+  RuntimeReport runtime_report = 2;
 
   message CompilationReport {
-    repeated .sc.game.editor.mightybridge.v1.EditorUpdateTinyMachineGraphResult.CompilationReport.CompilationMessage messages = 1;
+    repeated CompilationMessage messages = 1;
 
     message CompilationMessage {
-      .sc.game.editor.mightybridge.v1.EditorUpdateTinyMachineGraphResult.CompilationReport.Severity severity = 1;
-      .sc.game.editor.mightybridge.v1.EditorUpdateTinyMachineGraphResult.CompilationReport.Type type = 2;
+      Severity severity = 1;
+      Type type = 2;
       string source_id = 3;
       string message = 4;
     }
@@ -1275,13 +1275,13 @@ message EditorUpdateTinyMachineGraphResult {
     }
   }
   message RuntimeReport {
-    .sc.game.editor.mightybridge.v1.EditorGuid entity_guid = 1;
-    repeated .sc.game.editor.mightybridge.v1.EditorUpdateTinyMachineGraphResult.RuntimeReport.RuntimeMessage messages = 2;
+    EditorGuid entity_guid = 1;
+    repeated RuntimeMessage messages = 2;
     float graph_elapsed_time = 3;
-    repeated .sc.game.editor.mightybridge.v1.EditorUpdateTinyMachineGraphResult.RuntimeReport.NodePerformance node_performances = 4;
+    repeated NodePerformance node_performances = 4;
 
     message RuntimeMessage {
-      .sc.game.editor.mightybridge.v1.EditorUpdateTinyMachineGraphResult.RuntimeReport.Severity severity = 1;
+      Severity severity = 1;
       string message = 2;
       string node_id = 3;
     }
@@ -1301,56 +1301,56 @@ message EditorUpdateTinyMachineGraphResult {
 }
 
 message EditorGetPhysicsCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid object_guid = 1;
+  EditorGuid object_guid = 1;
 }
 
 message EditorGetPhysicsResult {
-  .sc.game.editor.mightybridge.v1.EditorObjectBaseInfo base_info = 1;
-  .sc.game.editor.mightybridge.v1.EditorPhysics object_physics = 2;
+  EditorObjectBaseInfo base_info = 1;
+  EditorPhysics object_physics = 2;
 }
 
 message EditorSetPhysicsCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid object_guid = 1;
-  .sc.game.editor.mightybridge.v1.EditorPhysics object_physics = 2;
+  EditorGuid object_guid = 1;
+  EditorPhysics object_physics = 2;
 }
 
 message EditorPhysics {
   string object_name = 1;
-  repeated .sc.game.editor.mightybridge.v1.EditorPhysicsProxy object_proxies = 2;
-  repeated .sc.game.editor.mightybridge.v1.EditorPhysics sub_objects_physics = 3;
+  repeated EditorPhysicsProxy object_proxies = 2;
+  repeated EditorPhysics sub_objects_physics = 3;
 }
 
 message EditorPhysicsProxy {
   oneof proxy {
-    .sc.game.editor.mightybridge.v1.EditorPhysicsProxy.Box box = 1;
-    .sc.game.editor.mightybridge.v1.EditorPhysicsProxy.Sphere sphere = 2;
-    .sc.game.editor.mightybridge.v1.EditorPhysicsProxy.Cylinder cylinder = 3;
-    .sc.game.editor.mightybridge.v1.EditorPhysicsProxy.Capsule capsule = 4;
-    .sc.game.editor.mightybridge.v1.EditorPhysicsProxy.Mesh mesh = 5;
+    Box box = 1;
+    Sphere sphere = 2;
+    Cylinder cylinder = 3;
+    Capsule capsule = 4;
+    Mesh mesh = 5;
   }
-  .sc.game.editor.mightybridge.v1.EditorPhysicsProxy.PhysicsType physics_type = 6;
+  PhysicsType physics_type = 6;
   string proxy_name = 7;
 
   message Box {
-    .sc.game.editor.mightybridge.v1.Transformf transform = 1;
-    .sc.game.editor.mightybridge.v1.Vec3f size = 2;
+    Transformf transform = 1;
+    Vec3f size = 2;
   }
 
   message Sphere {
-    .sc.game.editor.mightybridge.v1.Vec3f center = 1;
+    Vec3f center = 1;
     float radius = 2;
   }
 
   message Cylinder {
-    .sc.game.editor.mightybridge.v1.Vec3f axis = 1;
-    .sc.game.editor.mightybridge.v1.Vec3f center = 2;
+    Vec3f axis = 1;
+    Vec3f center = 2;
     float radius = 3;
     float height = 4;
   }
 
   message Capsule {
-    .sc.game.editor.mightybridge.v1.Vec3f axis = 1;
-    .sc.game.editor.mightybridge.v1.Vec3f center = 2;
+    Vec3f axis = 1;
+    Vec3f center = 2;
     float radius = 3;
     float height = 4;
   }
@@ -1372,12 +1372,12 @@ message EditorPhysicsProxy {
 }
 
 message EditorSetFrozenStatusCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid object_guid = 1;
+  EditorGuid object_guid = 1;
   bool is_frozen = 2;
 }
 
 message EditorSetVisibleStatusCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid object_guid = 1;
+  EditorGuid object_guid = 1;
   bool is_hidden = 2;
 }
 
@@ -1398,12 +1398,12 @@ message EditorCreatedNodeEventCommand {
 }
 
 message EditorSetObjectParentCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid parent_guid = 1;
-  .sc.game.editor.mightybridge.v1.EditorGuid child_guid = 2;
+  EditorGuid parent_guid = 1;
+  EditorGuid child_guid = 2;
 }
 
 message EditorSetViewportCameraTransformCommand {
-  .sc.game.editor.mightybridge.v1.Transformw transform = 1;
+  Transformw transform = 1;
   float fov = 2;
   float resolution_height = 3;
   float resolution_width = 4;
@@ -1412,7 +1412,7 @@ message EditorSetViewportCameraTransformCommand {
 message EditorGetViewportCameraTransformCommand {}
 
 message EditorGetViewportCameraTransformResult {
-  .sc.game.editor.mightybridge.v1.Transformw transform = 1;
+  Transformw transform = 1;
   float fov = 2;
   float resolution_height = 3;
   float resolution_width = 4;
@@ -1430,8 +1430,8 @@ message EditorTakeScreenshotCommand {
 
 message EditorShowMessageBoxCommand {
   string text = 1;
-  .sc.game.editor.mightybridge.v1.EditorShowMessageBoxCommand.MessageBoxIcon icon = 2;
-  .sc.game.editor.mightybridge.v1.EditorShowMessageBoxCommand.MessageBoxButtons buttons = 3;
+  MessageBoxIcon icon = 2;
+  MessageBoxButtons buttons = 3;
 
   enum MessageBoxIcon {
     MESSAGE_BOX_ICON_UNSPECIFIED = 0;
@@ -1453,7 +1453,7 @@ message EditorShowMessageBoxCommand {
 }
 
 message EditorShowMessageBoxResult {
-  .sc.game.editor.mightybridge.v1.EditorShowMessageBoxResult.MessageBoxResult result = 1;
+  MessageBoxResult result = 1;
 
   enum MessageBoxResult {
     MESSAGE_BOX_RESULT_UNSPECIFIED = 0;
@@ -1477,11 +1477,11 @@ message EditorSetCVarCommand {
 }
 
 message EditorGetMeshInfoCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid object_guid = 1;
+  EditorGuid object_guid = 1;
 }
 
 message EditorGetMeshInfoResult {
-  .sc.game.editor.mightybridge.v1.EditorObjectBaseInfo base_info = 1;
+  EditorObjectBaseInfo base_info = 1;
   int32 sub_object_count = 7;
   repeated string sub_object_infos = 8;
   int32 num_lods = 9;
@@ -1490,50 +1490,50 @@ message EditorGetMeshInfoResult {
   repeated float lod_geometric_mean_faces = 12;
   string material_path = 13;
   oneof mesh_faces {
-    .sc.game.editor.mightybridge.v1.EditorGetMeshInfoResult.SubObjectMeshFaces sub_mesh_faces = 15;
-    .sc.game.editor.mightybridge.v1.EditorGetMeshInfoResult.MeshInfo mesh_face = 16;
+    SubObjectMeshFaces sub_mesh_faces = 15;
+    MeshInfo mesh_face = 16;
   }
 
   message MeshInfo {
     int32 vert_count = 2;
     int32 index_count = 3;
     int32 face_count = 4;
-    .sc.game.editor.mightybridge.v1.EditorBoundingBox bbox = 5;
-    repeated .sc.game.editor.mightybridge.v1.EditorMeshSubset subsets = 6;
+    EditorBoundingBox bbox = 5;
+    repeated EditorMeshSubset subsets = 6;
     float geometric_mean_face = 17;
     int32 index = 18;
   }
   message SubObjectMeshFaces {
-    repeated .sc.game.editor.mightybridge.v1.EditorGetMeshInfoResult.MeshInfo sub_object_mesh_faces = 14;
+    repeated MeshInfo sub_object_mesh_faces = 14;
   }
 }
 
 message EditorGetEntitySlotsCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid object_guid = 1;
+  EditorGuid object_guid = 1;
 }
 
 message EditorCGASlot {
   string sub_object_name = 1;
-  .sc.game.editor.mightybridge.v1.Transformf sub_object_tm = 2;
+  Transformf sub_object_tm = 2;
 }
 
 message EditorCharacterSlot {}
 
 message EntitySlot {
   string path = 1;
-  .sc.game.editor.mightybridge.v1.Transformf local_transform = 2;
+  Transformf local_transform = 2;
   string material_path = 3;
   string tint_palette_path = 4;
-  .sc.game.editor.mightybridge.v1.Transformw world_transform = 5;
+  Transformw world_transform = 5;
   uint32 slot_index = 6;
   oneof slot_type {
-    .sc.game.editor.mightybridge.v1.EditorCGASlot cga_slot = 7;
-    .sc.game.editor.mightybridge.v1.EditorCharacterSlot character_slot = 8;
+    EditorCGASlot cga_slot = 7;
+    EditorCharacterSlot character_slot = 8;
   }
 }
 
 message EditorGetEntitySlotsResult {
-  repeated .sc.game.editor.mightybridge.v1.EntitySlot slots = 1;
+  repeated EntitySlot slots = 1;
 }
 
 message EditorPerforceMarkForAddCommand {
@@ -1541,7 +1541,7 @@ message EditorPerforceMarkForAddCommand {
 }
 
 message EditorPerforceMarkForAddResult {
-  .sc.game.editor.mightybridge.v1.EditorPerforceMarkForAddResult.ResultType result_type = 1;
+  ResultType result_type = 1;
 
   enum ResultType {
     RESULT_TYPE_UNSPECIFIED = 0;
@@ -1553,42 +1553,42 @@ message EditorPerforceMarkForAddResult {
 }
 
 message EditorDebugQuad {
-  .sc.game.editor.mightybridge.v1.Vec3w p1 = 1;
-  .sc.game.editor.mightybridge.v1.Vec3w p2 = 2;
-  .sc.game.editor.mightybridge.v1.Vec3w p3 = 3;
-  .sc.game.editor.mightybridge.v1.Vec3w p4 = 4;
+  Vec3w p1 = 1;
+  Vec3w p2 = 2;
+  Vec3w p3 = 3;
+  Vec3w p4 = 4;
 }
 
 message EditorDebugCircle {
-  .sc.game.editor.mightybridge.v1.Vec3w pos = 1;
+  Vec3w pos = 1;
   float radius = 2;
   uint32 axis = 3;
 }
 
 message EditorDebugBox {
-  .sc.game.editor.mightybridge.v1.Vec3w min = 1;
-  .sc.game.editor.mightybridge.v1.Vec3w max = 2;
+  Vec3w min = 1;
+  Vec3w max = 2;
 }
 
 message EditorDebugSphere {
-  .sc.game.editor.mightybridge.v1.Vec3w pos = 1;
+  Vec3w pos = 1;
   float radius = 2;
 }
 
 message EditorDebugCylinder {
-  .sc.game.editor.mightybridge.v1.Vec3w pos = 1;
-  .sc.game.editor.mightybridge.v1.Vec3w pos2 = 2;
+  Vec3w pos = 1;
+  Vec3w pos2 = 2;
   float radius = 3;
   uint32 segment_count = 4;
 }
 
 message EditorDebugLines {
-  repeated .sc.game.editor.mightybridge.v1.Vec3w points = 1;
+  repeated Vec3w points = 1;
   bool is_closed = 2;
 }
 
 message EditorDebugText {
-  .sc.game.editor.mightybridge.v1.Vec3w pos = 1;
+  Vec3w pos = 1;
   float size = 2;
   string text = 3;
   bool has_fixed_size = 4;
@@ -1597,28 +1597,28 @@ message EditorDebugText {
 
 message EditorDebugShape {
   string id = 1;
-  .sc.game.editor.mightybridge.v1.EditorRGBColor color = 2;
+  EditorRGBColor color = 2;
   float line_width = 3;
   bool is_local = 4;
   oneof shape {
-    .sc.game.editor.mightybridge.v1.EditorDebugQuad debug_quad = 5;
-    .sc.game.editor.mightybridge.v1.EditorDebugCircle debug_circle = 6;
-    .sc.game.editor.mightybridge.v1.EditorDebugBox debug_box = 7;
-    .sc.game.editor.mightybridge.v1.EditorDebugSphere debug_sphere = 8;
-    .sc.game.editor.mightybridge.v1.EditorDebugCylinder debug_cylinder = 9;
-    .sc.game.editor.mightybridge.v1.EditorDebugLines debug_lines = 10;
-    .sc.game.editor.mightybridge.v1.EditorDebugText debug_text = 11;
+    EditorDebugQuad debug_quad = 5;
+    EditorDebugCircle debug_circle = 6;
+    EditorDebugBox debug_box = 7;
+    EditorDebugSphere debug_sphere = 8;
+    EditorDebugCylinder debug_cylinder = 9;
+    EditorDebugLines debug_lines = 10;
+    EditorDebugText debug_text = 11;
   }
 }
 
 message EditorAddDebugShapesCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid hto_guid = 1;
+  EditorGuid hto_guid = 1;
   bool replace = 2;
-  repeated .sc.game.editor.mightybridge.v1.EditorDebugShape shapes = 3;
+  repeated EditorDebugShape shapes = 3;
 }
 
 message EditorRemoveDebugShapesCommand {
-  .sc.game.editor.mightybridge.v1.EditorGuid hto_guid = 1;
+  EditorGuid hto_guid = 1;
   bool remove_all = 2;
   repeated string shape_id = 3;
 }

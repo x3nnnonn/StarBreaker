@@ -11,10 +11,10 @@ import "google/protobuf/any.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 
 service FrontendService {
-  rpc Match ( .sc.external.services.matchmaking.v1.MatchRequest ) returns ( .sc.external.services.matchmaking.v1.MatchResponse );
-  rpc Cancel ( .sc.external.services.matchmaking.v1.CancelRequest ) returns ( .sc.external.services.matchmaking.v1.CancelResponse );
-  rpc GetLastAssignment ( .sc.external.services.matchmaking.v1.GetLastAssignmentRequest ) returns ( .sc.external.services.matchmaking.v1.GetLastAssignmentResponse );
-  rpc Accept ( .sc.external.services.matchmaking.v1.AcceptRequest ) returns ( .sc.external.services.matchmaking.v1.AcceptResponse );
+  rpc Match ( MatchRequest ) returns ( MatchResponse );
+  rpc Cancel ( CancelRequest ) returns ( CancelResponse );
+  rpc GetLastAssignment ( GetLastAssignmentRequest ) returns ( GetLastAssignmentResponse );
+  rpc Accept ( AcceptRequest ) returns ( AcceptResponse );
 }
 
 message PrivateSettings {
@@ -29,29 +29,29 @@ message GamePersistentUniverseMatchRequest {
 }
 
 message GameArenaCommanderMatchRequest {
-  .sc.external.common.game.v1.ArenaCommanderMode mode = 1;
+  common.game.v1.ArenaCommanderMode mode = 1;
   string squad_id = 2;
   repeated string maps = 3;
-  .sc.external.services.matchmaking.v1.PrivateSettings private_settings = 4;
-  .sc.external.common.shard.v1.SeatCriterias seat_criteria = 5;
+  PrivateSettings private_settings = 4;
+  common.shard.v1.SeatCriterias seat_criteria = 5;
 }
 
 message GameStarMarineMatchRequest {
-  .sc.external.common.game.v1.StarMarineMode mode = 1;
+  common.game.v1.StarMarineMode mode = 1;
   string squad_id = 2;
   repeated string maps = 3;
-  .sc.external.services.matchmaking.v1.PrivateSettings private_settings = 4;
-  .sc.external.common.shard.v1.SeatCriterias seat_criteria = 5;
+  PrivateSettings private_settings = 4;
+  common.shard.v1.SeatCriterias seat_criteria = 5;
 }
 
 message MatchRequest {
   oneof game {
     string rematch_ticket_id = 1;
-    .sc.external.services.matchmaking.v1.GamePersistentUniverseMatchRequest persistent_universe = 2;
-    .sc.external.services.matchmaking.v1.GameArenaCommanderMatchRequest arena_commander = 3;
-    .sc.external.services.matchmaking.v1.GameStarMarineMatchRequest star_marine = 4;
+    GamePersistentUniverseMatchRequest persistent_universe = 2;
+    GameArenaCommanderMatchRequest arena_commander = 3;
+    GameStarMarineMatchRequest star_marine = 4;
   }
-  .sc.external.common.network.v1.Region region = 5;
+  common.network.v1.Region region = 5;
 }
 
 message MatchResponse {
@@ -67,7 +67,7 @@ message CancelResponse {}
 message GetLastAssignmentRequest {}
 
 message GetLastAssignmentResponse {
-  .sc.external.services.matchmaking.v1.Assignment assignment = 1;
+  Assignment assignment = 1;
 }
 
 message AcceptRequest {

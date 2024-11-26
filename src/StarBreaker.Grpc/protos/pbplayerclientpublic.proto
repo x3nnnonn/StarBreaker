@@ -3,7 +3,7 @@ syntax = "proto2";
 package cig.Protocols.Public.PlayerClient;
 
 message ClientInfo {
-  required .cig.Protocols.Public.PlayerClient.ClientInfo.ClientState client_state = 1;
+  required ClientState client_state = 1;
   optional int32 game_mode = 2;
   optional int32 map_type = 3;
   optional int32 ship_type = 4;
@@ -22,6 +22,6 @@ message SetConnectionTimeoutCommand {
 }
 
 message HeartbeatNotification {
-  optional .cig.Protocols.Public.PlayerClient.ClientInfo client_info = 1;
+  optional ClientInfo client_info = 1;
 }
 

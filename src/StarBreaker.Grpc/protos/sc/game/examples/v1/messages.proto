@@ -12,6 +12,6 @@ message StringListMessage {
 }
 
 message NestedMessage {
-  repeated .sc.game.examples.v1.SimpleMessage msgs = 1;
+  repeated SimpleMessage msgs = 1;
 }
 

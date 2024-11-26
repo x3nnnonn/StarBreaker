@@ -8,26 +8,26 @@ import "sc/external/common/network/v1/types.proto";
 import "google/protobuf/timestamp.proto";
 
 service ShardSupervisorService {
-  rpc ReserveSeats ( .sc.internal.services.shard.v1.ReserveSeatsRequest ) returns ( .sc.internal.services.shard.v1.ReserveSeatsResponse );
-  rpc GetSeat ( .sc.internal.services.shard.v1.GetSeatRequest ) returns ( .sc.internal.services.shard.v1.GetSeatResponse );
-  rpc ReleaseSeats ( .sc.internal.services.shard.v1.ReleaseSeatsRequest ) returns ( .sc.internal.services.shard.v1.ReleaseSeatsResponse );
-  rpc ModifySeatMap ( .sc.internal.services.shard.v1.ModifySeatMapRequest ) returns ( .sc.internal.services.shard.v1.ModifySeatMapResponse );
-  rpc GatewayStream ( .sc.internal.services.shard.v1.GatewayStreamRequest ) returns ( .sc.internal.services.shard.v1.GatewayStreamResponse );
-  rpc DGSStream ( .sc.internal.services.shard.v1.DGSStreamRequest ) returns ( .sc.internal.services.shard.v1.DGSStreamResponse );
+  rpc ReserveSeats ( ReserveSeatsRequest ) returns ( ReserveSeatsResponse );
+  rpc GetSeat ( GetSeatRequest ) returns ( GetSeatResponse );
+  rpc ReleaseSeats ( ReleaseSeatsRequest ) returns ( ReleaseSeatsResponse );
+  rpc ModifySeatMap ( ModifySeatMapRequest ) returns ( ModifySeatMapResponse );
+  rpc GatewayStream (stream GatewayStreamRequest ) returns (stream GatewayStreamResponse );
+  rpc DGSStream (stream DGSStreamRequest ) returns (stream DGSStreamResponse );
 }
 
 message ReserveSeatsRequest {
-  repeated .sc.internal.services.shard.v1.ReserveSeatsRequest.ReserveSeatCommand commands = 1;
+  repeated ReserveSeatCommand commands = 1;
 
   message ReserveSeatCommand {
     uint64 player_id = 1;
-    .sc.external.common.shard.v1.SeatCriterias criterias = 2;
+    external.common.shard.v1.SeatCriterias criterias = 2;
     .google.protobuf.Timestamp until = 3;
   }
 }
 
 message ReserveSeatsResponse {
-  repeated .sc.internal.common.shard.v1.Reservation reservations = 1;
+  repeated common.shard.v1.Reservation reservations = 1;
 }
 
 message GetSeatRequest {
@@ -36,9 +36,9 @@ message GetSeatRequest {
 
 message GetSeatResponse {
   uint64 player_id = 1;
-  .sc.internal.common.shard.v1.SeatStatus status = 2;
-  .sc.external.common.shard.v1.SeatCriterias criterias = 3;
-  .sc.internal.common.shard.v1.Reservation reservation = 4;
+  common.shard.v1.SeatStatus status = 2;
+  external.common.shard.v1.SeatCriterias criterias = 3;
+  common.shard.v1.Reservation reservation = 4;
 }
 
 message ReleaseSeatsRequest {
@@ -50,16 +50,16 @@ message ReleaseSeatsResponse {
 }
 
 message ModifySeatMapRequest {
-  repeated .sc.internal.common.shard.v1.CriteriaCountPair to_remove = 1;
-  repeated .sc.internal.common.shard.v1.CriteriaCountPair to_add = 2;
+  repeated common.shard.v1.CriteriaCountPair to_remove = 1;
+  repeated common.shard.v1.CriteriaCountPair to_add = 2;
 }
 
 message ModifySeatMapResponse {}
 
 message GatewayStreamRequest {
   oneof request {
-    .sc.internal.services.shard.v1.GatewayStreamRequest.PlayerConnected connected = 1;
-    .sc.internal.services.shard.v1.GatewayStreamRequest.PlayerDisconnected disconnected = 2;
+    PlayerConnected connected = 1;
+    PlayerDisconnected disconnected = 2;
   }
 
   message PlayerConnected {
@@ -73,13 +73,13 @@ message GatewayStreamRequest {
 
 message GatewayStreamResponse {
   oneof response {
-    .sc.internal.services.shard.v1.GatewayStreamResponse.PlayerIncoming player_incoming = 1;
-    .sc.internal.services.shard.v1.GatewayStreamResponse.PlayerCanceled player_canceled = 2;
+    PlayerIncoming player_incoming = 1;
+    PlayerCanceled player_canceled = 2;
   }
 
   message PlayerIncoming {
     uint64 player_id = 1;
-    .sc.external.common.network.v1.CryptographicKeys keys = 2;
+    external.common.network.v1.CryptographicKeys keys = 2;
   }
   message PlayerCanceled {
     uint64 player_id = 1;

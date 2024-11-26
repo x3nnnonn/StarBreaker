@@ -4,7 +4,7 @@ package sc.external.services.rental.v1;
 
 message Rental {
   string id = 1;
-  .sc.external.services.rental.v1.RentalStatus status = 2;
+  RentalStatus status = 2;
   uint64 created_at = 3;
   uint64 began_at = 4;
   uint64 expire_at = 5;

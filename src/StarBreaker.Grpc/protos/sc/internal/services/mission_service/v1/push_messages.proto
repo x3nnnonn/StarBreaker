@@ -5,11 +5,11 @@ package sc.internal.services.mission_service.v1;
 import "sc/external/common/mission/v1/missions.proto";
 
 message MissionPhaseStateChange {
-  repeated .sc.internal.services.mission_service.v1.MissionPhaseStateChange.Body phases = 1;
+  repeated Body phases = 1;
 
   message Body {
     string active_phase_key = 1;
-    .sc.external.common.mission.v1.MissionPhaseState state = 2;
+    external.common.mission.v1.MissionPhaseState state = 2;
   }
 }
 

@@ -5,7 +5,7 @@ package cig.Protocols.Private.Presence;
 import "pbcommon.proto";
 
 message PlayerPresenceInfo {
-  required .cig.Protocols.Common.Uuid player_session_id = 1;
+  required Common.Uuid player_session_id = 1;
   required int32 player_presence_state = 2;
   required int32 web_account_id = 3;
   required string web_login_name = 4;
@@ -24,8 +24,8 @@ message SetConnectionPreferencesCommand {
 }
 
 message AddPlayerPresenceRequest {
-  required .cig.Protocols.Private.Presence.PlayerPresenceInfo player_presence_info = 1;
-  required .cig.Protocols.Common.Uuid player_service_id = 2;
+  required PlayerPresenceInfo player_presence_info = 1;
+  required Common.Uuid player_service_id = 2;
   optional bool response_required = 3;
 }
 
@@ -35,7 +35,7 @@ message AddPlayerPresenceResponse {
 }
 
 message RemovePlayerPresenceRequest {
-  required .cig.Protocols.Common.Uuid player_session_id = 1;
+  required Common.Uuid player_session_id = 1;
   optional bool response_required = 2;
 }
 
@@ -45,46 +45,46 @@ message RemovePlayerPresenceResponse {
 
 message RemovePlayerDuplicateLogin {
   required int32 web_account_id = 1;
-  required .cig.Protocols.Common.Uuid player_session_id = 2;
+  required Common.Uuid player_session_id = 2;
   required string ip_address = 3;
 }
 
 message RemovePlayerDuplicateLoginResponse {
   required bool success = 1;
   required bool was_online = 2;
-  required .cig.Protocols.Common.Uuid player_session_id = 3;
+  required Common.Uuid player_session_id = 3;
 }
 
 message DisconnectFromHub {
   required int32 web_account_id = 1;
-  required .cig.Protocols.Common.Uuid player_session_id = 2;
+  required Common.Uuid player_session_id = 2;
 }
 
 message GetPlayerPresenceRequest {
-  required .cig.Protocols.Common.Uuid player_session_id = 1;
+  required Common.Uuid player_session_id = 1;
 }
 
 message GetPlayerPresenceResponse {
-  required .cig.Protocols.Private.Presence.PlayerPresenceInfo player_presence_info = 1;
+  required PlayerPresenceInfo player_presence_info = 1;
 }
 
 message GetPlayersPresenceRequest {
-  repeated .cig.Protocols.Common.Uuid player_session_ids = 1;
+  repeated Common.Uuid player_session_ids = 1;
 }
 
 message GetPlayersPresenceResponse {
-  repeated .cig.Protocols.Private.Presence.PlayerPresenceInfo player_presence_infos = 1;
+  repeated PlayerPresenceInfo player_presence_infos = 1;
 }
 
 message SendMessageToPlayerCommand {
-  optional .cig.Protocols.Common.Uuid player_session_id = 1;
+  optional Common.Uuid player_session_id = 1;
   required string message_method = 2;
   required bytes message_to_send = 3;
   optional int32 player_web_account_id = 4;
 }
 
 message SendMessageToPlayersCommand {
-  repeated .cig.Protocols.Common.Uuid player_session_ids = 1;
+  repeated Common.Uuid player_session_ids = 1;
   required string message_method = 2;
   required bytes message_to_send = 3;
   repeated int32 player_web_account_ids = 4;
@@ -96,7 +96,7 @@ message SendMessageToAllPlayersCommand {
 }
 
 message PlayerPresenceModifiedNotification {
-  required .cig.Protocols.Private.Presence.PlayerPresenceInfo player_presence_info = 1;
+  required PlayerPresenceInfo player_presence_info = 1;
 }
 
 message RequestPlayerPresenceUpdate {

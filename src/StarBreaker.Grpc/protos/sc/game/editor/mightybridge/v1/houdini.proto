@@ -38,7 +38,7 @@ message HoudiniFileParameterTemplate {
 }
 
 message HoudiniDropdownParameterTemplate {
-  repeated .sc.game.editor.mightybridge.v1.HoudiniParameterComboItem combo_items = 1;
+  repeated HoudiniParameterComboItem combo_items = 1;
 }
 
 message HoudiniObjectListParameterTemplate {
@@ -54,15 +54,15 @@ message HoudiniParmTemplate {
   string name = 1;
   string label = 2;
   repeated string value_names = 3;
-  .sc.game.editor.mightybridge.v1.HoudiniParameterType type = 4;
+  HoudiniParameterType type = 4;
   bool horizontally_join_with_next_parameter = 5;
   string help = 6;
   oneof template_additionnal_info {
-    .sc.game.editor.mightybridge.v1.HoudiniFloatParameterTemplate float_param = 7;
-    .sc.game.editor.mightybridge.v1.HoudiniIntParameterTemplate int_param = 8;
-    .sc.game.editor.mightybridge.v1.HoudiniFileParameterTemplate file_param = 9;
-    .sc.game.editor.mightybridge.v1.HoudiniDropdownParameterTemplate dropdown_param = 10;
-    .sc.game.editor.mightybridge.v1.HoudiniObjectListParameterTemplate object_list_param = 11;
+    HoudiniFloatParameterTemplate float_param = 7;
+    HoudiniIntParameterTemplate int_param = 8;
+    HoudiniFileParameterTemplate file_param = 9;
+    HoudiniDropdownParameterTemplate dropdown_param = 10;
+    HoudiniObjectListParameterTemplate object_list_param = 11;
   }
 }
 
@@ -80,8 +80,8 @@ message HoudiniParmValue {
 }
 
 message HoudiniParameters {
-  repeated .sc.game.editor.mightybridge.v1.HoudiniParmTemplate parameter_templates = 1;
-  repeated .sc.game.editor.mightybridge.v1.HoudiniParmValue parameter_values = 2;
+  repeated HoudiniParmTemplate parameter_templates = 1;
+  repeated HoudiniParmValue parameter_values = 2;
   string template_identifier = 3;
 }
 
@@ -103,9 +103,9 @@ message HoudiniStringParameter {
 message HoudiniParameterValue {
   string name = 1;
   oneof params {
-    .sc.game.editor.mightybridge.v1.HoudiniFloatParameter float = 2;
-    .sc.game.editor.mightybridge.v1.HoudiniIntegerParameter integer = 3;
-    .sc.game.editor.mightybridge.v1.HoudiniStringParameter string = 4;
+    HoudiniFloatParameter float = 2;
+    HoudiniIntegerParameter integer = 3;
+    HoudiniStringParameter string = 4;
   }
 }
 
@@ -131,17 +131,17 @@ message HoudiniIntParameterRange {
 message HoudiniParameter {
   string name = 1;
   string label = 2;
-  .sc.game.editor.mightybridge.v1.HoudiniParameterType type = 3;
-  repeated .sc.game.editor.mightybridge.v1.HoudiniParameterValue values = 4;
+  HoudiniParameterType type = 3;
+  repeated HoudiniParameterValue values = 4;
   bool is_disabled = 5;
   bool is_locked = 7;
   bool is_visible = 8;
-  repeated .sc.game.editor.mightybridge.v1.HoudiniParameterTag tags = 9;
-  repeated .sc.game.editor.mightybridge.v1.HoudiniParameterComboItem combo_items = 10;
+  repeated HoudiniParameterTag tags = 9;
+  repeated HoudiniParameterComboItem combo_items = 10;
   bool horizontally_join_with_next_parameter = 11;
   oneof range {
-    .sc.game.editor.mightybridge.v1.HoudiniFloatParameterRange float_range = 12;
-    .sc.game.editor.mightybridge.v1.HoudiniIntParameterRange int_range = 13;
+    HoudiniFloatParameterRange float_range = 12;
+    HoudiniIntParameterRange int_range = 13;
   }
   bool is_dirty = 14;
   string help = 15;
@@ -156,24 +156,24 @@ message HoudiniGetNodeParamsCommand {
 }
 
 message HoudiniGetNodeParamsResult {
-  .sc.game.editor.mightybridge.v1.HoudiniParameters new_parameters = 2;
+  HoudiniParameters new_parameters = 2;
 }
 
 message HoudiniSetNodeParamsCommand {
   string node_path = 1;
-  repeated .sc.game.editor.mightybridge.v1.HoudiniParmValue parameters = 2;
+  repeated HoudiniParmValue parameters = 2;
   bool cook = 3;
   string template_identifier = 4;
 }
 
 message HoudiniSetNodeParamsResult {
-  .sc.game.editor.mightybridge.v1.HoudiniParameters new_parameters = 2;
+  HoudiniParameters new_parameters = 2;
 }
 
 message HoudiniCleanProjectCommand {}
 
 message HoudiniSetUpdateModeCommand {
-  .sc.game.editor.mightybridge.v1.HoudiniUpdateMode mode = 1;
+  HoudiniUpdateMode mode = 1;
 }
 
 message HoudiniSaveHipFileCommand {
@@ -191,7 +191,7 @@ message HdaDefinition {
 message HoudiniGetHdaListCommand {}
 
 message HoudiniGetHdaListResult {
-  repeated .sc.game.editor.mightybridge.v1.HdaDefinition hda_definitions = 2;
+  repeated HdaDefinition hda_definitions = 2;
 }
 
 message HoudiniCreateNodeCommand {
@@ -200,7 +200,7 @@ message HoudiniCreateNodeCommand {
   string node_name = 3;
   string parent_node_path = 4;
   bool cook_on_create = 5;
-  repeated .sc.game.editor.mightybridge.v1.HoudiniParmValue parameters = 6;
+  repeated HoudiniParmValue parameters = 6;
   string node_version = 7;
 }
 
@@ -210,16 +210,16 @@ message HoudiniDeleteNodeCommand {
 
 message HoudiniSetObjNodeTransformCommand {
   string node_path = 1;
-  .sc.game.editor.mightybridge.v1.Transformf transform = 2;
+  Transformf transform = 2;
 }
 
 message HoudiniSetSplinePointsCommand {
-  repeated .sc.game.editor.mightybridge.v1.Vec3f spline_points = 1;
+  repeated Vec3f spline_points = 1;
 }
 
 message HoudiniSetCameraTransformCommand {
-  .sc.game.editor.mightybridge.v1.Vec3f position = 1;
-  .sc.game.editor.mightybridge.v1.Quatf look_at = 2;
+  Vec3f position = 1;
+  Quatf look_at = 2;
 }
 
 message HoudiniGetSessionInfoCommand {}
@@ -272,8 +272,8 @@ message HoudiniMeshPrimitives {
   string material = 3;
   int32 flags = 13;
   int32 lod_level = 5;
-  repeated .sc.game.editor.mightybridge.v1.HoudiniMeshSubObject sub_objects = 7;
-  repeated .sc.game.editor.mightybridge.v1.HoudiniMeshMaterialID material_ids = 8;
+  repeated HoudiniMeshSubObject sub_objects = 7;
+  repeated HoudiniMeshMaterialID material_ids = 8;
   repeated int32 indices = 9;
   repeated int32 deleted_sub_object_numbers = 10;
   repeated string extra_node_infos = 11;

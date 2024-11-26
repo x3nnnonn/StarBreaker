@@ -12,8 +12,8 @@ message LeaderboardRow {
 
 message Leaderboard {
   string sorted_stat_def_id = 1;
-  repeated .sc.external.services.stats.v1.LeaderboardRow rows = 2;
-  repeated .sc.external.services.stats.v1.StatDef stat_defs = 3;
+  repeated LeaderboardRow rows = 2;
+  repeated StatDef stat_defs = 3;
 }
 
 message LeaderboardRequest {

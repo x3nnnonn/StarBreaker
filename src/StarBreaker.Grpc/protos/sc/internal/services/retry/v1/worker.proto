@@ -6,20 +6,20 @@ import "sc/internal/services/retry/v1/types.proto";
 
 message EnqueuedRequest {
   string name = 1;
-  .sc.internal.services.retry.v1.EnqueuedRequestBody body = 2;
+  EnqueuedRequestBody body = 2;
 }
 
 message EnqueuedRequestBody {
   string requester_id = 1;
-  .sc.internal.services.retry.v1.RetryEnvelope body = 2;
+  RetryEnvelope body = 2;
 }
 
 message EnqueuedEnvelope {
   string name = 1;
-  .sc.internal.services.retry.v1.EnqueuedEnvelope.Body body = 2;
+  Body body = 2;
 
   message Body {
-    .sc.internal.services.retry.v1.RetryEnvelope retry_envelope = 1;
+    RetryEnvelope retry_envelope = 1;
   }
 }
 

@@ -5,7 +5,7 @@ package cig.matchmaking.common;
 import "pbcommon.proto";
 
 message MatchType {
-  required .cig.matchmaking.common.MatchType.GameType match_type = 1;
+  required GameType match_type = 1;
 
   enum GameType {
     EA_BattleRoyale = 0;
@@ -41,7 +41,7 @@ message MatchType {
 }
 
 message PlayerSessionInfo {
-  required .cig.Protocols.Common.PlayerSessionInfo session_info = 1;
+  required Protocols.Common.PlayerSessionInfo session_info = 1;
   optional int32 team_assignment = 2;
 }
 

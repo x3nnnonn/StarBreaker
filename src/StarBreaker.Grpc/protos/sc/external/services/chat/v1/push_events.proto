@@ -5,7 +5,7 @@ package sc.external.services.chat.v1;
 import "sc/external/services/chat/v1/types.proto";
 
 message MessageReceived {
-  .sc.external.services.chat.v1.Message message = 1;
+  Message message = 1;
 }
 
 message MessageEdited {
@@ -22,6 +22,6 @@ message MessageErased {
 }
 
 message SystemMessageReceived {
-  .sc.external.services.chat.v1.SystemMessage message = 1;
+  SystemMessage message = 1;
 }
 

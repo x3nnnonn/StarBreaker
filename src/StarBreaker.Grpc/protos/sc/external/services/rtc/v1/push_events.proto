@@ -5,16 +5,16 @@ package sc.external.services.rtc.v1;
 import "sc/external/services/rtc/v1/types.proto";
 
 message CallReceived {
-  .sc.external.services.rtc.v1.Call call = 1;
+  Call call = 1;
 }
 
 message CallAccepted {
-  .sc.external.services.rtc.v1.Call call = 1;
-  .sc.external.services.rtc.v1.Channel channel = 2;
+  Call call = 1;
+  Channel channel = 2;
 }
 
 message CallDeclined {
-  .sc.external.services.rtc.v1.Call call = 1;
+  Call call = 1;
 }
 
 message CallHungup {
@@ -23,6 +23,6 @@ message CallHungup {
 }
 
 message ChannelResharded {
-  .sc.external.services.rtc.v1.Channel channel = 1;
+  Channel channel = 1;
 }
 

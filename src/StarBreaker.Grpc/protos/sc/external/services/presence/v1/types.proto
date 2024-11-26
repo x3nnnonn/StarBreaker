@@ -9,8 +9,8 @@ message Activity {
 }
 
 message Presence {
-  .sc.external.services.presence.v1.Status status = 1;
-  .sc.external.services.presence.v1.Activity activity = 2;
+  Status status = 1;
+  Activity activity = 2;
 }
 
 enum Status {

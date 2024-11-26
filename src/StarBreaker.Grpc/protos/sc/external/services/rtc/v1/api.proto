@@ -8,22 +8,22 @@ import "protoc-gen-openapiv2/options/annotations.proto";
 import "sc/external/common/api/v1/pagination.proto";
 
 service RTCService {
-  rpc GetChannels ( .sc.external.services.rtc.v1.GetChannelsRequest ) returns ( .sc.external.services.rtc.v1.GetChannelsResponse );
-  rpc Call ( .sc.external.services.rtc.v1.CallRequest ) returns ( .sc.external.services.rtc.v1.CallResponse );
-  rpc AcceptCall ( .sc.external.services.rtc.v1.AcceptCallRequest ) returns ( .sc.external.services.rtc.v1.AcceptCallResponse );
-  rpc DeclineCall ( .sc.external.services.rtc.v1.DeclineCallRequest ) returns ( .sc.external.services.rtc.v1.DeclineCallResponse );
-  rpc HangupCall ( .sc.external.services.rtc.v1.HangupCallRequest ) returns ( .sc.external.services.rtc.v1.HangupCallResponse );
-  rpc GetPendingCalls ( .sc.external.services.rtc.v1.GetPendingCallsRequest ) returns ( .sc.external.services.rtc.v1.GetPendingCallsResponse );
+  rpc GetChannels ( GetChannelsRequest ) returns ( GetChannelsResponse );
+  rpc Call ( CallRequest ) returns ( CallResponse );
+  rpc AcceptCall ( AcceptCallRequest ) returns ( AcceptCallResponse );
+  rpc DeclineCall ( DeclineCallRequest ) returns ( DeclineCallResponse );
+  rpc HangupCall ( HangupCallRequest ) returns ( HangupCallResponse );
+  rpc GetPendingCalls ( GetPendingCallsRequest ) returns ( GetPendingCallsResponse );
 }
 
 message GetChannelsRequest {
   repeated string group_ids = 1;
-  .sc.external.common.api.v1.PaginationArguments pagination = 2;
+  common.api.v1.PaginationArguments pagination = 2;
 }
 
 message GetChannelsResponse {
-  repeated .sc.external.services.rtc.v1.Channel channels = 1;
-  .sc.external.common.api.v1.PaginationInfo page_info = 2;
+  repeated Channel channels = 1;
+  common.api.v1.PaginationInfo page_info = 2;
 }
 
 message CallRequest {
@@ -31,7 +31,7 @@ message CallRequest {
 }
 
 message CallResponse {
-  .sc.external.services.rtc.v1.Call call = 1;
+  Call call = 1;
 }
 
 message AcceptCallRequest {
@@ -39,7 +39,7 @@ message AcceptCallRequest {
 }
 
 message AcceptCallResponse {
-  .sc.external.services.rtc.v1.Channel channel = 1;
+  Channel channel = 1;
 }
 
 message DeclineCallRequest {
@@ -55,11 +55,11 @@ message HangupCallRequest {
 message HangupCallResponse {}
 
 message GetPendingCallsRequest {
-  .sc.external.common.api.v1.PaginationArguments pagination = 2;
+  common.api.v1.PaginationArguments pagination = 2;
 }
 
 message GetPendingCallsResponse {
-  repeated .sc.external.services.rtc.v1.Call calls = 1;
-  .sc.external.common.api.v1.PaginationInfo page_info = 2;
+  repeated Call calls = 1;
+  common.api.v1.PaginationInfo page_info = 2;
 }
 

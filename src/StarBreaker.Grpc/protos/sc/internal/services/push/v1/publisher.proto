@@ -6,12 +6,12 @@ import "google/api/annotations.proto";
 import "sc/external/services/push/v1/messages.proto";
 
 service PushPublisherService {
-  rpc Push ( .sc.internal.services.push.v1.PushRequest ) returns ( .sc.internal.services.push.v1.PushResponse );
-  rpc Broadcast ( .sc.internal.services.push.v1.BroadcastRequest ) returns ( .sc.internal.services.push.v1.BroadcastResponse );
+  rpc Push ( PushRequest ) returns ( PushResponse );
+  rpc Broadcast ( BroadcastRequest ) returns ( BroadcastResponse );
 }
 
 message PushRequest {
-  repeated .sc.external.services.push.v1.PublishRequest envelopes = 1;
+  repeated external.services.push.v1.PublishRequest envelopes = 1;
 }
 
 message PushResponse {
@@ -19,7 +19,7 @@ message PushResponse {
 }
 
 message BroadcastRequest {
-  .sc.external.services.push.v1.PublishRequest envelope = 1;
+  external.services.push.v1.PublishRequest envelope = 1;
 }
 
 message BroadcastResponse {

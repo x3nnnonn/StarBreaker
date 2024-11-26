@@ -19,17 +19,17 @@ message NetworkInfo {
 
 message UnitReport {
   string id = 1;
-  .sc.internal.services.fleet.v1.Phase phase = 2;
+  Phase phase = 2;
   string product = 3;
   map<string, string> labels = 4;
   repeated string fleets = 5;
-  .sc.internal.services.fleet.v1.NetworkInfo network = 6;
-  .sc.internal.services.fleet.v1.ProcessInfo process = 7;
+  NetworkInfo network = 6;
+  ProcessInfo process = 7;
 
 }
 
 message ReportRequest {
-  repeated .sc.internal.services.fleet.v1.UnitReport reports = 1;
+  repeated UnitReport reports = 1;
 }
 
 message ReportResponse {}

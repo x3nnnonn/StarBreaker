@@ -7,7 +7,7 @@ import "protoc-gen-openapiv2/options/annotations.proto";
 import "sc/external/services/ledger/v1/types.proto";
 
 service LedgerService {
-  rpc GetFunds ( .sc.external.services.ledger.v1.GetFundsRequest ) returns ( .sc.external.services.ledger.v1.GetFundsResponse );
+  rpc GetFunds ( GetFundsRequest ) returns ( GetFundsResponse );
 }
 
 message GetFundsRequest {
@@ -15,6 +15,6 @@ message GetFundsRequest {
 }
 
 message GetFundsResponse {
-  repeated .sc.external.services.ledger.v1.Ledger ledgers = 1;
+  repeated Ledger ledgers = 1;
 }
 

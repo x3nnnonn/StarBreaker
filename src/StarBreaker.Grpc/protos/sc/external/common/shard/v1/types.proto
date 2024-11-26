@@ -8,7 +8,7 @@ message SeatTag {
 }
 
 message SeatCriterias {
-  repeated .sc.external.common.shard.v1.SeatTag tags = 1;
+  repeated SeatTag tags = 1;
 }
 
 message ShardInfo {

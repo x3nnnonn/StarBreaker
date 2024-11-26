@@ -12,7 +12,7 @@ message PlayerLeaveInstanceResponse {
 }
 
 message GeneralInstanceManagerNotification {
-  required .cig.Protocols.Public.gim.GeneralInstanceManagerNotification.NotificationType notification_type = 1;
+  required NotificationType notification_type = 1;
   required int32 status = 2;
   required int32 errcode = 3;
   required int32 hangar_state = 4;

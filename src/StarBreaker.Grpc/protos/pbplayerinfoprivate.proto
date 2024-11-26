@@ -14,8 +14,8 @@ message PlayerInfo {
 }
 
 message AddPlayerInfoRequest {
-  required .cig.Protocols.Common.Uuid player_session_id = 1;
-  required .cig.Protocols.Private.PI.PlayerInfo player_info = 2;
+  required Common.Uuid player_session_id = 1;
+  required PlayerInfo player_info = 2;
 }
 
 message AddPlayerInfoResponse {
@@ -31,6 +31,6 @@ message GetPlayerInfoRequest {
 message GetPlayerInfoResponse {
   required int32 status = 1;
   required int32 errcode = 2;
-  optional .cig.Protocols.Private.PI.PlayerInfo player_info = 3;
+  optional PlayerInfo player_info = 3;
 }
 

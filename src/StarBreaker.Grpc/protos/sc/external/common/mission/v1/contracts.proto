@@ -15,16 +15,16 @@ message ContractPrerequisites {
   uint32 location_id = 1;
   repeated uint32 required_token = 2;
   repeated uint32 excluded_token = 3;
-  repeated .sc.external.common.mission.v1.ReputationRequirement required_reputation = 4;
-  repeated .sc.external.common.mission.v1.ReputationRequirement excluded_reputation = 5;
+  repeated ReputationRequirement required_reputation = 4;
+  repeated ReputationRequirement excluded_reputation = 5;
   string shard_id = 6;
   repeated string wallet_ids = 7;
 }
 
 message MissionContract {
   string id = 1;
-  .sc.external.common.mission.v1.MissionTemplate mission_template = 2;
-  .sc.external.common.mission.v1.ContractPrerequisites prerequisites = 3;
+  MissionTemplate mission_template = 2;
+  ContractPrerequisites prerequisites = 3;
   uint32 location_id = 4;
   string contact_type = 5;
   .google.protobuf.Timestamp expiration_time = 6;

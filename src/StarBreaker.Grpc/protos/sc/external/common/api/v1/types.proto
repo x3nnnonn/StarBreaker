@@ -6,7 +6,7 @@ message TopicOverloadControl {
   string topic = 1;
   int32 partitions = 2;
   int32 aggregated_lag = 3;
-  repeated .sc.external.common.api.v1.TopicOverloadControl.PartitionLag lags = 4;
+  repeated PartitionLag lags = 4;
 
   message PartitionLag {
     int32 partition = 1;
@@ -15,6 +15,6 @@ message TopicOverloadControl {
 }
 
 message ServiceOverloadControlMetrics {
-  repeated .sc.external.common.api.v1.TopicOverloadControl topics = 1;
+  repeated TopicOverloadControl topics = 1;
 }
 

@@ -11,9 +11,9 @@ message PushDestination {
 }
 
 message PushControlMessage {
-  .sc.external.services.push.v1.PushControlMessage.Command command = 1;
+  Command command = 1;
   oneof event {
-    .sc.external.services.push.v1.PushControlMessage.SubscriptionEvent subscription_event = 2;
+    SubscriptionEvent subscription_event = 2;
   }
 
   message SubscriptionEvent {
@@ -35,41 +35,41 @@ message PushRetry {
 }
 
 message PublishRequest {
-  .sc.external.services.push.v1.PushEnvelopeType type = 2;
+  PushEnvelopeType type = 2;
   repeated string addresses = 3;
   repeated string topics = 4;
   string transit = 5;
-  .sc.external.services.push.v1.PushMessagePriority priority = 6;
-  .sc.external.services.push.v1.PushRetry retry = 7;
-  repeated .sc.external.services.push.v1.PushMessage messages = 8;
+  PushMessagePriority priority = 6;
+  PushRetry retry = 7;
+  repeated PushMessage messages = 8;
   bytes subscription_filter = 9;
 }
 
 message PushEnvelope {
   string id = 1;
-  .sc.external.services.push.v1.PushEnvelopeType type = 2;
+  PushEnvelopeType type = 2;
   repeated string addresses = 3;
   repeated string topics = 4;
   string transit = 5;
-  .sc.external.services.push.v1.PushMessagePriority priority = 6;
-  .sc.external.services.push.v1.PushRetry retry = 7;
-  repeated .sc.external.services.push.v1.PushMessage messages = 8;
-  .sc.external.common.trace.v1.TraceContext trace_context = 9;
+  PushMessagePriority priority = 6;
+  PushRetry retry = 7;
+  repeated PushMessage messages = 8;
+  common.trace.v1.TraceContext trace_context = 9;
   bytes subscription_filter = 10;
 }
 
 message PushMessage {
   oneof data {
-    .sc.external.services.push.v1.PushControlMessage control = 3;
+    PushControlMessage control = 3;
     .google.protobuf.Any any = 4;
   }
 }
 
 message PushCommand {
   oneof command {
-    .sc.external.services.push.v1.SubscribeCommand subscribe = 1;
-    .sc.external.services.push.v1.UnsubscribeCommand unsubscribe = 2;
-    .sc.external.services.push.v1.AckCommand ack = 3;
+    SubscribeCommand subscribe = 1;
+    UnsubscribeCommand unsubscribe = 2;
+    AckCommand ack = 3;
   }
 }
 

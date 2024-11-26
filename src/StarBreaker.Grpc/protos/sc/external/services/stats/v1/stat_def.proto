@@ -21,10 +21,10 @@ message NumberType {
 
 message StatDefType {
   oneof stat_type {
-    .sc.external.services.stats.v1.NumberType gauge = 1;
-    .sc.external.services.stats.v1.NumberType counter = 2;
-    .sc.external.services.stats.v1.AverageType avg = 3;
-    .sc.external.services.stats.v1.RollingAvergeType rolling_avg = 4;
+    NumberType gauge = 1;
+    NumberType counter = 2;
+    AverageType avg = 3;
+    RollingAvergeType rolling_avg = 4;
   }
 }
 
@@ -33,7 +33,7 @@ message StatDef {
   string game_id = 2;
   string game_mode = 3;
   string category = 4;
-  .sc.external.services.stats.v1.StatDefType type = 5;
+  StatDefType type = 5;
   string name = 6;
   string unit = 7;
   string display_description = 8;

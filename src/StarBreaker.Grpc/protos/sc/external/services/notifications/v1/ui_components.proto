@@ -5,11 +5,11 @@ package sc.external.services.notifications.v1;
 message DividerComponent {}
 
 message TextComponent {
-  .sc.external.services.notifications.v1.TextFormat format = 1;
+  TextFormat format = 1;
 }
 
 message ImageComponent {
-  .sc.external.services.notifications.v1.ImageSource source_type = 1;
+  ImageSource source_type = 1;
   string source = 2;
 }
 
@@ -22,22 +22,22 @@ message SelectComponentOption {
 message SelectComponent {
   string id = 1;
   string label = 2;
-  .sc.external.services.notifications.v1.SelectStyle style = 3;
+  SelectStyle style = 3;
   string placeholder = 4;
-  repeated .sc.external.services.notifications.v1.SelectComponentOption options = 5;
+  repeated SelectComponentOption options = 5;
 }
 
 message CheckboxComponent {
   string id = 1;
   string label = 2;
-  .sc.external.services.notifications.v1.CheckboxStyle style = 3;
+  CheckboxStyle style = 3;
   bool checked = 4;
   string value = 5;
 }
 
 message Action {
   string id = 1;
-  .sc.external.services.notifications.v1.ActionType type = 2;
+  ActionType type = 2;
   string url = 3;
   map<string, string> args = 4;
 
@@ -46,25 +46,25 @@ message Action {
 message ButtonComponent {
   string id = 1;
   string label = 2;
-  .sc.external.services.notifications.v1.ButtonStyle style = 3;
+  ButtonStyle style = 3;
   string value = 4;
-  .sc.external.services.notifications.v1.Action action = 5;
+  Action action = 5;
 }
 
 message Component {
   oneof type {
-    .sc.external.services.notifications.v1.DividerComponent divider = 1;
-    .sc.external.services.notifications.v1.TextComponent text = 2;
-    .sc.external.services.notifications.v1.ImageComponent image = 3;
-    .sc.external.services.notifications.v1.SelectComponent select = 4;
-    .sc.external.services.notifications.v1.CheckboxComponent checkbox = 5;
-    .sc.external.services.notifications.v1.ButtonComponent button = 6;
+    DividerComponent divider = 1;
+    TextComponent text = 2;
+    ImageComponent image = 3;
+    SelectComponent select = 4;
+    CheckboxComponent checkbox = 5;
+    ButtonComponent button = 6;
   }
 }
 
 message Block {
-  .sc.external.services.notifications.v1.BlockKind type = 1;
-  repeated .sc.external.services.notifications.v1.Component components = 2;
+  BlockKind type = 1;
+  repeated Component components = 2;
 }
 
 enum TextFormat {

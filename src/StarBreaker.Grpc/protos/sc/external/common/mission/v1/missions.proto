@@ -8,31 +8,31 @@ import "sc/external/common/mission/v1/types.proto";
 message ActiveMission {
   string mission_id = 1;
   string contract_id = 2;
-  .sc.external.common.mission.v1.MissionTemplate mission_template = 3;
+  MissionTemplate mission_template = 3;
   repeated string reserved_location_urns = 4;
   string mission_owner_urn = 5;
-  repeated .sc.external.common.mission.v1.MissionParticipant participants = 6;
+  repeated MissionParticipant participants = 6;
   .google.protobuf.Timestamp creation = 7;
   .google.protobuf.Timestamp expiry = 8;
-  .sc.external.common.mission.v1.MissionState mission_state = 9;
+  MissionState mission_state = 9;
   string active_mission_key = 10;
-  repeated .sc.external.common.mission.v1.MissionPhase mission_phases = 11;
-  repeated .sc.external.common.mission.v1.MissionObjective mission_objectives = 12;
+  repeated MissionPhase mission_phases = 11;
+  repeated MissionObjective mission_objectives = 12;
   string ess_group_urn = 13;
-  .sc.external.common.mission.v1.MissionReward reward = 14;
+  MissionReward reward = 14;
 }
 
 message ActiveMissionInfo {
   string mission_id = 1;
   string contract_id = 2;
-  .sc.external.common.mission.v1.MissionTemplate mission_template = 3;
+  MissionTemplate mission_template = 3;
   string mission_owner_urn = 4;
-  repeated .sc.external.common.mission.v1.MissionParticipant participants = 5;
+  repeated MissionParticipant participants = 5;
   .google.protobuf.Timestamp creation = 6;
   .google.protobuf.Timestamp expiry = 7;
-  .sc.external.common.mission.v1.MissionState mission_state = 8;
-  repeated .sc.external.common.mission.v1.MissionObjective mission_objectives = 9;
-  .sc.external.common.mission.v1.MissionReward reward = 10;
+  MissionState mission_state = 8;
+  repeated MissionObjective mission_objectives = 9;
+  MissionReward reward = 10;
 }
 
 message MissionObjective {
@@ -41,52 +41,52 @@ message MissionObjective {
   string mission_id = 3;
   .google.protobuf.Timestamp timer_start = 4;
   .google.protobuf.Timestamp expiry = 5;
-  .sc.external.common.mission.v1.MissionObjectiveState state = 6;
+  MissionObjectiveState state = 6;
   uint32 short_desc_id = 7;
   uint32 long_desc_id = 8;
   repeated uint64 marker_ids = 9;
   int64 progress_counter_current = 10;
   int64 progress_counter_max = 11;
-  .sc.external.common.mission.v1.MissionReward reward = 12;
+  MissionReward reward = 12;
 }
 
 message MissionPhaseData {
   oneof data {
-    .sc.external.common.mission.v1.MissionPhaseMissionEntity mission_entity = 1;
-    .sc.external.common.mission.v1.MissionPhaseHauling hauling = 2;
+    MissionPhaseMissionEntity mission_entity = 1;
+    MissionPhaseHauling hauling = 2;
   }
 }
 
 message MissionPhase {
   string mission_phase_guid = 1;
   string mission_id = 2;
-  .sc.external.common.mission.v1.MissionPhaseState state = 3;
+  MissionPhaseState state = 3;
   string active_phase_key = 4;
   string active_shard_id = 5;
   .google.protobuf.Timestamp timer_start = 6;
   .google.protobuf.Timestamp expiry = 7;
   string autocomplete_objective_id = 8;
-  .sc.external.common.mission.v1.MissionPhaseData data = 9;
+  MissionPhaseData data = 9;
 }
 
 message MissionPhaseMissionEntity {
   uint32 seed = 1;
-  .sc.external.common.mission.v1.MissionVariables variables = 2;
+  MissionVariables variables = 2;
 }
 
 message MissionPhaseHauling {
   uint32 seed = 1;
-  .sc.external.common.mission.v1.MissionVariables variables = 2;
+  MissionVariables variables = 2;
 }
 
 message MissionLog {
   string mission_id = 1;
   repeated string reserved_location_urns = 2;
   string mission_owner_urn = 3;
-  .sc.external.common.mission.v1.MissionState mission_state = 4;
+  MissionState mission_state = 4;
   string active_mission_key = 5;
-  repeated .sc.external.common.mission.v1.MissionPhase mission_phases = 6;
-  repeated .sc.external.common.mission.v1.MissionObjective mission_objectives = 7;
+  repeated MissionPhase mission_phases = 6;
+  repeated MissionObjective mission_objectives = 7;
 }
 
 enum MissionState {

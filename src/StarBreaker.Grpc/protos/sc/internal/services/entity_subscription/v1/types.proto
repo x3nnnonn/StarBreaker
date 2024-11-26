@@ -14,7 +14,7 @@ message SubscriberEntities {
 }
 
 message SubscriberEntitiesPushEvent {
-  .sc.internal.services.entity_subscription.v1.PushEventType event_type = 1;
+  PushEventType event_type = 1;
   uint64 subscriber = 2;
   repeated uint64 entities = 3;
 }

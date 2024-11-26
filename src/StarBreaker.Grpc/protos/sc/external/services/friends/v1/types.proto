@@ -13,14 +13,14 @@ message FriendInfo {
 }
 
 message Friend {
-  .sc.external.services.friends.v1.FriendInfo account = 1;
-  .sc.external.services.presence.v1.Presence presence = 2;
+  FriendInfo account = 1;
+  presence.v1.Presence presence = 2;
 }
 
 message FriendRequest {
   string id = 1;
   int64 created_at = 2;
-  .sc.external.services.friends.v1.FriendInfo sender = 3;
-  .sc.external.services.friends.v1.FriendInfo receiver = 4;
+  FriendInfo sender = 3;
+  FriendInfo receiver = 4;
 }
 

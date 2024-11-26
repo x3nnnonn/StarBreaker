@@ -8,12 +8,12 @@ import "sc/internal/services/entitlement/v1/commands.proto";
 import "sc/external/common/command/v1/types.proto";
 
 service AccountReadinessService {
-  rpc ReconcileAccount ( .sc.internal.services.entitlement.v1.ReconcileAccountRequest ) returns ( .sc.internal.services.entitlement.v1.ReconcileAccountResponse );
+  rpc ReconcileAccount ( ReconcileAccountRequest ) returns ( ReconcileAccountResponse );
 }
 
 message ReconcileAccountRequest {
-  .sc.internal.services.entitlement.v1.ReconcileAccountCommand command = 1;
-  .sc.external.common.command.v1.CommandArguments arguments = 2;
+  ReconcileAccountCommand command = 1;
+  external.common.command.v1.CommandArguments arguments = 2;
 }
 
 message ReconcileAccountResponse {}

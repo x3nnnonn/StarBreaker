@@ -14,7 +14,7 @@ message GroupRenamed {
 }
 
 message MemberInvited {
-  .sc.external.services.social.v1.Invitation invitation = 1;
+  Invitation invitation = 1;
 }
 
 message InvitationDeclined {
@@ -31,7 +31,7 @@ message InvitationRevoked {
 
 message MemberJoined {
   string group_id = 1;
-  .sc.external.services.social.v1.GroupMember member = 2;
+  GroupMember member = 2;
 }
 
 message MemberLeft {
@@ -61,7 +61,7 @@ message MemberUnmuted {
 }
 
 message GroupCreated {
-  .sc.external.services.social.v1.Group group = 1;
+  Group group = 1;
 }
 
 message ModeratorAdded {
@@ -81,11 +81,11 @@ message MemberReadyStatusChanged {
 }
 
 message InvitationReceived {
-  .sc.external.services.social.v1.Invitation invitation = 1;
+  Invitation invitation = 1;
 }
 
 message JoinedGroup {
-  .sc.external.services.social.v1.Group group = 1;
+  Group group = 1;
 }
 
 message LeftGroup {

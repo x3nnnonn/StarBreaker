@@ -6,9 +6,9 @@ import "google/api/annotations.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 
 service LockService {
-  rpc Lock ( .sc.internal.services.locks.v1.LockRequest ) returns ( .sc.internal.services.locks.v1.LockResponse );
-  rpc Release ( .sc.internal.services.locks.v1.ReleaseRequest ) returns ( .sc.internal.services.locks.v1.ReleaseResponse );
-  rpc Check ( .sc.internal.services.locks.v1.CheckRequest ) returns ( .sc.internal.services.locks.v1.CheckResponse );
+  rpc Lock ( LockRequest ) returns ( LockResponse );
+  rpc Release ( ReleaseRequest ) returns ( ReleaseResponse );
+  rpc Check ( CheckRequest ) returns ( CheckResponse );
 }
 
 message LockRequest {
@@ -25,7 +25,7 @@ message VersionedLock {
 }
 
 message LockResponse {
-  repeated .sc.internal.services.locks.v1.VersionedLock versioned_locks = 1;
+  repeated VersionedLock versioned_locks = 1;
 }
 
 message ReleaseRequest {
@@ -40,7 +40,7 @@ message LockRelease {
 }
 
 message ReleaseResponse {
-  repeated .sc.internal.services.locks.v1.LockRelease released_locks = 1;
+  repeated LockRelease released_locks = 1;
 }
 
 message CheckRequest {
@@ -48,6 +48,6 @@ message CheckRequest {
 }
 
 message CheckResponse {
-  repeated .sc.internal.services.locks.v1.VersionedLock versioned_locks = 1;
+  repeated VersionedLock versioned_locks = 1;
 }
 

@@ -11,6 +11,6 @@ message MissionLocation {
   uint64 location_entity_id = 1;
   string shard_id = 2;
   bool is_occupied = 3;
-  repeated .sc.external.common.mission.v1.MisionReservation reservations = 4;
+  repeated MisionReservation reservations = 4;
 }
 

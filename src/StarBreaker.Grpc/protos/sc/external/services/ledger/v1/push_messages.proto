@@ -5,10 +5,10 @@ package sc.external.services.ledger.v1;
 import "sc/external/services/ledger/v1/types.proto";
 
 message VariedFunds {
-  .sc.external.services.ledger.v1.Funds funds = 1;
+  Funds funds = 1;
   string ledger_name = 2;
   string log_message = 3;
-  .sc.external.services.ledger.v1.VariedFunds.Variation variation = 4;
+  Variation variation = 4;
   uint32 version = 5;
 
   enum Variation {

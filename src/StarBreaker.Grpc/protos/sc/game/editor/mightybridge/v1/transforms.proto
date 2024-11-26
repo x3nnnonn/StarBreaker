@@ -34,8 +34,8 @@ message Quatf {
 }
 
 message Transformf {
-  .sc.game.editor.mightybridge.v1.Vec3f position = 1;
-  .sc.game.editor.mightybridge.v1.Quatf rotation = 2;
+  Vec3f position = 1;
+  Quatf rotation = 2;
   float scale = 3;
 }
 
@@ -46,8 +46,8 @@ message Vec3w {
 }
 
 message Transformw {
-  .sc.game.editor.mightybridge.v1.Vec3w position = 1;
-  .sc.game.editor.mightybridge.v1.Quatf rotation = 2;
+  Vec3w position = 1;
+  Quatf rotation = 2;
   float scale = 3;
 }
 
