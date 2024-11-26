@@ -3,8 +3,8 @@ syntax = "proto3";
 package sc.external.services.discipline.v1;
 
 message Measure {
-  .sc.external.services.discipline.v1.MeasureType type = 1;
-  repeated .sc.external.services.discipline.v1.MeasureScope scope = 2;
+  MeasureType type = 1;
+  repeated MeasureScope scope = 2;
 }
 
 message KickAction {}
@@ -15,28 +15,28 @@ message MessageAction {
 
 message Action {
   oneof action {
-    .sc.external.services.discipline.v1.KickAction kick = 1;
-    .sc.external.services.discipline.v1.MessageAction message = 2;
+    KickAction kick = 1;
+    MessageAction message = 2;
   }
 }
 
 message Sanction {
   string id = 1;
   string target_urn = 2;
-  .sc.external.services.discipline.v1.SanctionStatus status = 3;
+  SanctionStatus status = 3;
   string author_id = 4;
   oneof lifetime {
     bool permanent = 5;
     uint64 until = 6;
   }
-  repeated .sc.external.services.discipline.v1.Measure measures = 7;
-  repeated .sc.external.services.discipline.v1.Action actions = 8;
-  .sc.external.services.discipline.v1.InputNotes notes = 9;
+  repeated Measure measures = 7;
+  repeated Action actions = 8;
+  InputNotes notes = 9;
 }
 
 message SanctionJob {
   string id = 1;
-  .sc.external.services.discipline.v1.SanctionStatus status = 2;
+  SanctionStatus status = 2;
 }
 
 message InputNotes {

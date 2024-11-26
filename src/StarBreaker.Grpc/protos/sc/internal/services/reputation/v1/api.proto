@@ -9,29 +9,29 @@ import "sc/external/common/api/v1/query.proto";
 import "sc/external/services/reputation/v1/types.proto";
 
 service ReputationService {
-  rpc Vary ( .sc.internal.services.reputation.v1.VaryRequest ) returns ( .sc.internal.services.reputation.v1.VaryResponse );
-  rpc Set ( .sc.internal.services.reputation.v1.SetRequest ) returns ( .sc.internal.services.reputation.v1.SetResponse );
-  rpc Reset ( .sc.internal.services.reputation.v1.ResetRequest ) returns ( .sc.internal.services.reputation.v1.ResetResponse );
-  rpc Copy ( .sc.internal.services.reputation.v1.CopyRequest ) returns ( .sc.internal.services.reputation.v1.CopyResponse );
-  rpc MGet ( .sc.internal.services.reputation.v1.MGetRequest ) returns ( .sc.internal.services.reputation.v1.MGetResponse );
-  rpc GetByIds ( .sc.internal.services.reputation.v1.GetByIdsRequest ) returns ( .sc.internal.services.reputation.v1.GetByIdsResponse );
-  rpc Query ( .sc.internal.services.reputation.v1.QueryRequest ) returns ( .sc.internal.services.reputation.v1.QueryResponse );
-  rpc QueryHistory ( .sc.internal.services.reputation.v1.QueryHistoryRequest ) returns ( .sc.internal.services.reputation.v1.QueryHistoryResponse );
-  rpc GetScoreHistory ( .sc.internal.services.reputation.v1.GetScoreHistoryRequest ) returns ( .sc.internal.services.reputation.v1.GetScoreHistoryResponse );
-  rpc Lock ( .sc.internal.services.reputation.v1.LockRequest ) returns ( .sc.internal.services.reputation.v1.LockResponse );
-  rpc Unlock ( .sc.internal.services.reputation.v1.UnlockRequest ) returns ( .sc.internal.services.reputation.v1.UnlockResponse );
-  rpc CreateStandings ( .sc.internal.services.reputation.v1.CreateStandingsRequest ) returns ( .sc.internal.services.reputation.v1.CreateStandingsResponse );
-  rpc ChangeStandings ( .sc.internal.services.reputation.v1.ChangeStandingsRequest ) returns ( .sc.internal.services.reputation.v1.ChangeStandingsResponse );
-  rpc DeleteStandings ( .sc.internal.services.reputation.v1.DeleteStandingsRequest ) returns ( .sc.internal.services.reputation.v1.DeleteStandingsResponse );
-  rpc ListStandings ( .sc.internal.services.reputation.v1.ListStandingsRequest ) returns ( .sc.internal.services.reputation.v1.ListStandingsResponse );
-  rpc GetStandings ( .sc.internal.services.reputation.v1.GetStandingsRequest ) returns ( .sc.internal.services.reputation.v1.GetStandingsResponse );
-  rpc GetStandingsByName ( .sc.internal.services.reputation.v1.GetStandingsByNameRequest ) returns ( .sc.internal.services.reputation.v1.GetStandingsByNameResponse );
-  rpc GetState ( .sc.internal.services.reputation.v1.GetStateRequest ) returns ( .sc.internal.services.reputation.v1.GetStateResponse );
-  rpc SetState ( .sc.internal.services.reputation.v1.SetStateRequest ) returns ( .sc.internal.services.reputation.v1.SetStateResponse );
+  rpc Vary ( VaryRequest ) returns ( VaryResponse );
+  rpc Set ( SetRequest ) returns ( SetResponse );
+  rpc Reset ( ResetRequest ) returns ( ResetResponse );
+  rpc Copy ( CopyRequest ) returns ( CopyResponse );
+  rpc MGet ( MGetRequest ) returns ( MGetResponse );
+  rpc GetByIds ( GetByIdsRequest ) returns ( GetByIdsResponse );
+  rpc Query ( QueryRequest ) returns ( QueryResponse );
+  rpc QueryHistory ( QueryHistoryRequest ) returns ( QueryHistoryResponse );
+  rpc GetScoreHistory ( GetScoreHistoryRequest ) returns ( GetScoreHistoryResponse );
+  rpc Lock ( LockRequest ) returns ( LockResponse );
+  rpc Unlock ( UnlockRequest ) returns ( UnlockResponse );
+  rpc CreateStandings ( CreateStandingsRequest ) returns ( CreateStandingsResponse );
+  rpc ChangeStandings ( ChangeStandingsRequest ) returns ( ChangeStandingsResponse );
+  rpc DeleteStandings ( DeleteStandingsRequest ) returns ( DeleteStandingsResponse );
+  rpc ListStandings ( ListStandingsRequest ) returns ( ListStandingsResponse );
+  rpc GetStandings ( GetStandingsRequest ) returns ( GetStandingsResponse );
+  rpc GetStandingsByName ( GetStandingsByNameRequest ) returns ( GetStandingsByNameResponse );
+  rpc GetState ( GetStateRequest ) returns ( GetStateResponse );
+  rpc SetState ( SetStateRequest ) returns ( SetStateResponse );
 }
 
 message VaryRequest {
-  repeated .sc.internal.services.reputation.v1.VaryRequest.VaryReputation reputations = 1;
+  repeated VaryReputation reputations = 1;
 
   message VaryReputation {
     string subject = 1;
@@ -39,8 +39,8 @@ message VaryRequest {
     string scope = 3;
     string standings_id = 4;
     uint32 amount = 5;
-    .sc.internal.services.reputation.v1.VaryRequest.VaryReputation.VaryAction action = 6;
-    .sc.external.services.reputation.v1.LogContext log_context = 7;
+    VaryAction action = 6;
+    external.services.reputation.v1.LogContext log_context = 7;
 
     enum VaryAction {
       VARY_ACTION_INVALID_UNSPECIFIED = 0;
@@ -51,11 +51,11 @@ message VaryRequest {
 }
 
 message VaryResponse {
-  repeated .sc.external.services.reputation.v1.ReputationInitialized reputations = 1;
+  repeated external.services.reputation.v1.ReputationInitialized reputations = 1;
 }
 
 message SetRequest {
-  repeated .sc.internal.services.reputation.v1.SetRequest.SetReputation reputations = 1;
+  repeated SetReputation reputations = 1;
 
   message SetReputation {
     string subject = 1;
@@ -63,25 +63,25 @@ message SetRequest {
     string scope = 3;
     string standings_id = 4;
     uint32 amount = 5;
-    .sc.external.services.reputation.v1.LogContext log_context = 6;
-    .sc.external.services.reputation.v1.ReputationLock lock = 7;
+    external.services.reputation.v1.LogContext log_context = 6;
+    external.services.reputation.v1.ReputationLock lock = 7;
   }
 }
 
 message SetResponse {
-  repeated .sc.external.services.reputation.v1.ReputationInitialized reputations = 1;
+  repeated external.services.reputation.v1.ReputationInitialized reputations = 1;
 }
 
 message ResetRequest {
-  repeated .sc.internal.services.reputation.v1.ResetRequest.ResetReputation reputations = 1;
+  repeated ResetReputation reputations = 1;
 
   message ResetReputation {
     string subject = 1;
     string entity = 2;
     string scope = 3;
     string standings_id = 4;
-    .sc.external.services.reputation.v1.ReputationLock lock = 5;
-    .sc.external.services.reputation.v1.LogContext log_context = 6;
+    external.services.reputation.v1.ReputationLock lock = 5;
+    external.services.reputation.v1.LogContext log_context = 6;
   }
 }
 
@@ -95,7 +95,7 @@ message CopyRequest {
 message CopyResponse {}
 
 message MGetRequest {
-  repeated .sc.internal.services.reputation.v1.MGetRequest.ReputationMGet reputations = 1;
+  repeated ReputationMGet reputations = 1;
 
   message ReputationMGet {
     string subject = 1;
@@ -105,7 +105,7 @@ message MGetRequest {
 }
 
 message MGetResponse {
-  repeated .sc.external.services.reputation.v1.VersionedReputation reputations = 1;
+  repeated external.services.reputation.v1.VersionedReputation reputations = 1;
 }
 
 message GetByIdsRequest {
@@ -113,16 +113,16 @@ message GetByIdsRequest {
 }
 
 message GetByIdsResponse {
-  repeated .sc.external.services.reputation.v1.VersionedReputation reputations = 1;
+  repeated external.services.reputation.v1.VersionedReputation reputations = 1;
 }
 
 message QueryRequest {
-  .sc.external.common.api.v1.Query query = 4;
+  external.common.api.v1.Query query = 4;
 }
 
 message QueryResponse {
-  repeated .sc.external.services.reputation.v1.Reputation results = 1;
-  .sc.external.common.api.v1.PaginationInfo page_info = 2;
+  repeated external.services.reputation.v1.Reputation results = 1;
+  external.common.api.v1.PaginationInfo page_info = 2;
 }
 
 message LockRequest {
@@ -140,23 +140,23 @@ message UnlockRequest {
 message UnlockResponse {}
 
 message QueryHistoryRequest {
-  .sc.external.common.api.v1.Query query = 4;
+  external.common.api.v1.Query query = 4;
 }
 
 message QueryHistoryResponse {
-  repeated .sc.external.services.reputation.v1.ReputationHistory results = 1;
-  .sc.external.common.api.v1.PaginationInfo page_info = 2;
+  repeated external.services.reputation.v1.ReputationHistory results = 1;
+  external.common.api.v1.PaginationInfo page_info = 2;
 }
 
 message CreateStandingsRequest {
   string name = 1;
   int32 initial = 2;
   int32 ceiling = 3;
-  repeated .sc.external.services.reputation.v1.Standing standings = 4;
+  repeated external.services.reputation.v1.Standing standings = 4;
 }
 
 message CreateStandingsResponse {
-  .sc.external.services.reputation.v1.Standings standings = 1;
+  external.services.reputation.v1.Standings standings = 1;
 }
 
 message ChangeStandingsRequest {
@@ -164,11 +164,11 @@ message ChangeStandingsRequest {
   string name = 2;
   int32 initial = 3;
   int32 ceiling = 4;
-  repeated .sc.external.services.reputation.v1.Standing standings = 5;
+  repeated external.services.reputation.v1.Standing standings = 5;
 }
 
 message ChangeStandingsResponse {
-  .sc.external.services.reputation.v1.Standings standings = 1;
+  external.services.reputation.v1.Standings standings = 1;
 }
 
 message DeleteStandingsRequest {
@@ -180,7 +180,7 @@ message DeleteStandingsResponse {}
 message ListStandingsRequest {}
 
 message ListStandingsResponse {
-  repeated .sc.external.services.reputation.v1.Standings standings = 1;
+  repeated external.services.reputation.v1.Standings standings = 1;
 }
 
 message GetStandingsRequest {
@@ -188,7 +188,7 @@ message GetStandingsRequest {
 }
 
 message GetStandingsResponse {
-  .sc.external.services.reputation.v1.Standings standings = 1;
+  external.services.reputation.v1.Standings standings = 1;
 }
 
 message GetStandingsByNameRequest {
@@ -196,11 +196,11 @@ message GetStandingsByNameRequest {
 }
 
 message GetStandingsByNameResponse {
-  repeated .sc.external.services.reputation.v1.Standings standings = 1;
+  repeated external.services.reputation.v1.Standings standings = 1;
 }
 
 message GetStateRequest {
-  repeated .sc.internal.services.reputation.v1.GetStateRequest.SubjectEntity subjects_entities = 1;
+  repeated SubjectEntity subjects_entities = 1;
 
   message SubjectEntity {
     string subject = 1;
@@ -209,16 +209,16 @@ message GetStateRequest {
 }
 
 message GetStateResponse {
-  repeated .sc.external.services.reputation.v1.State states = 1;
+  repeated external.services.reputation.v1.State states = 1;
 }
 
 message SetStateRequest {
-  repeated .sc.internal.services.reputation.v1.SetStateRequest.SubjectEntityState subjects = 1;
+  repeated SubjectEntityState subjects = 1;
 
   message SubjectEntityState {
     string subject = 1;
     string entity = 2;
-    .sc.internal.services.reputation.v1.SetStateRequest.SubjectEntityState.StateValuePairs pairs = 3;
+    StateValuePairs pairs = 3;
     string message = 4;
 
     message StateValuePairs {
@@ -231,7 +231,7 @@ message SetStateRequest {
 message SetStateResponse {}
 
 message GetScoreHistoryRequest {
-  repeated .sc.internal.services.reputation.v1.GetScoreHistoryRequest.ScoreHistory reputation_scores = 1;
+  repeated ScoreHistory reputation_scores = 1;
 
   message ScoreHistory {
     string reputation_id = 1;
@@ -240,11 +240,11 @@ message GetScoreHistoryRequest {
 }
 
 message GetScoreHistoryResponse {
-  repeated .sc.internal.services.reputation.v1.GetScoreHistoryResponse.ScoresHistory reputation_scores = 1;
+  repeated ScoresHistory reputation_scores = 1;
 
   message ScoresHistory {
     string reputation_id = 1;
-    repeated .sc.internal.services.reputation.v1.GetScoreHistoryResponse.ScoresHistory.Score scores = 2;
+    repeated Score scores = 2;
 
     message Score {
       uint64 score = 1;

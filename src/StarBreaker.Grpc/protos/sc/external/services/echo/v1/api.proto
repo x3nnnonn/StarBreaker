@@ -6,13 +6,13 @@ import "google/api/annotations.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 
 service EchoService {
-  rpc Echo ( .sc.external.services.echo.v1.EchoRequest ) returns ( .sc.external.services.echo.v1.EchoResponse );
-  rpc EchoClientStream ( .sc.external.services.echo.v1.EchoClientStreamRequest ) returns ( .sc.external.services.echo.v1.EchoClientStreamResponse );
-  rpc EchoServerStream ( .sc.external.services.echo.v1.EchoServerStreamRequest ) returns ( .sc.external.services.echo.v1.EchoServerStreamResponse );
-  rpc EchoDuplexStream ( .sc.external.services.echo.v1.EchoDuplexStreamRequest ) returns ( .sc.external.services.echo.v1.EchoDuplexStreamResponse );
-  rpc EchoSimpleDuplexStream ( .sc.external.services.echo.v1.EchoSimpleDuplexStreamRequest ) returns ( .sc.external.services.echo.v1.EchoSimpleDuplexStreamResponse );
-  rpc CloseAllStreams ( .sc.external.services.echo.v1.CloseAllStreamsRequest ) returns ( .sc.external.services.echo.v1.CloseAllStreamsResponse );
-  rpc EchoError ( .sc.external.services.echo.v1.EchoErrorRequest ) returns ( .sc.external.services.echo.v1.EchoErrorResponse );
+  rpc Echo ( EchoRequest ) returns ( EchoResponse );
+  rpc EchoClientStream (stream EchoClientStreamRequest ) returns ( EchoClientStreamResponse );
+  rpc EchoServerStream ( EchoServerStreamRequest ) returns (stream EchoServerStreamResponse );
+  rpc EchoDuplexStream (stream EchoDuplexStreamRequest ) returns (stream EchoDuplexStreamResponse );
+  rpc EchoSimpleDuplexStream (stream EchoSimpleDuplexStreamRequest ) returns (stream EchoSimpleDuplexStreamResponse );
+  rpc CloseAllStreams ( CloseAllStreamsRequest ) returns ( CloseAllStreamsResponse );
+  rpc EchoError ( EchoErrorRequest ) returns ( EchoErrorResponse );
 }
 
 message EchoRequest {
@@ -52,7 +52,7 @@ message RandomMessagesStreamSettings {
 
 message EchoDuplexStreamRequest {
   string msg = 1;
-  .sc.external.services.echo.v1.RandomMessagesStreamSettings random_message_settings = 2;
+  RandomMessagesStreamSettings random_message_settings = 2;
 }
 
 message EchoDuplexStreamResponse {

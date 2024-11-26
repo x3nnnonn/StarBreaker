@@ -7,13 +7,13 @@ import "sc/external/services/login/v1/types.proto";
 import "sc/external/common/platform/v1/types.proto";
 
 service LoginService {
-  rpc InitiateLogin ( .sc.external.services.login.v1.InitiateLoginRequest ) returns ( .sc.external.services.login.v1.InitiateLoginResponse );
-  rpc CancelLogin ( .sc.external.services.login.v1.CancelLoginRequest ) returns ( .sc.external.services.login.v1.CancelLoginResponse );
+  rpc InitiateLogin ( InitiateLoginRequest ) returns ( InitiateLoginResponse );
+  rpc CancelLogin ( CancelLoginRequest ) returns ( CancelLoginResponse );
 }
 
 message InitiateLoginRequest {
   string session_id = 1;
-  .sc.external.services.login.v1.InitiateLoginRequest.VersionIdentifier version = 2;
+  VersionIdentifier version = 2;
 
   message VersionIdentifier {
     uint64 base_cl = 1;
@@ -25,8 +25,8 @@ message InitiateLoginResponse {
   uint32 account_id = 1;
   string nickname = 2;
   string displayname = 3;
-  repeated .sc.external.common.platform.v1.PlatformBadge badges = 4;
-  .sc.external.services.login.v1.LoginRequestStatus status = 5;
+  repeated common.platform.v1.PlatformBadge badges = 4;
+  LoginRequestStatus status = 5;
   string tracking_metrics_id = 6;
 }
 

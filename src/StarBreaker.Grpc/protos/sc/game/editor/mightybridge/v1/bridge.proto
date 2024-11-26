@@ -7,7 +7,7 @@ import "google/api/annotations.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 
 service MightyBridgeService {
-  rpc MightyStream ( .sc.game.editor.mightybridge.v1.MightyStreamRequest ) returns ( .sc.game.editor.mightybridge.v1.MightyStreamResponse );
+  rpc MightyStream (stream MightyStreamRequest ) returns (stream MightyStreamResponse );
 }
 
 message BridgeFreeFormCommand {
@@ -28,18 +28,18 @@ message BridgeMessageResult {
 
 message BridgeMessage {
   oneof message {
-    .sc.game.editor.mightybridge.v1.BridgeMessageCommand message_command = 1;
-    .sc.game.editor.mightybridge.v1.BridgeMessageResult message_result = 2;
+    BridgeMessageCommand message_command = 1;
+    BridgeMessageResult message_result = 2;
   }
   string ticket = 3;
   .google.protobuf.Any payload = 4;
 }
 
 message MightyStreamRequest {
-  repeated .sc.game.editor.mightybridge.v1.BridgeMessage messages = 1;
+  repeated BridgeMessage messages = 1;
 }
 
 message MightyStreamResponse {
-  repeated .sc.game.editor.mightybridge.v1.BridgeMessage messages = 1;
+  repeated BridgeMessage messages = 1;
 }
 

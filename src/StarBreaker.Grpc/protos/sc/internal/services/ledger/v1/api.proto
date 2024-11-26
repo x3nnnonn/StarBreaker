@@ -9,25 +9,25 @@ import "sc/external/common/api/v1/pagination.proto";
 import "sc/external/common/api/v1/query.proto";
 
 service LedgerService {
-  rpc Create ( .sc.internal.services.ledger.v1.CreateRequest ) returns ( .sc.internal.services.ledger.v1.CreateResponse );
-  rpc Destroy ( .sc.internal.services.ledger.v1.DestroyRequest ) returns ( .sc.internal.services.ledger.v1.DestroyResponse );
-  rpc Query ( .sc.internal.services.ledger.v1.QueryRequest ) returns ( .sc.internal.services.ledger.v1.QueryResponse );
-  rpc GetFunds ( .sc.internal.services.ledger.v1.GetFundsRequest ) returns ( .sc.internal.services.ledger.v1.GetFundsResponse );
-  rpc Deposit ( .sc.internal.services.ledger.v1.DepositRequest ) returns ( .sc.internal.services.ledger.v1.DepositResponse );
-  rpc Withdraw ( .sc.internal.services.ledger.v1.WithdrawRequest ) returns ( .sc.internal.services.ledger.v1.WithdrawResponse );
-  rpc Transfer ( .sc.internal.services.ledger.v1.TransferRequest ) returns ( .sc.internal.services.ledger.v1.TransferResponse );
-  rpc Copy ( .sc.internal.services.ledger.v1.CopyRequest ) returns ( .sc.internal.services.ledger.v1.CopyResponse );
-  rpc QueryHistory ( .sc.internal.services.ledger.v1.QueryHistoryRequest ) returns ( .sc.internal.services.ledger.v1.QueryHistoryResponse );
+  rpc Create ( CreateRequest ) returns ( CreateResponse );
+  rpc Destroy ( DestroyRequest ) returns ( DestroyResponse );
+  rpc Query ( QueryRequest ) returns ( QueryResponse );
+  rpc GetFunds ( GetFundsRequest ) returns ( GetFundsResponse );
+  rpc Deposit ( DepositRequest ) returns ( DepositResponse );
+  rpc Withdraw ( WithdrawRequest ) returns ( WithdrawResponse );
+  rpc Transfer ( TransferRequest ) returns ( TransferResponse );
+  rpc Copy ( CopyRequest ) returns ( CopyResponse );
+  rpc QueryHistory ( QueryHistoryRequest ) returns ( QueryHistoryResponse );
 }
 
 message CreateRequest {
-  repeated .sc.internal.services.ledger.v1.CreateRequest.CreateLedger ledgers = 1;
+  repeated CreateLedger ledgers = 1;
 
   message CreateLedger {
     string owner_urn = 1;
     uint32 account_id = 2;
     string name = 3;
-    .sc.external.services.ledger.v1.Currency currency = 4;
+    external.services.ledger.v1.Currency currency = 4;
     string log_message = 5;
     uint64 amount = 6;
   }
@@ -44,19 +44,19 @@ message DestroyRequest {
 message DestroyResponse {}
 
 message DepositRequest {
-  .sc.external.services.ledger.v1.Transaction transaction = 1;
+  external.services.ledger.v1.Transaction transaction = 1;
 }
 
 message DepositResponse {}
 
 message TransferRequest {
-  .sc.external.services.ledger.v1.TransferTransaction transaction = 1;
+  external.services.ledger.v1.TransferTransaction transaction = 1;
 }
 
 message TransferResponse {}
 
 message WithdrawRequest {
-  .sc.external.services.ledger.v1.Transaction transaction = 1;
+  external.services.ledger.v1.Transaction transaction = 1;
 }
 
 message WithdrawResponse {}
@@ -73,7 +73,7 @@ message QueryRequest {
 }
 
 message QueryResponse {
-  repeated .sc.external.services.ledger.v1.Ledger ledgers = 1;
+  repeated external.services.ledger.v1.Ledger ledgers = 1;
 }
 
 message GetFundsRequest {
@@ -82,15 +82,15 @@ message GetFundsRequest {
 }
 
 message GetFundsResponse {
-  repeated .sc.external.services.ledger.v1.Ledger ledgers = 1;
+  repeated external.services.ledger.v1.Ledger ledgers = 1;
 }
 
 message QueryHistoryRequest {
-  .sc.external.common.api.v1.Query query = 4;
+  external.common.api.v1.Query query = 4;
 }
 
 message QueryHistoryResponse {
-  repeated .sc.external.services.ledger.v1.LedgerHistory results = 1;
-  .sc.external.common.api.v1.PaginationInfo page_info = 2;
+  repeated external.services.ledger.v1.LedgerHistory results = 1;
+  external.common.api.v1.PaginationInfo page_info = 2;
 }
 

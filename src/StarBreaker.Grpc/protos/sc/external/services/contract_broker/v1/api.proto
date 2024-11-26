@@ -7,7 +7,7 @@ import "google/api/annotations.proto";
 import "sc/external/common/mission/v1/contracts.proto";
 
 service ContractBrokerService {
-  rpc QueryAvailableContracts ( .sc.external.services.contract_broker.v1.QueryAvailableContractsRequest ) returns ( .sc.external.services.contract_broker.v1.QueryAvailableContractsResponse );
+  rpc QueryAvailableContracts ( QueryAvailableContractsRequest ) returns (stream QueryAvailableContractsResponse );
 }
 
 message QueryAvailableContractsRequest {
@@ -17,6 +17,6 @@ message QueryAvailableContractsRequest {
 }
 
 message QueryAvailableContractsResponse {
-  repeated .sc.external.common.mission.v1.MissionContract contracts = 1;
+  repeated common.mission.v1.MissionContract contracts = 1;
 }
 

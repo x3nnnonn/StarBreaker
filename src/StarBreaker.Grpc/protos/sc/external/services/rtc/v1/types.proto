@@ -10,7 +10,7 @@ message Server {
 message Channel {
   string group_id = 1;
   bool positional = 2;
-  .sc.external.services.rtc.v1.Server server = 4;
+  Server server = 4;
   int64 created_at = 5;
   string token = 6;
 }

@@ -11,15 +11,15 @@ message AuthenticateLoginRequest {
 
 message AuthenticateLoginResponse {
   required int32 status = 1;
-  optional .cig.Protocols.Common.PlayerSessionInfo sessionInfo = 2;
-  repeated .cig.Protocols.Common.RSIPlayerStatsInfo stats = 3;
+  optional Common.PlayerSessionInfo sessionInfo = 2;
+  repeated Common.RSIPlayerStatsInfo stats = 3;
   optional int32 hub_region_id = 4;
   required int32 login_queue = 5;
   required int32 login_queue_id = 6;
 }
 
 message AuthenticateKicked {
-  required .cig.Protocols.Public.Auth.AuthKickedReason reason = 1;
+  required AuthKickedReason reason = 1;
 }
 
 message AuthLoginQueueStatus {

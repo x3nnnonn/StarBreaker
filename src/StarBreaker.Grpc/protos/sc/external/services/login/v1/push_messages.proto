@@ -24,13 +24,13 @@ message AccountLoginQueueStatus {
 message ProcessingQueueHeartbeat {}
 
 message LoginQueueError {
-  .sc.external.services.login.v1.LoginRequestState state = 1;
-  .sc.external.services.login.v1.LoginRequestPhase phase = 2;
+  LoginRequestState state = 1;
+  LoginRequestPhase phase = 2;
   string error = 3;
   string session_id = 4;
 }
 
 message AccountLoginCharacterStatus {
-  repeated .sc.external.services.identity.v1.Player players = 1;
+  repeated identity.v1.Player players = 1;
 }
 

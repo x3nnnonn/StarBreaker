@@ -10,8 +10,8 @@ message RollingAverageValue {
 }
 
 message RollingAverage {
-  .sc.external.services.stats.v1.RollingAvergeType type = 1;
-  repeated .sc.external.services.stats.v1.RollingAverageValue values = 2;
+  RollingAvergeType type = 1;
+  repeated RollingAverageValue values = 2;
 }
 
 message Stat {
@@ -25,7 +25,7 @@ message Stat {
   string game_mode = 8;
   string category = 9;
   uint32 best = 10;
-  .sc.external.services.stats.v1.RollingAverage rolling_avg = 11;
+  RollingAverage rolling_avg = 11;
   uint32 version = 12;
   bool rankable = 13;
 }
@@ -43,6 +43,6 @@ message StatTableValues {
 
 message StatTable {
   string subject = 1;
-  repeated .sc.external.services.stats.v1.StatTableValues stats = 2;
+  repeated StatTableValues stats = 2;
 }
 

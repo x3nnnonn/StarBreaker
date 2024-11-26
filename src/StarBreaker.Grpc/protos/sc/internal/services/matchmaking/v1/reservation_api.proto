@@ -7,13 +7,13 @@ import "protoc-gen-openapiv2/options/annotations.proto";
 import "sc/internal/common/shard/v1/types.proto";
 
 service ReservationService {
-  rpc SetReservation ( .sc.internal.services.matchmaking.v1.SetReservationRequest ) returns ( .sc.internal.services.matchmaking.v1.SetReservationResponse );
-  rpc GetReservation ( .sc.internal.services.matchmaking.v1.GetReservationRequest ) returns ( .sc.internal.services.matchmaking.v1.GetReservationResponse );
-  rpc CancelReservation ( .sc.internal.services.matchmaking.v1.CancelReservationRequest ) returns ( .sc.internal.services.matchmaking.v1.CancelReservationResponse );
+  rpc SetReservation ( SetReservationRequest ) returns ( SetReservationResponse );
+  rpc GetReservation ( GetReservationRequest ) returns ( GetReservationResponse );
+  rpc CancelReservation ( CancelReservationRequest ) returns ( CancelReservationResponse );
 }
 
 message SetReservationRequest {
-  .sc.internal.common.shard.v1.Reservation reservation = 1;
+  common.shard.v1.Reservation reservation = 1;
 }
 
 message SetReservationResponse {}
@@ -23,7 +23,7 @@ message GetReservationRequest {
 }
 
 message GetReservationResponse {
-  .sc.internal.common.shard.v1.Reservation reservation = 1;
+  common.shard.v1.Reservation reservation = 1;
 }
 
 message CancelReservationRequest {

@@ -26,17 +26,17 @@ message QueueStatus {
 }
 
 message CharacterStatus {
-  repeated .sc.external.services.identity.v1.Player players = 1;
+  repeated identity.v1.Player players = 1;
 }
 
 message LoginRequestStatus {
   string login_request_id = 1;
-  .sc.external.services.login.v1.LoginRequestState state = 2;
-  .sc.external.services.login.v1.LoginRequestPhase phase = 3;
+  LoginRequestState state = 2;
+  LoginRequestPhase phase = 3;
   oneof status {
     .google.rpc.ErrorInfo error = 4;
-    .sc.external.services.login.v1.QueueStatus queue = 5;
-    .sc.external.services.login.v1.CharacterStatus characters = 6;
+    QueueStatus queue = 5;
+    CharacterStatus characters = 6;
   }
 }
 

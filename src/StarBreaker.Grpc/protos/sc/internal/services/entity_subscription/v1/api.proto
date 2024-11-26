@@ -7,25 +7,25 @@ import "google/api/annotations.proto";
 import "sc/internal/services/entity_subscription/v1/types.proto";
 
 service EntitySubscriptionService {
-  rpc Create ( .sc.internal.services.entity_subscription.v1.CreateRequest ) returns ( .sc.internal.services.entity_subscription.v1.CreateResponse );
-  rpc Delete ( .sc.internal.services.entity_subscription.v1.DeleteRequest ) returns ( .sc.internal.services.entity_subscription.v1.DeleteResponse );
-  rpc QuerySubscriberEntities ( .sc.internal.services.entity_subscription.v1.QuerySubscriberEntitiesRequest ) returns ( .sc.internal.services.entity_subscription.v1.QuerySubscriberEntitiesResponse );
-  rpc Subscribe ( .sc.internal.services.entity_subscription.v1.SubscribeRequest ) returns ( .sc.internal.services.entity_subscription.v1.SubscribeResponse );
-  rpc Unsubscribe ( .sc.internal.services.entity_subscription.v1.UnsubscribeRequest ) returns ( .sc.internal.services.entity_subscription.v1.UnsubscribeResponse );
-  rpc AddEntities ( .sc.internal.services.entity_subscription.v1.AddEntitiesRequest ) returns ( .sc.internal.services.entity_subscription.v1.AddEntitiesResponse );
-  rpc RemoveEntities ( .sc.internal.services.entity_subscription.v1.RemoveEntitiesRequest ) returns ( .sc.internal.services.entity_subscription.v1.RemoveEntitiesResponse );
+  rpc Create ( CreateRequest ) returns ( CreateResponse );
+  rpc Delete ( DeleteRequest ) returns ( DeleteResponse );
+  rpc QuerySubscriberEntities ( QuerySubscriberEntitiesRequest ) returns (stream QuerySubscriberEntitiesResponse );
+  rpc Subscribe ( SubscribeRequest ) returns ( SubscribeResponse );
+  rpc Unsubscribe ( UnsubscribeRequest ) returns ( UnsubscribeResponse );
+  rpc AddEntities ( AddEntitiesRequest ) returns ( AddEntitiesResponse );
+  rpc RemoveEntities ( RemoveEntitiesRequest ) returns ( RemoveEntitiesResponse );
 }
 
 message CreateRequest {
-  repeated .sc.internal.services.entity_subscription.v1.SubscriptionGroup groups = 1;
-  .sc.external.common.command.v1.CommandArguments arguments = 2;
+  repeated SubscriptionGroup groups = 1;
+  external.common.command.v1.CommandArguments arguments = 2;
 }
 
 message CreateResponse {}
 
 message DeleteRequest {
   repeated string group_urns = 1;
-  .sc.external.common.command.v1.CommandArguments arguments = 2;
+  external.common.command.v1.CommandArguments arguments = 2;
 }
 
 message DeleteResponse {}
@@ -36,13 +36,13 @@ message QuerySubscriberEntitiesRequest {
 }
 
 message QuerySubscriberEntitiesResponse {
-  repeated .sc.internal.services.entity_subscription.v1.SubscriberEntities results = 1;
+  repeated SubscriberEntities results = 1;
 }
 
 message SubscribeRequest {
   repeated string group_urns = 1;
   repeated uint64 subscribers = 2;
-  .sc.external.common.command.v1.CommandArguments arguments = 3;
+  external.common.command.v1.CommandArguments arguments = 3;
 }
 
 message SubscribeResponse {}
@@ -50,7 +50,7 @@ message SubscribeResponse {}
 message UnsubscribeRequest {
   repeated string group_urns = 1;
   repeated uint64 subscribers = 2;
-  .sc.external.common.command.v1.CommandArguments arguments = 3;
+  external.common.command.v1.CommandArguments arguments = 3;
 }
 
 message UnsubscribeResponse {}
@@ -58,7 +58,7 @@ message UnsubscribeResponse {}
 message AddEntitiesRequest {
   repeated string group_urns = 1;
   repeated uint64 entities = 2;
-  .sc.external.common.command.v1.CommandArguments arguments = 3;
+  external.common.command.v1.CommandArguments arguments = 3;
 }
 
 message AddEntitiesResponse {}
@@ -66,7 +66,7 @@ message AddEntitiesResponse {}
 message RemoveEntitiesRequest {
   repeated string group_urns = 1;
   repeated uint64 entities = 2;
-  .sc.external.common.command.v1.CommandArguments arguments = 3;
+  external.common.command.v1.CommandArguments arguments = 3;
 }
 
 message RemoveEntitiesResponse {}

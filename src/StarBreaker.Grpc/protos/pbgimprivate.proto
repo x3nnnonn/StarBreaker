@@ -13,18 +13,18 @@ message service_uuid {
 message UpdatePlayerInfo {
   required int32 web_account_id = 1;
   required uint64 character_id = 2;
-  required .cig.Protocols.Common.Uuid player_session_id = 3;
-  required .cig.Protocols.Common.Uuid player_service_id = 4;
+  required Common.Uuid player_session_id = 3;
+  required Common.Uuid player_service_id = 4;
   required string web_login_name = 5;
   required string web_session_token = 6;
   required string nickname = 7;
   required string display_name = 8;
   required string tracking_metrics_id = 9;
-  repeated .cig.Protocols.Common.RSIItemInfo rsi_item_info = 10;
-  repeated .cig.Protocols.Common.RSIItemInfo rsi_rented_item_info = 11;
+  repeated Common.RSIItemInfo rsi_item_info = 10;
+  repeated Common.RSIItemInfo rsi_rented_item_info = 11;
   repeated int32 badges = 12;
   required int32 hub_region_id = 13;
-  repeated .cig.Protocols.Common.RSIPlayerStatsInfo player_game_stats = 14;
+  repeated Common.RSIPlayerStatsInfo player_game_stats = 14;
 }
 
 message AddGameServerRequest {
@@ -38,8 +38,8 @@ message AddGameServerRequest {
   required int32 num_players = 8;
   required int32 process_id = 9;
   required uint64 location_id = 10;
-  required .cig.Protocols.Common.Uuid instance_id = 11;
-  repeated .cig.Protocols.Common.gim.PlayerSessionInfo players = 12;
+  required Common.Uuid instance_id = 11;
+  repeated Common.gim.PlayerSessionInfo players = 12;
   required uint64 previous_gim_id = 13;
   required int32 region_id = 14;
   required float default_match_score_scalar = 15;
@@ -86,7 +86,7 @@ message UpdateGameServerRequest {
   required int32 max_connections = 9;
   required int32 num_current_connections = 10;
   required int32 num_fully_connected_players = 11;
-  repeated .cig.Protocols.Private.gim.PlayerInfoReport player_info_report = 12;
+  repeated PlayerInfoReport player_info_report = 12;
   required string match_id = 13;
   required int32 prematch_state = 14;
   required bool restrict_join_to_prematch = 15;
@@ -97,7 +97,7 @@ message UpdateGameServerRequest {
   optional float frames_per_second = 20;
   optional int32 main_frame_id = 21;
   required int32 region_id = 22;
-  required .cig.Protocols.Private.gim.service_uuid service_id = 23;
+  required service_uuid service_id = 23;
   required string shard_id = 24;
   required string shard_name = 25;
   repeated string mesh_dgs_service_ids = 26;
@@ -111,7 +111,7 @@ message UpdateGameServerRequest {
   optional int32 num_server_crashes = 34;
   optional float server_crash_frequency = 35;
   optional string shard_status_string = 36;
-  repeated .cig.Protocols.Private.gim.ServerPortInfo server_ports = 37;
+  repeated ServerPortInfo server_ports = 37;
 }
 
 message UpdateGameServerResponse {
@@ -150,7 +150,7 @@ message GameServerConstructInstanceRequest {
   optional bool restrict_connections_to_prematch = 13;
   optional int32 instance_type = 14;
   required uint64 location_id = 15;
-  required .cig.Protocols.Common.Uuid instance_uuid = 16;
+  required Common.Uuid instance_uuid = 16;
   required string match_id = 17;
 }
 
@@ -180,7 +180,7 @@ message GameServerServerForceRestart {
 message GameServerAuthorizePlayerRequest {
   required int32 job_id = 1;
   required uint64 instance_id = 2;
-  repeated .cig.Protocols.Common.gim.PlayerSessionInfo player_info = 3;
+  repeated Common.gim.PlayerSessionInfo player_info = 3;
 }
 
 message GameServerAuthorizePlayerResponse {
@@ -195,7 +195,7 @@ message GameServerDeauthorizePlayerRequest {
   required uint64 instance_id = 2;
   required int32 player_account_id = 3;
   required string player_nickname = 4;
-  required .cig.Protocols.Common.Uuid player_session_token = 5;
+  required Common.Uuid player_session_token = 5;
   required int32 dup_login = 6;
   required uint64 player_geid = 7;
 }
@@ -246,8 +246,8 @@ message PlayerDisconnectRecoveryInfo {
 
 message P2PLocationRequest {
   required int32 target_account_id = 1;
-  repeated .cig.Protocols.Common.RSIItemInfo rsi_item_info = 2;
-  repeated .cig.Protocols.Common.RSIItemInfo rsi_rented_item_info = 3;
+  repeated Common.RSIItemInfo rsi_item_info = 2;
+  repeated Common.RSIItemInfo rsi_rented_item_info = 3;
   repeated int32 badges = 4;
 }
 

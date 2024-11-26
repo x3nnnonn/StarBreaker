@@ -7,7 +7,7 @@ message OwnershipRecord {
   uint32 class_guid_crc = 3;
   uint32 stack_size = 4;
   string inventory_id = 5;
-  .sc.external.services.longterm.v1.OwnershipRecordStatus status = 6;
+  OwnershipRecordStatus status = 6;
   uint64 owner_id = 7;
 }
 

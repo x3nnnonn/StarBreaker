@@ -23,7 +23,7 @@ message MatchInfo {
   string location = 8;
   int32 match_state_id = 9;
   string match_state = 10;
-  .sc.internal.services.gim.v1.GameSettings game_settings = 11;
+  GameSettings game_settings = 11;
   uint64 character_geid = 12;
   string shard_id = 13;
 }
@@ -40,7 +40,7 @@ message MapInfo {
 }
 
 message GameModeSetting {
-  repeated .sc.internal.services.gim.v1.MapInfo maps = 1;
+  repeated MapInfo maps = 1;
   int32 team_count = 2;
   int32 min_player_count = 3;
   int32 max_player_count = 4;

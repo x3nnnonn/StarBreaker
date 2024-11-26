@@ -8,7 +8,7 @@ import "sc/internal/services/discipline/v1/types.proto";
 import "sc/external/common/api/v1/query.proto";
 
 message CreateSanctionRequest {
-  repeated .sc.internal.services.discipline.v1.CreateSanctionRequest.Body sanctions = 1;
+  repeated Body sanctions = 1;
 
   message Body {
     string target_urn = 2;
@@ -16,9 +16,9 @@ message CreateSanctionRequest {
       bool permanent = 4;
       uint64 until = 5;
     }
-    repeated .sc.external.services.discipline.v1.Measure measures = 6;
-    .sc.external.services.discipline.v1.InputNotes notes = 7;
-    repeated .sc.external.services.discipline.v1.Action actions = 8;
+    repeated external.services.discipline.v1.Measure measures = 6;
+    external.services.discipline.v1.InputNotes notes = 7;
+    repeated external.services.discipline.v1.Action actions = 8;
   }
 }
 
@@ -27,41 +27,41 @@ message CreateSanctionResponse {
 }
 
 message ChangeSanctionRequest {
-  repeated .sc.internal.services.discipline.v1.ChangeSanctionRequest.Body changes = 1;
+  repeated Body changes = 1;
 
   message Body {
     string sanction_id = 1;
     string target_urn = 2;
-    .sc.external.services.discipline.v1.SanctionStatus status = 3;
+    external.services.discipline.v1.SanctionStatus status = 3;
     oneof lifetime {
       bool permanent = 4;
       uint64 until = 5;
     }
-    repeated .sc.external.services.discipline.v1.Measure measures = 6;
-    .sc.external.services.discipline.v1.InputNotes notes = 7;
-    repeated .sc.external.services.discipline.v1.Action actions = 8;
+    repeated external.services.discipline.v1.Measure measures = 6;
+    external.services.discipline.v1.InputNotes notes = 7;
+    repeated external.services.discipline.v1.Action actions = 8;
   }
 }
 
 message ChangeSanctionResponse {}
 
 message ActivateSanctionRequest {
-  repeated .sc.internal.services.discipline.v1.ActivateSanctionRequest.Body activations = 1;
+  repeated Body activations = 1;
 
   message Body {
     string sanction_id = 1;
-    .sc.external.services.discipline.v1.InputNotes notes = 2;
+    external.services.discipline.v1.InputNotes notes = 2;
   }
 }
 
 message ActivateSanctionResponse {}
 
 message LiftSanctionRequest {
-  repeated .sc.internal.services.discipline.v1.LiftSanctionRequest.Body lifts = 1;
+  repeated Body lifts = 1;
 
   message Body {
     string sanction_id = 1;
-    .sc.external.services.discipline.v1.InputNotes notes = 2;
+    external.services.discipline.v1.InputNotes notes = 2;
   }
 }
 
@@ -72,20 +72,20 @@ message GetSanctionRequest {
 }
 
 message GetSanctionResponse {
-  .sc.external.services.discipline.v1.Sanction sanction = 1;
+  external.services.discipline.v1.Sanction sanction = 1;
 }
 
 message QuerySanctionsRequest {
-  .sc.external.common.api.v1.Query query = 2;
+  external.common.api.v1.Query query = 2;
 }
 
 message QuerySanctionsResponse {
-  .sc.external.common.api.v1.PaginationInfo page_info = 1;
-  repeated .sc.external.services.discipline.v1.Sanction results = 2;
+  external.common.api.v1.PaginationInfo page_info = 1;
+  repeated external.services.discipline.v1.Sanction results = 2;
 }
 
 message CreateWatchListRequest {
-  repeated .sc.internal.services.discipline.v1.CreateWatchListRequest.Body creates = 1;
+  repeated Body creates = 1;
 
   message Body {
     string name = 1;
@@ -96,7 +96,7 @@ message CreateWatchListRequest {
 message CreateWatchListResponse {}
 
 message ChangeWatchListRequest {
-  repeated .sc.internal.services.discipline.v1.ChangeWatchListRequest.Body changes = 1;
+  repeated Body changes = 1;
 
   message Body {
     string watchlist_id = 1;
@@ -108,7 +108,7 @@ message ChangeWatchListRequest {
 message ChangeWatchListResponse {}
 
 message EraseWatchListRequest {
-  repeated .sc.internal.services.discipline.v1.EraseWatchListRequest.Body erasures = 1;
+  repeated Body erasures = 1;
 
   message Body {
     string watchlist_id = 1;
@@ -118,13 +118,13 @@ message EraseWatchListRequest {
 message EraseWatchListResponse {}
 
 message AddToWatchListRequest {
-  repeated .sc.internal.services.discipline.v1.AddToWatchListRequest.Body adds = 1;
+  repeated Body adds = 1;
 
   message Body {
     string watchlist_id = 1;
     repeated string targets = 2;
-    .sc.external.services.discipline.v1.InputNotes notes = 3;
-    .sc.internal.services.discipline.v1.WatchListReasonType reason = 4;
+    external.services.discipline.v1.InputNotes notes = 3;
+    WatchListReasonType reason = 4;
     string details = 5;
   }
 }
@@ -132,19 +132,19 @@ message AddToWatchListRequest {
 message AddToWatchListResponse {}
 
 message RemoveFromWatchListRequest {
-  repeated .sc.internal.services.discipline.v1.RemoveFromWatchListRequest.Body removes = 1;
+  repeated Body removes = 1;
 
   message Body {
     string watchlist_id = 1;
     repeated string targets = 2;
-    .sc.external.services.discipline.v1.InputNotes notes = 3;
+    external.services.discipline.v1.InputNotes notes = 3;
   }
 }
 
 message RemoveFromWatchListResponse {}
 
 message SanctionWatchlistRequest {
-  repeated .sc.internal.services.discipline.v1.SanctionWatchlistRequest.Body sanctions = 1;
+  repeated Body sanctions = 1;
 
   message Body {
     string watchlist_id = 1;
@@ -152,23 +152,23 @@ message SanctionWatchlistRequest {
       bool permanent = 4;
       uint64 until = 5;
     }
-    repeated .sc.external.services.discipline.v1.Measure measures = 6;
-    .sc.external.services.discipline.v1.InputNotes notes = 7;
-    repeated .sc.external.services.discipline.v1.Action actions = 8;
+    repeated external.services.discipline.v1.Measure measures = 6;
+    external.services.discipline.v1.InputNotes notes = 7;
+    repeated external.services.discipline.v1.Action actions = 8;
   }
 }
 
 message SanctionWatchlistResponse {}
 
 message CreateInfractionRequest {
-  repeated .sc.internal.services.discipline.v1.CreateInfractionRequest.Body creates = 1;
+  repeated Body creates = 1;
 
   message Body {
     string target_urn = 1;
-    .sc.internal.services.discipline.v1.InfractionScope scope = 2;
-    .sc.internal.services.discipline.v1.InfractionType type = 3;
-    .sc.internal.services.discipline.v1.InfractionSeverity severity = 4;
-    .sc.external.services.discipline.v1.InputNotes notes = 5;
+    InfractionScope scope = 2;
+    InfractionType type = 3;
+    InfractionSeverity severity = 4;
+    external.services.discipline.v1.InputNotes notes = 5;
   }
 }
 
@@ -177,25 +177,25 @@ message CreateInfractionResponse {
 }
 
 message EraseInfractionRequest {
-  repeated .sc.internal.services.discipline.v1.EraseInfractionRequest.Body erasures = 1;
+  repeated Body erasures = 1;
 
   message Body {
     string infraction_id = 1;
-    .sc.external.services.discipline.v1.InputNotes notes = 2;
+    external.services.discipline.v1.InputNotes notes = 2;
   }
 }
 
 message EraseInfractionResponse {}
 
 message ChangeInfractionRequest {
-  repeated .sc.internal.services.discipline.v1.ChangeInfractionRequest.Body changes = 1;
+  repeated Body changes = 1;
 
   message Body {
     string infraction_id = 1;
-    .sc.internal.services.discipline.v1.InfractionScope scope = 2;
-    .sc.internal.services.discipline.v1.InfractionType type = 3;
-    .sc.internal.services.discipline.v1.InfractionSeverity severity = 4;
-    .sc.external.services.discipline.v1.InputNotes notes = 5;
+    InfractionScope scope = 2;
+    InfractionType type = 3;
+    InfractionSeverity severity = 4;
+    external.services.discipline.v1.InputNotes notes = 5;
     string target_urn = 6;
   }
 }
@@ -203,50 +203,50 @@ message ChangeInfractionRequest {
 message ChangeInfractionResponse {}
 
 message QueryInfractionRequest {
-  .sc.external.common.api.v1.Query query = 2;
+  external.common.api.v1.Query query = 2;
 }
 
 message QueryInfractionResponse {
-  .sc.external.common.api.v1.PaginationInfo page_info = 1;
-  repeated .sc.internal.services.discipline.v1.Infraction results = 2;
+  external.common.api.v1.PaginationInfo page_info = 1;
+  repeated Infraction results = 2;
 }
 
 message CreateNoteRequest {
-  repeated .sc.internal.services.discipline.v1.CreateNoteRequest.Body creates = 1;
+  repeated Body creates = 1;
 
   message Body {
     string target_urn = 1;
     string subject_urn = 2;
-    .sc.external.services.discipline.v1.InputNotes notes = 3;
+    external.services.discipline.v1.InputNotes notes = 3;
   }
 }
 
 message CreateNoteResponse {}
 
 message ReplyNoteRequest {
-  repeated .sc.internal.services.discipline.v1.ReplyNoteRequest.Body replies = 1;
+  repeated Body replies = 1;
 
   message Body {
     string parent_id = 1;
-    .sc.external.services.discipline.v1.InputNotes notes = 2;
+    external.services.discipline.v1.InputNotes notes = 2;
   }
 }
 
 message ReplyNoteResponse {}
 
 message ChangeNoteRequest {
-  repeated .sc.internal.services.discipline.v1.ChangeNoteRequest.Body changes = 1;
+  repeated Body changes = 1;
 
   message Body {
     string note_id = 1;
-    .sc.external.services.discipline.v1.InputNotes notes = 2;
+    external.services.discipline.v1.InputNotes notes = 2;
   }
 }
 
 message ChangeNoteResponse {}
 
 message EraseNoteRequest {
-  repeated .sc.internal.services.discipline.v1.EraseNoteRequest.Body erasures = 1;
+  repeated Body erasures = 1;
 
   message Body {
     string note_id = 1;
@@ -256,25 +256,25 @@ message EraseNoteRequest {
 message EraseNoteResponse {}
 
 message QueryNoteRequest {
-  .sc.external.common.api.v1.Query query = 2;
+  external.common.api.v1.Query query = 2;
 }
 
 message QueryNoteResponse {
-  .sc.external.common.api.v1.PaginationInfo page_info = 1;
-  repeated .sc.internal.services.discipline.v1.Note results = 2;
+  external.common.api.v1.PaginationInfo page_info = 1;
+  repeated Note results = 2;
 }
 
 message VerifyEnforcementRequest {
-  repeated .sc.internal.services.discipline.v1.VerifyEnforcementRequest.Query queries = 1;
+  repeated Query queries = 1;
 
   message Query {
     string target_urn = 1;
-    .sc.external.services.discipline.v1.GameMode game_mode = 2;
+    external.services.discipline.v1.GameMode game_mode = 2;
   }
 }
 
 message VerifyEnforcementResponse {
-  repeated .sc.internal.services.discipline.v1.VerifyEnforcementResponse.Result results = 1;
+  repeated Result results = 1;
 
   message Result {
     string target_urn = 1;

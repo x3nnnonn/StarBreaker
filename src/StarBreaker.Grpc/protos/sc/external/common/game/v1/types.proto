@@ -4,9 +4,9 @@ package sc.external.common.game.v1;
 
 message Mode {
   oneof mode {
-    .sc.external.common.game.v1.ArenaCommanderMode arena_commander_mode = 1;
-    .sc.external.common.game.v1.StarMarineMode star_marine_mode = 2;
-    .sc.external.common.game.v1.PersistentUniverseMode persistent_universe_mode = 3;
+    ArenaCommanderMode arena_commander_mode = 1;
+    StarMarineMode star_marine_mode = 2;
+    PersistentUniverseMode persistent_universe_mode = 3;
   }
 }
 

@@ -13,12 +13,12 @@ import "google/api/annotations.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 
 service FleetService {
-  rpc Report ( .sc.internal.services.fleet.v1.ReportRequest ) returns ( .sc.internal.services.fleet.v1.ReportResponse );
-  rpc MarkUnhealthy ( .sc.internal.services.fleet.v1.MarkUnhealthyRequest ) returns ( .sc.internal.services.fleet.v1.MarkUnhealthyResponse );
-  rpc MetricsTargets ( .sc.internal.services.fleet.v1.MetricsTargetsRequest ) returns ( .sc.internal.services.fleet.v1.MetricsTargetsResponse );
-  rpc GetFleets ( .sc.internal.services.fleet.v1.GetFleetsRequest ) returns ( .sc.internal.services.fleet.v1.GetFleetsResponse );
-  rpc GetUnits ( .sc.internal.services.fleet.v1.GetUnitsRequest ) returns ( .sc.internal.services.fleet.v1.GetUnitsResponse );
-  rpc SendSignal ( .sc.internal.services.fleet.v1.SendSignalRequest ) returns ( .sc.internal.services.fleet.v1.SendSignalResponse );
-  rpc ClaimUnit ( .sc.internal.services.fleet.v1.ClaimUnitRequest ) returns ( .sc.internal.services.fleet.v1.ClaimUnitResponse );
+  rpc Report (stream ReportRequest ) returns ( ReportResponse );
+  rpc MarkUnhealthy ( MarkUnhealthyRequest ) returns ( MarkUnhealthyResponse );
+  rpc MetricsTargets ( MetricsTargetsRequest ) returns ( MetricsTargetsResponse );
+  rpc GetFleets ( GetFleetsRequest ) returns ( GetFleetsResponse );
+  rpc GetUnits ( GetUnitsRequest ) returns ( GetUnitsResponse );
+  rpc SendSignal ( SendSignalRequest ) returns ( SendSignalResponse );
+  rpc ClaimUnit ( ClaimUnitRequest ) returns ( ClaimUnitResponse );
 }
 

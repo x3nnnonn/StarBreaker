@@ -6,7 +6,7 @@ import "google/protobuf/any.proto";
 
 message EnqueuedRequest {
   string name = 1;
-  .sc.internal.services.entitlement.v1.EnqueuedRequestBody body = 2;
+  EnqueuedRequestBody body = 2;
 }
 
 message EnqueuedRequestBody {

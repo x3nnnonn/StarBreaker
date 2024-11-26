@@ -11,7 +11,7 @@ message JobTriggered {
 
 message KafkaJobTriggered {
   string name = 1;
-  .sc.internal.services.chrono.v1.JobTriggered body = 2;
+  JobTriggered body = 2;
 }
 
 message ExampleJobBody {

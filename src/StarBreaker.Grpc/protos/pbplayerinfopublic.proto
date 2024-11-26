@@ -26,7 +26,7 @@ message PlayerInfoNotification {
   optional string display_name = 3;
   optional int32 web_account_id = 4;
   optional int32 player_presence_state = 5;
-  optional .cig.Protocols.Common.Uuid party_id = 6;
+  optional Common.Uuid party_id = 6;
   optional bool party_leader = 7;
 }
 

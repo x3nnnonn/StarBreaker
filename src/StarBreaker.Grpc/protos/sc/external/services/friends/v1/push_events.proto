@@ -5,7 +5,7 @@ package sc.external.services.friends.v1;
 import "sc/external/services/friends/v1/types.proto";
 
 message FriendAdded {
-  .sc.external.services.friends.v1.Friend friend = 1;
+  Friend friend = 1;
 }
 
 message FriendRemoved {

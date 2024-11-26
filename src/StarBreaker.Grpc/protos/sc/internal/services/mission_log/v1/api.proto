@@ -7,9 +7,9 @@ import "google/api/annotations.proto";
 import "sc/internal/services/mission_log/v1/types.proto";
 
 service MissionLogInternalService {
-  rpc GetLogs ( .sc.internal.services.mission_log.v1.GetLogsRequest ) returns ( .sc.internal.services.mission_log.v1.GetLogsResponse );
-  rpc AddLogs ( .sc.internal.services.mission_log.v1.AddLogsRequest ) returns ( .sc.internal.services.mission_log.v1.AddLogsResponse );
-  rpc EraseLogs ( .sc.internal.services.mission_log.v1.EraseLogsRequest ) returns ( .sc.internal.services.mission_log.v1.EraseLogsResponse );
+  rpc GetLogs ( GetLogsRequest ) returns ( GetLogsResponse );
+  rpc AddLogs ( AddLogsRequest ) returns ( AddLogsResponse );
+  rpc EraseLogs ( EraseLogsRequest ) returns ( EraseLogsResponse );
 }
 
 message GetLogsRequest {
@@ -17,19 +17,19 @@ message GetLogsRequest {
 }
 
 message GetLogsResponse {
-  repeated .sc.internal.services.mission_log.v1.MissionLog logs = 2;
+  repeated MissionLog logs = 2;
 }
 
 message AddLogsRequest {
   uint64 player_id = 1;
-  repeated .sc.internal.services.mission_log.v1.MissionLog logs = 2;
+  repeated MissionLog logs = 2;
 }
 
 message AddLogsResponse {}
 
 message EraseLogsRequest {
   uint64 player_id = 1;
-  repeated .sc.internal.services.mission_log.v1.MissionLog logs = 2;
+  repeated MissionLog logs = 2;
 }
 
 message EraseLogsResponse {}

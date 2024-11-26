@@ -8,10 +8,10 @@ import "protoc-gen-openapiv2/options/annotations.proto";
 import "google/api/annotations.proto";
 
 service ChatService {
-  rpc SendMessage ( .sc.external.services.chat.v1.SendMessageRequest ) returns ( .sc.external.services.chat.v1.SendMessageResponse );
-  rpc EraseMessage ( .sc.external.services.chat.v1.EraseMessageRequest ) returns ( .sc.external.services.chat.v1.EraseMessageResponse );
-  rpc EditMessage ( .sc.external.services.chat.v1.EditMessageRequest ) returns ( .sc.external.services.chat.v1.EditMessageResponse );
-  rpc ListMessages ( .sc.external.services.chat.v1.ListMessagesRequest ) returns ( .sc.external.services.chat.v1.ListMessagesResponse );
+  rpc SendMessage ( SendMessageRequest ) returns ( SendMessageResponse );
+  rpc EraseMessage ( EraseMessageRequest ) returns ( EraseMessageResponse );
+  rpc EditMessage ( EditMessageRequest ) returns ( EditMessageResponse );
+  rpc ListMessages ( ListMessagesRequest ) returns ( ListMessagesResponse );
 }
 
 message SendMessageRequest {
@@ -36,11 +36,11 @@ message EditMessageResponse {}
 
 message ListMessagesRequest {
   string group_id = 1;
-  .sc.external.common.api.v1.PaginationArguments pagination = 2;
+  common.api.v1.PaginationArguments pagination = 2;
 }
 
 message ListMessagesResponse {
-  repeated .sc.external.services.chat.v1.Message messages = 1;
-  .sc.external.common.api.v1.PaginationInfo page_info = 2;
+  repeated Message messages = 1;
+  common.api.v1.PaginationInfo page_info = 2;
 }
 

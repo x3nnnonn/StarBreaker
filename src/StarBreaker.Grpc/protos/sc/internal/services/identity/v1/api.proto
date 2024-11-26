@@ -14,52 +14,52 @@ import "sc/external/common/platform/v1/types.proto";
 import "sc/external/common/types/v1/customization.proto";
 
 service IdentityService {
-  rpc QueryAccounts ( .sc.internal.services.identity.v1.QueryAccountsRequest ) returns ( .sc.internal.services.identity.v1.QueryAccountsResponse );
-  rpc QueryAccountsHistory ( .sc.internal.services.identity.v1.QueryAccountsHistoryRequest ) returns ( .sc.internal.services.identity.v1.QueryAccountsHistoryResponse );
-  rpc FulfillPlayers ( .sc.internal.services.identity.v1.FulfillPlayersRequest ) returns ( .sc.internal.services.identity.v1.FulfillPlayersResponse );
-  rpc RenamePlayers ( .sc.internal.services.identity.v1.RenamePlayersRequest ) returns ( .sc.internal.services.identity.v1.RenamePlayersResponse );
-  rpc RepairPlayers ( .sc.internal.services.identity.v1.RepairPlayersRequest ) returns ( .sc.internal.services.identity.v1.RepairPlayersResponse );
-  rpc ResetPlayers ( .sc.internal.services.identity.v1.ResetPlayersRequest ) returns ( .sc.internal.services.identity.v1.ResetPlayersResponse );
-  rpc ArchivePlayers ( .sc.internal.services.identity.v1.ArchivePlayersRequest ) returns ( .sc.internal.services.identity.v1.ArchivePlayersResponse );
-  rpc QueryPlayers ( .sc.internal.services.identity.v1.QueryPlayersRequest ) returns ( .sc.internal.services.identity.v1.QueryPlayersResponse );
-  rpc GetAccountBadges ( .sc.internal.services.identity.v1.GetAccountBadgesRequest ) returns ( .sc.internal.services.identity.v1.GetAccountBadgesResponse );
-  rpc GetGameInventory ( .sc.internal.services.identity.v1.GetGameInventoryRequest ) returns ( .sc.internal.services.identity.v1.GetGameInventoryResponse );
-  rpc GetEntitledKey ( .sc.internal.services.identity.v1.GetEntitledKeyRequest ) returns ( .sc.internal.services.identity.v1.GetEntitledKeyResponse );
-  rpc SetEntitledKey ( .sc.internal.services.identity.v1.SetEntitledKeyRequest ) returns ( .sc.internal.services.identity.v1.SetEntitledKeyResponse );
-  rpc RemoveEntitledKeys ( .sc.internal.services.identity.v1.RemoveEntitledKeysRequest ) returns ( .sc.internal.services.identity.v1.RemoveEntitledKeysResponse );
-  rpc GetRepairLockedKey ( .sc.internal.services.identity.v1.GetRepairLockedKeyRequest ) returns ( .sc.internal.services.identity.v1.GetRepairLockedKeyResponse );
-  rpc SetRepairLockedKey ( .sc.internal.services.identity.v1.SetRepairLockedKeyRequest ) returns ( .sc.internal.services.identity.v1.SetRepairLockedKeyResponse );
-  rpc SaveCharacterCustomizations ( .sc.internal.services.identity.v1.SaveCharacterCustomizationsRequest ) returns ( .sc.internal.services.identity.v1.SaveCharacterCustomizationsResponse );
-  rpc GetCharacterCustomizations ( .sc.internal.services.identity.v1.GetCharacterCustomizationsRequest ) returns ( .sc.internal.services.identity.v1.GetCharacterCustomizationsResponse );
+  rpc QueryAccounts ( QueryAccountsRequest ) returns ( QueryAccountsResponse );
+  rpc QueryAccountsHistory ( QueryAccountsHistoryRequest ) returns ( QueryAccountsHistoryResponse );
+  rpc FulfillPlayers ( FulfillPlayersRequest ) returns ( FulfillPlayersResponse );
+  rpc RenamePlayers ( RenamePlayersRequest ) returns ( RenamePlayersResponse );
+  rpc RepairPlayers ( RepairPlayersRequest ) returns ( RepairPlayersResponse );
+  rpc ResetPlayers ( ResetPlayersRequest ) returns ( ResetPlayersResponse );
+  rpc ArchivePlayers ( ArchivePlayersRequest ) returns ( ArchivePlayersResponse );
+  rpc QueryPlayers ( QueryPlayersRequest ) returns ( QueryPlayersResponse );
+  rpc GetAccountBadges ( GetAccountBadgesRequest ) returns ( GetAccountBadgesResponse );
+  rpc GetGameInventory ( GetGameInventoryRequest ) returns ( GetGameInventoryResponse );
+  rpc GetEntitledKey ( GetEntitledKeyRequest ) returns ( GetEntitledKeyResponse );
+  rpc SetEntitledKey ( SetEntitledKeyRequest ) returns ( SetEntitledKeyResponse );
+  rpc RemoveEntitledKeys ( RemoveEntitledKeysRequest ) returns ( RemoveEntitledKeysResponse );
+  rpc GetRepairLockedKey ( GetRepairLockedKeyRequest ) returns ( GetRepairLockedKeyResponse );
+  rpc SetRepairLockedKey ( SetRepairLockedKeyRequest ) returns ( SetRepairLockedKeyResponse );
+  rpc SaveCharacterCustomizations ( SaveCharacterCustomizationsRequest ) returns ( SaveCharacterCustomizationsResponse );
+  rpc GetCharacterCustomizations ( GetCharacterCustomizationsRequest ) returns ( GetCharacterCustomizationsResponse );
 }
 
 message QueryAccountsRequest {
-  .sc.internal.services.identity.v1.QueryAccountsRequest.Query query = 4;
+  Query query = 4;
 
   message Query {
-    .sc.internal.services.identity.v1.AccountFilter filter = 1;
-    .sc.external.common.api.v1.PaginationArguments pagination = 2;
-    .sc.external.common.api.v1.PaginationSort sort = 3;
+    AccountFilter filter = 1;
+    external.common.api.v1.PaginationArguments pagination = 2;
+    external.common.api.v1.PaginationSort sort = 3;
   }
 }
 
 message QueryAccountsResponse {
-  repeated .sc.internal.services.identity.v1.Account results = 1;
-  .sc.external.common.api.v1.PaginationInfo page_info = 2;
+  repeated Account results = 1;
+  external.common.api.v1.PaginationInfo page_info = 2;
 }
 
 message QueryAccountsHistoryRequest {
-  .sc.external.common.api.v1.Query query = 4;
+  external.common.api.v1.Query query = 4;
 }
 
 message QueryAccountsHistoryResponse {
-  repeated .sc.internal.services.identity.v1.AccountHistory results = 1;
-  .sc.external.common.api.v1.PaginationInfo page_info = 2;
+  repeated AccountHistory results = 1;
+  external.common.api.v1.PaginationInfo page_info = 2;
 }
 
 message FulfillPlayersRequest {
-  .sc.external.common.command.v1.CommandArguments arguments = 2;
-  repeated .sc.internal.services.identity.v1.FulfillPlayersRequest.FulfillPlayerCommand commands = 3;
+  external.common.command.v1.CommandArguments arguments = 2;
+  repeated FulfillPlayerCommand commands = 3;
 
   message FulfillPlayerCommand {
     string name = 1;
@@ -68,11 +68,11 @@ message FulfillPlayersRequest {
 }
 
 message FulfillPlayersResponse {
-  repeated .sc.external.services.identity.v1.Player players = 1;
+  repeated external.services.identity.v1.Player players = 1;
 }
 
 message RenamePlayersRequest {
-  repeated .sc.internal.services.identity.v1.RenamePlayersRequest.RenamePlayerCommand commands = 1;
+  repeated RenamePlayerCommand commands = 1;
 
   message RenamePlayerCommand {
     string urn = 1;
@@ -83,7 +83,7 @@ message RenamePlayersRequest {
 message RenamePlayersResponse {}
 
 message RepairPlayersRequest {
-  repeated .sc.internal.services.identity.v1.RepairPlayersRequest.RepairPlayerCommand commands = 1;
+  repeated RepairPlayerCommand commands = 1;
 
   message RepairPlayerCommand {
     oneof identifier {
@@ -95,7 +95,7 @@ message RepairPlayersRequest {
 message RepairPlayersResponse {}
 
 message ResetPlayersRequest {
-  repeated .sc.internal.services.identity.v1.ResetPlayersRequest.ResetPlayerCommand commands = 1;
+  repeated ResetPlayerCommand commands = 1;
 
   message ResetPlayerCommand {
     oneof identifier {
@@ -107,7 +107,7 @@ message ResetPlayersRequest {
 message ResetPlayersResponse {}
 
 message ArchivePlayersRequest {
-  repeated .sc.internal.services.identity.v1.ArchivePlayersRequest.ArchivePlayerCommand commands = 1;
+  repeated ArchivePlayerCommand commands = 1;
 
   message ArchivePlayerCommand {
     oneof identifier {
@@ -119,18 +119,18 @@ message ArchivePlayersRequest {
 message ArchivePlayersResponse {}
 
 message QueryPlayersRequest {
-  .sc.internal.services.identity.v1.QueryPlayersRequest.Query query = 4;
+  Query query = 4;
 
   message Query {
-    .sc.internal.services.identity.v1.PlayerFilter filter = 1;
-    .sc.external.common.api.v1.PaginationArguments pagination = 2;
-    .sc.external.common.api.v1.PaginationSort sort = 3;
+    PlayerFilter filter = 1;
+    external.common.api.v1.PaginationArguments pagination = 2;
+    external.common.api.v1.PaginationSort sort = 3;
   }
 }
 
 message QueryPlayersResponse {
-  repeated .sc.external.services.identity.v1.Player results = 1;
-  .sc.external.common.api.v1.PaginationInfo page_info = 2;
+  repeated external.services.identity.v1.Player results = 1;
+  external.common.api.v1.PaginationInfo page_info = 2;
 }
 
 message GetGameInventoryRequest {
@@ -138,7 +138,7 @@ message GetGameInventoryRequest {
 }
 
 message GetGameInventoryResponse {
-  .sc.external.common.platform.v1.PlatformGameInventoryData data = 1;
+  external.common.platform.v1.PlatformGameInventoryData data = 1;
 }
 
 message GetAccountBadgesRequest {
@@ -147,7 +147,7 @@ message GetAccountBadgesRequest {
 
 message GetAccountBadgesResponse {
   uint32 account_id = 1;
-  repeated .sc.external.common.platform.v1.PlatformBadge badges = 2;
+  repeated external.common.platform.v1.PlatformBadge badges = 2;
 }
 
 message GetEntitledKeyRequest {
@@ -190,7 +190,7 @@ message SetRepairLockedKeyResponse {}
 
 message SaveCharacterCustomizationsRequest {
   uint64 player_id = 1;
-  .sc.external.common.types.v1.CharacterCustomization character_customizations = 2;
+  external.common.types.v1.CharacterCustomization character_customizations = 2;
 }
 
 message SaveCharacterCustomizationsResponse {}
@@ -200,6 +200,6 @@ message GetCharacterCustomizationsRequest {
 }
 
 message GetCharacterCustomizationsResponse {
-  .sc.external.common.types.v1.CharacterCustomization character_customizations = 1;
+  external.common.types.v1.CharacterCustomization character_customizations = 1;
 }
 

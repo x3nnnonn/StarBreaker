@@ -9,16 +9,16 @@ import "sc/external/common/api/v1/pagination.proto";
 import "sc/external/common/api/v1/query.proto";
 
 service ReputationService {
-  rpc Get ( .sc.external.services.reputation.v1.GetRequest ) returns ( .sc.external.services.reputation.v1.GetResponse );
-  rpc QueryReputations ( .sc.external.services.reputation.v1.QueryReputationsRequest ) returns ( .sc.external.services.reputation.v1.QueryReputationsResponse );
-  rpc QueryFavorites ( .sc.external.services.reputation.v1.QueryFavoritesRequest ) returns ( .sc.external.services.reputation.v1.QueryFavoritesResponse );
-  rpc GetPreferences ( .sc.external.services.reputation.v1.GetPreferencesRequest ) returns ( .sc.external.services.reputation.v1.GetPreferencesResponse );
-  rpc SetPairs ( .sc.external.services.reputation.v1.SetPairsRequest ) returns ( .sc.external.services.reputation.v1.SetPairsResponse );
-  rpc AddFavorites ( .sc.external.services.reputation.v1.AddFavoritesRequest ) returns ( .sc.external.services.reputation.v1.AddFavoritesResponse );
-  rpc RemoveFavorites ( .sc.external.services.reputation.v1.RemoveFavoritesRequest ) returns ( .sc.external.services.reputation.v1.RemoveFavoritesResponse );
-  rpc AddFavoriteEntities ( .sc.external.services.reputation.v1.AddFavoriteEntitiesRequest ) returns ( .sc.external.services.reputation.v1.AddFavoriteEntitiesResponse );
-  rpc RemoveFavoriteEntities ( .sc.external.services.reputation.v1.RemoveFavoriteEntitiesRequest ) returns ( .sc.external.services.reputation.v1.RemoveFavoriteEntitiesResponse );
-  rpc GetScoreHistory ( .sc.external.services.reputation.v1.GetScoreHistoryRequest ) returns ( .sc.external.services.reputation.v1.GetScoreHistoryResponse );
+  rpc Get ( GetRequest ) returns ( GetResponse );
+  rpc QueryReputations ( QueryReputationsRequest ) returns ( QueryReputationsResponse );
+  rpc QueryFavorites ( QueryFavoritesRequest ) returns ( QueryFavoritesResponse );
+  rpc GetPreferences ( GetPreferencesRequest ) returns ( GetPreferencesResponse );
+  rpc SetPairs ( SetPairsRequest ) returns ( SetPairsResponse );
+  rpc AddFavorites ( AddFavoritesRequest ) returns ( AddFavoritesResponse );
+  rpc RemoveFavorites ( RemoveFavoritesRequest ) returns ( RemoveFavoritesResponse );
+  rpc AddFavoriteEntities ( AddFavoriteEntitiesRequest ) returns ( AddFavoriteEntitiesResponse );
+  rpc RemoveFavoriteEntities ( RemoveFavoriteEntitiesRequest ) returns ( RemoveFavoriteEntitiesResponse );
+  rpc GetScoreHistory ( GetScoreHistoryRequest ) returns ( GetScoreHistoryResponse );
 }
 
 message GetRequest {
@@ -27,36 +27,36 @@ message GetRequest {
 }
 
 message GetResponse {
-  .sc.external.services.reputation.v1.VersionedReputation reputation = 1;
+  VersionedReputation reputation = 1;
 }
 
 message QueryReputationsRequest {
-  .sc.external.common.api.v1.Query query = 4;
+  common.api.v1.Query query = 4;
 }
 
 message QueryReputationsResponse {
-  repeated .sc.external.services.reputation.v1.VersionedReputation results = 1;
-  .sc.external.common.api.v1.PaginationInfo page_info = 2;
+  repeated VersionedReputation results = 1;
+  common.api.v1.PaginationInfo page_info = 2;
 }
 
 message QueryFavoritesRequest {
-  .sc.external.common.api.v1.Query query = 4;
+  common.api.v1.Query query = 4;
 }
 
 message QueryFavoritesResponse {
-  repeated .sc.external.services.reputation.v1.VersionedReputation results = 1;
-  .sc.external.common.api.v1.PaginationInfo page_info = 2;
+  repeated VersionedReputation results = 1;
+  common.api.v1.PaginationInfo page_info = 2;
 }
 
 message GetPreferencesRequest {}
 
 message GetPreferencesResponse {
-  .sc.external.services.reputation.v1.GetPreferencesResponse.PlayerPreferences preferences = 1;
+  PlayerPreferences preferences = 1;
 
   message PlayerPreferences {
     string id = 1;
     string player = 2;
-    .sc.external.services.reputation.v1.Favorites favorites = 3;
+    Favorites favorites = 3;
     map<string, string> preference_pairs = 4;
 
   }
@@ -94,7 +94,7 @@ message RemoveFavoriteEntitiesRequest {
 message RemoveFavoriteEntitiesResponse {}
 
 message GetScoreHistoryRequest {
-  repeated .sc.external.services.reputation.v1.GetScoreHistoryRequest.ScoreHistory reputation_scores = 1;
+  repeated ScoreHistory reputation_scores = 1;
 
   message ScoreHistory {
     string reputation_id = 1;
@@ -103,11 +103,11 @@ message GetScoreHistoryRequest {
 }
 
 message GetScoreHistoryResponse {
-  repeated .sc.external.services.reputation.v1.GetScoreHistoryResponse.ScoresHistory reputation_scores = 1;
+  repeated ScoresHistory reputation_scores = 1;
 
   message ScoresHistory {
     string reputation_id = 1;
-    repeated .sc.external.services.reputation.v1.GetScoreHistoryResponse.ScoresHistory.Score scores = 2;
+    repeated Score scores = 2;
 
     message Score {
       uint64 score = 1;

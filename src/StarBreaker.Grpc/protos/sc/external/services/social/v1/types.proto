@@ -9,7 +9,7 @@ message Invitation {
   string from_urn = 2;
   string to_urn = 3;
   string group_id = 4;
-  .sc.external.services.social.v1.GroupType group_type = 5;
+  GroupType group_type = 5;
   map<string, string> metadata = 6;
   int64 created_at = 7;
 
@@ -22,9 +22,9 @@ message GroupSettings {
   bool can_leave = 4;
   bool requires_leader = 5;
   bool unique_for_type = 6;
-  .sc.external.services.social.v1.RTCSettings rtc = 7;
-  .sc.external.services.social.v1.ChatSettings chat = 8;
-  .sc.external.services.social.v1.InviteMode invite_mode = 9;
+  RTCSettings rtc = 7;
+  ChatSettings chat = 8;
+  InviteMode invite_mode = 9;
   bool presence_aware = 10;
   int32 ttl = 11;
 }
@@ -41,16 +41,16 @@ message ChatSettings {
 message GroupMember {
   string urn = 1;
   string display_name = 2;
-  .sc.external.services.presence.v1.Status presence_status = 3;
+  presence.v1.Status presence_status = 3;
 }
 
 message Group {
   string id = 1;
   string name = 2;
-  repeated .sc.external.services.social.v1.GroupMember members = 3;
+  repeated GroupMember members = 3;
   string leader_urn = 4;
-  .sc.external.services.social.v1.GroupType type = 5;
-  .sc.external.services.social.v1.GroupSettings settings = 6;
+  GroupType type = 5;
+  GroupSettings settings = 6;
   int64 created_at = 7;
   string parent_urn = 8;
   repeated string moderators = 10;
@@ -73,7 +73,7 @@ message Mute {
 }
 
 message GroupFilters {
-  repeated .sc.external.services.social.v1.GroupType types = 1;
+  repeated GroupType types = 1;
 }
 
 message GroupExpiredEvent {

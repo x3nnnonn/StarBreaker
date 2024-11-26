@@ -24,13 +24,13 @@ message SMsgRequestNpcRelationshipResponse {
   required uint64 player_id = 2;
   required uint64 npc_geid = 3;
   required uint64 ticket_id = 4;
-  repeated .cig.Protocols.Public.Reputation.MsgNpcRelationshipInfo npc_relationships = 5;
+  repeated MsgNpcRelationshipInfo npc_relationships = 5;
 }
 
 message CMsgUpdateNpcRelationship {
   required uint64 player_id = 1;
   required uint64 npc_geid = 2;
-  required .cig.Protocols.Public.Reputation.MsgNpcRelationshipInfo npc_relationship = 3;
+  required MsgNpcRelationshipInfo npc_relationship = 3;
   required uint64 ticket_id = 4;
 }
 

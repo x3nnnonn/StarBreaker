@@ -6,7 +6,7 @@ import "google/api/annotations.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 
 service MightyBridgeService {
-  rpc MightyStream ( .sc.internal.services.mightybridge.v1.MightyStreamRequest ) returns ( .sc.internal.services.mightybridge.v1.MightyStreamResponse );
+  rpc MightyStream (stream MightyStreamRequest ) returns (stream MightyStreamResponse );
 }
 
 message RemoteCommand {
@@ -22,16 +22,16 @@ message RemoteCommandResponse {
 
 message Packet {
   oneof data {
-    .sc.internal.services.mightybridge.v1.RemoteCommand command = 1;
-    .sc.internal.services.mightybridge.v1.RemoteCommandResponse response = 2;
+    RemoteCommand command = 1;
+    RemoteCommandResponse response = 2;
   }
 }
 
 message MightyStreamRequest {
-  repeated .sc.internal.services.mightybridge.v1.Packet packets = 1;
+  repeated Packet packets = 1;
 }
 
 message MightyStreamResponse {
-  repeated .sc.internal.services.mightybridge.v1.Packet packets = 1;
+  repeated Packet packets = 1;
 }
 

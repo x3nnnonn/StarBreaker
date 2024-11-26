@@ -6,9 +6,9 @@ import "sc/external/common/game/v1/types.proto";
 import "sc/external/common/network/v1/types.proto";
 
 message GameAndModeExtension {
-  .sc.external.common.game.v1.Game game = 1;
-  .sc.external.common.game.v1.Mode mode = 2;
-  .sc.external.common.network.v1.Region region = 3;
+  external.common.game.v1.Game game = 1;
+  external.common.game.v1.Mode mode = 2;
+  external.common.network.v1.Region region = 3;
   repeated string maps = 4;
   string shard_id = 5;
 }

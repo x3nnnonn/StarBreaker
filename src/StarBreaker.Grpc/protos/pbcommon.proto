@@ -22,7 +22,7 @@ message ErrorMessage {
 
 message RSIItemCustomizations {
   required string ref = 1;
-  repeated .cig.Protocols.Common.RSIItemCustomizations ports = 3;
+  repeated RSIItemCustomizations ports = 3;
 }
 
 message RSIItemLoadoutKit {
@@ -31,8 +31,8 @@ message RSIItemLoadoutKit {
 }
 
 message RSIItemInfo {
-  required .cig.Protocols.Common.Uuid uuid = 1;
-  required .cig.Protocols.Common.Uuid config_uuid = 2;
+  required Uuid uuid = 1;
+  required Uuid config_uuid = 2;
   required int32 id = 3;
   required string code = 4;
   required string class_guid = 5;
@@ -47,8 +47,8 @@ message RSIItemInfo {
   optional int32 item_source = 14;
   optional uint32 duration = 15;
   optional int32 rate = 16;
-  optional .cig.Protocols.Common.RSIItemLoadoutKit loadout = 17;
-  repeated .cig.Protocols.Common.RSIItemCustomizations customizations = 18;
+  optional RSIItemLoadoutKit loadout = 17;
+  repeated RSIItemCustomizations customizations = 18;
 }
 
 message RSIBadgeInfo {
@@ -72,12 +72,12 @@ message BayInfo {
   required string rule = 2;
   required string bay = 3;
   required uint32 num_items = 4;
-  repeated .cig.Protocols.Common.ItemInfo item_info = 5;
+  repeated ItemInfo item_info = 5;
 }
 
 message AccountHangarLayout {
   required string hangar = 1;
-  repeated .cig.Protocols.Common.BayInfo bay_info = 2;
+  repeated BayInfo bay_info = 2;
 }
 
 message DatastoreXmlCompressed {
@@ -86,18 +86,18 @@ message DatastoreXmlCompressed {
 }
 
 message PlayerSessionInfo {
-  optional .cig.Protocols.Common.Uuid session_id = 1;
+  optional Uuid session_id = 1;
   optional string web_session_token = 2;
   optional int32 web_account_id = 3;
   optional string web_login_id = 4;
   optional string web_handle = 5;
   optional string web_moniker = 6;
   optional string tracking_metrics_id = 7;
-  repeated .cig.Protocols.Common.RSIItemInfo rsi_item_info = 8;
-  repeated .cig.Protocols.Common.RSIItemInfo rsi_rented_item_info = 9;
-  repeated .cig.Protocols.Common.RSIBadgeInfo badges = 10;
-  optional .cig.Protocols.Common.AccountHangarLayout account_hangar_layout = 11;
-  optional .cig.Protocols.Common.DatastoreXmlCompressed datastore_xml_compressed = 12;
+  repeated RSIItemInfo rsi_item_info = 8;
+  repeated RSIItemInfo rsi_rented_item_info = 9;
+  repeated RSIBadgeInfo badges = 10;
+  optional AccountHangarLayout account_hangar_layout = 11;
+  optional DatastoreXmlCompressed datastore_xml_compressed = 12;
   optional uint64 character_geid = 13;
 }
 
@@ -125,7 +125,7 @@ message EntitlementPackage {
   required int32 web_account_id = 3;
   required uint64 player_geid = 4;
   required uint64 ticket_id = 5;
-  repeated .cig.Protocols.Common.RSIItemInfo rsi_items = 6;
+  repeated RSIItemInfo rsi_items = 6;
 }
 
 message EntitlementsRequest {
@@ -136,7 +136,7 @@ message EntitlementsRequest {
 message LocationServicesDestination {
   required uint64 location_id = 1;
   required string location_name = 2;
-  repeated .cig.Protocols.Common.InstanceEntry instance_list = 3;
+  repeated InstanceEntry instance_list = 3;
   optional int32 instance_owner = 4;
 }
 
@@ -145,19 +145,19 @@ message PlayerShardHistory {
   required string shard_name = 2;
   required uint64 timestamp = 3;
   required bool is_available = 4;
-  repeated .cig.Protocols.Common.InstanceEntry instance_list = 5;
+  repeated InstanceEntry instance_list = 5;
 }
 
 message LocationServicesDestinationList {
-  repeated .cig.Protocols.Common.LocationServicesDestination list = 1;
-  repeated .cig.Protocols.Common.PlayerShardHistory player_shard_history_list = 2;
+  repeated LocationServicesDestination list = 1;
+  repeated PlayerShardHistory player_shard_history_list = 2;
 }
 
 message LocationServiceRequest {
   optional uint64 location_id = 1;
   optional string instance_id = 2;
-  repeated .cig.Protocols.Common.RSIItemInfo rsi_item_info = 3;
-  repeated .cig.Protocols.Common.RSIItemInfo rsi_rented_item_info = 4;
+  repeated RSIItemInfo rsi_item_info = 3;
+  repeated RSIItemInfo rsi_rented_item_info = 4;
   repeated int32 badges = 5;
   repeated uint64 friend_geids = 6;
 }

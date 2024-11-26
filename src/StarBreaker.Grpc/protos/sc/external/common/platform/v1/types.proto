@@ -18,7 +18,7 @@ message LoadoutKitConfiguration {
 
 message PortConfig {
   string ref = 1;
-  repeated .sc.external.common.platform.v1.PortConfig ports = 2;
+  repeated PortConfig ports = 2;
 }
 
 message ShipSerial {
@@ -31,11 +31,11 @@ message PlatformShip {
   string ship_entity_class_guid = 2;
   string insurance_code = 3;
   string insurance_entity_class_guid = 4;
-  .sc.external.common.platform.v1.ShipSerial serial = 5;
+  ShipSerial serial = 5;
   string ship_custom_name = 6;
   string uuid = 7;
-  repeated .sc.external.common.platform.v1.PortConfig customizations = 8;
-  .sc.external.common.platform.v1.LoadoutKitConfiguration loadout_kit = 9;
+  repeated PortConfig customizations = 8;
+  LoadoutKitConfiguration loadout_kit = 9;
 }
 
 message PlatformHangarLevel {
@@ -57,14 +57,14 @@ message PlatformOtherItem {
 }
 
 message PlatformHangars {
-  repeated .sc.external.common.platform.v1.PlatformHangarLevel levels = 1;
-  repeated .sc.external.common.platform.v1.PlatformHangarDecoration decorations = 2;
+  repeated PlatformHangarLevel levels = 1;
+  repeated PlatformHangarDecoration decorations = 2;
 }
 
 message PlatformGameInventoryData {
   int32 account_id = 1;
-  repeated .sc.external.common.platform.v1.PlatformShip ships = 2;
-  .sc.external.common.platform.v1.PlatformHangars hangars = 3;
-  repeated .sc.external.common.platform.v1.PlatformOtherItem other_items = 4;
+  repeated PlatformShip ships = 2;
+  PlatformHangars hangars = 3;
+  repeated PlatformOtherItem other_items = 4;
 }
 

@@ -90,8 +90,8 @@ message StarMarineControlIndividualStats {
   required int32 rounds_draw = 13;
   required int32 earned_rec = 14;
   required bool left_early = 15;
-  repeated .service_statistics.WeaponStats weapons_used = 16;
-  repeated .service_statistics.ArmorStats armor_used = 17;
+  repeated WeaponStats weapons_used = 16;
+  repeated ArmorStats armor_used = 17;
   required int32 score = 18;
   required int32 play_time = 19;
   required int32 kill_streaks_achieved = 20;
@@ -126,8 +126,8 @@ message StarMarineEliminationIndividualStats {
   required bool won = 9;
   required int32 earned_rec = 10;
   required bool left_early = 11;
-  repeated .service_statistics.WeaponStats weapons_used = 12;
-  repeated .service_statistics.ArmorStats armor_used = 13;
+  repeated WeaponStats weapons_used = 12;
+  repeated ArmorStats armor_used = 13;
   required int32 score = 14;
   required int32 play_time = 15;
   required bool draw = 16;
@@ -158,8 +158,8 @@ message FPSGunGameIndividualStats {
   required bool won = 9;
   required int32 earned_rec = 10;
   required bool left_early = 11;
-  repeated .service_statistics.WeaponStats weapons_used = 12;
-  repeated .service_statistics.ArmorStats armor_used = 13;
+  repeated WeaponStats weapons_used = 12;
+  repeated ArmorStats armor_used = 13;
   required int32 score = 14;
   required int32 play_time = 15;
   required bool draw = 16;
@@ -513,46 +513,46 @@ message PirateSwarmPlayerStats {
 }
 
 message RPCStatisticsReport {
-  required .service_statistics.RPCStatisticsReport.GameType game_type = 1;
+  required GameType game_type = 1;
   required string server_version = 2;
-  repeated .service_statistics.VanduulSwarmIndividualStats vanduul_swarm_individual_stats = 3;
-  optional .service_statistics.VanduulSwarmMatchStats vanduul_swarm_match_stats = 4;
-  repeated .service_statistics.BattleRoyaleIndividualStats battle_royale_individual_stats = 5;
-  optional .service_statistics.BattleRoyaleMatchStats battle_royale_match_stats = 6;
-  repeated .service_statistics.SquadronBattleIndividualStats squadron_battle_individual_stats = 7;
-  optional .service_statistics.SquadronBattleMatchStats squadron_battle_match_stats = 8;
-  repeated .service_statistics.CaptureTheCoreIndividualStats capture_the_core_individual_stats = 9;
-  optional .service_statistics.CaptureTheCoreMatchStats capture_the_core_match_stats = 10;
-  repeated .service_statistics.ConquestIndividualStats conquest_individual_stats = 11;
-  optional .service_statistics.ConquestMatchStats conquest_match_stats = 12;
-  repeated .service_statistics.RaceIndividualStats race_individual_stats = 13;
-  optional .service_statistics.RaceMatchStats race_match_stats = 14;
-  repeated .service_statistics.DeathRaceIndividualStats death_race_individual_stats = 15;
-  optional .service_statistics.DeathRaceMatchStats death_race_match_stats = 16;
-  repeated .service_statistics.VanduulSwarmCoopIndividualStats vanduul_swarm_coop_individual_stats = 17;
-  optional .service_statistics.VanduulSwarmCoopMatchStats vanduul_swarm_coop_match_stats = 18;
-  optional .service_statistics.BattleRoyalePlayerStats battle_royale_player_stats = 19;
-  optional .service_statistics.SquadronBattlePlayerStats squadron_battle_player_stats = 20;
-  optional .service_statistics.CaptureTheCorePlayerStats capture_the_core_player_stats = 21;
-  optional .service_statistics.VanduulSwarmPlayerStats vanduul_swarm_player_stats = 22;
-  optional .service_statistics.DeathRacePlayerStats death_race_player_stats = 23;
-  optional .service_statistics.RacePlayerStats race_player_stats = 24;
-  optional .service_statistics.VanduulSwarmCoopPlayerStats vanduul_swarm_coop_player_stats = 25;
-  repeated .service_statistics.StarMarineControlIndividualStats star_marine_control_individual_stats = 26;
-  optional .service_statistics.StarMarineControlMatchStats star_marine_control_match_stats = 27;
-  optional .service_statistics.StarMarinePlayerStats star_marine_control_player_stats = 28;
-  repeated .service_statistics.PirateSwarmIndividualStats pirate_swarm_individual_stats = 29;
-  optional .service_statistics.PirateSwarmMatchStats pirate_swarm_match_stats = 30;
-  optional .service_statistics.PirateSwarmPlayerStats pirate_swarm_player_stats = 31;
-  repeated .service_statistics.StarMarineEliminationIndividualStats star_marine_elimination_individual_stats = 32;
-  optional .service_statistics.StarMarineEliminationMatchStats star_marine_elimination_match_stats = 33;
-  optional .service_statistics.StarMarinePlayerStats star_marine_elimination_player_stats = 34;
-  repeated .service_statistics.DuelIndividualStats duel_individual_stats = 35;
-  optional .service_statistics.DuelMatchStats duel_match_stats = 36;
-  optional .service_statistics.DuelPlayerStats duel_player_stats = 37;
-  repeated .service_statistics.FPSGunGameIndividualStats fpsgungame_individual_stats = 38;
-  optional .service_statistics.FPSGunGameMatchStats fpsgungame_match_stats = 39;
-  optional .service_statistics.FPSGunGamePlayerStats fpsgungame_player_stats = 40;
+  repeated VanduulSwarmIndividualStats vanduul_swarm_individual_stats = 3;
+  optional VanduulSwarmMatchStats vanduul_swarm_match_stats = 4;
+  repeated BattleRoyaleIndividualStats battle_royale_individual_stats = 5;
+  optional BattleRoyaleMatchStats battle_royale_match_stats = 6;
+  repeated SquadronBattleIndividualStats squadron_battle_individual_stats = 7;
+  optional SquadronBattleMatchStats squadron_battle_match_stats = 8;
+  repeated CaptureTheCoreIndividualStats capture_the_core_individual_stats = 9;
+  optional CaptureTheCoreMatchStats capture_the_core_match_stats = 10;
+  repeated ConquestIndividualStats conquest_individual_stats = 11;
+  optional ConquestMatchStats conquest_match_stats = 12;
+  repeated RaceIndividualStats race_individual_stats = 13;
+  optional RaceMatchStats race_match_stats = 14;
+  repeated DeathRaceIndividualStats death_race_individual_stats = 15;
+  optional DeathRaceMatchStats death_race_match_stats = 16;
+  repeated VanduulSwarmCoopIndividualStats vanduul_swarm_coop_individual_stats = 17;
+  optional VanduulSwarmCoopMatchStats vanduul_swarm_coop_match_stats = 18;
+  optional BattleRoyalePlayerStats battle_royale_player_stats = 19;
+  optional SquadronBattlePlayerStats squadron_battle_player_stats = 20;
+  optional CaptureTheCorePlayerStats capture_the_core_player_stats = 21;
+  optional VanduulSwarmPlayerStats vanduul_swarm_player_stats = 22;
+  optional DeathRacePlayerStats death_race_player_stats = 23;
+  optional RacePlayerStats race_player_stats = 24;
+  optional VanduulSwarmCoopPlayerStats vanduul_swarm_coop_player_stats = 25;
+  repeated StarMarineControlIndividualStats star_marine_control_individual_stats = 26;
+  optional StarMarineControlMatchStats star_marine_control_match_stats = 27;
+  optional StarMarinePlayerStats star_marine_control_player_stats = 28;
+  repeated PirateSwarmIndividualStats pirate_swarm_individual_stats = 29;
+  optional PirateSwarmMatchStats pirate_swarm_match_stats = 30;
+  optional PirateSwarmPlayerStats pirate_swarm_player_stats = 31;
+  repeated StarMarineEliminationIndividualStats star_marine_elimination_individual_stats = 32;
+  optional StarMarineEliminationMatchStats star_marine_elimination_match_stats = 33;
+  optional StarMarinePlayerStats star_marine_elimination_player_stats = 34;
+  repeated DuelIndividualStats duel_individual_stats = 35;
+  optional DuelMatchStats duel_match_stats = 36;
+  optional DuelPlayerStats duel_player_stats = 37;
+  repeated FPSGunGameIndividualStats fpsgungame_individual_stats = 38;
+  optional FPSGunGameMatchStats fpsgungame_match_stats = 39;
+  optional FPSGunGamePlayerStats fpsgungame_player_stats = 40;
 
   enum GameType {
     EA_BattleRoyale = 0;
@@ -588,7 +588,7 @@ message RPCStatisticsReport {
 }
 
 message RPCRecStatisticsRequest {
-  required .service_statistics.RPCRecStatisticsRequest.RequestType request_type = 1;
+  required RequestType request_type = 1;
   repeated string rented_item_id = 2;
   optional .cig.matchmaking.common.PlayerSessionInfo player_session_info = 3;
 

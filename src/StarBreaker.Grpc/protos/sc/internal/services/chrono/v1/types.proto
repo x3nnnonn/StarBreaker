@@ -15,8 +15,8 @@ message JobSchedule {
 message Job {
   string id = 1;
   string name = 2;
-  .sc.internal.services.chrono.v1.JobSchedule schedule = 3;
-  repeated .sc.external.common.command.v1.NotifyDestination destinations = 4;
+  JobSchedule schedule = 3;
+  repeated external.common.command.v1.NotifyDestination destinations = 4;
   repeated string tags = 5;
   .google.protobuf.Any body = 6;
 }
@@ -24,19 +24,19 @@ message Job {
 message ScheduledJob {
   string id = 1;
   string name = 2;
-  .sc.internal.services.chrono.v1.JobSchedule schedule = 3;
-  repeated .sc.external.common.command.v1.NotifyDestination destinations = 4;
+  JobSchedule schedule = 3;
+  repeated external.common.command.v1.NotifyDestination destinations = 4;
   repeated string tags = 5;
   .google.protobuf.Any body = 6;
   .google.protobuf.Timestamp created_time = 7;
   .google.protobuf.Timestamp last_modified_time = 8;
   .google.protobuf.Timestamp last_ran_time = 9;
-  .sc.internal.services.chrono.v1.JobStatus status = 10;
+  JobStatus status = 10;
 }
 
 message JobLogs {
   string id = 1;
-  .sc.internal.services.chrono.v1.JobLogAction job_action = 2;
+  JobLogAction job_action = 2;
   uint64 created_at = 3;
 }
 

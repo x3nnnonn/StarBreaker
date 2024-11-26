@@ -9,15 +9,15 @@ import "sc/external/common/api/v1/pagination.proto";
 import "sc/external/common/api/v1/query.proto";
 
 service StatsService {
-  rpc FindStats ( .sc.external.services.stats.v1.FindStatsRequest ) returns ( .sc.external.services.stats.v1.FindStatsResponse );
+  rpc FindStats ( FindStatsRequest ) returns ( FindStatsResponse );
 }
 
 message FindStatsRequest {
-  .sc.external.common.api.v1.Query query = 4;
+  common.api.v1.Query query = 4;
 }
 
 message FindStatsResponse {
-  repeated .sc.external.services.stats.v1.Stat results = 1;
-  .sc.external.common.api.v1.PaginationInfo page_info = 2;
+  repeated Stat results = 1;
+  common.api.v1.PaginationInfo page_info = 2;
 }
 

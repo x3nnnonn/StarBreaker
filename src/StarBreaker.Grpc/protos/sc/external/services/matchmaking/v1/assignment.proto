@@ -13,8 +13,8 @@ message MatchmakingInProgress {
   }
   string ticket_id = 3;
   string creator_name = 4;
-  .sc.external.common.game.v1.Game game = 5;
-  .sc.external.common.game.v1.Mode mode = 6;
+  common.game.v1.Game game = 5;
+  common.game.v1.Mode mode = 6;
 }
 
 message MatchmakingCancelled {
@@ -22,7 +22,7 @@ message MatchmakingCancelled {
 }
 
 message Assignment {
-  .sc.external.common.network.v1.Endpoint endpoint = 1;
+  common.network.v1.Endpoint endpoint = 1;
   .google.protobuf.Any credentials = 2;
   string ticket_id = 3;
   string instance_id = 4;
@@ -30,9 +30,9 @@ message Assignment {
 
 message Proposal {
   string id = 1;
-  .sc.external.common.network.v1.Region region = 2;
-  .sc.external.common.game.v1.Game game = 3;
-  .sc.external.common.game.v1.Mode mode = 4;
+  common.network.v1.Region region = 2;
+  common.game.v1.Game game = 3;
+  common.game.v1.Mode mode = 4;
   string match_description = 5;
   uint32 current_players = 6;
   uint32 max_players = 7;

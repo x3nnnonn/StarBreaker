@@ -10,6 +10,6 @@ message Target {
 message MetricsTargetsRequest {}
 
 message MetricsTargetsResponse {
-  repeated .sc.internal.services.fleet.v1.Target targets = 1;
+  repeated Target targets = 1;
 }
 

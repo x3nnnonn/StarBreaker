@@ -7,12 +7,12 @@ import "protoc-gen-openapiv2/options/annotations.proto";
 import "sc/external/services/configuration/v1/matchers.proto";
 
 service ConfigAdminService {
-  rpc WriteConfig ( .sc.internal.services.configuration.v1.WriteConfigRequest ) returns ( .sc.internal.services.configuration.v1.WriteConfigResponse );
-  rpc UpdateConfig ( .sc.internal.services.configuration.v1.UpdateConfigRequest ) returns ( .sc.internal.services.configuration.v1.UpdateConfigResponse );
-  rpc DeleteConfig ( .sc.internal.services.configuration.v1.DeleteConfigRequest ) returns ( .sc.internal.services.configuration.v1.DeleteConfigResponse );
-  rpc QueryAllConfigurations ( .sc.internal.services.configuration.v1.QueryAllConfigurationsRequest ) returns ( .sc.internal.services.configuration.v1.QueryAllConfigurationsResponse );
-  rpc QueryConfigurationNodeHistory ( .sc.internal.services.configuration.v1.QueryConfigurationNodeHistoryRequest ) returns ( .sc.internal.services.configuration.v1.QueryConfigurationNodeHistoryResponse );
-  rpc QueryAllConfigurationsByGroup ( .sc.internal.services.configuration.v1.QueryAllConfigurationsByGroupRequest ) returns ( .sc.internal.services.configuration.v1.QueryAllConfigurationsByGroupResponse );
+  rpc WriteConfig ( WriteConfigRequest ) returns ( WriteConfigResponse );
+  rpc UpdateConfig ( UpdateConfigRequest ) returns ( UpdateConfigResponse );
+  rpc DeleteConfig ( DeleteConfigRequest ) returns ( DeleteConfigResponse );
+  rpc QueryAllConfigurations ( QueryAllConfigurationsRequest ) returns ( QueryAllConfigurationsResponse );
+  rpc QueryConfigurationNodeHistory ( QueryConfigurationNodeHistoryRequest ) returns ( QueryConfigurationNodeHistoryResponse );
+  rpc QueryAllConfigurationsByGroup ( QueryAllConfigurationsByGroupRequest ) returns ( QueryAllConfigurationsByGroupResponse );
 }
 
 message WriteConfigMatchers {
@@ -29,7 +29,7 @@ message WriteRequest {
   string config_group = 1;
   string config_key = 2;
   string value = 3;
-  .sc.internal.services.configuration.v1.WriteConfigMatchers matchers = 4;
+  WriteConfigMatchers matchers = 4;
 }
 
 message WriteResponse {
@@ -38,11 +38,11 @@ message WriteResponse {
 }
 
 message WriteConfigRequest {
-  .sc.internal.services.configuration.v1.WriteRequest request = 1;
+  WriteRequest request = 1;
 }
 
 message WriteConfigResponse {
-  .sc.internal.services.configuration.v1.WriteResponse response = 1;
+  WriteResponse response = 1;
 }
 
 message UpdateRequest {
@@ -57,11 +57,11 @@ message UpdateResponse {
 }
 
 message UpdateConfigRequest {
-  .sc.internal.services.configuration.v1.UpdateRequest request = 1;
+  UpdateRequest request = 1;
 }
 
 message UpdateConfigResponse {
-  .sc.internal.services.configuration.v1.UpdateResponse response = 1;
+  UpdateResponse response = 1;
 }
 
 message DeleteRequest {
@@ -72,17 +72,17 @@ message DeleteRequest {
 message DeleteResponse {}
 
 message DeleteConfigRequest {
-  .sc.internal.services.configuration.v1.DeleteRequest request = 1;
+  DeleteRequest request = 1;
 }
 
 message DeleteConfigResponse {
-  .sc.internal.services.configuration.v1.DeleteResponse response = 1;
+  DeleteResponse response = 1;
 }
 
 message QueryAllConfigurationsRequestBody {
   string config_group = 1;
   string config_key = 2;
-  .sc.external.services.configuration.v1.ConfigMatchers matchers = 5;
+  external.services.configuration.v1.ConfigMatchers matchers = 5;
 }
 
 message QueryAllConfigurationMatch {
@@ -92,15 +92,15 @@ message QueryAllConfigurationMatch {
 }
 
 message QueryAllConfigurationsResponseBody {
-  repeated .sc.internal.services.configuration.v1.QueryAllConfigurationMatch matches = 1;
+  repeated QueryAllConfigurationMatch matches = 1;
 }
 
 message QueryAllConfigurationsRequest {
-  .sc.internal.services.configuration.v1.QueryAllConfigurationsRequestBody query = 1;
+  QueryAllConfigurationsRequestBody query = 1;
 }
 
 message QueryAllConfigurationsResponse {
-  .sc.internal.services.configuration.v1.QueryAllConfigurationsResponseBody response = 1;
+  QueryAllConfigurationsResponseBody response = 1;
 }
 
 message QueryConfigurationNodeHistoryRequestBody {
@@ -113,15 +113,15 @@ message QueryConfigurationNodeHistoryVersion {
 }
 
 message QueryConfigurationNodeHistoryResponseBody {
-  repeated .sc.internal.services.configuration.v1.QueryConfigurationNodeHistoryVersion versions = 1;
+  repeated QueryConfigurationNodeHistoryVersion versions = 1;
 }
 
 message QueryConfigurationNodeHistoryRequest {
-  .sc.internal.services.configuration.v1.QueryConfigurationNodeHistoryRequestBody query = 1;
+  QueryConfigurationNodeHistoryRequestBody query = 1;
 }
 
 message QueryConfigurationNodeHistoryResponse {
-  .sc.internal.services.configuration.v1.QueryConfigurationNodeHistoryResponseBody response = 1;
+  QueryConfigurationNodeHistoryResponseBody response = 1;
 }
 
 message QueryAllConfigurationsByGroupRequestBody {
@@ -132,21 +132,21 @@ message QueryAllConfigurationsByGroupMatch {
   string curr_node = 1;
   uint64 curr_version = 2;
   string value = 3;
-  .sc.external.services.configuration.v1.ConfigMatchers matchers = 4;
+  external.services.configuration.v1.ConfigMatchers matchers = 4;
 }
 
 message QueryAllConfigurationsByGroupRequest {
-  .sc.internal.services.configuration.v1.QueryAllConfigurationsByGroupRequestBody query = 1;
+  QueryAllConfigurationsByGroupRequestBody query = 1;
 }
 
 message QueryAllConfigurationsByGroupResponse {
-  map<string, .sc.internal.services.configuration.v1.QueryAllConfigurationsByGroupResponse.QueryAllConfigurationsByGroupResponseBody> response = 1;
+  map<string, QueryAllConfigurationsByGroupResponseBody> response = 1;
 
   message QueryAllConfigurationsByGroupResponseBody {
-    map<string, .sc.internal.services.configuration.v1.QueryAllConfigurationsByGroupResponse.QueryAllConfigurationsByGroupResponseBody.QueryAllConfigurationsByGroupResponseBodyGroup> variables = 1;
+    map<string, QueryAllConfigurationsByGroupResponseBodyGroup> variables = 1;
 
     message QueryAllConfigurationsByGroupResponseBodyGroup {
-      repeated .sc.internal.services.configuration.v1.QueryAllConfigurationsByGroupMatch matches = 1;
+      repeated QueryAllConfigurationsByGroupMatch matches = 1;
     }
   }
 }

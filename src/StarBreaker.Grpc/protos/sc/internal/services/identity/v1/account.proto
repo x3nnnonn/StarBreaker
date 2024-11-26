@@ -11,8 +11,8 @@ message Account {
   string nickname = 4;
   string display_name = 5;
   string avatar_url = 6;
-  repeated .sc.external.common.platform.v1.PlatformBadge badges = 7;
-  repeated .sc.external.common.platform.v1.PlatformRole roles = 8;
+  repeated external.common.platform.v1.PlatformBadge badges = 7;
+  repeated external.common.platform.v1.PlatformRole roles = 8;
   string tracking_metrics_id = 9;
 }
 

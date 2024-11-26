@@ -3,11 +3,11 @@ syntax = "proto3";
 package sc.external.services.entitlement.v1;
 
 message NewEntityPortConfiguration {
-  repeated .sc.external.services.entitlement.v1.NewEntityPortConfiguration.PortConfig ports = 1;
+  repeated PortConfig ports = 1;
 
   message PortConfig {
     string ref = 1;
-    repeated .sc.external.services.entitlement.v1.NewEntityPortConfiguration.PortConfig ports = 2;
+    repeated PortConfig ports = 2;
   }
 }
 
@@ -26,45 +26,45 @@ message NewEntitySerialConfiguration {
 
 message NewEntityConfigurationParameters {
   oneof param {
-    .sc.external.services.entitlement.v1.NewEntityPortConfiguration entity_port = 1;
-    .sc.external.services.entitlement.v1.NewEntityLoadoutKitConfiguration entity_loadout_kit = 2;
-    .sc.external.services.entitlement.v1.NewEntityNameConfiguration entity_name = 3;
-    .sc.external.services.entitlement.v1.NewEntitySerialConfiguration entity_serial = 4;
+    NewEntityPortConfiguration entity_port = 1;
+    NewEntityLoadoutKitConfiguration entity_loadout_kit = 2;
+    NewEntityNameConfiguration entity_name = 3;
+    NewEntitySerialConfiguration entity_serial = 4;
   }
 }
 
 message NewEntityConfiguration {
   string id = 1;
-  repeated .sc.external.services.entitlement.v1.NewEntityConfigurationParameters params = 2;
+  repeated NewEntityConfigurationParameters params = 2;
 }
 
 message Entitlement {
   string urn = 1;
   uint64 created_at = 2;
   uint64 modified_at = 3;
-  .sc.external.services.entitlement.v1.EntitlementStatus status = 4;
+  EntitlementStatus status = 4;
   string account_urn = 5;
   string player_urn = 6;
-  .sc.external.services.entitlement.v1.EntitlementType type = 7;
-  .sc.external.services.entitlement.v1.EntitlementSource source = 8;
+  EntitlementType type = 7;
+  EntitlementSource source = 8;
   bool real_money = 9;
   string source_sku = 10;
   string name = 11;
   string entity_class_guid = 12;
   uint32 stack_size = 13;
-  .sc.external.services.entitlement.v1.Insurance insurance = 15;
-  .sc.external.services.entitlement.v1.InsuranceItemPortLoadout arena_commander_loadout = 16;
-  .sc.external.services.entitlement.v1.NewEntityConfiguration entity_config = 17;
-  .sc.external.services.entitlement.v1.EntitlementItemType item_type = 18;
+  Insurance insurance = 15;
+  InsuranceItemPortLoadout arena_commander_loadout = 16;
+  NewEntityConfiguration entity_config = 17;
+  EntitlementItemType item_type = 18;
 }
 
 message EntitlementHistory {
   string urn = 1;
   string account_urn = 2;
   string player_urn = 3;
-  .sc.external.services.entitlement.v1.EntitlementType type = 4;
-  .sc.external.services.entitlement.v1.EntitlementSource source = 5;
-  .sc.external.services.entitlement.v1.EntitlementStatus status = 6;
+  EntitlementType type = 4;
+  EntitlementSource source = 5;
+  EntitlementStatus status = 6;
   string name = 7;
   string entity_class_guid = 8;
   uint64 log_at = 9;
@@ -75,8 +75,8 @@ message EntitlementHistory {
 
 message InsurancePolicy {
   oneof coverage {
-    .sc.external.services.entitlement.v1.InsurancePolicy.Lifetime lifetime = 1;
-    .sc.external.services.entitlement.v1.InsurancePolicy.Duration duration = 2;
+    Lifetime lifetime = 1;
+    Duration duration = 2;
   }
 
   message Lifetime {}
@@ -86,16 +86,16 @@ message InsurancePolicy {
 }
 
 message Insurance {
-  .sc.external.services.entitlement.v1.InsurancePolicy policy = 1;
-  .sc.external.services.entitlement.v1.InsuranceItemPortLoadout custom_loadout = 2;
+  InsurancePolicy policy = 1;
+  InsuranceItemPortLoadout custom_loadout = 2;
 }
 
 message InsuranceItemPortLoadout {
-  repeated .sc.external.services.entitlement.v1.InsuranceItemPortParams items = 1;
+  repeated InsuranceItemPortParams items = 1;
 }
 
 message InsuranceItemPortParams {
-  repeated .sc.external.services.entitlement.v1.InsuranceItemPortParams items = 1;
+  repeated InsuranceItemPortParams items = 1;
   string port_name = 2;
   string item_class = 3;
   uint64 game_flags = 4;
