@@ -36,7 +36,7 @@ public class ReadFromBinary
             if (!string.IsNullOrWhiteSpace(dir)) Directory.CreateDirectory(dir);
             var protoText = fileDescriptor.ToProtoString(new DynamicGrpcPrinterOptions()
             {
-                FullyQualified = true
+                FullyQualified = false
             });
             File.WriteAllText(path, protoText);
         }

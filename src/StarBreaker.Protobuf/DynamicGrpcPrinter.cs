@@ -231,7 +231,7 @@ public static class DynamicGrpcPrinter
         context.Indent();
         foreach (var method in service.Methods)
         {
-            context.WriteLine($"rpc {method.Name} ( {context.GetTypeName(method.InputType)} ) returns ( {context.GetTypeName(method.OutputType)} );");
+            context.WriteLine($"rpc {method.Name} ({(method.IsClientStreaming ? "stream" : "")} {context.GetTypeName(method.InputType)} ) returns ({(method.IsServerStreaming ? "stream" : "")} {context.GetTypeName(method.OutputType)} );");
         }
         context.UnIndent();
         context.PopContextName(service.Name);
