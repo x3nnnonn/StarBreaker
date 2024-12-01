@@ -15,10 +15,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Content Include="strings.txt" CopyToOutputDirectory="PreserveNewest"/>
-        <Content Include="keys.txt" CopyToOutputDirectory="PreserveNewest"/>
-        <Content Include="mats.txt" CopyToOutputDirectory="PreserveNewest"/>
-        <Content Include="working.txt" CopyToOutputDirectory="PreserveNewest"/>
+        <Content Include="*.txt" CopyToOutputDirectory="PreserveNewest"/>
     </ItemGroup>
-
 </Project>
