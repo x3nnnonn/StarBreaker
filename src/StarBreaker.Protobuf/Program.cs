@@ -1,7 +1,7 @@
 ﻿using StarBreaker.Protobuf;
 using StarBreaker.Sandbox;
-
-ExtractProtos.Run();
+ReadAllBuffers.Run();
+//ExtractProtos.Run();
 
 //await GrpcClient.RunAsync();
 return;

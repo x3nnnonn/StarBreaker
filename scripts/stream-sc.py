@@ -1,3 +1,5 @@
+import os
+
 whitelist = [
     "QueryConfig",
     "WatchConfig",
@@ -7,6 +9,8 @@ whitelist = [
     "Listen",
     #todo: add more
 ]
+
+i = 0
 
 def requestheaders(flow):
     print("requesting " + flow.request.url)
@@ -30,3 +34,27 @@ def responseheaders(flow):
 
     print("streaming off for " + flow.request.url)
     flow.response.stream = False
+
+def request(flow):
+    global i
+    i += 1
+    endpoint_parts = flow.request.url.split("/")[-2:]
+    endpoint = ".".join(endpoint_parts)
+
+    with open(os.path.join("dump", str(i) + '-' + "request" + '-' + endpoint + ".grpc"), "wb") as f:
+        if flow.request.content is not None:
+            f.write(flow.request.content)
+        else:
+            f.write(b"")
+        
+def response(flow):
+    global i
+    i += 1
+    endpoint_parts = flow.request.url.split("/")[-2:]
+    endpoint = ".".join(endpoint_parts)
+
+    with open(os.path.join("dump", str(i) + '-' + "response" + '-' + endpoint + ".grpc"), "wb") as f:
+        if flow.response.content is not None:
+            f.write(flow.response.content)
+        else:
+            f.write(b"")
