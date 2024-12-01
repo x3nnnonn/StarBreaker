@@ -6,6 +6,7 @@
     <File Path="..\crc32c.html" />
     <File Path="..\scripts\mitm.ps1" />
     <File Path="..\scripts\stream-sc.py" />
+    <File Path="..\.github\workflows\build.yml" />
   </Folder>
   <Project Path="StarBreaker.Chf\StarBreaker.Chf.csproj" />
   <Project Path="StarBreaker.Cli\StarBreaker.Cli.csproj" />
