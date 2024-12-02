@@ -23,7 +23,7 @@ public class ReadAllBuffers
             return new
             {
                 Filename = f,
-                Index = int.Parse(parts[0]),
+                Index = parts[0],
                 RequestOrResponse = parts[1],
                 Method = parts[2],
             };

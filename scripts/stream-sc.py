@@ -1,4 +1,5 @@
 import os
+import datetime
 
 whitelist = [
     "QueryConfig",
@@ -9,8 +10,6 @@ whitelist = [
     "Listen",
     #todo: add more
 ]
-
-i = 0
 
 def requestheaders(flow):
     print("requesting " + flow.request.url)
@@ -36,24 +35,20 @@ def responseheaders(flow):
     flow.response.stream = False
 
 def request(flow):
-    global i
-    i += 1
     endpoint_parts = flow.request.url.split("/")[-2:]
     endpoint = ".".join(endpoint_parts)
 
-    with open(os.path.join("dump", str(i) + '-' + "request" + '-' + endpoint + ".grpc"), "wb") as f:
+    with open(os.path.join("dump", datetime.datetime.now().strftime("%Y%m%d.%H%M%S.%f") + '-' + "request" + '-' + endpoint + ".grpc"), "wb") as f:
         if flow.request.content is not None:
             f.write(flow.request.content)
         else:
             f.write(b"")
         
 def response(flow):
-    global i
-    i += 1
     endpoint_parts = flow.request.url.split("/")[-2:]
     endpoint = ".".join(endpoint_parts)
 
-    with open(os.path.join("dump", str(i) + '-' + "response" + '-' + endpoint + ".grpc"), "wb") as f:
+    with open(os.path.join("dump", datetime.datetime.now().strftime("%Y%m%d.%H%M%S.%f")  + '-' + "response" + '-' + endpoint + ".grpc"), "wb") as f:
         if flow.response.content is not None:
             f.write(flow.response.content)
         else:
