@@ -3,12 +3,11 @@ using StarBreaker.Grpc;
 
 namespace StarBreaker.Protobuf;
 
-
 /// <summary>
 /// Attempts to read all grpc buffers captured by the proxy,
 /// finding the protobuf type and writing it to json.
 /// </summary>
-public class ReadAllBuffers
+public class GrpcToJson
 {
     public static void Run()
     {

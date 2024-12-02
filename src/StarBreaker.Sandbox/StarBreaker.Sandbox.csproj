@@ -11,6 +11,7 @@
       <ProjectReference Include="..\StarBreaker.CryXmlB\StarBreaker.CryXmlB.csproj" />
       <ProjectReference Include="..\StarBreaker.Dds\StarBreaker.Dds.csproj" />
       <ProjectReference Include="..\StarBreaker.Forge\StarBreaker.Forge.csproj" />
+      <ProjectReference Include="..\StarBreaker.Grpc\StarBreaker.Grpc.csproj" />
       <ProjectReference Include="..\StarBreaker.P4k\StarBreaker.P4k.csproj" />
     </ItemGroup>
 

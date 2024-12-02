@@ -3,11 +3,11 @@ using Google.Protobuf.Reflection;
 
 namespace StarBreaker.Protobuf;
 
-public class ReadFromBinary
+public class ProtobufExtractor
 {
     private readonly string _file;
 
-    public ReadFromBinary(string file)
+    public ProtobufExtractor(string file)
     {
         if (!File.Exists(file))
             throw new FileNotFoundException("File not found", file);
@@ -70,7 +70,7 @@ public class ReadFromBinary
             if (span[start - 1] == 0x0A && 0x0A == cursor - start - 1)
                 start -= 1;
 
-            var varInt = (int)span.DecodeVarInt(start + 1, out var bytesRead);
+            var varInt = (int)DecodeVarInt(span, start + 1, out var bytesRead);
             if (cursor - (int)bytesRead != varInt)
                 continue;
 
@@ -82,7 +82,7 @@ public class ReadFromBinary
             {
                 tags = tags[tags.IndexOf(span[cursor])..];
 
-                var varInt2 = span.DecodeVarInt(cursor + 1, out var bytesRead2);
+                var varInt2 = DecodeVarInt(span, cursor + 1, out var bytesRead2);
                 var something = (span[cursor] & 0b111) == 2;
                 cursor = (int)bytesRead2 + (something ? (int)varInt2 : 0);
             }
@@ -127,5 +127,25 @@ public class ReadFromBinary
 
         // Step 2 - Build FileDescriptor from properly ordered list
         return FileDescriptor.BuildFromByteStrings(orderedList);
+    }
+    
+    public static ulong DecodeVarInt(Span<byte> span, int pos, out ulong outPos)
+    {
+        var result = 0;
+        var shift = 0;
+        while (true)
+        {
+            var b = span[pos];
+            result |= (b & 0x7f) << shift;
+            pos += 1;
+            if ((b & 0x80) == 0)
+            {
+                outPos = (ulong)pos;
+                return (ulong)result;
+            }
+            shift += 7;
+            if (shift >= 64)
+                throw new Exception("Too many bytes when decoding varint.");
+        }
     }
 }
