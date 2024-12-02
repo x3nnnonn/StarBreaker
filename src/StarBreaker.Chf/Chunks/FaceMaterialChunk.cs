@@ -11,7 +11,8 @@ public sealed class FaceMaterialChunk
     [
         ItemPortKeys.GetUIntKey("shader_head"),
         ItemPortKeys.GetUIntKey("shader_Head"),
-        ItemPortKeys.GetUIntKey("female23")
+        ItemPortKeys.GetUIntKey("female23"),
+        ItemPortKeys.GetUIntKey("female27"),
     ];
 
     public required MakeupChunk[] Children { get; init; }

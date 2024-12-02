@@ -20,7 +20,8 @@ public sealed class HairModifierChunk
             "stubble_itemport"
         ]);
         var guid = reader.Read<CigGuid>();
-        if (guid != HairVarBrown) throw new Exception("Unexpected Hair modifier guid: " + guid);
+        if (guid != HairVarBrown && guid != UniversalStubble)
+            throw new Exception("Unexpected Hair modifier guid: " + guid);
 
         reader.Expect(0);
         var count = reader.Read<uint>(); //0 for hair modifier, 6 for facial hair modifier
@@ -30,6 +31,7 @@ public sealed class HairModifierChunk
             case 0:
                 return new HairModifierChunk { ChildCount = count };
             case 6:
+            case 7:
                 //the data i have has this 5 here but the next property is right after.
                 //Unknown what this is.
                 //count of how many objects are left to read??
@@ -40,5 +42,7 @@ public sealed class HairModifierChunk
         }
     }
 
-    public static readonly CigGuid HairVarBrown = new("12ce4ce5-e49a-4dab-9d31-ad262faaddf2");
+    public static readonly CigGuid HairVarBrown = new("12ce4ce5-e49a-4dab-9d31-ad262faaddf2");    
+    public static readonly CigGuid UniversalStubble = new("f2c511d6-ff1d-4275-a8c2-ae60fb259186");
+
 }

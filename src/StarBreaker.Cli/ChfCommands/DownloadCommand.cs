@@ -32,25 +32,9 @@ public class DownloadCommand : ICommand
         http.DefaultRequestHeaders.Add("User-Agent",
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3");
 
-        await console.Output.WriteLineAsync("Downloading metadata...");
-        var rowsList = new List<SccCharacter>();
-        var page = 1;
-
-        while (true)
-        {
-            var response = await http.GetFromJsonAsync(
-                $"https://www.star-citizen-characters.com/api/heads?page={page++}&orderBy=latest",
-                StarBreakerSerializerContext.Default.SccRoot
-            );
-            rowsList.AddRange(response!.body!.rows!);
-            if (response.body.hasNextPage == false)
-                break;
-        }
-
-        await console.Output.WriteLineAsync("Downloaded metadata");
         await console.Output.WriteLineAsync("Downloading all missing characters...");
 
-        foreach (var row in rowsList)
+        await foreach (var row in GetCharactersAsync(http))
         {
             try
             {
@@ -82,6 +66,25 @@ public class DownloadCommand : ICommand
             {
                 await console.Output.WriteLineAsync($"Error downloading {row.title}: {e.Message}");
             }
+        }
+    }
+    
+    private static async IAsyncEnumerable<SccCharacter> GetCharactersAsync(HttpClient httpClient)
+    {
+        var page = 1;
+        while (true)
+        {
+            var response = await httpClient.GetFromJsonAsync(
+                $"https://www.star-citizen-characters.com/api/heads?page={page++}&orderBy=latest",
+                StarBreakerSerializerContext.Default.SccRoot
+            );
+            foreach (var row in response!.body!.rows!)
+            {
+                yield return row;
+            }
+
+            if (response.body.hasNextPage == false)
+                break;
         }
     }
 
