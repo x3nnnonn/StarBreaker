@@ -9,6 +9,13 @@ namespace StarBreaker.Protobuf;
 //Note: this is a modified version of the original code. I don't really remember what changes make sense or why,
 // but this is working and the whole thing is very brittle so I'm leaving it like this :)
 
+public class DynamicGrpcPrinterOptions
+{
+    public bool AddMetaComments { get; set; }
+    public bool FullyQualified { get; set; }
+    public string Indent { get; set; } = "  ";
+}
+
 /// <summary>
 /// Extension methods for printing descriptors back to proto language.
 /// </summary>

@@ -22,7 +22,7 @@ public static class GrpcClient
         const string testFunds = @"C:\Users\Diogo\Downloads\GetFunds.grpc";
         const string testChar = @"C:\Users\Diogo\Downloads\everything.grpc";
         const string testContainer = @"C:\Users\Diogo\Downloads\ContainerQueryStream.grpc";
-        
+
         var containerQuery = ContainerQueryStreamResponse.Parser.ParseFrom(GrpcUtils.GrpcToProtobuf(File.ReadAllBytes(testContainer)));
         var ledger = GetFundsResponse.Parser.ParseFrom(GrpcUtils.GrpcToProtobuf(File.ReadAllBytes(testFunds)));
         var enity = EntityQueryResponse.Parser.ParseFrom(GrpcUtils.GrpcToProtobuf(File.ReadAllBytes(testEntity)));
