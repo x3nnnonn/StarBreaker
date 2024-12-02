@@ -15,7 +15,7 @@ public static class StringCrc32c
 
         var uintsToTest = ReadKeys("keys.txt");
 
-        var forge = new DataForge(File.OpenRead(@"C:\Scratch\StarCitizen\p4k\Data\Game.dcb"));
+        var forge = new DataForge(File.OpenRead(@"D:\StarCitizen\p4k\Data\Game.dcb"));
         var enums = forge.ExportEnums();
 
         IEnumerable<string> haystack = new List<string>();
@@ -29,7 +29,7 @@ public static class StringCrc32c
         //haystack = haystack.Concat(StreamLines("mats.txt"));
         //haystack = haystack.Concat(StreamLines("working.txt"));
 
-        haystack = haystack.Concat(Directory.EnumerateFiles(@"C:\Scratch\StarCitizen\p4k", "*", SearchOption.AllDirectories).Select(Path.GetFileNameWithoutExtension));
+        haystack = haystack.Concat(Directory.EnumerateFiles(@"D:\StarCitizen\p4k\", "*", SearchOption.AllDirectories).Select(Path.GetFileNameWithoutExtension));
         haystack = haystack.SelectMany(GetVariations);
         //TODO: charactercustomizer_pu.socpak
 

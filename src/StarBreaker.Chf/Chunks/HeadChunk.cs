@@ -14,7 +14,7 @@ public sealed class HeadChunk
     public required EyebrowChunk? Eyebrow { get; init; }
     public required EyelashChunk? Eyelash { get; init; }
     public required FacialHairChunk? FacialHair { get; init; }
-    public required PiercingChunk? Piercing { get; init; }
+    public required List<PiercingChunk> Piercings { get; init; }
 
     public static HeadChunk Read(ref SpanReader reader)
     {
@@ -28,8 +28,10 @@ public sealed class HeadChunk
         EyebrowChunk? eyebrow = null;
         EyelashChunk? eyelash = null;
         FacialHairChunk? facialHair = null;
-        PiercingChunk? piercing = null;
-
+        List<PiercingChunk> piercings = new();
+        ScalpChunk? scalp = null;
+        PiercingsEyebrowsItemport? piercingEyebrows = null;
+        
         for (var i = 0; i < (int)childCount; i++)
         {
             var k = reader.Peek<uint>();
@@ -53,9 +55,17 @@ public sealed class HeadChunk
             {
                 facialHair = FacialHairChunk.Read(ref reader);
             }
+            else if (k == ScalpChunk.Key)
+            {
+                scalp = ScalpChunk.Read(ref reader);
+            }
+            else if (k == PiercingsEyebrowsItemport.Key)
+            {
+                piercingEyebrows = PiercingsEyebrowsItemport.Read(ref reader);
+            }
             else if (PiercingChunk.Keys.Contains(k))
             {
-                piercing = PiercingChunk.Read(ref reader);
+                piercings.Add(PiercingChunk.Read(ref reader));
             }
             else
             {
@@ -71,7 +81,7 @@ public sealed class HeadChunk
             Hair = hair ?? new HairChunk { HairType = HairType.None, Modifier = null },
             Eyebrow = eyebrow ?? new EyebrowChunk { EyebrowType = EyebrowType.None, ChildCount = 0 },
             FacialHair = facialHair ?? new FacialHairChunk { FacialHairType = FacialHairType.None, Modifier = null },
-            Piercing = piercing ?? new PiercingChunk { Guid = CigGuid.Empty }
+            Piercings = piercings
         };
     }
 }
