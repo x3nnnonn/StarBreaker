@@ -4,13 +4,13 @@
       "commandName": "Project",
       "commandLineArgs": "-h"
     },
-    "df-extract": {
+    "dcb-extract": {
       "commandName": "Project",
-      "commandLineArgs": "df-extract --dcb \"D:\\StarCitizen\\p4k\\Data\\Game.dcb\" --output D:\\StarCitizen\\dataforge"
+      "commandLineArgs": "dcb-extract --dcb \"D:\\StarCitizen\\p4k\\Data\\Game.dcb\" --output D:\\StarCitizen\\DataCore"
     },
-    "df-extract-single": {
+    "dcb-extract-single": {
       "commandName": "Project",
-      "commandLineArgs": "df-extract-single --dcb \"D:\\StarCitizen\\Data\\Game.dcb\" --output D:\\StarCitizen\\dataforge"
+      "commandLineArgs": "dcb-extract-single --dcb \"D:\\StarCitizen\\Data\\Game.dcb\" --output D:\\StarCitizen\\DataCore"
     },
     "p4k-extract": {
       "commandName": "Project",

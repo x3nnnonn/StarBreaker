@@ -1,17 +1,17 @@
 using System.Runtime.InteropServices;
 
-namespace StarBreaker.Forge;
+namespace StarBreaker.DataCore;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public readonly record struct DataForgePropertyDefinition
+public readonly record struct DataCorePropertyDefinition
 {
-    private readonly DataForgeStringId2 NameOffset;
+    private readonly DataCoreStringId2 NameOffset;
     public readonly ushort StructIndex;
     public readonly DataType DataType;
     public readonly ConversionType ConversionType;
     private readonly ushort _padding;
     
-    public string GetName(Database db) => db.GetString2(NameOffset);
+    public string GetName(DataCoreDatabase db) => db.GetString2(NameOffset);
 
     public bool IsAttribute => ConversionType == ConversionType.Attribute && 
                                DataType != DataType.Class && 
@@ -19,7 +19,7 @@ public readonly record struct DataForgePropertyDefinition
     
 #if DEBUG
     public string Name => DebugGlobal.Database.GetString2(NameOffset);
-    public DataForgeStructDefinition? Struct => IsAttribute 
+    public DataCoreStructDefinition? Struct => IsAttribute 
         ? null 
         : DebugGlobal.Database.StructDefinitions[StructIndex];
 #endif

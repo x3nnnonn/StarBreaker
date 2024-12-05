@@ -2,7 +2,7 @@
 using System.Globalization;
 using System.Numerics;
 using System.Text;
-using StarBreaker.Forge;
+using StarBreaker.DataCore;
 
 namespace StarBreaker.Sandbox;
 
@@ -15,12 +15,12 @@ public static class StringCrc32c
 
         var uintsToTest = ReadKeys("keys.txt");
 
-        var forge = new DataForge(File.OpenRead(@"D:\StarCitizen\p4k\Data\Game.dcb"));
-        var enums = forge.ExportEnums();
+        var dcb = new DataCoreBinary(File.OpenRead(@"D:\StarCitizen\p4k\Data\Game.dcb"));
+        var enums = dcb.ExportEnums();
 
         IEnumerable<string> haystack = new List<string>();
 
-        haystack = haystack.Concat(forge._database.EnumerateStrings1().Concat(forge._database.EnumerateStrings2()));
+        haystack = haystack.Concat(dcb._database.EnumerateStrings1().Concat(dcb._database.EnumerateStrings2()));
         haystack = haystack.Concat(["head_eyedetail"]);
         haystack = haystack.Concat(enums.Select(x => x.Key));
         haystack = haystack.Concat(enums.SelectMany(x => x.Value));

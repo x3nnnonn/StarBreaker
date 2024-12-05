@@ -1,18 +1,17 @@
 using System.Diagnostics;
-using System.Text.RegularExpressions;
 using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using StarBreaker.Cli.Utils;
-using StarBreaker.Forge;
+using StarBreaker.DataCore;
 
-namespace StarBreaker.Cli.DataForgeCommands;
+namespace StarBreaker.Cli.DataCoreCommands;
 
-[Command("df-extract-single", Description = "Extracts a DataForge binary file into a single xml")]
-public class DataForgeExtractSingleCommand : ICommand
+[Command("dcb-extract-single", Description = "Extracts a DataCore binary file into a single xml")]
+public class DataCoreExtractSingleCommand : ICommand
 {
-    [CommandOption("dcb", 'd', Description = "Path to the DataForge binary file")]
-    public required string DataForgeBinary { get; init; }
+    [CommandOption("dcb", 'd', Description = "Path to the DataCore binary file")]
+    public required string DataCoreBinary { get; init; }
     
     [CommandOption("output", 'o', Description = "Path to the output directory")]
     public required string OutputDirectory { get; init; }
@@ -22,13 +21,13 @@ public class DataForgeExtractSingleCommand : ICommand
     
     public ValueTask ExecuteAsync(IConsole console)
     {
-        var dataForge = new DataForge(File.OpenRead(DataForgeBinary));
+        var DataCore = new DataCoreBinary(File.OpenRead(DataCoreBinary));
 
-        console.Output.WriteLine("DataForge loaded.");
+        console.Output.WriteLine("DataCore loaded.");
         console.Output.WriteLine("Exporting...");
         
         var sw = Stopwatch.StartNew();
-        dataForge.ExtractSingle(OutputDirectory, Filter, new ProgressBar(console));
+        DataCore.ExtractSingle(OutputDirectory, Filter, new ProgressBar(console));
         sw.Stop();
         
         console.Output.WriteLine();

@@ -1,7 +1,6 @@
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
-using StarBreaker.Common;
-using StarBreaker.Forge;
+using StarBreaker.DataCore;
 using StarBreaker.Services;
 
 namespace StarBreaker.Screens;
@@ -17,7 +16,7 @@ public sealed partial class DataCoreTabViewModel : PageViewModelBase
     public DataCoreTabViewModel(IP4kService p4kService)
     {
         _p4KService = p4kService;
-        Forge = null;
+        DataCore = null;
 
         Task.Run(Initialize);
     }
@@ -25,14 +24,14 @@ public sealed partial class DataCoreTabViewModel : PageViewModelBase
     private void Initialize()
     {
         var entry = _p4KService.P4kFile.OpenRead(dataCorePath);
-        var forge = new DataForge(entry);
+        var dcb = new DataCoreBinary(entry);
         entry.Dispose();
         
-        Dispatcher.UIThread.InvokeAsync(() => Forge = forge);
+        Dispatcher.UIThread.InvokeAsync(() => DataCore = dcb);
     }
 
     [ObservableProperty] 
-    private DataForge? _forge;
+    private DataCoreBinary? _dataCore;
 
-    public string Yes => Forge?.Database.RecordDefinitions.Length.ToString() ?? "No";
+    public string Yes => DataCore?.Database.RecordDefinitions.Length.ToString() ?? "No";
 }

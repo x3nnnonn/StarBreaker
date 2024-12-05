@@ -31,8 +31,8 @@ COMMANDS
   chf-import-watch  Watch for new characters in the Star Citizen folder and import them. 
   chf-process       Process a character file 
   chf-process-all   Processes all characters in the given folder. 
-  df-extract        Extracts a DataForge binary file into separate xml files 
-  df-extract-single  Extracts a DataForge binary file into a single xml 
+  df-extract        Extracts a DataCore binary file into separate xml files 
+  df-extract-single  Extracts a DataCore binary file into a single xml 
   p4k-extract       Extracts a Game.p4k file 
 
 You can run `StarBreaker.Cli [command] --help` to show help on a specific command.
@@ -62,7 +62,7 @@ Development project mostly so I can throw in some code and run it. Some miscella
 
 The one interesting part about this sandbox project is the [Crc32 brute forcing](src/StarBreaker.Sandbox/StringCrc32c.cs). Chf files (and possibly others, I'm not sure yet) save the crc32c hashes of strings as a uint32 to the file. It's surprisingly useful to know the original string that produced this hash, so I run the hashing function on every game-related string I can find (running `strings` on the exe, parsing the entire p4k and datacore, etc).
 
-### P4k, Forge, CryXml, CryChunk, Dds, etc
+### P4k, DataCore, CryXml, CryChunk, Dds, etc
 These projects are useful to extract data from the p4k file specifically. They implement the various custom formats the game uses to archive its assets. Below is a collapsed list of file types found in the p4k, and which ones are supported.
 
 <details>
@@ -77,7 +77,7 @@ Some are common formats and immediately usable, other require conversion, and so
 Files with these extensions can be opened with a program or converted to a more common format.
 Some of them require specific parsing, which I've already done.
 
-- dbc = StarBreaker.Forge
+- dbc = StarBreaker.DataCore
 - p4k = StarBreaker.P4k
 - xml = StarBreaker.CryXmlB
 - cfg = plain text, configuration

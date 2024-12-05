@@ -4,17 +4,17 @@ using System.Text;
 using System.Xml;
 using StarBreaker.Common;
 
-namespace StarBreaker.Forge;
+namespace StarBreaker.DataCore;
 
-public sealed partial class DataForge
+public sealed partial class DataCoreBinary
 {
-    public readonly Database _database;
+    public readonly DataCoreDatabase _database;
 
-    public Database Database => _database;
+    public DataCoreDatabase Database => _database;
 
-    public DataForge(Stream fs)
+    public DataCoreBinary(Stream fs)
     {
-        _database = new Database(fs);
+        _database = new DataCoreDatabase(fs);
     }
 
     public Dictionary<string, string[]> ExportEnums()
@@ -35,9 +35,9 @@ public sealed partial class DataForge
         return result;
     }
 
-    public Dictionary<string, DataForgeRecord> GetRecordsByFileName(string? fileNameFilter = null)
+    public Dictionary<string, DataCoreRecord> GetRecordsByFileName(string? fileNameFilter = null)
     {
-        var structsPerFileName = new Dictionary<string, DataForgeRecord>();
+        var structsPerFileName = new Dictionary<string, DataCoreRecord>();
         foreach (var record in _database.RecordDefinitions)
         {
             var fileName = record.GetFileName(_database);
@@ -54,7 +54,7 @@ public sealed partial class DataForge
         return structsPerFileName;
     }
 
-    public void ExtractSingleRecord(TextWriter writer, DataForgeRecord record)
+    public void ExtractSingleRecord(TextWriter writer, DataCoreRecord record)
     {
         var structDef = _database.StructDefinitions[record.StructIndex];
         var offset = _database.Offsets[record.StructIndex][record.InstanceIndex];
@@ -101,7 +101,7 @@ public sealed partial class DataForge
         });
     }
 
-    private void FillNode(XmlNode node, DataForgeStructDefinition structDef, ref SpanReader reader)
+    private void FillNode(XmlNode node, DataCoreStructDefinition structDef, ref SpanReader reader)
     {
         foreach (ref readonly var prop in structDef.EnumerateProperties(_database.StructDefinitions, _database.PropertyDefinitions).AsSpan())
         {
@@ -120,7 +120,7 @@ public sealed partial class DataForge
                 }
                 else if (prop.DataType is DataType.StrongPointer /* or DataType.WeakPointer*/)
                 {
-                    var ptr = reader.Read<DataForgePointer>();
+                    var ptr = reader.Read<DataCorePointer>();
 
                     if (ptr.StructIndex == 0xFFFFFFFF || ptr.InstanceIndex == 0xFFFFFFFF) continue;
 
@@ -177,19 +177,19 @@ public sealed partial class DataForge
                             node.AppendAttribute(new XmlAttribute<long>(name1, reader.ReadInt64()));
                             break;
                         case DataType.Reference:
-                            node.AppendAttribute(new XmlAttribute<DataForgeReference>(name1, reader.Read<DataForgeReference>()));
+                            node.AppendAttribute(new XmlAttribute<DataCoreReference>(name1, reader.Read<DataCoreReference>()));
                             break;
                         case DataType.String:
-                            node.AppendAttribute(new XmlAttribute<string>(name1, _database.GetString(reader.Read<DataForgeStringId>())));
+                            node.AppendAttribute(new XmlAttribute<string>(name1, _database.GetString(reader.Read<DataCoreStringId>())));
                             break;
                         case DataType.Locale:
-                            node.AppendAttribute(new XmlAttribute<string>(name1, _database.GetString(reader.Read<DataForgeStringId>())));
+                            node.AppendAttribute(new XmlAttribute<string>(name1, _database.GetString(reader.Read<DataCoreStringId>())));
                             break;
                         case DataType.EnumChoice:
-                            node.AppendAttribute(new XmlAttribute<string>(name1, _database.GetString(reader.Read<DataForgeStringId>())));
+                            node.AppendAttribute(new XmlAttribute<string>(name1, _database.GetString(reader.Read<DataCoreStringId>())));
                             break;
                         case DataType.WeakPointer:
-                            node.AppendAttribute(new XmlAttribute<DataForgePointer>(name1, reader.Read<DataForgePointer>()));
+                            node.AppendAttribute(new XmlAttribute<DataCorePointer>(name1, reader.Read<DataCorePointer>()));
                             break;
                         default:
                             throw new UnreachableException();
@@ -293,13 +293,13 @@ public sealed partial class DataForge
                                 arrayItem.AppendAttribute(new XmlAttribute<string>("__value", _database.GetString(_database.EnumValues[index])));
                                 break;
                             case DataType.Reference:
-                                arrayItem.AppendAttribute(new XmlAttribute<DataForgeReference>("__value", _database.ReferenceValues[index]));
+                                arrayItem.AppendAttribute(new XmlAttribute<DataCoreReference>("__value", _database.ReferenceValues[index]));
                                 break;
                             case DataType.WeakPointer:
-                                arrayItem.AppendAttribute(new XmlAttribute<DataForgePointer>("__value", _database.StrongValues[index]));
+                                arrayItem.AppendAttribute(new XmlAttribute<DataCorePointer>("__value", _database.StrongValues[index]));
                                 break;
                             case DataType.Class:
-                                arrayItem.AppendAttribute(new XmlAttribute<DataForgePointer>("__value", _database.StrongValues[index]));
+                                arrayItem.AppendAttribute(new XmlAttribute<DataCorePointer>("__value", _database.StrongValues[index]));
                                 break;
                             default:
                                 throw new InvalidOperationException(nameof(DataType));

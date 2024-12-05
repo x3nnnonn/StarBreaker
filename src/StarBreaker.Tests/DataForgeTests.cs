@@ -1,4 +1,4 @@
-using StarBreaker.Forge;
+using StarBreaker.DataCore;
 
 namespace StarBreaker.Tests;
 
@@ -10,11 +10,11 @@ public class Tests
     [Test]
     public async Task TestTagDatabase()
     {
-        var forge = new DataForge(File.OpenRead(@"C:\Scratch\StarCitizen\p4k\Data\Game.dcb"));
-        var tagdatabase = forge.GetRecordsByFileName("*TagDatabase*");
+        var dcb = new DataCoreBinary(File.OpenRead(@"C:\Scratch\StarCitizen\p4k\Data\Game.dcb"));
+        var tagdatabase = dcb.GetRecordsByFileName("*TagDatabase*");
         
         var writer = new StringWriter();
-        forge.ExtractSingleRecord(writer, tagdatabase.Values.Single());
+        dcb.ExtractSingleRecord(writer, tagdatabase.Values.Single());
         
         var expected = await File.ReadAllTextAsync("TagDatabase.TagDatabase.xml");
         var actual = writer.ToString();
@@ -24,8 +24,8 @@ public class Tests
     [Test]
     public async Task Enums()
     {
-        var forge = new DataForge(File.OpenRead(@"C:\Scratch\StarCitizen\p4k\Data\Game.dcb"));
-        var enums = forge.ExportEnums();
+        var dcb = new DataCoreBinary(File.OpenRead(@"C:\Scratch\StarCitizen\p4k\Data\Game.dcb"));
+        var enums = dcb.ExportEnums();
 
         await Assert.That(enums).IsNotEmpty();
         await Assert.That(enums.All(e => e.Value.Length > 0)).IsTrue();

@@ -1,9 +1,9 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace StarBreaker.Forge;
+namespace StarBreaker.DataCore;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public readonly record struct DataForgeStringId
+public readonly record struct DataCoreStringId
 {
     // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
     public readonly int Id;
@@ -15,7 +15,7 @@ public readonly record struct DataForgeStringId
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public readonly record struct DataForgeStringId2
+public readonly record struct DataCoreStringId2
 {
     // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
     public readonly int Id;
