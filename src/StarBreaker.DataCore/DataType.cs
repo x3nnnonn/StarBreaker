@@ -1,4 +1,4 @@
-namespace StarBreaker.Forge;
+namespace StarBreaker.DataCore;
 
 public enum DataType : ushort
 {

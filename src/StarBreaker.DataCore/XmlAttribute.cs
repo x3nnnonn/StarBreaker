@@ -1,6 +1,6 @@
 using StarBreaker.Common;
 
-namespace StarBreaker.Forge;
+namespace StarBreaker.DataCore;
 
 public abstract class XmlAttribute
 {
@@ -74,12 +74,12 @@ public sealed class XmlAttribute<T> : XmlAttribute
             case CigGuid g:
                 g.WriteInto(writer);
                 break;
-            case DataForgeReference ra:
+            case DataCoreReference ra:
                 ra.Value.WriteInto(writer);
                 writer.Write('.');
                 writer.Write(ra.Item1);
                 break;
-            case DataForgePointer p:
+            case DataCorePointer p:
                 //todo: remove me?
                 writer.Write(p.StructIndex);
                 writer.Write('.');

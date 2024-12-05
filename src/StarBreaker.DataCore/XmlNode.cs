@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-namespace StarBreaker.Forge;
+namespace StarBreaker.DataCore;
 
 [DebuggerDisplay("{_name}")]
 public sealed class XmlNode

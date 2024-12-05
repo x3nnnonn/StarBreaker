@@ -3,21 +3,21 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using StarBreaker.Common;
 
-namespace StarBreaker.Forge;
+namespace StarBreaker.DataCore;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public readonly record struct DataForgeStructDefinition
+public readonly record struct DataCoreStructDefinition
 {
-    private static readonly ConcurrentDictionary<DataForgeStructDefinition, DataForgePropertyDefinition[]> _propertiesCache = new();
-    private readonly DataForgeStringId2 NameOffset;
+    private static readonly ConcurrentDictionary<DataCoreStructDefinition, DataCorePropertyDefinition[]> _propertiesCache = new();
+    private readonly DataCoreStringId2 NameOffset;
     public readonly uint ParentTypeIndex;
     public readonly ushort AttributeCount;
     public readonly ushort FirstAttributeIndex;
     public readonly uint NodeType;
 
-    public string GetName(Database db) => db.GetString2(NameOffset);
+    public string GetName(DataCoreDatabase db) => db.GetString2(NameOffset);
     
-    public int CalculateSize(ReadOnlySpan<DataForgeStructDefinition> structs, ReadOnlySpan<DataForgePropertyDefinition> properties)
+    public int CalculateSize(ReadOnlySpan<DataCoreStructDefinition> structs, ReadOnlySpan<DataCorePropertyDefinition> properties)
     {
         var size = 0;
 
@@ -32,15 +32,15 @@ public readonly record struct DataForgeStructDefinition
 
             size += attribute.DataType switch
             {
-                DataType.Reference => Unsafe.SizeOf<DataForgeReference>(),
-                DataType.WeakPointer => Unsafe.SizeOf<DataForgePointer>(),
-                DataType.StrongPointer => Unsafe.SizeOf<DataForgePointer>(),
-                DataType.EnumChoice => Unsafe.SizeOf<DataForgeStringId>(),
+                DataType.Reference => Unsafe.SizeOf<DataCoreReference>(),
+                DataType.WeakPointer => Unsafe.SizeOf<DataCorePointer>(),
+                DataType.StrongPointer => Unsafe.SizeOf<DataCorePointer>(),
+                DataType.EnumChoice => Unsafe.SizeOf<DataCoreStringId>(),
                 DataType.Guid => Unsafe.SizeOf<CigGuid>(),
-                DataType.Locale => Unsafe.SizeOf<DataForgeStringId>(),
+                DataType.Locale => Unsafe.SizeOf<DataCoreStringId>(),
                 DataType.Double => Unsafe.SizeOf<double>(),
                 DataType.Single => Unsafe.SizeOf<float>(),
-                DataType.String => Unsafe.SizeOf<DataForgeStringId>(),
+                DataType.String => Unsafe.SizeOf<DataCoreStringId>(),
                 DataType.UInt64 => Unsafe.SizeOf<ulong>(),
                 DataType.UInt32 => Unsafe.SizeOf<uint>(),
                 DataType.UInt16 => Unsafe.SizeOf<ushort>(),
@@ -58,15 +58,15 @@ public readonly record struct DataForgeStructDefinition
         return size;
     }
 
-    public DataForgePropertyDefinition[] EnumerateProperties(
-        ReadOnlySpan<DataForgeStructDefinition> structs,
-        ReadOnlySpan<DataForgePropertyDefinition> properties
+    public DataCorePropertyDefinition[] EnumerateProperties(
+        ReadOnlySpan<DataCoreStructDefinition> structs,
+        ReadOnlySpan<DataCorePropertyDefinition> properties
     )
     {
         if (_propertiesCache.TryGetValue(this, out var cachedProperties))
             return cachedProperties;
 
-        var _properties = new List<DataForgePropertyDefinition>();
+        var _properties = new List<DataCorePropertyDefinition>();
         _properties.AddRange(properties.Slice(FirstAttributeIndex, AttributeCount));
 
         var baseStruct = this;
@@ -83,8 +83,8 @@ public readonly record struct DataForgeStructDefinition
     }
 
 #if DEBUG
-    public DataForgePropertyDefinition[] Properties => EnumerateProperties(DebugGlobal.Database.StructDefinitions, DebugGlobal.Database.PropertyDefinitions);
-    public DataForgeStructDefinition? Parent => ParentTypeIndex == 0xffffffff ? null : DebugGlobal.Database.StructDefinitions[(int)ParentTypeIndex];
+    public DataCorePropertyDefinition[] Properties => EnumerateProperties(DebugGlobal.Database.StructDefinitions, DebugGlobal.Database.PropertyDefinitions);
+    public DataCoreStructDefinition? Parent => ParentTypeIndex == 0xffffffff ? null : DebugGlobal.Database.StructDefinitions[(int)ParentTypeIndex];
     public string Name => GetName(DebugGlobal.Database);
 #endif
 }

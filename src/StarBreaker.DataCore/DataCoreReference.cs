@@ -1,10 +1,10 @@
 using System.Runtime.InteropServices;
 using StarBreaker.Common;
 
-namespace StarBreaker.Forge;
+namespace StarBreaker.DataCore;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public readonly record struct DataForgeReference
+public readonly record struct DataCoreReference
 {
     public readonly uint Item1;
     public readonly CigGuid Value;

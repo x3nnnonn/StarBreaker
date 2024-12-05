@@ -4,7 +4,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\StarBreaker.Forge\StarBreaker.Forge.csproj"/>
+        <ProjectReference Include="..\StarBreaker.DataCore\StarBreaker.DataCore.csproj" />
     </ItemGroup>
 
     <ItemGroup>

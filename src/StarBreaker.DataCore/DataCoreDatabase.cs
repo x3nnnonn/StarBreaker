@@ -2,18 +2,18 @@ using System.Collections.Frozen;
 using System.Text;
 using StarBreaker.Common;
 
-namespace StarBreaker.Forge;
+namespace StarBreaker.DataCore;
 
-public class Database
+public class DataCoreDatabase
 {
     private readonly int DataSectionOffset;
     private readonly byte[] DataSection;
 
-    public readonly DataForgeStructDefinition[] StructDefinitions;
-    public readonly DataForgePropertyDefinition[] PropertyDefinitions;
-    public readonly DataForgeEnumDefinition[] EnumDefinitions;
-    public readonly DataForgeDataMapping[] DataMappings;
-    public readonly DataForgeRecord[] RecordDefinitions;
+    public readonly DataCoreStructDefinition[] StructDefinitions;
+    public readonly DataCorePropertyDefinition[] PropertyDefinitions;
+    public readonly DataCoreEnumDefinition[] EnumDefinitions;
+    public readonly DataCoreDataMapping[] DataMappings;
+    public readonly DataCoreRecord[] RecordDefinitions;
 
     public readonly sbyte[] Int8Values;
     public readonly short[] Int16Values;
@@ -30,23 +30,23 @@ public class Database
     public readonly double[] DoubleValues;
     public readonly CigGuid[] GuidValues;
 
-    public readonly DataForgeStringId[] StringIdValues;
-    public readonly DataForgeStringId[] LocaleValues;
-    public readonly DataForgeStringId[] EnumValues;
+    public readonly DataCoreStringId[] StringIdValues;
+    public readonly DataCoreStringId[] LocaleValues;
+    public readonly DataCoreStringId[] EnumValues;
 
-    public readonly DataForgePointer[] StrongValues;
-    public readonly DataForgePointer[] WeakValues;
-    public readonly DataForgeReference[] ReferenceValues;
+    public readonly DataCorePointer[] StrongValues;
+    public readonly DataCorePointer[] WeakValues;
+    public readonly DataCoreReference[] ReferenceValues;
 
-    public readonly DataForgeStringId2[] EnumOptions;
+    public readonly DataCoreStringId2[] EnumOptions;
     
     public readonly FrozenDictionary<int, int[]> Offsets;
 
     private readonly FrozenDictionary<int, string> _cachedStrings;
     private readonly FrozenDictionary<int, string> _cachedStrings2;
+    private readonly FrozenDictionary<CigGuid, DataCoreRecord> _cachedRecords;
 
-
-    public Database(Stream fs)
+    public DataCoreDatabase(Stream fs)
     {
         using var reader = new BinaryReader(fs);
 
@@ -84,11 +84,11 @@ public class Database
         var textLength = reader.ReadUInt32();
         var textLength2 = reader.ReadUInt32();
 
-        StructDefinitions = reader.ReadArray<DataForgeStructDefinition>(structDefinitionCount);
-        PropertyDefinitions = reader.ReadArray<DataForgePropertyDefinition>(propertyDefinitionCount);
-        EnumDefinitions = reader.ReadArray<DataForgeEnumDefinition>(enumDefinitionCount);
-        DataMappings = reader.ReadArray<DataForgeDataMapping>(dataMappingCount);
-        RecordDefinitions = reader.ReadArray<DataForgeRecord>(recordDefinitionCount);
+        StructDefinitions = reader.ReadArray<DataCoreStructDefinition>(structDefinitionCount);
+        PropertyDefinitions = reader.ReadArray<DataCorePropertyDefinition>(propertyDefinitionCount);
+        EnumDefinitions = reader.ReadArray<DataCoreEnumDefinition>(enumDefinitionCount);
+        DataMappings = reader.ReadArray<DataCoreDataMapping>(dataMappingCount);
+        RecordDefinitions = reader.ReadArray<DataCoreRecord>(recordDefinitionCount);
 
         Int8Values = reader.ReadArray<sbyte>(int8ValueCount);
         Int16Values = reader.ReadArray<short>(int16ValueCount);
@@ -105,14 +105,14 @@ public class Database
         DoubleValues = reader.ReadArray<double>(doubleValueCount);
         GuidValues = reader.ReadArray<CigGuid>(guidValueCount);
 
-        StringIdValues = reader.ReadArray<DataForgeStringId>(stringIdValueCount);
-        LocaleValues = reader.ReadArray<DataForgeStringId>(localeValueCount);
-        EnumValues = reader.ReadArray<DataForgeStringId>(enumValueCount);
+        StringIdValues = reader.ReadArray<DataCoreStringId>(stringIdValueCount);
+        LocaleValues = reader.ReadArray<DataCoreStringId>(localeValueCount);
+        EnumValues = reader.ReadArray<DataCoreStringId>(enumValueCount);
 
-        StrongValues = reader.ReadArray<DataForgePointer>(strongValueCount);
-        WeakValues = reader.ReadArray<DataForgePointer>(weakValueCount);
-        ReferenceValues = reader.ReadArray<DataForgeReference>(referenceValueCount);
-        EnumOptions = reader.ReadArray<DataForgeStringId2>(enumOptionCount);
+        StrongValues = reader.ReadArray<DataCorePointer>(strongValueCount);
+        WeakValues = reader.ReadArray<DataCorePointer>(weakValueCount);
+        ReferenceValues = reader.ReadArray<DataCoreReference>(referenceValueCount);
+        EnumOptions = reader.ReadArray<DataCoreStringId2>(enumOptionCount);
 
         _cachedStrings = ReadStringTable(reader.ReadBytes((int)textLength).AsSpan());
         _cachedStrings2 = ReadStringTable(reader.ReadBytes((int)textLength2).AsSpan());
@@ -124,6 +124,13 @@ public class Database
         DataSection = new byte[fs.Length - bytesRead];
         if (reader.Read(DataSection, 0, DataSection.Length) != DataSection.Length)
             throw new Exception("Failed to read data section");
+        
+        var records = new Dictionary<CigGuid, DataCoreRecord>();
+        foreach (var record in RecordDefinitions)
+        {
+            records[record.Hash] = record;
+        }
+        _cachedRecords = records.ToFrozenDictionary();
 
 #if DEBUG
         DebugGlobal.Database = this;
@@ -131,8 +138,9 @@ public class Database
     }
 
     public SpanReader GetReader(int offset) => new(DataSection, offset - DataSectionOffset);
-    public string GetString(DataForgeStringId id) => _cachedStrings[id.Id];
-    public string GetString2(DataForgeStringId2 id) => _cachedStrings2[id.Id];
+    public string GetString(DataCoreStringId id) => _cachedStrings[id.Id];
+    public string GetString2(DataCoreStringId2 id) => _cachedStrings2[id.Id];
+    public DataCoreRecord GetRecord(CigGuid guid) => _cachedRecords[guid];
 
     private static FrozenDictionary<int, string> ReadStringTable(ReadOnlySpan<byte> span)
     {
@@ -153,9 +161,9 @@ public class Database
 
     private static FrozenDictionary<int, int[]> ReadOffsets(
         int initialOffset,
-        Span<DataForgeDataMapping> mappings,
-        ReadOnlySpan<DataForgeStructDefinition> structDefs,
-        ReadOnlySpan<DataForgePropertyDefinition> propDefs)
+        Span<DataCoreDataMapping> mappings,
+        ReadOnlySpan<DataCoreStructDefinition> structDefs,
+        ReadOnlySpan<DataCorePropertyDefinition> propDefs)
     {
         var instances = new Dictionary<int, int[]>();
 

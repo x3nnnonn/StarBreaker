@@ -8,14 +8,14 @@
              x:Class="StarBreaker.Screens.DataCoreTabView">
     <Grid>
         <Grid
-            IsVisible="{Binding Forge, Converter={x:Static ObjectConverters.IsNotNull}}"
+            IsVisible="{Binding DataCore, Converter={x:Static ObjectConverters.IsNotNull}}"
             VerticalAlignment="Stretch"
             HorizontalAlignment="Stretch">
             <TextBlock Text="{Binding Yes}" />
         </Grid>
 
         <StackPanel
-            IsVisible="{Binding Forge, Converter={x:Static ObjectConverters.IsNull}}"
+            IsVisible="{Binding DataCore, Converter={x:Static ObjectConverters.IsNull}}"
             VerticalAlignment="Center"
             HorizontalAlignment="Center">
             <TextBlock
