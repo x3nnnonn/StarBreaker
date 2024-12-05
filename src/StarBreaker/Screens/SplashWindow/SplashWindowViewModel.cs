@@ -7,7 +7,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using StarBreaker.Services;
-using static System.Environment;
 
 namespace StarBreaker.Screens;
 
@@ -49,7 +48,7 @@ public sealed partial class SplashWindowViewModel : ViewModelBase
     public async Task PickP4k()
     {
         _logger?.LogTrace("PickP4k enter");
-        var defaultPath = await App.StorageProvider.TryGetFolderFromPathAsync($"{Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)}{Constants.DefaultStarCitizenFolder}");
+        var defaultPath = await App.StorageProvider.TryGetFolderFromPathAsync(Constants.DefaultStarCitizenFolder);
         var task = App.StorageProvider.OpenFilePickerAsync(Constants.GetP4kFilter(defaultPath));
         var file = await task;
         if (file.Count != 1)
@@ -65,23 +64,17 @@ public sealed partial class SplashWindowViewModel : ViewModelBase
 
     public void LoadDefaultP4kLocations()
     {
-        var currentInstallDirectory = GetInstallDirectory();
-        if (currentInstallDirectory.Length == 0)
-        {
-            GetP4ksFromDirectory($"{Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)}{Constants.DefaultStarCitizenFolder}");
-        }
-        else
-        {
-            GetP4ksFromDirectory(currentInstallDirectory);
-        }
+        if (!TryGetInstallDirectory(out var currentInstallDirectory))
+            currentInstallDirectory = Constants.DefaultStarCitizenFolder;
+
+        GetP4ksFromDirectory(currentInstallDirectory);
     }
 
     private void GetP4ksFromDirectory(string installationPath)
     {
         if (!Directory.Exists(installationPath))
-        {
             return;
-        }
+
         var p4ks = Directory.GetFiles(installationPath, Constants.DataP4k, SearchOption.AllDirectories);
         if (p4ks.Length == 0)
         {
@@ -99,7 +92,7 @@ public sealed partial class SplashWindowViewModel : ViewModelBase
                 _logger.LogError("Failed to get directory name for {Path}", p4k);
                 continue;
             }
-            
+
             BuildManifest? manifest = null;
             try
             {
@@ -114,7 +107,6 @@ public sealed partial class SplashWindowViewModel : ViewModelBase
             catch
             {
                 //fine to ignore
-                
             }
 
             Installations.Add(new StarCitizenInstallationViewModel
@@ -137,27 +129,47 @@ public sealed partial class SplashWindowViewModel : ViewModelBase
     /// Checks the RSI Launcher logs for a Star Citizen Install Directory
     /// </summary>
     /// <returns>The current Star Citizen install directory</returns>
-    private string GetInstallDirectory()
+    private bool TryGetInstallDirectory(out string dir)
     {
-        var launcherPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}{Constants.DefaultRSILauncherFolder}";
-        if (!File.Exists($"{launcherPath}\\log.log"))
+        dir = "";
+
+        var launcherPath = Constants.DefaultRSILauncherFolder;
+        if (!Directory.Exists(launcherPath))
+        {
+            _logger.LogError("Failed to find RSI Launcher directory");
+            return false;
+        }
+
+        var logPath = Path.Combine(launcherPath, "logs", "log.log");
+
+        if (!File.Exists(logPath))
         {
             _logger.LogError("Failed to find RSI Launcher log");
-            return String.Empty;
+            return false;
         }
-        var lines = File.ReadLines($"{launcherPath}\\log.log");
-        foreach (var line in lines)
+
+        foreach (var line in File.ReadLines(logPath))
         {
-            if (line.Contains("Installing Star Citizen"))
+            if (!line.Contains("Installing Star Citizen"))
+                continue;
+
+            try
             {
-                var strstart = line.IndexOf(" at ") + " at ".Length;
-                var strend = line.LastIndexOf("StarCitizen") + "StarCitizen".Length;
+                var strstart = line.IndexOf(" at ", StringComparison.InvariantCultureIgnoreCase) + " at ".Length;
+                var strend = line.LastIndexOf("StarCitizen", StringComparison.InvariantCultureIgnoreCase) + "StarCitizen".Length;
                 var installDirectory = line.Substring(strstart, strend - strstart);
-                return installDirectory;
+                dir = installDirectory;
+                return true;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to parse SC install directory from launcher log");
+                return false;
             }
         }
+
         _logger.LogError("Failed to find SC install directory from launcher log");
-        return String.Empty;
+        return false;
     }
 }
 
@@ -166,7 +178,7 @@ public sealed class StarCitizenInstallationViewModel
     public required string ChannelName { get; init; }
     public required string Path { get; init; }
     public BuildManifest? Manifest { get; set; }
-    
+
     public string DisplayVersion => $"{ChannelName} - {Manifest?.Data.Branch}-{Manifest?.Data.RequestedP4ChangeNum}";
 }
 
