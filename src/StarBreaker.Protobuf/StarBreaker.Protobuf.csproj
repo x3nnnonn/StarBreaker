@@ -1,14 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>exe</OutputType>
-  </PropertyGroup>
-
   <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.29.1" />
     <PackageReference Include="Grpc.Reflection" Version="2.67.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\StarBreaker.Common\StarBreaker.Common.csproj" />
-    <ProjectReference Include="..\StarBreaker.Grpc\StarBreaker.Grpc.csproj" />
   </ItemGroup>
 </Project>

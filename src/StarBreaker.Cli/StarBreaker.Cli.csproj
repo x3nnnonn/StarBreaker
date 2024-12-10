@@ -7,6 +7,7 @@
     <ProjectReference Include="..\StarBreaker.Chf\StarBreaker.Chf.csproj" />
     <ProjectReference Include="..\StarBreaker.DataCore\StarBreaker.DataCore.csproj" />
     <ProjectReference Include="..\StarBreaker.P4k\StarBreaker.P4k.csproj" />
+    <ProjectReference Include="..\StarBreaker.Protobuf\StarBreaker.Protobuf.csproj" />
   </ItemGroup>
 
   <ItemGroup>

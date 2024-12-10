@@ -44,9 +44,13 @@
       "commandName": "Project",
       "commandLineArgs": "chf-process-all"
     },
-    "debug": {
+    "proto-extract": {
       "commandName": "Project",
-      "commandLineArgs": "debug"
+      "commandLineArgs": "proto-extract --input \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\EPTU\\Bin64\\StarCitizen.exe\" --output \"C:\\Development\\StarBreaker\\src\\StarBreaker.Grpc\\protos\"" 
+    },
+    "proto-set-extract": {
+      "commandName": "Project",
+      "commandLineArgs": "proto-set-extract --input \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\EPTU\\Bin64\\StarCitizen.exe\" --output \"C:\\Development\\StarBreaker\\scripts\\sc.bin\""
     }
   }
 }
