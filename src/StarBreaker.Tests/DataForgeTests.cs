@@ -10,7 +10,7 @@ public class Tests
     [Test]
     public async Task TestTagDatabase()
     {
-        var dcb = new DataCoreBinary(File.OpenRead(@"C:\Scratch\StarCitizen\p4k\Data\Game.dcb"));
+        var dcb = new DataCoreBinary(File.OpenRead(@"D:\StarCitizen\p4k\Data\Game.dcb"));
         var tagdatabase = dcb.GetRecordsByFileName("*TagDatabase*");
         
         var writer = new StringWriter();

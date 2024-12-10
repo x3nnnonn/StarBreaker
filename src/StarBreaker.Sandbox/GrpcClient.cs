@@ -6,7 +6,7 @@ using Grpc.Net.Client;
 using Sc.External.Services.CharacterCustomizer.V1;
 using Sc.External.Services.Entitygraph.V1;
 using Sc.External.Services.Ledger.V1;
-using StarBreaker.Grpc;
+using StarBreaker.Common;
 
 namespace StarBreaker.Sandbox;
 
