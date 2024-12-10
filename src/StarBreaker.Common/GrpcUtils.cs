@@ -1,4 +1,4 @@
-﻿namespace StarBreaker.Grpc;
+﻿namespace StarBreaker.Common;
 
 public static class GrpcUtils
 {
@@ -8,7 +8,7 @@ public static class GrpcUtils
     /// </summary>
     /// <param name="grpcData">The gRPC data to convert.</param>
     /// <returns>The data without the gRPC header.</returns>
-    public static ReadOnlySpan<byte> GrpcToProtobuf(this ReadOnlySpan<byte> grpcData)
+    public static ReadOnlySpan<byte> GrpcToProtobuf(ReadOnlySpan<byte> grpcData)
     {
         if (grpcData.Length < 5 || grpcData[0] != 0)
             throw new ArgumentException("Invalid gRPC data");

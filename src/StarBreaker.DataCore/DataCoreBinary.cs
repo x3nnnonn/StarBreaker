@@ -68,6 +68,7 @@ public sealed partial class DataCoreBinary
         FillNode(node, structDef, ref reader);
 
         node.WriteTo(writer, 0);
+        writer.Flush();
     }
 
     public void Extract(string outputFolder, string? fileNameFilter = null, IProgress<double>? progress = null)
@@ -76,12 +77,9 @@ public sealed partial class DataCoreBinary
         var recordsByFileName = GetRecordsByFileName(fileNameFilter);
         var total = recordsByFileName.Count;
 
-        var lockObj = new Lock();
 
-        Parallel.ForEach(recordsByFileName, kvp =>
+        foreach (var (fileName, record) in recordsByFileName)
         {
-            var (fileName, record) = kvp;
-
             var filePath = Path.Combine(outputFolder, fileName);
 
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
@@ -91,14 +89,11 @@ public sealed partial class DataCoreBinary
                 ExtractSingleRecord(writer, record);
             }
 
-            using (lockObj.EnterScope())
-            {
-                var currentProgress = Interlocked.Increment(ref progressValue);
-                //only report progress every 250 records and when we are done
-                if (currentProgress == total || currentProgress % 250 == 0)
-                    progress?.Report(currentProgress / (double)total);
-            }
-        });
+            var currentProgress = Interlocked.Increment(ref progressValue);
+            //only report progress every 250 records and when we are done
+            if (currentProgress == total || currentProgress % 250 == 0)
+                progress?.Report(currentProgress / (double)total);
+        }
     }
 
     private void FillNode(XmlNode node, DataCoreStructDefinition structDef, ref SpanReader reader)
@@ -132,6 +127,34 @@ public sealed partial class DataCoreBinary
                     var child = new XmlNode(prop.GetName(_database));
 
                     FillNode(child, structDef2, ref reader2);
+
+                    node.AppendChild(child);
+                }
+                else if (prop.DataType == DataType.Reference)
+                {
+                    var reference = reader.Read<DataCoreReference>();
+                    if (reference.RecordId == CigGuid.Empty || reference.InstanceIndex == 0xffffffff)
+                    {
+                        node.AppendAttribute(new XmlAttribute<string>(prop.GetName(_database), "null"));
+                        continue;
+                    }
+
+                    var record = _database.GetRecord(reference.RecordId);
+
+                    var structDef1 = _database.StructDefinitions[record.StructIndex];
+
+                    var offset1 = _database.Offsets[record.StructIndex][record.InstanceIndex];
+
+                    var reader1 = _database.GetReader(offset1);
+
+                    var child = new XmlNode(prop.GetName(_database));
+                    
+                    if(offset1 == 129343588)
+                    {
+                        Debugger.Break();
+                    }
+
+                    FillNode(child, structDef1, ref reader1);
 
                     node.AppendChild(child);
                 }
@@ -239,6 +262,23 @@ public sealed partial class DataCoreBinary
 
                         FillNode(child, structDef2, ref reader2);
 
+                        arrayNode.AppendChild(child);
+                    }
+                    else if (prop.DataType == DataType.Reference)
+                    {
+                        var reference = _database.ReferenceValues[index];
+                        if (reference.RecordId == CigGuid.Empty || reference.InstanceIndex == 0xffffffff)
+                        {
+                            arrayNode.AppendAttribute(new XmlAttribute<string>("null", "null"));
+                            continue;
+                        }
+
+                        var record = _database.GetRecord(reference.RecordId);
+                        var structDef1 = _database.StructDefinitions[record.StructIndex];
+                        var offset1 = _database.Offsets[record.StructIndex][record.InstanceIndex];
+                        var reader1 = _database.GetReader(offset1);
+                        var child = new XmlNode(prop.GetName(_database));
+                        FillNode(child, structDef1, ref reader1);
                         arrayNode.AppendChild(child);
                     }
                     else

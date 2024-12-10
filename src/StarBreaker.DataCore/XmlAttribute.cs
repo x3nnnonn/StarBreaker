@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using StarBreaker.Common;
 
 namespace StarBreaker.DataCore;
@@ -14,6 +15,7 @@ public abstract class XmlAttribute
     }
 }
 
+[DebuggerDisplay("{_name}={Value}")]
 public sealed class XmlAttribute<T> : XmlAttribute
 {
     public readonly T Value;
@@ -75,9 +77,9 @@ public sealed class XmlAttribute<T> : XmlAttribute
                 g.WriteInto(writer);
                 break;
             case DataCoreReference ra:
-                ra.Value.WriteInto(writer);
+                ra.RecordId.WriteInto(writer);
                 writer.Write('.');
-                writer.Write(ra.Item1);
+                writer.Write(ra.InstanceIndex);
                 break;
             case DataCorePointer p:
                 //todo: remove me?
