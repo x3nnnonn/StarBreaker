@@ -205,3 +205,4 @@ src/StarBreaker.Sandbox/working.txt
 src/StarBreaker.Sandbox/mats.txt
 src/StarBreaker.Sandbox/keys.txt
 scripts/dump
+src/StarBreaker.Grpc/protos

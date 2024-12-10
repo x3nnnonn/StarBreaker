@@ -22,17 +22,6 @@ public class DynamicGrpcPrinterOptions
 public static class DynamicGrpcPrinter
 {
     /// <summary>
-    /// Prints the proto description of the specified <see cref="FileDescriptor"/> to a writer.
-    /// </summary>
-    /// <param name="file">The descriptor to print.</param>
-    /// <param name="writer">The text writer.</param>
-    /// <param name="options">The printing options.</param>
-    public static void ToProtoString(this FileDescriptor file, TextWriter writer, DynamicGrpcPrinterOptions? options = null)
-    {
-        ToProtoString(file, new DynamicGrpcPrinterContext(writer, options ?? new DynamicGrpcPrinterOptions()));
-    }
-
-    /// <summary>
     /// Prints the proto description of the specified <see cref="FileDescriptor"/> to a string.
     /// </summary>
     /// <param name="file">The descriptor to print.</param>
@@ -41,82 +30,9 @@ public static class DynamicGrpcPrinter
     public static string ToProtoString(this FileDescriptor file, DynamicGrpcPrinterOptions? options = null)
     {
         var writer = new StringWriter();
-        ToProtoString(file, writer, options);
+        ToProtoString(file, new DynamicGrpcPrinterContext(writer, options ?? new DynamicGrpcPrinterOptions()));
         return writer.ToString();
     }
-
-    /// <summary>
-    /// Prints the proto description of the specified <see cref="MessageDescriptor"/> to a writer.
-    /// </summary>
-    /// <param name="service">The descriptor to print.</param>
-    /// <param name="writer">The text writer.</param>
-    /// <param name="options">The printing options.</param>
-    public static void ToProtoString(this ServiceDescriptor service, TextWriter writer, DynamicGrpcPrinterOptions? options = null)
-    {
-        ToProtoString(service, new DynamicGrpcPrinterContext(writer, options ?? new DynamicGrpcPrinterOptions()));
-    }
-
-    /// <summary>
-    /// Prints the proto description of the specified <see cref="MessageDescriptor"/> to a string.
-    /// </summary>
-    /// <param name="service">The descriptor to print.</param>
-    /// <param name="options">The printing options.</param>
-    /// <returns>A proto description of the specified descriptor.</returns>
-    public static string ToProtoString(this ServiceDescriptor service, DynamicGrpcPrinterOptions? options = null)
-    {
-        var writer = new StringWriter();
-        ToProtoString(service, writer, options);
-        return writer.ToString();
-    }
-
-    /// <summary>
-    /// Prints the proto description of the specified <see cref="MessageDescriptor"/> to a writer.
-    /// </summary>
-    /// <param name="message">The descriptor to print.</param>
-    /// <param name="writer">The text writer.</param>
-    /// <param name="options">The printing options.</param>
-    public static void ToProtoString(this MessageDescriptor message, TextWriter writer, DynamicGrpcPrinterOptions? options = null)
-    {
-        ToProtoString(message, new DynamicGrpcPrinterContext(writer, options ?? new DynamicGrpcPrinterOptions()));
-    }
-
-    /// <summary>
-    /// Prints the proto description of the specified <see cref="MessageDescriptor"/> to a string.
-    /// </summary>
-    /// <param name="message">The descriptor to print.</param>
-    /// <param name="options">The printing options.</param>
-    /// <returns>A proto description of the specified descriptor.</returns>
-    public static string ToProtoString(this MessageDescriptor message, DynamicGrpcPrinterOptions? options = null)
-    {
-        var writer = new StringWriter();
-        ToProtoString(message, writer, options);
-        return writer.ToString();
-    }
-
-    /// <summary>
-    /// Prints the proto description of the specified <see cref="EnumDescriptor"/> to a writer.
-    /// </summary>
-    /// <param name="enumDesc">The descriptor to print.</param>
-    /// <param name="writer">The text writer.</param>
-    /// <param name="options">The printing options.</param>
-    public static void ToProtoString(this EnumDescriptor enumDesc, TextWriter writer, DynamicGrpcPrinterOptions? options = null)
-    {
-        ToProtoString(enumDesc, new DynamicGrpcPrinterContext(writer, options ?? new DynamicGrpcPrinterOptions()));
-    }
-
-    /// <summary>
-    /// Prints the proto description of the specified <see cref="EnumDescriptor"/> to a string.
-    /// </summary>
-    /// <param name="enumDesc">The descriptor to print.</param>
-    /// <param name="options">The printing options.</param>
-    /// <returns>A proto description of the specified descriptor.</returns>
-    public static string ToProtoString(this EnumDescriptor enumDesc, DynamicGrpcPrinterOptions? options = null)
-    {
-        var writer = new StringWriter();
-        ToProtoString(enumDesc, writer, options);
-        return writer.ToString();
-    }
-
     
     private static string GetEnumName(Enum enumValue, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] Type enumType)
     {
@@ -143,7 +59,6 @@ public static class DynamicGrpcPrinter
         }
 
         bool requiresNewLine = false;
-        // Write syntax
         switch (file.Syntax)
         {
             case Syntax.Proto2:
@@ -204,25 +119,25 @@ public static class DynamicGrpcPrinter
             context.WriteLine();
         }
         
-        // //Dump extensions
-        // //TODO: does ordering matter?
-        // var extendedTypes = file.Extensions.UnorderedExtensions.Select(x => x.ExtendeeType).Distinct();
-        // foreach (var extendedType in extendedTypes)
-        // {
-        //     context.WriteLine();
-        //     context.WriteLine($"// Extensions for {context.GetTypeName(extendedType)}");
-        //     context.WriteLine();
-        //     context.WriteLine($"extend {context.GetTypeName(extendedType)} {{");
-        //     context.Indent();
-        //     
-        //     foreach (var extension in file.Extensions.GetExtensionsInDeclarationOrder(extendedType))
-        //     {
-        //         context.WriteLine($"{context.GetTypeName(extension)} {extension.Name} = {extension.FieldNumber};");
-        //     }
-        //     
-        //     context.UnIndent();
-        //     context.WriteLine("}");
-        // }
+        //Dump extensions
+        //TODO: does ordering matter?
+        var extendedTypes = file.Extensions.UnorderedExtensions.Select(x => x.ExtendeeType).Distinct();
+        foreach (var extendedType in extendedTypes)
+        {
+            context.WriteLine();
+            context.WriteLine($"// Extensions for {context.GetTypeName(extendedType)}");
+            context.WriteLine();
+            context.WriteLine($"extend {context.GetTypeName(extendedType)} {{");
+            context.Indent();
+            
+            foreach (var extension in file.Extensions.GetExtensionsInDeclarationOrder(extendedType))
+            {
+                context.WriteLine($"{context.GetTypeName(extension)} {extension.Name} = {extension.FieldNumber};");
+            }
+            
+            context.UnIndent();
+            context.WriteLine("}");
+        }
 
         context.PopContextName(file.Package);
     }
