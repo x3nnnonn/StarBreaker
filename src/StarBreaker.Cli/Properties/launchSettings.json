@@ -46,11 +46,11 @@
     },
     "proto-extract": {
       "commandName": "Project",
-      "commandLineArgs": "proto-extract --input \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\EPTU\\Bin64\\StarCitizen.exe\" --output \"C:\\Development\\StarBreaker\\src\\StarBreaker.Grpc\\protos\"" 
+      "commandLineArgs": "proto-extract --input \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\EPTU\\Bin64\\StarCitizen.exe\" --output \"C:\\Development\\StarCitizenProtobuf\\protos\"" 
     },
     "proto-set-extract": {
       "commandName": "Project",
-      "commandLineArgs": "proto-set-extract --input \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\EPTU\\Bin64\\StarCitizen.exe\" --output \"C:\\Development\\StarBreaker\\scripts\\sc.bin\""
+      "commandLineArgs": "proto-set-extract --input \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\EPTU\\Bin64\\StarCitizen.exe\" --output \"C:\\Development\\StarCitizenProtobuf\\descriptorSet.bin\""
     }
   }
 }
