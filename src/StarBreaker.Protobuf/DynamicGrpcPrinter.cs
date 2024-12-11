@@ -513,6 +513,7 @@ public static class DynamicGrpcPrinter
             return builder.ToString();
         }
 
+        //TODO: this is a bit buggy, avoid using.
         private string GetContextualTypeName(string fullTypeName)
         {
             if (Options.FullyQualified) return $".{fullTypeName}";
