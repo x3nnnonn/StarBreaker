@@ -5,9 +5,13 @@
   <PropertyGroup>
     <NoWarn>CS8981</NoWarn>
   </PropertyGroup>
+  
+  <PropertyGroup>
+    <ProtobufPath>C:\Development\StarCitizenProtobuf\protos</ProtobufPath>
+  </PropertyGroup>
 
   <ItemGroup>
-    <Protobuf ProtoRoot="protos" Include="protos\**\*.proto" />
+    <Protobuf ProtoRoot="$(ProtobufPath)" Include="$(ProtobufPath)\**\*.proto" />
   </ItemGroup>
 
   <ItemGroup>

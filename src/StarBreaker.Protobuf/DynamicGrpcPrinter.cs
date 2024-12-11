@@ -33,7 +33,7 @@ public static class DynamicGrpcPrinter
         ToProtoString(file, new DynamicGrpcPrinterContext(writer, options ?? new DynamicGrpcPrinterOptions()));
         return writer.ToString();
     }
-    
+
     private static string GetEnumName(Enum enumValue, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] Type enumType)
     {
         foreach (var field in enumType.GetFields(BindingFlags.Static | BindingFlags.Public))
@@ -71,12 +71,6 @@ public static class DynamicGrpcPrinter
                 break;
         }
 
-        var options = file.GetOptions();
-        if (options != null)
-        {
-            ToProtoString(options, context);
-        }
-
         // Dump package
         if (requiresNewLine) context.WriteLine();
         requiresNewLine = false;
@@ -94,6 +88,12 @@ public static class DynamicGrpcPrinter
         {
             context.WriteLine($"import \"{import.Name}\";");
             requiresNewLine = true;
+        }
+
+        var options = file.GetOptions();
+        if (options != null)
+        {
+            ToProtoString(options, context);
         }
 
         // Dump services
@@ -118,7 +118,7 @@ public static class DynamicGrpcPrinter
             ToProtoString(enumDescriptor, context);
             context.WriteLine();
         }
-        
+
         //Dump extensions
         //TODO: does ordering matter?
         var extendedTypes = file.Extensions.UnorderedExtensions.Select(x => x.ExtendeeType).Distinct();
@@ -129,12 +129,12 @@ public static class DynamicGrpcPrinter
             context.WriteLine();
             context.WriteLine($"extend {context.GetTypeName(extendedType)} {{");
             context.Indent();
-            
+
             foreach (var extension in file.Extensions.GetExtensionsInDeclarationOrder(extendedType))
             {
                 context.WriteLine($"{context.GetTypeName(extension)} {extension.Name} = {extension.FieldNumber};");
             }
-            
+
             context.UnIndent();
             context.WriteLine("}");
         }
@@ -166,7 +166,7 @@ public static class DynamicGrpcPrinter
 
         if (context.Options.AddMetaComments)
         {
-            context.WriteLine($"// {message.FullName} is {(isEmpty?"an empty":"a")} message:");
+            context.WriteLine($"// {message.FullName} is {(isEmpty ? "an empty" : "a")} message:");
         }
 
         // Compact form, if a message is empty, output a single line
@@ -264,7 +264,7 @@ public static class DynamicGrpcPrinter
             {
                 var nestedMessageType = message.NestedTypes[index];
                 var oo = nestedMessageType.GetOptions();
-                if (oo != null  && oo.HasMapEntry && oo.MapEntry)
+                if (oo != null && oo.HasMapEntry && oo.MapEntry)
                     continue;
                 ToProtoString(nestedMessageType, context);
 
@@ -291,31 +291,6 @@ public static class DynamicGrpcPrinter
                 }
             }
         }
-        
-                
-        //terrible
-        if(message.File.Name == "google/protobuf/descriptor.proto")
-        {
-            string[] names = [
-                "ExtensionRangeOptions ",
-                "FileOptions",
-                "MessageOptions",
-                "FieldOptions",
-                "OneofOptions",
-                "EnumOptions",
-                "EnumValueOptions",
-                "ServiceOptions",
-                "MethodOptions"
-            ];
-            
-            if (names.Contains(message.Name))
-            {
-                context.WriteLine("extensions 1000 to max;");
-            }
-            
-            Console.WriteLine();
-        }
-        
 
         context.UnIndent();
         context.PopContextName(message.Name);
@@ -541,7 +516,7 @@ public static class DynamicGrpcPrinter
         private string GetContextualTypeName(string fullTypeName)
         {
             if (Options.FullyQualified) return $".{fullTypeName}";
-
+            
             int nextIndex = 0;
             foreach (var partName in _contextNames)
             {
