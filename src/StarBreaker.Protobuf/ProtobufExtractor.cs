@@ -29,11 +29,6 @@ public class ProtobufExtractor
         var fileDescriptors = FileDescriptor.BuildFromByteStrings(protoByteStrings);
 
         var targetFolder = Directory.CreateDirectory(protoPath);
-
-        var opts = new DynamicGrpcPrinterOptions
-        {
-            FullyQualified = true
-        };
         
         foreach (var fileDescriptor in fileDescriptors)
         {
@@ -46,7 +41,7 @@ public class ProtobufExtractor
             if (!string.IsNullOrWhiteSpace(dir))
                 Directory.CreateDirectory(dir);
 
-            File.WriteAllText(path, fileDescriptor.ToProtoString(opts));
+            File.WriteAllText(path, fileDescriptor.ToProtoString());
         }
     }
 
