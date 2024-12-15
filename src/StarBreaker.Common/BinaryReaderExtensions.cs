@@ -46,7 +46,9 @@ public static class BinaryReaderExtensions
             
             while (location == -1)
             {
-                br.BaseStream.Seek(-rent.Length, SeekOrigin.Current);
+                // seek to the left by chunkSize + magic.Length.
+                // this is to ensure we don't miss the magic bytes that are split between chunks
+                br.BaseStream.Seek((rent.Length + magic.Length) * -1, SeekOrigin.Current);
 
                 if (br.Read(rent, 0, rent.Length) != rent.Length)
                     throw new Exception("Failed to read end of central directory record");
