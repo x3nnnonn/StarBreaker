@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace StarBreaker.P4k;
 
@@ -42,13 +43,13 @@ public sealed class ZipNode
                 return;
             }
 
-            if (!current.Children.TryGetValue(partHashCode, out var value))
+            ref var value = ref CollectionsMarshal.GetValueRefOrAddDefault(current.Children, partHashCode, out var existed);
+            if (!existed)
             {
                 value = new ZipNode(part.ToString());
-                current.Children[partHashCode] = value;
             }
 
-            current = value;
+            current = value!;
         }
     }
 }
