@@ -34,7 +34,7 @@ public static class BinaryReaderExtensions
     
     public static long Locate(this BinaryReader br, ReadOnlySpan<byte> magic, long bytesFromEnd = 0)
     {
-        const int chunkSize = 2048;
+        const int chunkSize = 4096;
 
         var rent = ArrayPool<byte>.Shared.Rent(chunkSize);
         var search = rent.AsSpan();
