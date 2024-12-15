@@ -9,13 +9,6 @@ namespace StarBreaker.Protobuf;
 //Note: this is a modified version of the original code. I don't really remember what changes make sense or why,
 // but this is working and the whole thing is very brittle so I'm leaving it like this :)
 
-public class DynamicGrpcPrinterOptions
-{
-    public bool AddMetaComments { get; set; }
-    public bool FullyQualified { get; set; }
-    public string Indent { get; set; } = "  ";
-}
-
 /// <summary>
 /// Extension methods for printing descriptors back to proto language.
 /// </summary>
@@ -25,12 +18,11 @@ public static class DynamicGrpcPrinter
     /// Prints the proto description of the specified <see cref="FileDescriptor"/> to a string.
     /// </summary>
     /// <param name="file">The descriptor to print.</param>
-    /// <param name="options">The printing options.</param>
     /// <returns>A proto description of the specified descriptor.</returns>
-    public static string ToProtoString(this FileDescriptor file, DynamicGrpcPrinterOptions? options = null)
+    public static string ToProtoString(this FileDescriptor file)
     {
         var writer = new StringWriter();
-        ToProtoString(file, new DynamicGrpcPrinterContext(writer, options ?? new DynamicGrpcPrinterOptions()));
+        ToProtoString(file, new DynamicGrpcPrinterContext(writer));
         return writer.ToString();
     }
 
@@ -53,11 +45,6 @@ public static class DynamicGrpcPrinter
 
     private static void ToProtoString(this FileDescriptor file, DynamicGrpcPrinterContext context)
     {
-        if (context.Options.AddMetaComments)
-        {
-            context.WriteLine($"// {file.Name} is a proto file.");
-        }
-
         bool requiresNewLine = false;
         switch (file.Syntax)
         {
@@ -79,7 +66,6 @@ public static class DynamicGrpcPrinter
             context.WriteLine($"package {file.Package};");
             requiresNewLine = true;
         }
-        context.PushContextName(file.Package);
 
         // Dump imports
         if (requiresNewLine) context.WriteLine();
@@ -139,35 +125,23 @@ public static class DynamicGrpcPrinter
             context.WriteLine("}");
         }
 
-        context.PopContextName(file.Package);
     }
 
     private static void ToProtoString(this ServiceDescriptor service, DynamicGrpcPrinterContext context)
     {
-        if (context.Options.AddMetaComments)
-        {
-            context.WriteLine($"// {service.FullName} is a service:");
-        }
         context.WriteLine($"service {service.Name} {{");
-        context.PushContextName(service.Name);
         context.Indent();
         foreach (var method in service.Methods)
         {
             context.WriteLine($"rpc {method.Name} ({(method.IsClientStreaming ? "stream" : "")} {context.GetTypeName(method.InputType)} ) returns ({(method.IsServerStreaming ? "stream" : "")} {context.GetTypeName(method.OutputType)} );");
         }
         context.UnIndent();
-        context.PopContextName(service.Name);
         context.WriteLine("}");
     }
 
     private static void ToProtoString(this MessageDescriptor message, DynamicGrpcPrinterContext context)
     {
         bool isEmpty = message.Fields.InDeclarationOrder().Count == 0 && message.NestedTypes.Count == 0 && message.EnumTypes.Count == 0 && message.GetOptions() == null;
-
-        if (context.Options.AddMetaComments)
-        {
-            context.WriteLine($"// {message.FullName} is {(isEmpty ? "an empty" : "a")} message:");
-        }
 
         // Compact form, if a message is empty, output a single line
         if (isEmpty)
@@ -177,7 +151,6 @@ public static class DynamicGrpcPrinter
         }
 
         context.WriteLine($"message {message.Name} {{");
-        context.PushContextName(message.Name);
         context.Indent();
 
         // handle options
@@ -293,7 +266,6 @@ public static class DynamicGrpcPrinter
         }
 
         context.UnIndent();
-        context.PopContextName(message.Name);
         context.WriteLine("}");
     }
 
@@ -301,10 +273,6 @@ public static class DynamicGrpcPrinter
 
     private static void ToProtoString(this EnumDescriptor enumDescriptor, DynamicGrpcPrinterContext context)
     {
-        if (context.Options.AddMetaComments)
-        {
-            context.WriteLine($"// {enumDescriptor.FullName} is an enum:");
-        }
         context.WriteLine($"enum {enumDescriptor.Name} {{");
         context.Indent();
         foreach (var item in enumDescriptor.Values)
@@ -363,16 +331,10 @@ public static class DynamicGrpcPrinter
 
     private class DynamicGrpcPrinterContext
     {
-        private readonly List<string> _contextNames;
-
-        public DynamicGrpcPrinterContext(TextWriter writer, DynamicGrpcPrinterOptions options)
+        public DynamicGrpcPrinterContext(TextWriter writer)
         {
-            _contextNames = new List<string>();
             Writer = writer;
-            Options = options;
         }
-
-        public DynamicGrpcPrinterOptions Options { get; }
 
         public int Level { get; set; }
 
@@ -395,34 +357,15 @@ public static class DynamicGrpcPrinter
 
         private void WriteIndent()
         {
-            var indent = Options.Indent;
-            for (int i = 0; i < Level; i++)
+            for (var i = 0; i < Level; i++)
             {
-                Writer.Write(indent);
-            }
-        }
-
-        public void PushContextName(string name)
-        {
-            if (string.IsNullOrEmpty(name)) return;
-            foreach (var partName in name.Split('.'))
-            {
-                _contextNames.Add($"{partName}.");
-            }
-        }
-
-        public void PopContextName(string name)
-        {
-            if (string.IsNullOrEmpty(name)) return;
-            foreach (var _ in name.Split('.'))
-            {
-                _contextNames.RemoveAt(_contextNames.Count - 1);
+                Writer.Write("  ");
             }
         }
 
         public string GetTypeName(MessageDescriptor descriptor)
         {
-            return GetContextualTypeName(descriptor.FullName);
+            return GetAbsoluteTypeName(descriptor.FullName);
         }
 
         public string GetTypeName(FieldDescriptor field)
@@ -483,7 +426,7 @@ public static class DynamicGrpcPrinter
                 case FieldType.Group:
                     break;
                 case FieldType.Message:
-                    builder.Append(GetContextualTypeName(field.MessageType.FullName));
+                    builder.Append(GetAbsoluteTypeName(field.MessageType.FullName));
                     break;
                 case FieldType.Bytes:
                     builder.Append("bytes");
@@ -504,7 +447,7 @@ public static class DynamicGrpcPrinter
                     builder.Append("sint64");
                     break;
                 case FieldType.Enum:
-                    builder.Append(GetContextualTypeName(field.EnumType.FullName));
+                    builder.Append(GetAbsoluteTypeName(field.EnumType.FullName));
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -513,24 +456,6 @@ public static class DynamicGrpcPrinter
             return builder.ToString();
         }
 
-        //TODO: this is a bit buggy, avoid using.
-        private string GetContextualTypeName(string fullTypeName)
-        {
-            if (Options.FullyQualified) return $".{fullTypeName}";
-            
-            int nextIndex = 0;
-            foreach (var partName in _contextNames)
-            {
-                var currentIndex = fullTypeName.IndexOf(partName, nextIndex, StringComparison.OrdinalIgnoreCase);
-                if (currentIndex != nextIndex)
-                {
-                    break;
-                }
-
-                nextIndex = currentIndex + partName.Length;
-            }
-
-            return nextIndex > 0 ? fullTypeName.Substring(nextIndex) : $".{fullTypeName}";
-        }
+        private static string GetAbsoluteTypeName(string fullTypeName) => $".{fullTypeName}";
     }
 }
