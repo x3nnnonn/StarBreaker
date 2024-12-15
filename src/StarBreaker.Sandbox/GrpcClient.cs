@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿#if DEBUG
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Google.Protobuf;
 using Grpc.Core;
@@ -9,7 +10,6 @@ using Sc.External.Services.Ledger.V1;
 using StarBreaker.Common;
 
 namespace StarBreaker.Sandbox;
-
 /// <summary>
 /// This is here mostly so I can stop referencing the grpc project in actually useful ones.
 ///  It takes ages to compile and I don't want to do it every time I make a change to the protos.
@@ -197,3 +197,5 @@ public record LoginData
 [JsonSerializable(typeof(LoginData))]
 [JsonSerializable(typeof(StarNetwork))]
 public partial class JsonContext : JsonSerializerContext;
+
+#endif
