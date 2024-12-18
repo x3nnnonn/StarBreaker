@@ -5,27 +5,38 @@ namespace StarBreaker.Protobuf;
 
 public class ProtobufExtractor
 {
-    public List<FileDescriptorProto> FileDescriptorProtos { get; }
+    public FileDescriptorSet DescriptorSet { get; }
 
-    public ProtobufExtractor(string file)
+    private ProtobufExtractor(FileDescriptorSet descriptorSet)
     {
-        if (!File.Exists(file))
-            throw new FileNotFoundException("File not found", file);
+        DescriptorSet = descriptorSet;
+    }
+
+    public static ProtobufExtractor FromFilename(string fileName)
+    {
+        if (!File.Exists(fileName))
+            throw new FileNotFoundException("File not found", fileName);
 
         // first we get the raw file descriptors as decoded bytes from the exe
-        var rawFileDescriptorProtos = GetDescriptorsFromFile(file);
+        var rawFileDescriptorProtos = GetDescriptorsFromFile(fileName);
 
         // some protos are duplicates (google well known types), so we deduplicate them. Keeps the largest one.
         var dedupedFileDescriptorProtos = DeduplicateFileDescriptors(rawFileDescriptorProtos);
 
-        // we need them to be in order of dependency for a valid FileDescriptorSet. Do it here to guarantee valid output.
-        FileDescriptorProtos = OrderByDependency(dedupedFileDescriptorProtos);
+        // then we order them by dependency, so that we can write them in the correct order
+        var orderedFileDescriptors = OrderByDependency(dedupedFileDescriptorProtos);
+
+        var set = new FileDescriptorSet();
+
+        set.File.AddRange(orderedFileDescriptors);
+
+        return new ProtobufExtractor(set);
     }
 
     public void WriteProtos(string protoPath, Func<FileDescriptor, bool>? filter = null)
     {
         // This next step is kind of stupid, but it's the only format FileDescriptor accepts
-        var protoByteStrings = FileDescriptorProtos.Select(x => x.ToByteString());
+        var protoByteStrings = DescriptorSet.File.Select(x => x.ToByteString());
         var fileDescriptors = FileDescriptor.BuildFromByteStrings(protoByteStrings);
 
         var targetFolder = Directory.CreateDirectory(protoPath);
@@ -53,11 +64,8 @@ public class ProtobufExtractor
         
         Directory.CreateDirectory(directory);
 
-        var set = new FileDescriptorSet();
-        set.File.AddRange(FileDescriptorProtos);
-
         using var output = File.Create(descriptorSetPath);
-        set.WriteTo(output);
+        DescriptorSet.WriteTo(output);
     }
 
     private static IEnumerable<FileDescriptorProto> DeduplicateFileDescriptors(IEnumerable<FileDescriptorProto> protos)
@@ -69,39 +77,36 @@ public class ProtobufExtractor
             );
     }
 
-    private static List<FileDescriptorProto> OrderByDependency(IEnumerable<FileDescriptorProto> unordered)
+    private static IEnumerable<FileDescriptorProto> OrderByDependency(IEnumerable<FileDescriptorProto> unordered)
     {
-        var resolved = new HashSet<string>();
-        var orderedList = new List<FileDescriptorProto>();
-        var unorderedList = new List<FileDescriptorProto>(unordered);
+        var seen = new HashSet<string>();
+        var unprocessed = new List<FileDescriptorProto>(unordered);
 
-        while (unorderedList.Count > 0)
+        while (unprocessed.Count > 0)
         {
-            var proto = unorderedList.FirstOrDefault(x => x.Dependency.All(dep => resolved.Contains(dep)));
+            var proto = unprocessed.FirstOrDefault(x => x.Dependency.All(dep => seen.Contains(dep)));
             if (proto == null)
             {
                 throw new InvalidOperationException(
-                    $"Invalid proto dependencies. Unable to resolve remaining protos [{string.Join(",", unorderedList.Select(x => x.Name))}] that don't have all their dependencies available.");
+                    $"Invalid proto dependencies. Unable to resolve remaining protos [{string.Join(",", unprocessed.Select(x => x.Name))}] that don't have all their dependencies available.");
             }
 
-            resolved.Add(proto.Name);
-            unorderedList.Remove(proto);
-            orderedList.Add(proto);
-        }
+            seen.Add(proto.Name);
+            unprocessed.Remove(proto);
 
-        return orderedList;
+            yield return proto;
+        }
     }
 
-    private static List<FileDescriptorProto> GetDescriptorsFromFile(string file)
+    private static IEnumerable<FileDescriptorProto> GetDescriptorsFromFile(string file)
     {
-        var protos = new List<FileDescriptorProto>();
-        var span = File.ReadAllBytes(file).AsSpan();
+        var bytes = File.ReadAllBytes(file);
+        var fileLength = bytes.Length;
 
-        var fileLength = span.Length;
-
-        int cursor = 0;
+        var cursor = 0;
         while (cursor < fileLength)
         {
+            var span = bytes.AsSpan();
             var headerIndex = span[cursor..].IndexOf(".proto"u8);
             if (headerIndex == -1)
                 break;
@@ -137,10 +142,8 @@ public class ProtobufExtractor
                 cursor = (int)bytesRead2 + (something ? (int)varInt2 : 0);
             }
 
-            protos.Add(FileDescriptorProto.Parser.ParseFrom(span[start..cursor]));
+            yield return FileDescriptorProto.Parser.ParseFrom(span[start..cursor]);
         }
-
-        return protos;
     }
 
     private static ulong DecodeVarInt(Span<byte> span, int pos, out ulong outPos)

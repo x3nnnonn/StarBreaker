@@ -17,7 +17,7 @@ public class ExtractDescriptorSetCommand : ICommand
     public ValueTask ExecuteAsync(IConsole console)
     {
         console.Output.WriteLine("Extracting protobuf descriptor set...");
-        var extractor = new ProtobufExtractor(Input);
+        var extractor = ProtobufExtractor.FromFilename(Input);
         extractor.WriteDescriptorSet(Output);
         console.Output.WriteLine("Wrote descriptor set to {0}", Output);
         
