@@ -17,9 +17,9 @@ public class ExtractProtobufsCommand : ICommand
     public ValueTask ExecuteAsync(IConsole console)
     {
         console.Output.WriteLine("Extracting protobuf definitions...");
-        var extractor = new ProtobufExtractor(Input);
+        var extractor = ProtobufExtractor.FromFilename(Input);
         extractor.WriteProtos(Output, p => !p.Name.StartsWith("google/protobuf"));
-        console.Output.WriteLine("Wrote {0} protobuf definitions to {1}", extractor.FileDescriptorProtos.Count, Output);
+        console.Output.WriteLine("Wrote {0} protobuf definitions to {1}", extractor.DescriptorSet.File.Count, Output);
         
         return default;
     }

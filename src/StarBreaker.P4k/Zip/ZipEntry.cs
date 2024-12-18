@@ -1,8 +1,10 @@
+using System.Diagnostics;
 using StarBreaker.Common;
 using ZstdSharp;
 
 namespace StarBreaker.P4k;
 
+[DebuggerDisplay("{Name}")]
 public sealed class ZipEntry
 {
     public string Name { get; }

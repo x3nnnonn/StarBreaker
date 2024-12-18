@@ -199,11 +199,16 @@ public sealed partial class P4kFile
         // run it!
         Parallel.ForEach(filteredEntries, entry =>
             {
+                if (entry.UncompressedSize == 0)
+                    return;
+
                 var entryPath = Path.Combine(outputDir, entry.Name);
+                if (File.Exists(entryPath))
+                    return;
 
                 Directory.CreateDirectory(Path.GetDirectoryName(entryPath) ?? throw new InvalidOperationException());
 
-                using (var writeStream = new FileStream(entryPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 131072, useAsync: true))
+                using (var writeStream = new FileStream(entryPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: (int)entry.UncompressedSize, useAsync: true))
                 {
                     using (var entryStream = Open(entry))
                     {
@@ -225,7 +230,7 @@ public sealed partial class P4kFile
 
     public Stream Open(ZipEntry entry)
     {
-        var p4kStream = new FileStream(P4KPath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: (int)entry.UncompressedSize, useAsync: false);
+        var p4kStream = new FileStream(P4KPath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: (int)entry.CompressedSize, useAsync: false);
 
         p4kStream.Seek((long)entry.Offset, SeekOrigin.Begin);
         if (p4kStream.Read<uint>() is not 0x14034B50 and not 0x04034B50)

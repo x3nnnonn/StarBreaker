@@ -130,7 +130,7 @@ public sealed partial class DataCoreBinary
 
                     node.AppendChild(child);
                 }
-                else if (prop.DataType == DataType.Reference)
+                else if (prop.DataType == DataType.Reference && false)
                 {
                     var reference = reader.Read<DataCoreReference>();
                     if (reference.RecordId == CigGuid.Empty || reference.InstanceIndex == 0xffffffff)
@@ -264,7 +264,7 @@ public sealed partial class DataCoreBinary
 
                         arrayNode.AppendChild(child);
                     }
-                    else if (prop.DataType == DataType.Reference)
+                    else if (prop.DataType == DataType.Reference && false)
                     {
                         var reference = _database.ReferenceValues[index];
                         if (reference.RecordId == CigGuid.Empty || reference.InstanceIndex == 0xffffffff)
