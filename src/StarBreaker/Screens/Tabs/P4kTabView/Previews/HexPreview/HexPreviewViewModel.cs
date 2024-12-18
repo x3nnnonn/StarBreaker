@@ -7,8 +7,7 @@ public  sealed partial class HexPreviewViewModel : FilePreviewViewModel
 {
     public HexPreviewViewModel(byte[] data)
     {
-        Document = new ByteArrayBinaryDocument(data, true);
-
+        Document = new MemoryBinaryDocument(data, true);
     }
 
     [ObservableProperty] private IBinaryDocument _document;
