@@ -38,7 +38,7 @@ public sealed partial class P4kFile
     public static P4kFile FromFile(string filePath, IProgress<double>? progress = null)
     {
         progress?.Report(0);
-        using var reader = new BinaryReader(new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.None, 65536), Encoding.UTF8, false);
+        using var reader = new BinaryReader(new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.None, 16384), Encoding.UTF8, false);
 
         var eocdLocation = reader.Locate(EOCDRecord.Magic);
         reader.BaseStream.Seek(eocdLocation, SeekOrigin.Begin);
@@ -86,7 +86,8 @@ public sealed partial class P4kFile
         {
             var entry = ReadEntry(reader);
             entries[i] = entry;
-            channel.Writer.TryWrite(entry);
+            if (!channel.Writer.TryWrite(entry))
+                throw new Exception("Failed to write to channel");
 
             if (i % reportInterval == 0)
                 progress?.Report(i / (double)eocd64.TotalEntries);

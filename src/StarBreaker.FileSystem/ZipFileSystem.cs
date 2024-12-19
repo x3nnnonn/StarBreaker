@@ -25,10 +25,7 @@ public sealed class ZipFileSystem : IFileSystem
             .Select(entry => entry.FullName);
     }
 
-    public bool Exists(string path)
-    {
-        return _archive.Entries.Any(entry => entry.FullName == path);
-    }
+    public bool FileExists(string path) => _archive.Entries.Any(entry => entry.FullName == path);
 
     public Stream OpenRead(string path)
     {

@@ -8,7 +8,7 @@ public sealed class FileSystem : IFileSystem
 
     public IEnumerable<string> GetDirectories(string path) => Directory.EnumerateDirectories(path);
 
-    public bool Exists(string path) => File.Exists(path) || Directory.Exists(path);
+    public bool FileExists(string path) => File.Exists(path) || Directory.Exists(path);
 
     public Stream OpenRead(string path) => File.OpenRead(path);
 }
