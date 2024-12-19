@@ -24,7 +24,7 @@ public interface IFileSystem
     /// </summary>
     /// <param name="path">The path to the file or folder.</param>
     /// <returns>True if the file or folder exists, false otherwise.</returns>
-    bool Exists(string path);
+    bool FileExists(string path);
     
     /// <summary>
     ///     Open a file for reading.

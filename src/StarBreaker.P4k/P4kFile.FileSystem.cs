@@ -14,10 +14,8 @@ public sealed partial class P4kFile : IFileSystem
         for (var index = 0; index < partsCount; index++)
         {
             var part = ranges[index];
-            if (!current.Children.TryGetValue(string.GetHashCode(span[part]), out var value))
-            {
+            if (!current.Children.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(span[part], out var value))
                 yield break;
-            }
 
             current = value;
         }
@@ -39,10 +37,8 @@ public sealed partial class P4kFile : IFileSystem
         for (var index = 0; index < partsCount; index++)
         {
             var part = ranges[index];
-            if (!current.Children.TryGetValue(string.GetHashCode(span[part]), out var value))
-            {
+            if (!current.Children.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(span[part], out var value))
                 yield break;
-            }
 
             current = value;
         }
@@ -53,7 +49,7 @@ public sealed partial class P4kFile : IFileSystem
         }
     }
 
-    public bool Exists(string path)
+    public bool FileExists(string path)
     {
         Span<Range> ranges = stackalloc Range[20];
         var span = path.AsSpan();
@@ -63,10 +59,8 @@ public sealed partial class P4kFile : IFileSystem
         for (var index = 0; index < partsCount; index++)
         {
             var part = ranges[index];
-            if (!current.Children.TryGetValue(string.GetHashCode(span[part]), out var value))
-            {
+            if (!current.Children.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(span[part], out var value))
                 return false;
-            }
 
             current = value;
         }
@@ -84,18 +78,14 @@ public sealed partial class P4kFile : IFileSystem
         for (var index = 0; index < partsCount; index++)
         {
             var part = ranges[index];
-            if (!current.Children.TryGetValue(string.GetHashCode(span[part]), out var value))
-            {
+            if (!current.Children.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(span[part], out var value))
                 throw new FileNotFoundException();
-            }
 
             current = value;
         }
 
         if (current.ZipEntry == null)
-        {
             throw new FileNotFoundException();
-        }
 
         return Open(current.ZipEntry);
     }
