@@ -39,7 +39,7 @@ public sealed class XmlNode
         
         if (_children.Count == 0)
         {
-            writer.Write(" />");
+            writer.Write("/>");
             return;
         }
 

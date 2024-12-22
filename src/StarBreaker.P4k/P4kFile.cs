@@ -38,7 +38,7 @@ public sealed partial class P4kFile
     public static P4kFile FromFile(string filePath, IProgress<double>? progress = null)
     {
         progress?.Report(0);
-        using var reader = new BinaryReader(new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.None, 16384), Encoding.UTF8, false);
+        using var reader = new BinaryReader(new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.None, 4096), Encoding.UTF8, false);
 
         var eocdLocation = reader.Locate(EOCDRecord.Magic);
         reader.BaseStream.Seek(eocdLocation, SeekOrigin.Begin);
