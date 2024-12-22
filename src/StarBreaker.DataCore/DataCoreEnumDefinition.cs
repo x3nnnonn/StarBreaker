@@ -10,4 +10,9 @@ public readonly record struct DataCoreEnumDefinition
     public readonly ushort FirstValueIndex;
     
     public string GetName(DataCoreDatabase db) => db.GetString2(NameOffset);
+
+    #if DEBUG
+    public string Name => DebugGlobal.Database.GetString2(NameOffset);
+    public string Values => string.Join(", ", DebugGlobal.Database.EnumOptions[FirstValueIndex..(FirstValueIndex + ValueCount)]);
+    #endif
 }

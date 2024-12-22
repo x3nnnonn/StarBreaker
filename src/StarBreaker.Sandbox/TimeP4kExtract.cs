@@ -6,7 +6,7 @@ namespace StarBreaker.Sandbox;
 
 public static class TimeP4kExtract
 {
-    private const string p4k = @"C:\Program Files\Roberts Space Industries\StarCitizen\EPTU\Data.p4k";
+    private const string p4k = @"C:\Program Files\Roberts Space Industries\StarCitizen\4.0_PREVIEW\Data.p4k";
 
     public static void Run()
     {

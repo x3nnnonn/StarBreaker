@@ -36,7 +36,12 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             Columns =
             {
                 new HierarchicalExpanderColumn<ZipNode>(
-                    new TextColumn<ZipNode, string>("File Name", x => x.Name, options: new TextColumnOptions<ZipNode>()),
+                    new TextColumn<ZipNode, string>("Name", x => x.GetName(), options: new TextColumnOptions<ZipNode>()
+                    {
+                        //TODO: make the sorting do folders first, then files
+                        //CompareAscending = null,
+                        //CompareDescending = null
+                    }),
                     x => x.Children.Values
                 ),
                 new TextColumn<ZipNode, string>("Size", x => x.GetSize()),

@@ -8,7 +8,7 @@ public sealed class ZipNode
 {
     private static readonly Dictionary<string, ZipNode> _empty = new();
 
-    public string Name { get; }
+    public string? Name { get; }
     public ZipEntry? ZipEntry { get; }
     public Dictionary<string, ZipNode> Children { get; }
 
@@ -21,7 +21,7 @@ public sealed class ZipNode
 
     public ZipNode(ZipEntry file)
     {
-        Name = "";
+        Name = null;
         ZipEntry = file;
         Children = _empty;
     }
