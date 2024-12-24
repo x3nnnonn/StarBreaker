@@ -83,6 +83,7 @@ public sealed class XmlAttribute<T> : XmlAttribute
                 break;
             case DataCorePointer p:
                 //todo: remove me?
+                writer.Write("Pointer.");
                 writer.Write(p.StructIndex);
                 writer.Write('.');
                 writer.Write(p.InstanceIndex);

@@ -21,13 +21,13 @@ public class DataCoreExtractCommand : ICommand
     
     public ValueTask ExecuteAsync(IConsole console)
     {
-        var DataCore = new DataCoreBinary(File.OpenRead(DataCoreBinary));
+        var df = new DataForge(File.OpenRead(DataCoreBinary));
 
         console.Output.WriteLine("DataCore loaded.");
         console.Output.WriteLine("Exporting...");
-        
+
         var sw = Stopwatch.StartNew();
-        DataCore.Extract(OutputDirectory, Filter, new ProgressBar(console));
+        df.ExtractAll(OutputDirectory, Filter, new ProgressBar(console));
         sw.Stop();
         
         console.Output.WriteLine();

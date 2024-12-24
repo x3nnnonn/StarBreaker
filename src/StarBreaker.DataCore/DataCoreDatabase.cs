@@ -42,9 +42,9 @@ public class DataCoreDatabase
     
     public readonly FrozenDictionary<int, int[]> Offsets;
 
-    private readonly FrozenDictionary<int, string> _cachedStrings;
-    private readonly FrozenDictionary<int, string> _cachedStrings2;
-    private readonly FrozenDictionary<CigGuid, DataCoreRecord> _cachedRecords;
+    public readonly FrozenDictionary<int, string> CachedStrings;
+    public readonly FrozenDictionary<int, string> CachedStrings2;
+    public readonly FrozenDictionary<CigGuid, DataCoreRecord> RecordMap;
 
     public DataCoreDatabase(Stream fs)
     {
@@ -114,8 +114,8 @@ public class DataCoreDatabase
         ReferenceValues = reader.ReadArray<DataCoreReference>(referenceValueCount);
         EnumOptions = reader.ReadArray<DataCoreStringId2>(enumOptionCount);
 
-        _cachedStrings = ReadStringTable(reader.ReadBytes((int)textLength).AsSpan());
-        _cachedStrings2 = ReadStringTable(reader.ReadBytes((int)textLength2).AsSpan());
+        CachedStrings = ReadStringTable(reader.ReadBytes((int)textLength).AsSpan());
+        CachedStrings2 = ReadStringTable(reader.ReadBytes((int)textLength2).AsSpan());
         
         var bytesRead = (int)fs.Position;
 
@@ -128,9 +128,9 @@ public class DataCoreDatabase
         var records = new Dictionary<CigGuid, DataCoreRecord>();
         foreach (var record in RecordDefinitions)
         {
-            records[record.Hash] = record;
+            records[record.Id] = record;
         }
-        _cachedRecords = records.ToFrozenDictionary();
+        RecordMap = records.ToFrozenDictionary();
 
 #if DEBUG
         DebugGlobal.Database = this;
@@ -138,9 +138,9 @@ public class DataCoreDatabase
     }
 
     public SpanReader GetReader(int offset) => new(DataSection, offset - DataSectionOffset);
-    public string GetString(DataCoreStringId id) => _cachedStrings[id.Id];
-    public string GetString2(DataCoreStringId2 id) => _cachedStrings2[id.Id];
-    public DataCoreRecord GetRecord(CigGuid guid) => _cachedRecords[guid];
+    public string GetString(DataCoreStringId id) => CachedStrings[id.Id];
+    public string GetString2(DataCoreStringId2 id) => CachedStrings2[id.Id];
+    public DataCoreRecord GetRecord(CigGuid guid) => RecordMap[guid];
 
     private static FrozenDictionary<int, string> ReadStringTable(ReadOnlySpan<byte> span)
     {
@@ -184,7 +184,4 @@ public class DataCoreDatabase
 
         return instances.ToFrozenDictionary();
     }
-
-    public IEnumerable<string> EnumerateStrings1() => _cachedStrings.Values;
-    public IEnumerable<string> EnumerateStrings2() => _cachedStrings2.Values;
 }
