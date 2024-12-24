@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 
 namespace StarBreaker.DataCore;
 
@@ -9,7 +8,7 @@ public sealed class XmlNode
     public readonly string _name;
     public readonly List<XmlNode> _children;
     public readonly List<XmlAttribute> _attributes;
-    
+
     public XmlNode(string name)
     {
         _name = name;
@@ -21,8 +20,15 @@ public sealed class XmlNode
 
     public void AppendAttribute(XmlAttribute xmlAttribute) => _attributes.Add(xmlAttribute);
 
-    public void WriteTo(TextWriter writer, int depth)
+    public void WriteTo(TextWriter writer)
     {
+        WriteToInternal(writer, 0, new Stack<XmlNode>());
+    }
+
+    public void WriteToInternal(TextWriter writer, int depth, Stack<XmlNode> stack)
+    {
+        stack.Push(this);
+
         for (var i = 0; i < depth; i++)
         {
             writer.Write("  ");
@@ -36,7 +42,7 @@ public sealed class XmlNode
             writer.Write(' ');
             attribute.WriteTo(writer);
         }
-        
+
         if (_children.Count == 0)
         {
             writer.Write("/>");
@@ -47,12 +53,33 @@ public sealed class XmlNode
 
         foreach (var child in _children)
         {
+            if (stack.Contains(child))
+            {
+                writer.WriteLine();
+                for (var i = 0; i < depth; i++)
+                {
+                    writer.Write("  ");
+                }
+
+                writer.Write("<CircularReference />");
+                writer.WriteLine();
+                for (var i = 0; i < depth; i++)
+                {
+                    writer.Write("  ");
+                }
+
+                writer.Write("</");
+                writer.Write(_name);
+                writer.Write('>');
+                return;
+            }
+
             writer.WriteLine();
-            child.WriteTo(writer, depth + 1);
+            child.WriteToInternal(writer, depth + 1, stack);
         }
-        
+
         writer.WriteLine();
-        
+
         for (var i = 0; i < depth; i++)
         {
             writer.Write("  ");
@@ -61,5 +88,7 @@ public sealed class XmlNode
         writer.Write("</");
         writer.Write(_name);
         writer.Write('>');
+
+        stack.Pop();
     }
 }
