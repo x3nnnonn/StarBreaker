@@ -8,4 +8,6 @@ public readonly record struct DataCoreReference
 {
     public readonly uint InstanceIndex;
     public readonly CigGuid RecordId;
+
+    public override string ToString() => $"Reference.{RecordId}.{InstanceIndex}";
 }
