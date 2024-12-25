@@ -7,4 +7,6 @@ public readonly record struct DataCorePointer
 {
     public readonly uint StructIndex;
     public readonly uint InstanceIndex;
+
+    public override string ToString() => $"Pointer.{StructIndex}.{InstanceIndex}";
 }

@@ -1,4 +1,6 @@
 ﻿using System.Text;
+using System.Xml;
+using System.Xml.Linq;
 using StarBreaker.Chf;
 using StarBreaker.Common;
 using StarBreaker.DataCore;
@@ -14,10 +16,8 @@ public static class TagDatabase
         var dcbStream = p4k.OpenRead(@"Data\Game2.dcb");
         var dcb = new DataForge(dcbStream);
         var tagDatabase = dcb.DataCore.GetRecordsByFileName("*TagDatabase*").Values.Single();
-
-        using var writer = new StreamWriter(@"D:\tagdatabase.xml");
-        //dcb.ExtractSingleRecord(writer, tagDatabase);
-
-        dcb.ExtractAll(@"D:\\DataCore", progress: new Progress<double>(x => { Console.WriteLine($"Progress: {x:P}"); }));
+        var someActorThing = dcb.DataCore.Database.GetRecord(new CigGuid("001087eb-84db-4bf4-a912-f641894aa543"));
+        var rec = dcb.DataCore.GetFromRecord(tagDatabase);
+        rec.Save(@"D:\rec.xml");
     }
 }

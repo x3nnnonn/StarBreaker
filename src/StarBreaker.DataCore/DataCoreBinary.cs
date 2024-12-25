@@ -1,12 +1,14 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.IO.Enumeration;
+using System.Xml.Linq;
 using StarBreaker.Common;
 
 namespace StarBreaker.DataCore;
 
 public sealed class DataCoreBinary
 {
-    private readonly Dictionary<(int, int), XmlNode> _cache = new();
+    private readonly Dictionary<(int, int), XElement> _cache = new();
     public DataCoreDatabase Database { get; }
 
     public DataCoreBinary(Stream fs)
@@ -33,7 +35,7 @@ public sealed class DataCoreBinary
         return structsPerFileName;
     }
 
-    private void FillNode(XmlNode node, DataCoreStructDefinition structDef, ref SpanReader reader)
+    private void FillNode(XElement node, DataCoreStructDefinition structDef, ref SpanReader reader)
     {
         foreach (ref readonly var prop in structDef.EnumerateProperties(Database.StructDefinitions, Database.PropertyDefinitions).AsSpan())
         {
@@ -44,13 +46,11 @@ public sealed class DataCoreBinary
             else
             {
                 FillArray(node, ref reader, prop);
-
-                //node.AppendChild(new XmlNode("__metadata"));
             }
         }
     }
 
-    private void FillArray(XmlNode node, ref SpanReader reader, DataCorePropertyDefinition prop)
+    private void FillArray(XElement node, ref SpanReader reader, DataCorePropertyDefinition prop)
     {
         var count = reader.ReadUInt32();
         var firstIndex = reader.ReadUInt32();
@@ -58,13 +58,11 @@ public sealed class DataCoreBinary
         if (count == 0)
             return;
 
-        var arrayNode = new XmlNode(prop.GetName(Database));
+        var arrayNode = new XElement(prop.GetName(Database));
 
         for (var i = 0; i < count; i++)
         {
             var index = (int)firstIndex + i;
-
-            XmlNode childNode;
 
             if (prop.DataType is DataType.StrongPointer or DataType.WeakPointer)
             {
@@ -78,90 +76,90 @@ public sealed class DataCoreBinary
                 if (reference.StructIndex == 0xFFFFFFFF || reference.InstanceIndex == 0xFFFFFFFF)
                     continue;
 
-                childNode = GetFromPointer((int)reference.StructIndex, (int)reference.InstanceIndex);
+                arrayNode.Add(GetFromPointer((int)reference.StructIndex, (int)reference.InstanceIndex));
             }
             else if (prop.DataType == DataType.Reference)
             {
                 var reference = Database.ReferenceValues[index];
                 if (reference.RecordId == CigGuid.Empty || reference.InstanceIndex == 0xffffffff)
-                {
-                    arrayNode.AppendAttribute(new XmlAttribute<string>("null", "null"));
                     continue;
-                }
 
-                childNode = GetFromRecord(reference.RecordId);
+                arrayNode.Add(GetReference(reference));
             }
             else if (prop.DataType == DataType.Class)
             {
-                childNode = GetFromPointer(prop.StructIndex, index);
+                arrayNode.Add(GetFromPointer(prop.StructIndex, index));
             }
             else
             {
-                childNode = GetArrayItemNode(prop, index);
+                arrayNode.Add(GetArrayItemNode(prop, index));
             }
-
-            arrayNode.AppendChild(childNode);
         }
 
-        node.AppendChild(arrayNode);
+        node.Add(arrayNode);
     }
 
-    private void FillAttribute(XmlNode node, ref SpanReader reader, DataCorePropertyDefinition prop)
+    private void FillAttribute(XElement node, ref SpanReader reader, DataCorePropertyDefinition prop)
     {
         // ReSharper disable once ConvertIfStatementToSwitchStatement switch here looks kinda ugly idk
         if (prop.DataType == DataType.Class)
         {
             var structDef3 = Database.StructDefinitions[prop.StructIndex];
 
-            var childClass = new XmlNode(prop.GetName(Database));
+            var childClass = new XElement(prop.GetName(Database));
 
             FillNode(childClass, structDef3, ref reader);
 
-            node.AppendChild(childClass);
+            node.Add(childClass);
         }
         else if (prop.DataType is DataType.StrongPointer or DataType.WeakPointer)
         {
             var ptr = reader.Read<DataCorePointer>();
 
             if (ptr.StructIndex == 0xFFFFFFFF || ptr.InstanceIndex == 0xFFFFFFFF)
-            {
-                node.AppendAttribute(new XmlAttribute<string>(prop.GetName(Database), "null"));
                 return;
-            }
 
-            node.AppendChild(GetFromPointer((int)ptr.StructIndex, (int)ptr.InstanceIndex));
+            node.Add(GetFromPointer((int)ptr.StructIndex, (int)ptr.InstanceIndex));
         }
         else if (prop.DataType == DataType.Reference)
         {
             var reference = reader.Read<DataCoreReference>();
             if (reference.RecordId == CigGuid.Empty || reference.InstanceIndex == 0xffffffff)
-            {
-                node.AppendAttribute(new XmlAttribute<string>(prop.GetName(Database), "null"));
                 return;
-            }
 
-            node.AppendChild(GetFromRecord(reference.RecordId));
+            node.Add(GetReference(reference));
         }
         else
         {
-            node.AppendAttribute(GetAttribute(prop, ref reader));
+            node.Add(GetAttribute(prop, ref reader));
         }
     }
 
-    public XmlNode GetFromRecord(CigGuid guid)
+    public XElement GetReference(DataCoreReference reference)
     {
-        var record = Database.GetRecord(guid);
+        var record = Database.GetRecord(reference.RecordId);
 
-        // var node = new XmlNode("Record");
-        // node.AppendAttribute(new XmlAttribute<string>("__name", record.GetName(Database)));
-        // node.AppendAttribute(new XmlAttribute<string>("__fileName", record.GetFileName(Database)));
-        // node.AppendAttribute(new XmlAttribute<string>("__guid", guid.ToString()));
-        // return node;
+        //TODO: stack overflow here sometimes, need to investigate
+        // return GetFromRecord(record);
 
+
+        // this here is a workaround to prevent stack overflow.
+        // At least tells the reader what the reference would have been.
+        var node = new XElement("RecordReference");
+
+        node.Add(new XAttribute("__name", record.GetName(Database)));
+        node.Add(new XAttribute("__fileName", record.GetFileName(Database)));
+        node.Add(new XAttribute("__guid", reference.RecordId.ToString()));
+
+        return node;
+    }
+
+    public XElement GetFromRecord(DataCoreRecord record)
+    {
         return GetFromPointer(record.StructIndex, record.InstanceIndex);
     }
 
-    private XmlNode GetFromPointer(int structIndex, int instanceIndex)
+    private XElement GetFromPointer(int structIndex, int instanceIndex)
     {
         if (_cache.TryGetValue((structIndex, instanceIndex), out var node))
             return node;
@@ -170,7 +168,7 @@ public sealed class DataCoreBinary
         var offset = Database.Offsets[structIndex][instanceIndex];
         var reader = Database.GetReader(offset);
 
-        node = new XmlNode(structDef.GetName(Database));
+        node = new XElement(structDef.GetName(Database));
 
         //store the node in the cache before filling it to prevent infinite recursion
         _cache[(structIndex, instanceIndex)] = node;
@@ -180,56 +178,59 @@ public sealed class DataCoreBinary
         return node;
     }
 
-    private XmlNode GetArrayItemNode(DataCorePropertyDefinition prop, int index)
+    private XElement GetArrayItemNode(DataCorePropertyDefinition prop, int index)
     {
-        var arrayItem = new XmlNode(prop.DataType.ToStringFast());
+        var arrayItem = new XElement(prop.DataType.ToStringFast());
 
         const string indexName = "__index";
-        XmlAttribute att = prop.DataType switch
+        var att = prop.DataType switch
         {
-            DataType.Byte => new XmlAttribute<byte>(indexName, Database.UInt8Values[index]),
-            DataType.Int16 => new XmlAttribute<short>(indexName, Database.Int16Values[index]),
-            DataType.Int32 => new XmlAttribute<int>(indexName, Database.Int32Values[index]),
-            DataType.Int64 => new XmlAttribute<long>(indexName, Database.Int64Values[index]),
-            DataType.SByte => new XmlAttribute<sbyte>(indexName, Database.Int8Values[index]),
-            DataType.UInt16 => new XmlAttribute<ushort>(indexName, Database.UInt16Values[index]),
-            DataType.UInt32 => new XmlAttribute<uint>(indexName, Database.UInt32Values[index]),
-            DataType.UInt64 => new XmlAttribute<ulong>(indexName, Database.UInt64Values[index]),
-            DataType.Boolean => new XmlAttribute<bool>(indexName, Database.BooleanValues[index]),
-            DataType.Single => new XmlAttribute<float>(indexName, Database.SingleValues[index]),
-            DataType.Double => new XmlAttribute<double>(indexName, Database.DoubleValues[index]),
-            DataType.Guid => new XmlAttribute<CigGuid>(indexName, Database.GuidValues[index]),
-            DataType.String => new XmlAttribute<string>(indexName, Database.GetString(Database.StringIdValues[index])),
-            DataType.Locale => new XmlAttribute<string>(indexName, Database.GetString(Database.LocaleValues[index])),
-            DataType.EnumChoice => new XmlAttribute<string>(indexName, Database.GetString(Database.EnumValues[index])),
+            DataType.Byte => new XAttribute(indexName, Database.UInt8Values[index].ToString(CultureInfo.InvariantCulture)),
+            DataType.Int16 => new XAttribute(indexName, Database.Int16Values[index].ToString(CultureInfo.InvariantCulture)),
+            DataType.Int32 => new XAttribute(indexName, Database.Int32Values[index].ToString(CultureInfo.InvariantCulture)),
+            DataType.Int64 => new XAttribute(indexName, Database.Int64Values[index].ToString(CultureInfo.InvariantCulture)),
+            DataType.SByte => new XAttribute(indexName, Database.Int8Values[index].ToString(CultureInfo.InvariantCulture)),
+            DataType.UInt16 => new XAttribute(indexName, Database.UInt16Values[index].ToString(CultureInfo.InvariantCulture)),
+            DataType.UInt32 => new XAttribute(indexName, Database.UInt32Values[index].ToString(CultureInfo.InvariantCulture)),
+            DataType.UInt64 => new XAttribute(indexName, Database.UInt64Values[index].ToString(CultureInfo.InvariantCulture)),
+            DataType.Boolean => new XAttribute(indexName, Database.BooleanValues[index].ToString(CultureInfo.InvariantCulture)),
+            DataType.Single => new XAttribute(indexName, Database.SingleValues[index].ToString(CultureInfo.InvariantCulture)),
+            DataType.Double => new XAttribute(indexName, Database.DoubleValues[index].ToString(CultureInfo.InvariantCulture)),
+            DataType.Guid => new XAttribute(indexName, Database.GuidValues[index].ToString()),
+            DataType.String => new XAttribute(indexName, Database.GetString(Database.StringIdValues[index])),
+            DataType.Locale => new XAttribute(indexName, Database.GetString(Database.LocaleValues[index])),
+            DataType.EnumChoice => new XAttribute(indexName, Database.GetString(Database.EnumValues[index])),
             _ => throw new InvalidOperationException(nameof(DataType))
         };
 
-        arrayItem.AppendAttribute(att);
+        arrayItem.Add(att);
 
         return arrayItem;
     }
 
-    private XmlAttribute GetAttribute(DataCorePropertyDefinition prop, ref SpanReader reader)
+    private XAttribute GetAttribute(DataCorePropertyDefinition prop, ref SpanReader reader)
     {
         var name = prop.GetName(Database);
-        
+
         return prop.DataType switch
         {
-            DataType.Boolean => new XmlAttribute<bool>(name, reader.ReadBoolean()),
-            DataType.Single => new XmlAttribute<float>(name, reader.ReadSingle()),
-            DataType.Double => new XmlAttribute<double>(name, reader.ReadDouble()),
-            DataType.Guid => new XmlAttribute<CigGuid>(name, reader.Read<CigGuid>()),
-            DataType.SByte => new XmlAttribute<sbyte>(name, reader.ReadSByte()),
-            DataType.UInt16 => new XmlAttribute<ushort>(name, reader.ReadUInt16()),
-            DataType.UInt32 => new XmlAttribute<uint>(name, reader.ReadUInt32()),
-            DataType.UInt64 => new XmlAttribute<ulong>(name, reader.ReadUInt64()),
-            DataType.Byte => new XmlAttribute<byte>(name, reader.ReadByte()),
-            DataType.Int16 => new XmlAttribute<short>(name, reader.ReadInt16()),
-            DataType.Int32 => new XmlAttribute<int>(name, reader.ReadInt32()),
-            DataType.Int64 => new XmlAttribute<long>(name, reader.ReadInt64()),
-            DataType.String or DataType.Locale or DataType.EnumChoice => new XmlAttribute<string>(name, Database.GetString(reader.Read<DataCoreStringId>())),
-            _ => throw new UnreachableException()
+            DataType.Boolean => new XAttribute(name, reader.ReadBoolean().ToString(CultureInfo.InvariantCulture)),
+            DataType.Single => new XAttribute(name, reader.ReadSingle().ToString(CultureInfo.InvariantCulture)),
+            DataType.Double => new XAttribute(name, reader.ReadDouble().ToString(CultureInfo.InvariantCulture)),
+            DataType.Guid => new XAttribute(name, reader.Read<CigGuid>().ToString()),
+            DataType.SByte => new XAttribute(name, reader.ReadSByte().ToString(CultureInfo.InvariantCulture)),
+            DataType.UInt16 => new XAttribute(name, reader.ReadUInt16().ToString(CultureInfo.InvariantCulture)),
+            DataType.UInt32 => new XAttribute(name, reader.ReadUInt32().ToString(CultureInfo.InvariantCulture)),
+            DataType.UInt64 => new XAttribute(name, reader.ReadUInt64().ToString(CultureInfo.InvariantCulture)),
+            DataType.Byte => new XAttribute(name, reader.ReadByte().ToString(CultureInfo.InvariantCulture)),
+            DataType.Int16 => new XAttribute(name, reader.ReadInt16().ToString(CultureInfo.InvariantCulture)),
+            DataType.Int32 => new XAttribute(name, reader.ReadInt32().ToString(CultureInfo.InvariantCulture)),
+            DataType.Int64 => new XAttribute(name, reader.ReadInt64().ToString(CultureInfo.InvariantCulture)),
+            DataType.String or DataType.Locale or DataType.EnumChoice => new XAttribute(name, Database.GetString(reader.Read<DataCoreStringId>())),
+            //DataType.Reference => new XAttribute(name, reader.Read<DataCoreReference>().ToString()),
+            //DataType.StrongPointer or DataType.WeakPointer => new XAttribute(name, reader.Read<DataCorePointer>().ToString()),
+            DataType.Class => throw new InvalidOperationException("Classes should be handled by FillNode"),
+            _ => throw new InvalidOperationException(nameof(DataType))
         };
     }
 }

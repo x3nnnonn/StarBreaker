@@ -1,5 +1,6 @@
 ﻿using System.IO.Enumeration;
 using System.Text;
+using System.Xml;
 
 namespace StarBreaker.DataCore;
 
@@ -57,8 +58,10 @@ public class DataForge
 
     public void ExtractSingleRecord(TextWriter writer, DataCoreRecord record)
     {
-        var node = DataCore.GetFromRecord(record.Id);
-        node.WriteTo(writer);
-        writer.Flush();
+        var node = DataCore.GetFromRecord(record);
+
+        using var xmlWriter = XmlWriter.Create(writer, new XmlWriterSettings { Indent = true });
+
+        node.WriteTo(xmlWriter);
     }
 }
