@@ -13,14 +13,7 @@ public readonly record struct DataCorePropertyDefinition
     
     public string GetName(DataCoreDatabase db) => db.GetString2(NameOffset);
 
-    public bool IsAttribute => ConversionType == ConversionType.Attribute && 
-                               DataType != DataType.Class && 
-                               DataType != DataType.StrongPointer;
-    
 #if DEBUG
     public string Name => DebugGlobal.Database.GetString2(NameOffset);
-    public DataCoreStructDefinition? Struct => IsAttribute 
-        ? null 
-        : DebugGlobal.Database.StructDefinitions[StructIndex];
 #endif
 }

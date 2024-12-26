@@ -14,8 +14,8 @@ public class Tests
         var tagdatabase = df.DataCore.GetRecordsByFileName("*TagDatabase*");
 
         var writer = new StringWriter();
-        df.ExtractSingleRecord(writer, tagdatabase.Values.Single());
-        
+        df.GetFromRecord(tagdatabase.Values.Single()).Save(writer);
+
         var expected = await File.ReadAllTextAsync("TagDatabase.TagDatabase.xml");
         var actual = writer.ToString();
         await Assert.That(actual).IsEqualTo(expected);
