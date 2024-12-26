@@ -1,6 +1,7 @@
 ﻿using System.IO.Enumeration;
 using System.Text;
 using System.Xml;
+using System.Xml.Linq;
 
 namespace StarBreaker.DataCore;
 
@@ -11,6 +12,11 @@ public class DataForge
     public DataForge(Stream stream)
     {
         DataCore = new DataCoreBinary(stream);
+    }
+
+    public XElement GetFromRecord(DataCoreRecord record)
+    {
+        return DataCore.GetFromPointer(record.StructIndex, record.InstanceIndex);
     }
 
     public Dictionary<string, string[]> ExportEnums()
@@ -43,25 +49,14 @@ public class DataForge
 
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
 
-            {
-                using var writer = new StreamWriter(filePath);
+            var node = DataCore.GetFromPointer(record.StructIndex, record.InstanceIndex);
 
-                ExtractSingleRecord(writer, record);
-            }
+            node.Save(filePath);
 
             var currentProgress = Interlocked.Increment(ref progressValue);
             //only report progress every 250 records and when we are done
             if (currentProgress == total || currentProgress % 250 == 0)
                 progress?.Report(currentProgress / (double)total);
         }
-    }
-
-    public void ExtractSingleRecord(TextWriter writer, DataCoreRecord record)
-    {
-        var node = DataCore.GetFromRecord(record);
-
-        using var xmlWriter = XmlWriter.Create(writer, new XmlWriterSettings { Indent = true });
-
-        node.WriteTo(xmlWriter);
     }
 }

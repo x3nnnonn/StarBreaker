@@ -9,5 +9,7 @@ public readonly record struct DataCoreReference
     public readonly uint InstanceIndex;
     public readonly CigGuid RecordId;
 
+    public bool IsInvalid => RecordId == CigGuid.Empty || InstanceIndex == 0xFFFFFFFF;
+
     public override string ToString() => $"Reference.{RecordId}.{InstanceIndex}";
 }
