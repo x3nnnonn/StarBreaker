@@ -1,9 +1,15 @@
 using System.Globalization;
-using System.IO.Enumeration;
 using System.Xml.Linq;
 using StarBreaker.Common;
 
 namespace StarBreaker.DataCore;
+
+public sealed class VisitedTracker
+{
+    private readonly HashSet<(int, int)> _visited = [];
+
+    public bool TryVisit(int structIndex, int instanceIndex) => _visited.Add((structIndex, instanceIndex));
+}
 
 public sealed class DataCoreBinary
 {
@@ -14,7 +20,7 @@ public sealed class DataCoreBinary
         Database = new DataCoreDatabase(fs);
     }
 
-    private XElement GetFromStruct(int structIndex, ref SpanReader reader)
+    private XElement GetFromStruct(int structIndex, ref SpanReader reader, VisitedTracker tracker)
     {
         var node = new XElement(Database.StructDefinitions[structIndex].GetName(Database));
 
@@ -23,10 +29,10 @@ public sealed class DataCoreBinary
             node.Add(prop.ConversionType switch
             {
                 //TODO: do we need to handle different types of arrays?
-                ConversionType.Attribute => GetAttribute(prop, ref reader),
-                ConversionType.ComplexArray => GetArray(prop, ref reader),
-                ConversionType.SimpleArray => GetArray(prop, ref reader),
-                ConversionType.ClassArray => GetArray(prop, ref reader),
+                ConversionType.Attribute => GetAttribute(prop, ref reader, tracker),
+                ConversionType.ComplexArray => GetArray(prop, ref reader, tracker),
+                ConversionType.SimpleArray => GetArray(prop, ref reader, tracker),
+                ConversionType.ClassArray => GetArray(prop, ref reader, tracker),
                 _ => throw new InvalidOperationException(nameof(ConversionType))
             });
         }
@@ -34,9 +40,9 @@ public sealed class DataCoreBinary
         return node;
     }
 
-    private XElement GetArray(DataCorePropertyDefinition prop, ref SpanReader reader)
+    private XElement GetArray(DataCorePropertyDefinition prop, ref SpanReader reader, VisitedTracker tracker)
     {
-        var count = reader.ReadUInt32();
+        var count = reader.ReadInt32();
         var firstIndex = reader.ReadInt32();
         var arrayNode = new XElement(prop.GetName(Database));
 
@@ -46,10 +52,10 @@ public sealed class DataCoreBinary
 
             arrayNode.Add(prop.DataType switch
             {
-                DataType.Reference => CreateSimpleReference(Database.ReferenceValues[instanceIndex]),
-                DataType.WeakPointer => CreateSimplePointer(Database.WeakValues[instanceIndex], "WeakPointer"),
-                DataType.StrongPointer => GetFromPointer(Database.StrongValues[instanceIndex]),
-                DataType.Class => GetFromInstance(prop.StructIndex, instanceIndex),
+                DataType.Reference => GetReference(Database.ReferenceValues[instanceIndex], tracker),
+                DataType.WeakPointer => GetFromPointer(Database.WeakValues[instanceIndex], tracker),
+                DataType.StrongPointer => GetFromPointer(Database.StrongValues[instanceIndex], tracker),
+                DataType.Class => GetFromInstance(prop.StructIndex, instanceIndex, tracker),
 
                 DataType.EnumChoice => new XElement(prop.DataType.ToStringFast(), Database.EnumValues[instanceIndex].ToString(Database)),
                 DataType.Guid => new XElement(prop.DataType.ToStringFast(), Database.GuidValues[instanceIndex].ToString()),
@@ -76,14 +82,14 @@ public sealed class DataCoreBinary
         return arrayNode;
     }
 
-    private XObject GetAttribute(DataCorePropertyDefinition prop, ref SpanReader reader)
+    private XObject GetAttribute(DataCorePropertyDefinition prop, ref SpanReader reader, VisitedTracker tracker)
     {
         return prop.DataType switch
         {
-            DataType.Reference => CreateSimpleReference(reader.Read<DataCoreReference>()),
-            DataType.WeakPointer => CreateSimplePointer(reader.Read<DataCorePointer>(), "WeakPointer"),
-            DataType.StrongPointer => GetFromPointer(reader.Read<DataCorePointer>()),
-            DataType.Class => GetFromStruct(prop.StructIndex, ref reader),
+            DataType.Reference => GetReference(reader.Read<DataCoreReference>(), tracker),
+            DataType.WeakPointer => GetFromPointer(reader.Read<DataCorePointer>(), tracker),
+            DataType.StrongPointer => GetFromPointer(reader.Read<DataCorePointer>(), tracker),
+            DataType.Class => GetFromStruct(prop.StructIndex, ref reader, tracker),
 
             DataType.EnumChoice => new XAttribute(prop.GetName(Database), reader.Read<DataCoreStringId>().ToString(Database)),
             DataType.Guid => new XAttribute(prop.GetName(Database), reader.Read<CigGuid>().ToString()),
@@ -104,42 +110,7 @@ public sealed class DataCoreBinary
         };
     }
 
-    private XElement GetReference(DataCoreReference reference)
-    {
-        if (reference.IsInvalid)
-            return CreateSimpleReference(reference);
-
-        var record = Database.GetRecord(reference.RecordId);
-        return GetFromInstance(record.StructIndex, record.InstanceIndex);
-    }
-
-    private XElement GetFromPointer(DataCorePointer pointer)
-    {
-        if (pointer.IsInvalid)
-            return CreateSimplePointer(pointer, "InvalidPointer");
-
-        return GetFromInstance(pointer.StructIndex, pointer.InstanceIndex);
-    }
-
-    public XElement GetFromRecord(DataCoreRecord record)
-    {
-        // use this from outside. create a stack and pass it along for circular reference checking.
-        var stack = new Stack<CigGuid>();
-
-        var node = GetFromInstance(record.StructIndex, record.InstanceIndex);
-
-        return node;
-    }
-
-    //cache these?
-    private XElement GetFromInstance(int structIndex, int instanceIndex)
-    {
-        var reader = Database.GetReader(Database.Offsets[structIndex][instanceIndex]);
-
-        return GetFromStruct(structIndex, ref reader);
-    }
-
-    private XElement CreateSimpleReference(DataCoreReference reference)
+    private XElement GetReference(DataCoreReference reference, VisitedTracker tracker)
     {
         if (reference.IsInvalid)
         {
@@ -149,33 +120,40 @@ public sealed class DataCoreBinary
         }
 
         var record = Database.GetRecord(reference.RecordId);
-        var node = new XElement("RecordReference");
 
-        node.Add(new XAttribute("__name", record.GetName(Database)));
-        node.Add(new XAttribute("__fileName", record.GetFileName(Database)));
-        node.Add(new XAttribute("__guid", reference.RecordId.ToString()));
-        node.Add(new XAttribute("__structName", Database.StructDefinitions[record.StructIndex].GetName(Database)));
-        node.Add(new XAttribute("__structIndex", record.StructIndex.ToString(CultureInfo.InvariantCulture)));
-        node.Add(new XAttribute("__instanceIndex", record.InstanceIndex.ToString(CultureInfo.InvariantCulture)));
-
-        return node;
+        return GetFromInstance(record.StructIndex, record.InstanceIndex, tracker);
     }
 
-    private static XElement CreateSimplePointer(DataCorePointer pointer, string name)
+    private XElement GetFromPointer(DataCorePointer pointer, VisitedTracker tracker)
     {
         if (pointer.IsInvalid)
         {
-            var invalidNode = new XElement("Invalid" + name);
+            var invalidNode = new XElement("InvalidPointer");
             invalidNode.Add(new XAttribute("__structIndex", pointer.StructIndex.ToString(CultureInfo.InvariantCulture)));
             invalidNode.Add(new XAttribute("__instanceIndex", pointer.InstanceIndex.ToString(CultureInfo.InvariantCulture)));
             return invalidNode;
         }
 
-        var node = new XElement(name);
+        return GetFromInstance(pointer.StructIndex, pointer.InstanceIndex, tracker);
+    }
 
-        node.Add(new XAttribute("__structIndex", pointer.StructIndex.ToString(CultureInfo.InvariantCulture)));
-        node.Add(new XAttribute("__instanceIndex", pointer.InstanceIndex.ToString(CultureInfo.InvariantCulture)));
+    public XElement GetFromRecord(DataCoreRecord record)
+    {
+        return GetFromInstance(record.StructIndex, record.InstanceIndex, new VisitedTracker());
+    }
 
-        return node;
+    private XElement GetFromInstance(int structIndex, int instanceIndex, VisitedTracker tracker)
+    {
+        if (!tracker.TryVisit(structIndex, instanceIndex))
+        {
+            var circularNode = new XElement("CircularReference");
+            circularNode.Add(new XAttribute("__structIndex", structIndex.ToString(CultureInfo.InvariantCulture)));
+            circularNode.Add(new XAttribute("__instanceIndex", instanceIndex.ToString(CultureInfo.InvariantCulture)));
+            circularNode.Add(new XAttribute("__structName", Database.StructDefinitions[structIndex].GetName(Database)));
+            return circularNode;
+        }
+
+        var reader = Database.GetReader(Database.Offsets[structIndex][instanceIndex]);
+        return GetFromStruct(structIndex, ref reader, tracker);
     }
 }

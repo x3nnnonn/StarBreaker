@@ -184,6 +184,9 @@ public class DataCoreDatabase
             var structs = db.StructDefinitions.AsSpan();
             var properties = db.PropertyDefinitions.AsSpan();
 
+            if (@this is { AttributeCount: 0, ParentTypeIndex: -1 })
+                return [];
+
             // Calculate total property count to avoid resizing
             int totalPropertyCount = @this.AttributeCount;
             var baseStruct = @this;
