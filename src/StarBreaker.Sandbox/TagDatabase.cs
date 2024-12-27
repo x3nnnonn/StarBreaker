@@ -37,6 +37,6 @@ public static class TagDatabase
         dcb.GetFromRecord(tagDatabase).Save(@"D:\tagdatabase.xml");
         dcb.GetFromRecord(megaMap).Save(@"D:\megamap.xml");
 
-        //dcb.ExtractAll(@"D:\DataCore2");
+        dcb.ExtractAllParallel(@"D:\StarCitizen\DataCoreExport");
     }
 }

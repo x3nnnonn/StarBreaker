@@ -5,6 +5,7 @@ using Avalonia.Controls.Models.TreeDataGrid;
 using Avalonia.Controls.Selection;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Extensions.Logging;
 using StarBreaker.Common;
 using StarBreaker.Extensions;
 using StarBreaker.P4k;
@@ -17,6 +18,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
     public override string Name => "P4k";
     public override string Icon => "ZipFolder";
 
+    private readonly ILogger<P4kTabViewModel> _logger;
     private readonly IP4kService _p4KService;
     
     [ObservableProperty] private HierarchicalTreeDataGridSource<ZipNode> _source;
@@ -28,9 +30,10 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
     private static readonly string[] ddsLodExtensions = [".dds"];
     //, ".dds.1", ".dds.2", ".dds.3", ".dds.4", ".dds.5", ".dds.6", ".dds.7", ".dds.8", ".dds.9"];
 
-    public P4kTabViewModel(IP4kService p4kService)
+    public P4kTabViewModel(IP4kService p4kService, ILogger<P4kTabViewModel> logger)
     {
         _p4KService = p4kService;
+        _logger = logger;
         Source = new HierarchicalTreeDataGridSource<ZipNode>(Array.Empty<ZipNode>())
         {
             Columns =
@@ -44,7 +47,11 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
                     }),
                     x => x.Children.Values
                 ),
-                new TextColumn<ZipNode, string>("Size", x => x.GetSize()),
+                new TextColumn<ZipNode, string>("Size", x => x.GetSize(), options: new TextColumnOptions<ZipNode>()
+                {
+                    CompareAscending = (a, b) => a.ZipEntry?.UncompressedSize.CompareTo(b.ZipEntry?.UncompressedSize) ?? 0,
+                    CompareDescending = (a, b) => b.ZipEntry?.UncompressedSize.CompareTo(a.ZipEntry?.UncompressedSize) ?? 0
+                }),
                 new TextColumn<ZipNode, string>("Date", x => x.GetModifiedDate()),
                 // new TextColumn<ZipNode, string>("Compression", x => x.CompressionMethodUi),
                 // new TextColumn<ZipNode, string>("Encrypted", x => x.EncryptedUi)
@@ -96,20 +103,25 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             //check cryxml before extension since ".xml" sometimes is cxml sometimes plaintext
             if (CryXmlB.CryXml.TryOpen(new MemoryStream(buffer), out var c))
             {
+                _logger.LogInformation("cryxml");
                 var stringwriter = new StringWriter();
-                c.WriteXml(XmlWriter.Create(stringwriter, new XmlWriterSettings(){Indent = true}));
+                c.WriteXml(XmlWriter.Create(stringwriter, new XmlWriterSettings{Indent = true}));
                 preview = new TextPreviewViewModel(stringwriter.ToString());
             }
-            else if (plaintextExtensions.Any(p => selectedEntry.Name.EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
+            else if (plaintextExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
             {
+                _logger.LogInformation("plaintextExtensions");
+
                 preview = new TextPreviewViewModel(Encoding.UTF8.GetString(buffer));
             }
-            else if (ddsLodExtensions.Any(p => selectedEntry.Name.EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
+            else if (ddsLodExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
             {
+                _logger.LogInformation("ddsLodExtensions");
                 preview = new DdsPreviewViewModel(buffer);
             }
             else
             {
+                _logger.LogInformation("hex");
                 preview = new HexPreviewViewModel(buffer);
             }
             //todo other types

@@ -33,10 +33,7 @@ public class DataForge
         return structsPerFileName;
     }
 
-    public XElement GetFromRecord(DataCoreRecord record)
-    {
-        return DataCore.GetFromRecord(record);
-    }
+    public XElement GetFromRecord(DataCoreRecord record) => DataCore.GetFromRecord(record, []);
 
     public Dictionary<string, string[]> ExportEnums()
     {

@@ -129,7 +129,7 @@ public class DataCoreDatabase
         if (reader.Read(DataSection, 0, DataSection.Length) != DataSection.Length)
             throw new Exception("Failed to read data section");
 
-        RecordMap = RecordDefinitions.ToDictionary(x => x.Id).ToFrozenDictionary();
+        RecordMap = RecordDefinitions.ToFrozenDictionary(x => x.Id);
 
         var mainRecords = new Dictionary<string, DataCoreRecord>();
         foreach (var record in RecordDefinitions)
@@ -168,7 +168,7 @@ public class DataCoreDatabase
 
     private FrozenDictionary<int, int[]> ReadOffsets(int initialOffset, Span<DataCoreDataMapping> mappings)
     {
-        var instances = new Dictionary<int, int[]>();
+        var instances = new Dictionary<int, int[]>(mappings.Length);
 
         foreach (var mapping in mappings)
         {
@@ -210,7 +210,7 @@ public class DataCoreDatabase
 
             // Reset to start struct for actual property copying
             baseStruct = @this;
-            int currentPosition = totalPropertyCount;
+            var currentPosition = totalPropertyCount;
 
             // Copy properties in reverse order to avoid InsertRange
             do
@@ -261,7 +261,7 @@ public class DataCoreDatabase
                 DataType.SByte => Unsafe.SizeOf<sbyte>(),
                 DataType.Boolean => Unsafe.SizeOf<byte>(),
                 DataType.Class => CalculateStructSize(attribute.StructIndex),
-                _ => throw new ArgumentOutOfRangeException()
+                _ => throw new InvalidOperationException(nameof(DataType))
             };
         }
 

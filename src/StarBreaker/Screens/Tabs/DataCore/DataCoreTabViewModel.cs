@@ -7,7 +7,7 @@ namespace StarBreaker.Screens;
 
 public sealed partial class DataCoreTabViewModel : PageViewModelBase
 {
-    private const string dataCorePath = "Data\\Game.dcb";
+    private const string dataCorePath = "Data\\Game2.dcb";
     public override string Name => "DataCore";
     public override string Icon => "ViewAll";
 
