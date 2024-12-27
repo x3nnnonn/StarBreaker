@@ -36,11 +36,11 @@ public sealed class DataCoreBinary
         return structsPerFileName;
     }
 
-    private XElement GetNode(DataCoreStructDefinition structDef, ref SpanReader reader)
+    private XElement GetNode(int structIndex, ref SpanReader reader)
     {
-        var node = new XElement(structDef.GetName(Database));
+        var node = new XElement(Database.StructDefinitions[structIndex].GetName(Database));
 
-        foreach (ref readonly var prop in structDef.EnumerateProperties(Database.StructDefinitions, Database.PropertyDefinitions).AsSpan())
+        foreach (var prop in Database.GetProperties(structIndex))
         {
             node.Add(prop.ConversionType switch
             {
@@ -68,8 +68,8 @@ public sealed class DataCoreBinary
 
             arrayNode.Add(prop.DataType switch
             {
-                DataType.Reference => GetReference(Database.ReferenceValues[index]),
-                DataType.WeakPointer => GetFromPointer(Database.WeakValues[index]),
+                DataType.Reference => CreateSimpleReference(Database.ReferenceValues[index]),
+                DataType.WeakPointer => CreateSimplePointer(Database.WeakValues[index], "WeakPointer"),
                 DataType.StrongPointer => GetFromPointer(Database.StrongValues[index]),
                 DataType.Class => GetFromPointer(prop.StructIndex, index),
 
@@ -101,8 +101,8 @@ public sealed class DataCoreBinary
         {
             DataType.Reference => CreateSimpleReference(reader.Read<DataCoreReference>()),
             DataType.WeakPointer => CreateSimplePointer(reader.Read<DataCorePointer>(), "WeakPointer"),
-            DataType.StrongPointer => CreateSimplePointer(reader.Read<DataCorePointer>(), "StrongPointer"),
-            DataType.Class => GetNode(Database.StructDefinitions[prop.StructIndex], ref reader),
+            DataType.StrongPointer => GetFromPointer(reader.Read<DataCorePointer>()),
+            DataType.Class => GetNode(prop.StructIndex, ref reader),
 
             DataType.EnumChoice => new XAttribute(prop.GetName(Database), reader.Read<DataCoreStringId>().ToString(Database)),
             DataType.Guid => new XAttribute(prop.GetName(Database), reader.Read<CigGuid>().ToString()),
@@ -127,8 +127,6 @@ public sealed class DataCoreBinary
     {
         if (reference.IsInvalid)
             return CreateSimpleReference(reference);
-
-        //return CreateSimpleReference(reference);
 
         if (!_currentReferencePath.Add(reference.RecordId))
         {
@@ -159,7 +157,7 @@ public sealed class DataCoreBinary
     {
         var reader = Database.GetReader(Database.Offsets[structIndex][instanceIndex]);
 
-        return GetNode(Database.StructDefinitions[structIndex], ref reader);
+        return GetNode(structIndex, ref reader);
     }
 
     private XElement CreateSimpleReference(DataCoreReference reference)
