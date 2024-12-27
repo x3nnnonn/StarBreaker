@@ -14,9 +14,28 @@ public class DataForge
         DataCore = new DataCoreBinary(stream);
     }
 
+    public Dictionary<string, DataCoreRecord> GetRecordsByFileName(string? fileNameFilter = null)
+    {
+        var structsPerFileName = new Dictionary<string, DataCoreRecord>();
+        foreach (var record in DataCore.Database.RecordDefinitions)
+        {
+            var fileName = record.GetFileName(DataCore.Database);
+
+            if (fileNameFilter != null && !FileSystemName.MatchesSimpleExpression(fileNameFilter, fileName))
+                continue;
+
+            //this looks a lil wonky, but it's correct.
+            //we will either find only on record for any given name,
+            //or when we find multiple, we only care about the last one.
+            structsPerFileName[fileName] = record;
+        }
+
+        return structsPerFileName;
+    }
+
     public XElement GetFromRecord(DataCoreRecord record)
     {
-        return DataCore.GetFromInstance(record.StructIndex, record.InstanceIndex);
+        return DataCore.GetFromRecord(record);
     }
 
     public Dictionary<string, string[]> ExportEnums()
@@ -40,7 +59,7 @@ public class DataForge
     public void ExtractAll(string outputFolder, string? fileNameFilter = null, IProgress<double>? progress = null)
     {
         var progressValue = 0;
-        var recordsByFileName = DataCore.GetRecordsByFileName(fileNameFilter);
+        var recordsByFileName = GetRecordsByFileName(fileNameFilter);
         var total = recordsByFileName.Count;
 
         foreach (var (fileName, record) in recordsByFileName)
@@ -49,7 +68,7 @@ public class DataForge
 
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
 
-            var node = DataCore.GetFromInstance(record.StructIndex, record.InstanceIndex);
+            var node = DataCore.GetFromRecord(record);
 
             node.Save(filePath);
 

@@ -14,25 +14,6 @@ public sealed class DataCoreBinary
         Database = new DataCoreDatabase(fs);
     }
 
-    public Dictionary<string, DataCoreRecord> GetRecordsByFileName(string? fileNameFilter = null)
-    {
-        var structsPerFileName = new Dictionary<string, DataCoreRecord>();
-        foreach (var record in Database.RecordDefinitions)
-        {
-            var fileName = record.GetFileName(Database);
-
-            if (fileNameFilter != null && !FileSystemName.MatchesSimpleExpression(fileNameFilter, fileName))
-                continue;
-
-            //this looks a lil wonky, but it's correct.
-            //we will either find only on record for any given name,
-            //or when we find multiple, we only care about the last one.
-            structsPerFileName[fileName] = record;
-        }
-
-        return structsPerFileName;
-    }
-
     private XElement GetFromStruct(int structIndex, ref SpanReader reader)
     {
         var node = new XElement(Database.StructDefinitions[structIndex].GetName(Database));
@@ -123,7 +104,7 @@ public sealed class DataCoreBinary
         };
     }
 
-    public XElement GetReference(DataCoreReference reference)
+    private XElement GetReference(DataCoreReference reference)
     {
         if (reference.IsInvalid)
             return CreateSimpleReference(reference);
@@ -132,14 +113,13 @@ public sealed class DataCoreBinary
         return GetFromInstance(record.StructIndex, record.InstanceIndex);
     }
 
-    public XElement GetFromPointer(DataCorePointer pointer)
+    private XElement GetFromPointer(DataCorePointer pointer)
     {
         if (pointer.IsInvalid)
             return CreateSimplePointer(pointer, "InvalidPointer");
 
         return GetFromInstance(pointer.StructIndex, pointer.InstanceIndex);
     }
-
 
     public XElement GetFromRecord(DataCoreRecord record)
     {
@@ -152,7 +132,7 @@ public sealed class DataCoreBinary
     }
 
     //cache these?
-    public XElement GetFromInstance(int structIndex, int instanceIndex)
+    private XElement GetFromInstance(int structIndex, int instanceIndex)
     {
         var reader = Database.GetReader(Database.Offsets[structIndex][instanceIndex]);
 

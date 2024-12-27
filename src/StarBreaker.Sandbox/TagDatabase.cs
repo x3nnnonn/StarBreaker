@@ -25,9 +25,9 @@ public static class TagDatabase
 
         var xxx = dcb.DataCore.Database.RecordDefinitions.Where(x => x.GetFileName(dcb.DataCore.Database).Contains("TagDatabase.Tagdatabase", StringComparison.InvariantCultureIgnoreCase)).ToList();
         var yyy = xxx.GroupBy(x => x.InstanceIndex);
-        var megaMap = dcb.DataCore.GetRecordsByFileName("*megamap.pu*").Values.Single();
-        var tagDatabase = dcb.DataCore.GetRecordsByFileName("*TagDatabase*").Values.Single();
-        var broker = dcb.DataCore.GetRecordsByFileName("*missionbroker.pu*").Values.Single();
+        var megaMap = dcb.GetRecordsByFileName("*megamap.pu*").Values.Single();
+        var tagDatabase = dcb.GetRecordsByFileName("*TagDatabase*").Values.Single();
+        var broker = dcb.GetRecordsByFileName("*missionbroker.pu*").Values.Single();
         var someActorThing = dcb.DataCore.Database.GetRecord(new CigGuid("001087eb-84db-4bf4-a912-f641894aa543"));
 
         dcb.GetFromRecord(tagDatabase).Save(@"D:\tagdatabase.xml");

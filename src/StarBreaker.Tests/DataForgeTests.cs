@@ -11,7 +11,7 @@ public class Tests
     public async Task TestTagDatabase()
     {
         var df = new DataForge(File.OpenRead(@"D:\StarCitizen\p4k\Data\Game.dcb"));
-        var tagdatabase = df.DataCore.GetRecordsByFileName("*TagDatabase*");
+        var tagdatabase = df.GetRecordsByFileName("*TagDatabase*");
 
         var writer = new StringWriter();
         df.GetFromRecord(tagdatabase.Values.Single()).Save(writer);
