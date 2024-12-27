@@ -3,6 +3,10 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <PublishAot>true</PublishAot>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\StarBreaker.Chf\StarBreaker.Chf.csproj" />
     <ProjectReference Include="..\StarBreaker.DataCore\StarBreaker.DataCore.csproj" />
