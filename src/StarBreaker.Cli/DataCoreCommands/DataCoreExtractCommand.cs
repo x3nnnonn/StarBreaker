@@ -4,14 +4,15 @@ using CliFx.Attributes;
 using CliFx.Infrastructure;
 using StarBreaker.Cli.Utils;
 using StarBreaker.DataCore;
+using StarBreaker.P4k;
 
 namespace StarBreaker.Cli.DataCoreCommands;
 
 [Command("dcb-extract", Description = "Extracts a DataCore binary file into separate xml files")]
 public class DataCoreExtractCommand : ICommand
 {
-    [CommandOption("dcb", 'd', Description = "Path to the DataCore binary file")]
-    public required string DataCoreBinary { get; init; }
+    [CommandOption("p4k", 'p', Description = "Path to the Game.p4k")]
+    public required string P4kFile { get; init; }
     
     [CommandOption("output", 'o', Description = "Path to the output directory")]
     public required string OutputDirectory { get; init; }
@@ -21,7 +22,12 @@ public class DataCoreExtractCommand : ICommand
     
     public ValueTask ExecuteAsync(IConsole console)
     {
-        var df = new DataForge(File.OpenRead(DataCoreBinary));
+        var p4k = P4k.P4kFile.FromFile(P4kFile);
+        console.Output.WriteLine("P4k loaded.");
+        var dcbStream = p4k.OpenRead(@"Data\Game2.dcb");
+        console.Output.WriteLine("DataCore extracted.");
+
+        var df = new DataForge(dcbStream);
 
         console.Output.WriteLine("DataCore loaded.");
         console.Output.WriteLine("Exporting...");

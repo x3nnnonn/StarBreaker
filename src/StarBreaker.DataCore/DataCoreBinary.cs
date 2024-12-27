@@ -1,8 +1,21 @@
 using System.Globalization;
+using System.Text;
 using System.Xml.Linq;
 using StarBreaker.Common;
 
 namespace StarBreaker.DataCore;
+
+public sealed class DataCoreExtractionContext
+{
+    public HashSet<(int, int)> Tracker { get; }
+    public string FileName { get; }
+
+    public DataCoreExtractionContext(string fileName)
+    {
+        Tracker = new HashSet<(int, int)>();
+        FileName = fileName;
+    }
+}
 
 public sealed class DataCoreBinary
 {
@@ -13,7 +26,7 @@ public sealed class DataCoreBinary
         Database = new DataCoreDatabase(fs);
     }
 
-    private XElement GetFromStruct(int structIndex, ref SpanReader reader, Stack<(int, int)> tracker)
+    private XElement GetFromStruct(int structIndex, ref SpanReader reader, DataCoreExtractionContext context)
     {
         var node = new XElement(Database.StructDefinitions[structIndex].GetName(Database));
 
@@ -22,10 +35,10 @@ public sealed class DataCoreBinary
             node.Add(prop.ConversionType switch
             {
                 //TODO: do we need to handle different types of arrays?
-                ConversionType.Attribute => GetAttribute(prop, ref reader, tracker),
-                ConversionType.ComplexArray => GetArray(prop, ref reader, tracker),
-                ConversionType.SimpleArray => GetArray(prop, ref reader, tracker),
-                ConversionType.ClassArray => GetArray(prop, ref reader, tracker),
+                ConversionType.Attribute => GetAttribute(prop, ref reader, context),
+                ConversionType.ComplexArray => GetArray(prop, ref reader, context),
+                ConversionType.SimpleArray => GetArray(prop, ref reader, context),
+                ConversionType.ClassArray => GetArray(prop, ref reader, context),
                 _ => throw new InvalidOperationException(nameof(ConversionType))
             });
         }
@@ -33,7 +46,7 @@ public sealed class DataCoreBinary
         return node;
     }
 
-    private XElement GetArray(DataCorePropertyDefinition prop, ref SpanReader reader, Stack<(int, int)> tracker)
+    private XElement GetArray(DataCorePropertyDefinition prop, ref SpanReader reader, DataCoreExtractionContext context)
     {
         var count = reader.ReadInt32();
         var firstIndex = reader.ReadInt32();
@@ -45,10 +58,10 @@ public sealed class DataCoreBinary
 
             arrayNode.Add(prop.DataType switch
             {
-                DataType.Reference => GetFromReference(Database.ReferenceValues[instanceIndex], tracker),
-                DataType.WeakPointer => GetFromPointer(Database.WeakValues[instanceIndex], tracker),
-                DataType.StrongPointer => GetFromPointer(Database.StrongValues[instanceIndex], tracker),
-                DataType.Class => GetFromInstance(prop.StructIndex, instanceIndex, tracker),
+                DataType.Reference => GetFromReference(Database.ReferenceValues[instanceIndex], context),
+                DataType.WeakPointer => GetFromPointer(Database.WeakValues[instanceIndex], context),
+                DataType.StrongPointer => GetFromPointer(Database.StrongValues[instanceIndex], context),
+                DataType.Class => GetFromInstance(prop.StructIndex, instanceIndex, context),
 
                 DataType.EnumChoice => new XElement(prop.DataType.ToStringFast(), Database.EnumValues[instanceIndex].ToString(Database)),
                 DataType.Guid => new XElement(prop.DataType.ToStringFast(), Database.GuidValues[instanceIndex].ToString()),
@@ -72,14 +85,14 @@ public sealed class DataCoreBinary
         return arrayNode;
     }
 
-    private XObject GetAttribute(DataCorePropertyDefinition prop, ref SpanReader reader, Stack<(int, int)> tracker)
+    private XObject GetAttribute(DataCorePropertyDefinition prop, ref SpanReader reader, DataCoreExtractionContext context)
     {
         return prop.DataType switch
         {
-            DataType.Reference => GetFromReference(reader.Read<DataCoreReference>(), tracker),
-            DataType.WeakPointer => GetFromPointer(reader.Read<DataCorePointer>(), tracker),
-            DataType.StrongPointer => GetFromPointer(reader.Read<DataCorePointer>(), tracker),
-            DataType.Class => GetFromStruct(prop.StructIndex, ref reader, tracker),
+            DataType.Reference => GetFromReference(reader.Read<DataCoreReference>(), context),
+            DataType.WeakPointer => GetFromPointer(reader.Read<DataCorePointer>(), context),
+            DataType.StrongPointer => GetFromPointer(reader.Read<DataCorePointer>(), context),
+            DataType.Class => GetFromStruct(prop.StructIndex, ref reader, context),
 
             DataType.EnumChoice => new XAttribute(prop.GetName(Database), reader.Read<DataCoreStringId>().ToString(Database)),
             DataType.Guid => new XAttribute(prop.GetName(Database), reader.Read<CigGuid>().ToString()),
@@ -100,7 +113,7 @@ public sealed class DataCoreBinary
         };
     }
 
-    private XElement GetFromReference(DataCoreReference reference, Stack<(int, int)> tracker)
+    private XElement GetFromReference(DataCoreReference reference, DataCoreExtractionContext context)
     {
         if (reference.IsInvalid)
         {
@@ -117,21 +130,21 @@ public sealed class DataCoreBinary
             //if we're referencing a full on file, just add a small mention to it
             var fileReferenceNode = new XElement("FileReference");
             fileReferenceNode.Add(new XAttribute("__guid", reference.RecordId.ToString()));
-            fileReferenceNode.Add(new XAttribute("__fileName", record.GetFileName(Database)));
+            fileReferenceNode.Add(new XAttribute("__filePath", ComputeRelativePath(record.GetFileName(Database), context.FileName)));
             return fileReferenceNode;
         }
 
-        return GetFromRecord(record, tracker);
+        return GetFromRecord(record, context);
     }
 
-    public XElement GetFromRecord(DataCoreRecord record, Stack<(int, int)> tracker)
+    public XElement GetFromRecord(DataCoreRecord record, DataCoreExtractionContext context)
     {
-        var element = GetFromInstance(record.StructIndex, record.InstanceIndex, tracker);
+        var element = GetFromInstance(record.StructIndex, record.InstanceIndex, context);
         element.Add(new XAttribute("__recordGuid", record.Id.ToString()));
         return element;
     }
 
-    private XElement GetFromPointer(DataCorePointer pointer, Stack<(int, int)> tracker)
+    private XElement GetFromPointer(DataCorePointer pointer, DataCoreExtractionContext context)
     {
         if (pointer.IsInvalid)
         {
@@ -141,12 +154,12 @@ public sealed class DataCoreBinary
             return invalidNode;
         }
 
-        return GetFromInstance(pointer.StructIndex, pointer.InstanceIndex, tracker);
+        return GetFromInstance(pointer.StructIndex, pointer.InstanceIndex, context);
     }
 
-    private XElement GetFromInstance(int structIndex, int instanceIndex, Stack<(int, int)> tracker)
+    private XElement GetFromInstance(int structIndex, int instanceIndex, DataCoreExtractionContext context)
     {
-        if (tracker.Contains((structIndex, instanceIndex)))
+        if (!context.Tracker.Add((structIndex, instanceIndex)))
         {
             var circularNode = new XElement("CircularReference");
 
@@ -157,17 +170,30 @@ public sealed class DataCoreBinary
             return circularNode;
         }
 
-        tracker.Push((structIndex, instanceIndex));
-
         var reader = Database.GetReader(Database.Offsets[structIndex][instanceIndex]);
-        var element = GetFromStruct(structIndex, ref reader, tracker);
+        var element = GetFromStruct(structIndex, ref reader, context);
 
-        tracker.Pop();
+        //TODO: make this configurable?
+        // Popping it here makes it repeat the same data more often.
+        // If we leave it in the stack (could be a HashSet), it will only ever print the  same data once per file.
+        //context.Tracker.Pop();
 
         // add some metadata to the element, mostly so we can figure out what a CircularReference is pointing to
         element.Add(new XAttribute("__structIndex", structIndex.ToString(CultureInfo.InvariantCulture)));
         element.Add(new XAttribute("__instanceIndex", instanceIndex.ToString(CultureInfo.InvariantCulture)));
 
         return element;
+    }
+
+    public static string ComputeRelativePath(string filePath, string contextFileName)
+    {
+        var slashes = contextFileName.Count(c => c == '/');
+        var sb = new StringBuilder("file://./");
+        for (var i = 0; i < slashes; i++)
+        {
+            sb.Append("../");
+        }
+        sb.Append(filePath);
+        return sb.ToString();
     }
 }

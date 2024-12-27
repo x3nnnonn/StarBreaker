@@ -17,8 +17,9 @@ public class DataForge
     public Dictionary<string, DataCoreRecord> GetRecordsByFileName(string? fileNameFilter = null)
     {
         var structsPerFileName = new Dictionary<string, DataCoreRecord>();
-        foreach (var record in DataCore.Database.RecordDefinitions)
+        foreach (var recordId in DataCore.Database.MainRecords)
         {
+            var record = DataCore.Database.RecordMap[recordId];
             var fileName = record.GetFileName(DataCore.Database);
 
             if (fileNameFilter != null && !FileSystemName.MatchesSimpleExpression(fileNameFilter, fileName))
@@ -33,7 +34,7 @@ public class DataForge
         return structsPerFileName;
     }
 
-    public XElement GetFromRecord(DataCoreRecord record) => DataCore.GetFromRecord(record, []);
+    public XElement GetFromRecord(DataCoreRecord record) => DataCore.GetFromRecord(record, new DataCoreExtractionContext(record.GetFileName(DataCore.Database)));
 
     public Dictionary<string, string[]> ExportEnums()
     {
