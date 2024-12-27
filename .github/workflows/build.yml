@@ -17,10 +17,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: StarBreaker
-          path: src/StarBreaker/bin/Release/net9.0/win-x64/publish
+          path: | 
+            src/StarBreaker/bin/Release/net9.0/win-x64/publish
+            !**/*.pdb
 
       - name: Upload CLI
         uses: actions/upload-artifact@v4
         with:
           name: StarBreaker.Cli
-          path: src/StarBreaker.Cli/bin/Release/net9.0/win-x64/publish
+          path: |
+            src/StarBreaker.Cli/bin/Release/net9.0/win-x64/publish
+            !**/*.pdb
