@@ -68,7 +68,7 @@ public class DataForge
 
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
 
-            var node = DataCore.GetFromRecord(record);
+            var node = GetFromRecord(record);
 
             node.Save(filePath);
 
@@ -77,5 +77,31 @@ public class DataForge
             if (currentProgress == total || currentProgress % 250 == 0)
                 progress?.Report(currentProgress / (double)total);
         }
+    }
+
+    public void ExtractAllParallel(string outputFolder, string? fileNameFilter = null, IProgress<double>? progress = null)
+    {
+        var progressValue = 0;
+        var recordsByFileName = GetRecordsByFileName(fileNameFilter);
+        var total = recordsByFileName.Count;
+
+        Parallel.ForEach(recordsByFileName, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, kvp =>
+        {
+            var (fileName, record) = kvp;
+            var filePath = Path.Combine(outputFolder, fileName);
+
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+
+            var node = GetFromRecord(record);
+
+            node.Save(filePath);
+
+            var currentProgress = Interlocked.Increment(ref progressValue);
+            //only report progress every 250 records and when we are done
+            if (currentProgress == total || currentProgress % 250 == 0)
+                progress?.Report(currentProgress / (double)total);
+        });
+
+        progress?.Report(1);
     }
 }

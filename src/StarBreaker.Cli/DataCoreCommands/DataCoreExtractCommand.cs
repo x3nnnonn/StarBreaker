@@ -27,7 +27,7 @@ public class DataCoreExtractCommand : ICommand
         console.Output.WriteLine("Exporting...");
 
         var sw = Stopwatch.StartNew();
-        df.ExtractAll(OutputDirectory, Filter, new ProgressBar(console));
+        df.ExtractAllParallel(OutputDirectory, Filter, new ProgressBar(console));
         sw.Stop();
         
         console.Output.WriteLine();
