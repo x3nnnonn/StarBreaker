@@ -10,6 +10,15 @@ jobs:
       - name: Clone
         uses: actions/checkout@v4
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.x
+          cache: true
+
+      - name: Restore
+        run: dotnet restore src --locked-mode
+
       - name: Publish
         run: dotnet publish src
 
