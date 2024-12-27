@@ -1,4 +1,6 @@
+using System.Collections.Concurrent;
 using System.Collections.Frozen;
+using System.Runtime.CompilerServices;
 using System.Text;
 using StarBreaker.Common;
 
@@ -6,6 +8,7 @@ namespace StarBreaker.DataCore;
 
 public class DataCoreDatabase
 {
+    private readonly ConcurrentDictionary<int, DataCorePropertyDefinition[]> _propertiesCache = new();
     private readonly int DataSectionOffset;
     private readonly byte[] DataSection;
 
@@ -39,7 +42,7 @@ public class DataCoreDatabase
     public readonly DataCoreReference[] ReferenceValues;
 
     public readonly DataCoreStringId2[] EnumOptions;
-    
+
     public readonly FrozenDictionary<int, int[]> Offsets;
 
     public readonly FrozenDictionary<int, string> CachedStrings;
@@ -116,21 +119,16 @@ public class DataCoreDatabase
 
         CachedStrings = ReadStringTable(reader.ReadBytes((int)textLength).AsSpan());
         CachedStrings2 = ReadStringTable(reader.ReadBytes((int)textLength2).AsSpan());
-        
+
         var bytesRead = (int)fs.Position;
 
-        Offsets = ReadOffsets(bytesRead, DataMappings, StructDefinitions, PropertyDefinitions);
+        Offsets = ReadOffsets(bytesRead, DataMappings);
         DataSectionOffset = bytesRead;
         DataSection = new byte[fs.Length - bytesRead];
         if (reader.Read(DataSection, 0, DataSection.Length) != DataSection.Length)
             throw new Exception("Failed to read data section");
-        
-        var records = new Dictionary<CigGuid, DataCoreRecord>();
-        foreach (var record in RecordDefinitions)
-        {
-            records[record.Id] = record;
-        }
-        RecordMap = records.ToFrozenDictionary();
+
+        RecordMap = RecordDefinitions.ToDictionary(x => x.Id).ToFrozenDictionary();
 
 #if DEBUG
         DebugGlobal.Database = this;
@@ -159,29 +157,102 @@ public class DataCoreDatabase
         return strings.ToFrozenDictionary();
     }
 
-    private static FrozenDictionary<int, int[]> ReadOffsets(
-        int initialOffset,
-        Span<DataCoreDataMapping> mappings,
-        ReadOnlySpan<DataCoreStructDefinition> structDefs,
-        ReadOnlySpan<DataCorePropertyDefinition> propDefs)
+    private FrozenDictionary<int, int[]> ReadOffsets(int initialOffset, Span<DataCoreDataMapping> mappings)
     {
         var instances = new Dictionary<int, int[]>();
 
         foreach (var mapping in mappings)
         {
             var arr = new int[mapping.StructCount];
-            var structDef = structDefs[mapping.StructIndex];
-            var structSize = structDef.CalculateSize(structDefs, propDefs);
 
             for (var i = 0; i < mapping.StructCount; i++)
             {
                 arr[i] = initialOffset;
-                initialOffset += structSize;
+                initialOffset += CalculateStructSize(mapping.StructIndex);
             }
 
             instances.Add(mapping.StructIndex, arr);
         }
 
         return instances.ToFrozenDictionary();
+    }
+
+    public DataCorePropertyDefinition[] GetProperties(int structIndex) =>
+        _propertiesCache.GetOrAdd(structIndex, static (index, db) =>
+        {
+            var @this = db.StructDefinitions[index];
+            var structs = db.StructDefinitions.AsSpan();
+            var properties = db.PropertyDefinitions.AsSpan();
+
+            // Calculate total property count to avoid resizing
+            int totalPropertyCount = @this.AttributeCount;
+            var baseStruct = @this;
+            while (baseStruct.ParentTypeIndex != 0xFFFFFFFF)
+            {
+                baseStruct = structs[(int)baseStruct.ParentTypeIndex];
+                totalPropertyCount += baseStruct.AttributeCount;
+            }
+
+            // Pre-allocate array with exact size needed
+            var result = new DataCorePropertyDefinition[totalPropertyCount];
+
+            // Reset to start struct for actual property copying
+            baseStruct = @this;
+            int currentPosition = totalPropertyCount;
+
+            // Copy properties in reverse order to avoid InsertRange
+            do
+            {
+                int count = baseStruct.AttributeCount;
+                currentPosition -= count;
+                properties.Slice(baseStruct.FirstAttributeIndex, count)
+                    .CopyTo(result.AsSpan(currentPosition, count));
+
+                if (baseStruct.ParentTypeIndex == 0xFFFFFFFF) break;
+                baseStruct = structs[(int)baseStruct.ParentTypeIndex];
+            } while (true);
+
+            return result;
+        }, this);
+
+    public int CalculateStructSize(int structIndex)
+    {
+        var size = 0;
+
+        foreach (var attribute in GetProperties(structIndex))
+        {
+            if (attribute.ConversionType != ConversionType.Attribute)
+            {
+                //array count + array offset
+                size += sizeof(int) * 2;
+                continue;
+            }
+
+            size += attribute.DataType switch
+            {
+                DataType.Reference => Unsafe.SizeOf<DataCoreReference>(),
+                DataType.WeakPointer => Unsafe.SizeOf<DataCorePointer>(),
+                DataType.StrongPointer => Unsafe.SizeOf<DataCorePointer>(),
+                DataType.EnumChoice => Unsafe.SizeOf<DataCoreStringId>(),
+                DataType.Guid => Unsafe.SizeOf<CigGuid>(),
+                DataType.Locale => Unsafe.SizeOf<DataCoreStringId>(),
+                DataType.Double => Unsafe.SizeOf<double>(),
+                DataType.Single => Unsafe.SizeOf<float>(),
+                DataType.String => Unsafe.SizeOf<DataCoreStringId>(),
+                DataType.UInt64 => Unsafe.SizeOf<ulong>(),
+                DataType.UInt32 => Unsafe.SizeOf<uint>(),
+                DataType.UInt16 => Unsafe.SizeOf<ushort>(),
+                DataType.Byte => Unsafe.SizeOf<byte>(),
+                DataType.Int64 => Unsafe.SizeOf<long>(),
+                DataType.Int32 => Unsafe.SizeOf<int>(),
+                DataType.Int16 => Unsafe.SizeOf<short>(),
+                DataType.SByte => Unsafe.SizeOf<sbyte>(),
+                DataType.Boolean => Unsafe.SizeOf<byte>(),
+                DataType.Class => CalculateStructSize(attribute.StructIndex),
+                _ => throw new ArgumentOutOfRangeException()
+            };
+        }
+
+        return size;
     }
 }
