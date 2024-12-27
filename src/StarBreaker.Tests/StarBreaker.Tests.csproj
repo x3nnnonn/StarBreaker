@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-        <PackageReference Include="TUnit" Version="0.4.92" />
+        <PackageReference Include="TUnit" Version="0.6.0" />
     </ItemGroup>
 
     <ItemGroup>
