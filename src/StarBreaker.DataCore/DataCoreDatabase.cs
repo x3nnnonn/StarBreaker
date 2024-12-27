@@ -48,6 +48,7 @@ public class DataCoreDatabase
     public readonly FrozenDictionary<int, string> CachedStrings;
     public readonly FrozenDictionary<int, string> CachedStrings2;
     public readonly FrozenDictionary<CigGuid, DataCoreRecord> RecordMap;
+    public readonly FrozenSet<CigGuid> MainRecords;
 
     public DataCoreDatabase(Stream fs)
     {
@@ -129,6 +130,14 @@ public class DataCoreDatabase
             throw new Exception("Failed to read data section");
 
         RecordMap = RecordDefinitions.ToDictionary(x => x.Id).ToFrozenDictionary();
+
+        var mainRecords = new Dictionary<string, DataCoreRecord>();
+        foreach (var record in RecordDefinitions)
+        {
+            mainRecords[record.GetFileName(this)] = record;
+        }
+
+        MainRecords = mainRecords.Values.Select(x => x.Id).ToFrozenSet();
 
 #if DEBUG
         DebugGlobal.Database = this;

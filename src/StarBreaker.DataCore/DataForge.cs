@@ -85,7 +85,7 @@ public class DataForge
         var recordsByFileName = GetRecordsByFileName(fileNameFilter);
         var total = recordsByFileName.Count;
 
-        Parallel.ForEach(recordsByFileName, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, kvp =>
+        Parallel.ForEach(recordsByFileName, kvp =>
         {
             var (fileName, record) = kvp;
             var filePath = Path.Combine(outputFolder, fileName);
