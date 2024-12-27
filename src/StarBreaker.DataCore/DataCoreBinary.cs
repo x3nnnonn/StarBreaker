@@ -7,9 +7,6 @@ namespace StarBreaker.DataCore;
 
 public sealed class DataCoreBinary
 {
-    //TODO: make currentReferencePath per-export so we can parallelize
-    private readonly HashSet<CigGuid> _currentReferencePath = [];
-    private readonly Dictionary<(int, int), XElement> _cache = [];
     public DataCoreDatabase Database { get; }
 
     public DataCoreBinary(Stream fs)
@@ -36,7 +33,7 @@ public sealed class DataCoreBinary
         return structsPerFileName;
     }
 
-    private XElement GetNode(int structIndex, ref SpanReader reader)
+    private XElement GetFromStruct(int structIndex, ref SpanReader reader)
     {
         var node = new XElement(Database.StructDefinitions[structIndex].GetName(Database));
 
@@ -59,38 +56,41 @@ public sealed class DataCoreBinary
     private XElement GetArray(DataCorePropertyDefinition prop, ref SpanReader reader)
     {
         var count = reader.ReadUInt32();
-        var firstIndex = reader.ReadUInt32();
+        var firstIndex = reader.ReadInt32();
         var arrayNode = new XElement(prop.GetName(Database));
 
         for (var i = 0; i < count; i++)
         {
-            var index = (int)firstIndex + i;
+            var instanceIndex = firstIndex + i;
 
             arrayNode.Add(prop.DataType switch
             {
-                DataType.Reference => CreateSimpleReference(Database.ReferenceValues[index]),
-                DataType.WeakPointer => CreateSimplePointer(Database.WeakValues[index], "WeakPointer"),
-                DataType.StrongPointer => GetFromPointer(Database.StrongValues[index]),
-                DataType.Class => GetFromPointer(prop.StructIndex, index),
+                DataType.Reference => CreateSimpleReference(Database.ReferenceValues[instanceIndex]),
+                DataType.WeakPointer => CreateSimplePointer(Database.WeakValues[instanceIndex], "WeakPointer"),
+                DataType.StrongPointer => GetFromPointer(Database.StrongValues[instanceIndex]),
+                DataType.Class => GetFromInstance(prop.StructIndex, instanceIndex),
 
-                DataType.EnumChoice => new XElement(prop.DataType.ToStringFast(), Database.EnumValues[index].ToString(Database)),
-                DataType.Guid => new XElement(prop.DataType.ToStringFast(), Database.GuidValues[index].ToString()),
-                DataType.Locale => new XElement(prop.DataType.ToStringFast(), Database.LocaleValues[index].ToString(Database)),
-                DataType.Double => new XElement(prop.DataType.ToStringFast(), Database.DoubleValues[index].ToString(CultureInfo.InvariantCulture)),
-                DataType.Single => new XElement(prop.DataType.ToStringFast(), Database.SingleValues[index].ToString(CultureInfo.InvariantCulture)),
-                DataType.String => new XElement(prop.DataType.ToStringFast(), Database.StringIdValues[index].ToString(Database)),
-                DataType.UInt64 => new XElement(prop.DataType.ToStringFast(), Database.UInt64Values[index].ToString(CultureInfo.InvariantCulture)),
-                DataType.UInt32 => new XElement(prop.DataType.ToStringFast(), Database.UInt32Values[index].ToString(CultureInfo.InvariantCulture)),
-                DataType.UInt16 => new XElement(prop.DataType.ToStringFast(), Database.UInt16Values[index].ToString(CultureInfo.InvariantCulture)),
-                DataType.Byte => new XElement(prop.DataType.ToStringFast(), Database.UInt8Values[index].ToString(CultureInfo.InvariantCulture)),
-                DataType.Int64 => new XElement(prop.DataType.ToStringFast(), Database.Int64Values[index].ToString(CultureInfo.InvariantCulture)),
-                DataType.Int32 => new XElement(prop.DataType.ToStringFast(), Database.Int32Values[index].ToString(CultureInfo.InvariantCulture)),
-                DataType.Int16 => new XElement(prop.DataType.ToStringFast(), Database.Int16Values[index].ToString(CultureInfo.InvariantCulture)),
-                DataType.SByte => new XElement(prop.DataType.ToStringFast(), Database.Int8Values[index].ToString(CultureInfo.InvariantCulture)),
-                DataType.Boolean => new XElement(prop.DataType.ToStringFast(), Database.BooleanValues[index].ToString(CultureInfo.InvariantCulture)),
+                DataType.EnumChoice => new XElement(prop.DataType.ToStringFast(), Database.EnumValues[instanceIndex].ToString(Database)),
+                DataType.Guid => new XElement(prop.DataType.ToStringFast(), Database.GuidValues[instanceIndex].ToString()),
+                DataType.Locale => new XElement(prop.DataType.ToStringFast(), Database.LocaleValues[instanceIndex].ToString(Database)),
+                DataType.Double => new XElement(prop.DataType.ToStringFast(), Database.DoubleValues[instanceIndex].ToString(CultureInfo.InvariantCulture)),
+                DataType.Single => new XElement(prop.DataType.ToStringFast(), Database.SingleValues[instanceIndex].ToString(CultureInfo.InvariantCulture)),
+                DataType.String => new XElement(prop.DataType.ToStringFast(), Database.StringIdValues[instanceIndex].ToString(Database)),
+                DataType.UInt64 => new XElement(prop.DataType.ToStringFast(), Database.UInt64Values[instanceIndex].ToString(CultureInfo.InvariantCulture)),
+                DataType.UInt32 => new XElement(prop.DataType.ToStringFast(), Database.UInt32Values[instanceIndex].ToString(CultureInfo.InvariantCulture)),
+                DataType.UInt16 => new XElement(prop.DataType.ToStringFast(), Database.UInt16Values[instanceIndex].ToString(CultureInfo.InvariantCulture)),
+                DataType.Byte => new XElement(prop.DataType.ToStringFast(), Database.UInt8Values[instanceIndex].ToString(CultureInfo.InvariantCulture)),
+                DataType.Int64 => new XElement(prop.DataType.ToStringFast(), Database.Int64Values[instanceIndex].ToString(CultureInfo.InvariantCulture)),
+                DataType.Int32 => new XElement(prop.DataType.ToStringFast(), Database.Int32Values[instanceIndex].ToString(CultureInfo.InvariantCulture)),
+                DataType.Int16 => new XElement(prop.DataType.ToStringFast(), Database.Int16Values[instanceIndex].ToString(CultureInfo.InvariantCulture)),
+                DataType.SByte => new XElement(prop.DataType.ToStringFast(), Database.Int8Values[instanceIndex].ToString(CultureInfo.InvariantCulture)),
+                DataType.Boolean => new XElement(prop.DataType.ToStringFast(), Database.BooleanValues[instanceIndex].ToString(CultureInfo.InvariantCulture)),
                 _ => throw new InvalidOperationException(nameof(DataType))
             });
         }
+
+        if (count == 0)
+            arrayNode.Add(new XAttribute("Empty", "true"));
 
         return arrayNode;
     }
@@ -102,7 +102,7 @@ public sealed class DataCoreBinary
             DataType.Reference => CreateSimpleReference(reader.Read<DataCoreReference>()),
             DataType.WeakPointer => CreateSimplePointer(reader.Read<DataCorePointer>(), "WeakPointer"),
             DataType.StrongPointer => GetFromPointer(reader.Read<DataCorePointer>()),
-            DataType.Class => GetNode(prop.StructIndex, ref reader),
+            DataType.Class => GetFromStruct(prop.StructIndex, ref reader),
 
             DataType.EnumChoice => new XAttribute(prop.GetName(Database), reader.Read<DataCoreStringId>().ToString(Database)),
             DataType.Guid => new XAttribute(prop.GetName(Database), reader.Read<CigGuid>().ToString()),
@@ -128,21 +128,8 @@ public sealed class DataCoreBinary
         if (reference.IsInvalid)
             return CreateSimpleReference(reference);
 
-        if (!_currentReferencePath.Add(reference.RecordId))
-        {
-            // We've detected a cycle
-            return CreateSimpleReference(reference);
-        }
-
-        try
-        {
-            var record = Database.GetRecord(reference.RecordId);
-            return GetFromPointer(record.StructIndex, record.InstanceIndex);
-        }
-        finally
-        {
-            _currentReferencePath.Remove(reference.RecordId);
-        }
+        var record = Database.GetRecord(reference.RecordId);
+        return GetFromInstance(record.StructIndex, record.InstanceIndex);
     }
 
     public XElement GetFromPointer(DataCorePointer pointer)
@@ -150,14 +137,26 @@ public sealed class DataCoreBinary
         if (pointer.IsInvalid)
             return CreateSimplePointer(pointer, "InvalidPointer");
 
-        return GetFromPointer((int)pointer.StructIndex, (int)pointer.InstanceIndex);
+        return GetFromInstance(pointer.StructIndex, pointer.InstanceIndex);
     }
 
-    public XElement GetFromPointer(int structIndex, int instanceIndex)
+
+    public XElement GetFromRecord(DataCoreRecord record)
+    {
+        // use this from outside. create a stack and pass it along for circular reference checking.
+        var stack = new Stack<CigGuid>();
+
+        var node = GetFromInstance(record.StructIndex, record.InstanceIndex);
+
+        return node;
+    }
+
+    //cache these?
+    public XElement GetFromInstance(int structIndex, int instanceIndex)
     {
         var reader = Database.GetReader(Database.Offsets[structIndex][instanceIndex]);
 
-        return GetNode(structIndex, ref reader);
+        return GetFromStruct(structIndex, ref reader);
     }
 
     private XElement CreateSimpleReference(DataCoreReference reference)

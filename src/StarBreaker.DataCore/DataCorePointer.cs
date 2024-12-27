@@ -5,10 +5,10 @@ namespace StarBreaker.DataCore;
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public readonly record struct DataCorePointer
 {
-    public readonly uint StructIndex;
-    public readonly uint InstanceIndex;
+    public readonly int StructIndex;
+    public readonly int InstanceIndex;
 
-    public bool IsInvalid => StructIndex == 0xFFFFFFFF || InstanceIndex == 0xFFFFFFFF;
+    public bool IsInvalid => StructIndex == -1 || InstanceIndex == -1;
 
     public override string ToString() => $"Pointer.{StructIndex}.{InstanceIndex}";
 }
