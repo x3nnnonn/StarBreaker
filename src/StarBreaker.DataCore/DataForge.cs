@@ -16,7 +16,7 @@ public class DataForge
 
     public XElement GetFromRecord(DataCoreRecord record)
     {
-        return DataCore.GetFromPointer(record.StructIndex, record.InstanceIndex);
+        return DataCore.GetFromInstance(record.StructIndex, record.InstanceIndex);
     }
 
     public Dictionary<string, string[]> ExportEnums()
@@ -49,7 +49,7 @@ public class DataForge
 
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
 
-            var node = DataCore.GetFromPointer(record.StructIndex, record.InstanceIndex);
+            var node = DataCore.GetFromInstance(record.StructIndex, record.InstanceIndex);
 
             node.Save(filePath);
 

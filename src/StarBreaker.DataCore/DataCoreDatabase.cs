@@ -187,9 +187,9 @@ public class DataCoreDatabase
             // Calculate total property count to avoid resizing
             int totalPropertyCount = @this.AttributeCount;
             var baseStruct = @this;
-            while (baseStruct.ParentTypeIndex != 0xFFFFFFFF)
+            while (baseStruct.ParentTypeIndex != -1)
             {
-                baseStruct = structs[(int)baseStruct.ParentTypeIndex];
+                baseStruct = structs[baseStruct.ParentTypeIndex];
                 totalPropertyCount += baseStruct.AttributeCount;
             }
 
@@ -208,8 +208,8 @@ public class DataCoreDatabase
                 properties.Slice(baseStruct.FirstAttributeIndex, count)
                     .CopyTo(result.AsSpan(currentPosition, count));
 
-                if (baseStruct.ParentTypeIndex == 0xFFFFFFFF) break;
-                baseStruct = structs[(int)baseStruct.ParentTypeIndex];
+                if (baseStruct.ParentTypeIndex == -1) break;
+                baseStruct = structs[baseStruct.ParentTypeIndex];
             } while (true);
 
             return result;
