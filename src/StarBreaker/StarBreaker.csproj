@@ -6,7 +6,7 @@
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     </PropertyGroup>
 
-    <PropertyGroup Condition="'$(Configuration)' != 'Debug'">
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
         <PublishAot>true</PublishAot>
     </PropertyGroup>
 

@@ -5,6 +5,7 @@ using StarBreaker.Cli.DataCoreCommands;
 using StarBreaker.Cli.P4kCommands;
 
 return await new CliApplicationBuilder()
+    .SetExecutableName("StarBreaker.Cli")
     .AddCommand<DownloadCommand>()
     .AddCommand<ExportAllCommand>()
     .AddCommand<ImportAllCommand>()
