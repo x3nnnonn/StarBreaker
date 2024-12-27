@@ -28,12 +28,14 @@ public static class TagDatabase
         var megaMap = dcb.GetRecordsByFileName("*megamap.pu*").Values.Single();
         var tagDatabase = dcb.GetRecordsByFileName("*TagDatabase*").Values.Single();
         var broker = dcb.GetRecordsByFileName("*missionbroker.pu*").Values.Single();
+        var unittest = dcb.GetRecordsByFileName("*unittesta*").Values.Single();
         var someActorThing = dcb.DataCore.Database.GetRecord(new CigGuid("41d8fb15-72bb-446e-81df-eaecbc01e195"));
-        dcb.GetFromRecord(someActorThing).Save(@"D:\someActorThing.xml");
 
+        dcb.GetFromRecord(broker).Save(@"D:\broker.xml");
+        dcb.GetFromRecord(unittest).Save(@"D:\unittesta.xml");
+        dcb.GetFromRecord(someActorThing).Save(@"D:\someActorThing.xml");
         dcb.GetFromRecord(tagDatabase).Save(@"D:\tagdatabase.xml");
         dcb.GetFromRecord(megaMap).Save(@"D:\megamap.xml");
-        dcb.GetFromRecord(broker).Save(@"D:\broker.xml");
 
         //dcb.ExtractAll(@"D:\DataCore2");
     }

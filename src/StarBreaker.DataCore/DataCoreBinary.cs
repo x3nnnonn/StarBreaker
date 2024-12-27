@@ -4,13 +4,6 @@ using StarBreaker.Common;
 
 namespace StarBreaker.DataCore;
 
-public sealed class VisitedTracker
-{
-    private readonly HashSet<(int, int)> _visited = [];
-
-    public bool TryVisit(int structIndex, int instanceIndex) => _visited.Add((structIndex, instanceIndex));
-}
-
 public sealed class DataCoreBinary
 {
     public DataCoreDatabase Database { get; }
@@ -20,7 +13,7 @@ public sealed class DataCoreBinary
         Database = new DataCoreDatabase(fs);
     }
 
-    private XElement GetFromStruct(int structIndex, ref SpanReader reader, VisitedTracker tracker)
+    private XElement GetFromStruct(int structIndex, ref SpanReader reader, Stack<(int, int)> tracker)
     {
         var node = new XElement(Database.StructDefinitions[structIndex].GetName(Database));
 
@@ -40,7 +33,7 @@ public sealed class DataCoreBinary
         return node;
     }
 
-    private XElement GetArray(DataCorePropertyDefinition prop, ref SpanReader reader, VisitedTracker tracker)
+    private XElement GetArray(DataCorePropertyDefinition prop, ref SpanReader reader, Stack<(int, int)> tracker)
     {
         var count = reader.ReadInt32();
         var firstIndex = reader.ReadInt32();
@@ -52,7 +45,7 @@ public sealed class DataCoreBinary
 
             arrayNode.Add(prop.DataType switch
             {
-                DataType.Reference => GetReference(Database.ReferenceValues[instanceIndex], tracker),
+                DataType.Reference => GetFromReference(Database.ReferenceValues[instanceIndex], tracker),
                 DataType.WeakPointer => GetFromPointer(Database.WeakValues[instanceIndex], tracker),
                 DataType.StrongPointer => GetFromPointer(Database.StrongValues[instanceIndex], tracker),
                 DataType.Class => GetFromInstance(prop.StructIndex, instanceIndex, tracker),
@@ -76,17 +69,14 @@ public sealed class DataCoreBinary
             });
         }
 
-        if (count == 0)
-            arrayNode.Add(new XAttribute("Empty", "true"));
-
         return arrayNode;
     }
 
-    private XObject GetAttribute(DataCorePropertyDefinition prop, ref SpanReader reader, VisitedTracker tracker)
+    private XObject GetAttribute(DataCorePropertyDefinition prop, ref SpanReader reader, Stack<(int, int)> tracker)
     {
         return prop.DataType switch
         {
-            DataType.Reference => GetReference(reader.Read<DataCoreReference>(), tracker),
+            DataType.Reference => GetFromReference(reader.Read<DataCoreReference>(), tracker),
             DataType.WeakPointer => GetFromPointer(reader.Read<DataCorePointer>(), tracker),
             DataType.StrongPointer => GetFromPointer(reader.Read<DataCorePointer>(), tracker),
             DataType.Class => GetFromStruct(prop.StructIndex, ref reader, tracker),
@@ -110,21 +100,31 @@ public sealed class DataCoreBinary
         };
     }
 
-    private XElement GetReference(DataCoreReference reference, VisitedTracker tracker)
+    private XElement GetFromReference(DataCoreReference reference, Stack<(int, int)> tracker)
     {
         if (reference.IsInvalid)
         {
             var invalidNode = new XElement("InvalidReference");
             invalidNode.Add(new XAttribute("__guid", reference.RecordId.ToString()));
+            invalidNode.Add(new XAttribute("__instanceIndex", reference.InstanceIndex.ToString(CultureInfo.InvariantCulture)));
             return invalidNode;
         }
 
         var record = Database.GetRecord(reference.RecordId);
 
+        if (IsReferenceForFile(reference))
+        {
+            //if we're referencing a full on file, just add a small mention to it
+            var fileReferenceNode = new XElement("FileReference");
+            fileReferenceNode.Add(new XAttribute("__guid", reference.RecordId.ToString()));
+            fileReferenceNode.Add(new XAttribute("__fileName", record.GetFileName(Database)));
+            return fileReferenceNode;
+        }
+
         return GetFromInstance(record.StructIndex, record.InstanceIndex, tracker);
     }
 
-    private XElement GetFromPointer(DataCorePointer pointer, VisitedTracker tracker)
+    private XElement GetFromPointer(DataCorePointer pointer, Stack<(int, int)> tracker)
     {
         if (pointer.IsInvalid)
         {
@@ -139,21 +139,35 @@ public sealed class DataCoreBinary
 
     public XElement GetFromRecord(DataCoreRecord record)
     {
-        return GetFromInstance(record.StructIndex, record.InstanceIndex, new VisitedTracker());
+        return GetFromInstance(record.StructIndex, record.InstanceIndex, new Stack<(int, int)>());
     }
 
-    private XElement GetFromInstance(int structIndex, int instanceIndex, VisitedTracker tracker)
+    private XElement GetFromInstance(int structIndex, int instanceIndex, Stack<(int, int)> tracker)
     {
-        if (!tracker.TryVisit(structIndex, instanceIndex))
+        if (tracker.Contains((structIndex, instanceIndex)))
         {
             var circularNode = new XElement("CircularReference");
+            circularNode.Add(new XAttribute("__structName", Database.StructDefinitions[structIndex].GetName(Database)));
             circularNode.Add(new XAttribute("__structIndex", structIndex.ToString(CultureInfo.InvariantCulture)));
             circularNode.Add(new XAttribute("__instanceIndex", instanceIndex.ToString(CultureInfo.InvariantCulture)));
-            circularNode.Add(new XAttribute("__structName", Database.StructDefinitions[structIndex].GetName(Database)));
+            //TODO: add more info here?
             return circularNode;
         }
 
-        var reader = Database.GetReader(Database.Offsets[structIndex][instanceIndex]);
-        return GetFromStruct(structIndex, ref reader, tracker);
+        tracker.Push((structIndex, instanceIndex));
+        try
+        {
+            var reader = Database.GetReader(Database.Offsets[structIndex][instanceIndex]);
+            return GetFromStruct(structIndex, ref reader, tracker);
+        }
+        finally
+        {
+            tracker.Pop();
+        }
+    }
+
+    public bool IsReferenceForFile(DataCoreReference reference)
+    {
+        return Database.MainRecords.Contains(reference.RecordId);
     }
 }
