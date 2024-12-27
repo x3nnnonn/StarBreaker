@@ -104,7 +104,7 @@ public sealed class DataCoreBinary
     {
         if (reference.IsInvalid)
         {
-            var invalidNode = new XElement("InvalidReference");
+            var invalidNode = new XElement("NullReference");
             invalidNode.Add(new XAttribute("__guid", reference.RecordId.ToString()));
             invalidNode.Add(new XAttribute("__instanceIndex", reference.InstanceIndex.ToString(CultureInfo.InvariantCulture)));
             return invalidNode;
@@ -112,7 +112,7 @@ public sealed class DataCoreBinary
 
         var record = Database.GetRecord(reference.RecordId);
 
-        if (IsReferenceForFile(reference))
+        if (Database.MainRecords.Contains(reference.RecordId))
         {
             //if we're referencing a full on file, just add a small mention to it
             var fileReferenceNode = new XElement("FileReference");
@@ -121,14 +121,21 @@ public sealed class DataCoreBinary
             return fileReferenceNode;
         }
 
-        return GetFromInstance(record.StructIndex, record.InstanceIndex, tracker);
+        return GetFromRecord(record, tracker);
+    }
+
+    public XElement GetFromRecord(DataCoreRecord record, Stack<(int, int)> tracker)
+    {
+        var element = GetFromInstance(record.StructIndex, record.InstanceIndex, tracker);
+        element.Add(new XAttribute("__recordGuid", record.Id.ToString()));
+        return element;
     }
 
     private XElement GetFromPointer(DataCorePointer pointer, Stack<(int, int)> tracker)
     {
         if (pointer.IsInvalid)
         {
-            var invalidNode = new XElement("InvalidPointer");
+            var invalidNode = new XElement("NullPointer");
             invalidNode.Add(new XAttribute("__structIndex", pointer.StructIndex.ToString(CultureInfo.InvariantCulture)));
             invalidNode.Add(new XAttribute("__instanceIndex", pointer.InstanceIndex.ToString(CultureInfo.InvariantCulture)));
             return invalidNode;
@@ -137,37 +144,30 @@ public sealed class DataCoreBinary
         return GetFromInstance(pointer.StructIndex, pointer.InstanceIndex, tracker);
     }
 
-    public XElement GetFromRecord(DataCoreRecord record)
-    {
-        return GetFromInstance(record.StructIndex, record.InstanceIndex, new Stack<(int, int)>());
-    }
-
     private XElement GetFromInstance(int structIndex, int instanceIndex, Stack<(int, int)> tracker)
     {
         if (tracker.Contains((structIndex, instanceIndex)))
         {
             var circularNode = new XElement("CircularReference");
+
             circularNode.Add(new XAttribute("__structName", Database.StructDefinitions[structIndex].GetName(Database)));
             circularNode.Add(new XAttribute("__structIndex", structIndex.ToString(CultureInfo.InvariantCulture)));
             circularNode.Add(new XAttribute("__instanceIndex", instanceIndex.ToString(CultureInfo.InvariantCulture)));
-            //TODO: add more info here?
+
             return circularNode;
         }
 
         tracker.Push((structIndex, instanceIndex));
-        try
-        {
-            var reader = Database.GetReader(Database.Offsets[structIndex][instanceIndex]);
-            return GetFromStruct(structIndex, ref reader, tracker);
-        }
-        finally
-        {
-            tracker.Pop();
-        }
-    }
 
-    public bool IsReferenceForFile(DataCoreReference reference)
-    {
-        return Database.MainRecords.Contains(reference.RecordId);
+        var reader = Database.GetReader(Database.Offsets[structIndex][instanceIndex]);
+        var element = GetFromStruct(structIndex, ref reader, tracker);
+
+        tracker.Pop();
+
+        // add some metadata to the element, mostly so we can figure out what a CircularReference is pointing to
+        element.Add(new XAttribute("__structIndex", structIndex.ToString(CultureInfo.InvariantCulture)));
+        element.Add(new XAttribute("__instanceIndex", instanceIndex.ToString(CultureInfo.InvariantCulture)));
+
+        return element;
     }
 }
