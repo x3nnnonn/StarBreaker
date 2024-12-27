@@ -6,7 +6,7 @@
     },
     "dcb-extract": {
       "commandName": "Project",
-      "commandLineArgs": "dcb-extract --dcb \"D:\\StarCitizen\\p4keptu\\Data\\Game2.dcb\" --output D:\\StarCitizen\\DataCoreEptu"
+      "commandLineArgs": "dcb-extract --p4k \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\4.0_PREVIEW\\Data.p4k\" --output D:\\StarCitizen\\DataCoreExport"
     },
     "p4k-extract": {
       "commandName": "Project",
