@@ -173,11 +173,6 @@ public sealed class DataCoreBinary
         var reader = Database.GetReader(Database.Offsets[structIndex][instanceIndex]);
         var element = GetFromStruct(structIndex, ref reader, context);
 
-        //TODO: make this configurable?
-        // Popping it here makes it repeat the same data more often.
-        // If we leave it in the stack (could be a HashSet), it will only ever print the  same data once per file.
-        //context.Tracker.Pop();
-
         // add some metadata to the element, mostly so we can figure out what a CircularReference is pointing to
         element.Add(new XAttribute("__structIndex", structIndex.ToString(CultureInfo.InvariantCulture)));
         element.Add(new XAttribute("__instanceIndex", instanceIndex.ToString(CultureInfo.InvariantCulture)));
