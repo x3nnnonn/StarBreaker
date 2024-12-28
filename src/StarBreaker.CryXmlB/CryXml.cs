@@ -87,100 +87,16 @@ public readonly struct CryXml
         var length = relevantData.IndexOf((byte)'\0');
 
         if (length == 0)
-            return "";
+            return "empty";
 
         return Encoding.ASCII.GetString(relevantData[..length]);
     }
 
-    public void WriteXmlFast(TextWriter writer)
+    public override string ToString()
     {
-        if (_nodes[0].ParentIndex != -1)
-            throw new Exception("Root node has parent");
-
-        writer.WriteLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-        WriteXmlElementFast(writer, 0, 0);
-    }
-
-    private void WriteXmlElementFast(TextWriter writer, int depth, int nodeIndex)
-    {
-        var node = _nodes[nodeIndex];
-
-        for (var i = 0; i < depth; i++)
-        {
-            writer.Write(' ');
-            writer.Write(' ');
-        }
-
-        writer.Write('<');
-        if (writer.WriteXmlString(_stringData, (int)node.TagStringOffset) == 0)
-            writer.Write("__unknown__");
-
-        var attributes = _attributes.AsSpan(node.FirstAttributeIndex, node.AttributeCount);
-        foreach (var attribute in attributes)
-        {
-            writer.Write(' ');
-            writer.WriteXmlString(_stringData, (int)attribute.KeyStringOffset);
-            writer.Write('=');
-            writer.Write('\"');
-            writer.WriteXmlString(_stringData, (int)attribute.ValueStringOffset);
-            writer.Write('\"');
-        }
-
-        var stringElementLength = _stringData.AsSpan((int)node.ItemType).IndexOf((byte)'\0');
-        var hasStringElement = stringElementLength != 0;
-        var hasChildren = node.ChildCount != 0;
-
-        if (!hasChildren && !hasStringElement)
-        {
-            writer.Write(' ');
-            writer.Write('/');
-            writer.WriteLine('>');
-            return;
-        }
-
-        writer.Write('>');
-
-        if (hasStringElement && !hasChildren)
-        {
-            writer.WriteXmlString(_stringData, (int)node.ItemType);
-            writer.Write('<');
-            writer.Write('/');
-            writer.WriteXmlString(_stringData, (int)node.TagStringOffset);
-            writer.WriteLine('>');
-            return;
-        }
-
-        if (hasStringElement)
-        {
-            writer.WriteLine();
-            writer.WriteXmlString(_stringData, (int)node.ItemType);
-            writer.WriteLine();
-        }
-
-        if (!hasStringElement && hasChildren)
-        {
-            writer.WriteLine();
-        }
-
-        var childIndices = _childIndices.AsSpan(node.FirstChildIndex, node.ChildCount);
-        foreach (var childIndex in childIndices)
-        {
-            WriteXmlElementFast(writer, depth + 1, childIndex);
-        }
-
-        for (var i = 0; i < depth; i++)
-        {
-            writer.Write(' ');
-            writer.Write(' ');
-        }
-
-        writer.Write('<');
-        writer.Write('/');
-        writer.WriteXmlString(_stringData, (int)node.TagStringOffset);
-
-        if (nodeIndex == 0)
-            writer.Write('>');
-        else
-            writer.WriteLine('>');
+        var sb = new StringBuilder();
+        using var writer = XmlWriter.Create(sb, new XmlWriterSettings { Indent = true });
+        WriteXml(writer);
+        return sb.ToString();
     }
 }

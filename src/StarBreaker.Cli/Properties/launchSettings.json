@@ -10,11 +10,7 @@
     },
     "p4k-extract": {
       "commandName": "Project",
-      "commandLineArgs": "p4k-extract --p4k \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\4.0_PREVIEW\\Data.p4k\" --output \"D:\\StarCitizen\\p4keptu\""
-    },
-    "p4k-extract-datacore": {
-      "commandName": "Project",
-      "commandLineArgs": "p4k-extract --p4k \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\4.0_PREVIEW\\Data.p4k\" --output \"D:\\StarCitizen\\p4keptu\" --filter \"*.dcb\""
+      "commandLineArgs": "p4k-extract --p4k \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\4.0_PREVIEW\\Data.p4k\" --output \"D:\\StarCitizen\\P4k\""
     },
     "chf-download": {
       "commandName": "Project",

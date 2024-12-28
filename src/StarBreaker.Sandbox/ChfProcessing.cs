@@ -1,12 +1,20 @@
 ﻿using System.Text;
+using StarBreaker.Chf;
 using StarBreaker.Common;
 
-namespace StarBreaker.Chf;
+namespace StarBreaker.Sandbox;
 
-public class DebugCommand
+public static class ChfProcessing
 {
-    public async ValueTask ExecuteAsync()
+    public static async Task Run()
     {
+        var dnas = @"C:\Users\Diogo\Desktop\dnas.txt";
+        var load = (await File.ReadAllLinesAsync(dnas)).Select(FixWeirdDnaString).ToArray();
+        int i = 0;
+        await CreateCharactersFromDnaStrings(load.Select(x => ($"female_{i++}.chf", x)));
+
+        return;
+
         await FixDnaStrings();
         
         var hugeData = Path.Combine(DefaultPaths.ResearchFolder, "dna", "huge_fixed.csv");
