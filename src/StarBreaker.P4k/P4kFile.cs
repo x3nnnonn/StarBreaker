@@ -208,7 +208,6 @@ public sealed partial class P4kFile
                     return;
 
                 Directory.CreateDirectory(Path.GetDirectoryName(entryPath) ?? throw new InvalidOperationException());
-                var sss = (int)entry.UncompressedSize;
                 using (var writeStream = new FileStream(entryPath, FileMode.Create, FileAccess.Write, FileShare.None,
                            bufferSize: entry.UncompressedSize > int.MaxValue ? 81920 : (int)entry.UncompressedSize, useAsync: true))
                 {

@@ -22,17 +22,16 @@ public sealed class DnaChunk
 
         childReader.ExpectKey("dna matrix 1.0");
         childReader.ExpectAnyKey(["protos_human_male_face_t1_pu", "protos_human_female_face_t1_pu"]);
-        childReader.ExpectAny([0x65E740D3, 0x65D75204, 0x66EBFAD1, 0x66DF165F]);
-        childReader.Expect(0);
-        childReader.Expect<byte>(0x0c);
-        childReader.Expect<byte>(0x0);
-        childReader.Expect<byte>(0x04);
-        childReader.Expect<byte>(0x0);
-        childReader.Expect<byte>(0x4);
-        childReader.Expect<byte>(0x0);
+        childReader.ExpectAny([
+            0x65E740D3, 0x65D75204, 0x66EBFAD1, 0x66DF165F,
+            0x674986D1, 0x67448F99
+        ]);
+        childReader.Expect<uint>(0);
 
-        var size = childReader.Read<byte>();
-        childReader.Expect<byte>(0);
+        childReader.Expect<ushort>(12); //number of parts?
+        childReader.Expect<ushort>(4); //blend per part?
+        childReader.Expect<ushort>(4); //unknown
+        var maxHeadId = childReader.Read<ushort>();
 
         var perBodyPart = Enum.GetValues<FacePart>().ToDictionary(x => x, _ => new DnaPart[4]);
         for (var i = 0; i < PartCount; i++)
@@ -49,7 +48,7 @@ public sealed class DnaChunk
         return new DnaChunk
         {
             DnaString = dnaString,
-            ChildCount = size,
+            ChildCount = maxHeadId,
             Parts = perBodyPart
         };
     }

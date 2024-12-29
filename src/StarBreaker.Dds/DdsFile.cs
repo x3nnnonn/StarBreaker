@@ -124,6 +124,7 @@ public class DdsFile
 
     public bool SaveAsPng(string fullPath)
     {
+        Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
         var bitmap = ToSkia();
         using var fs = File.Create(Path.ChangeExtension(fullPath, ".png"));
         using var wstream = new SKManagedWStream(fs);
