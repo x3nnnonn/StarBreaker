@@ -2,7 +2,9 @@
 using System.Globalization;
 using System.Numerics;
 using System.Text;
+using StarBreaker.Common;
 using StarBreaker.DataCore;
+using StarBreaker.P4k;
 
 namespace StarBreaker.Sandbox;
 
@@ -10,26 +12,24 @@ public static class StringCrc32c
 {
     public static void Run()
     {
-        var tested = 0;
-
         var uintsToTest = ReadKeys("keys.txt");
 
-        var dcb = new DataForge(File.OpenRead(@"D:\StarCitizen\p4k\Data\Game.dcb"));
-        var enums = dcb.ExportEnums();
+        var p4k = P4kFile.FromFile(@"C:\Program Files\Roberts Space Industries\StarCitizen\4.0_PREVIEW\Data.p4k");
+        var dcbStream = p4k.OpenRead(@"Data\Game2.dcb");
 
-        IEnumerable<string> haystack = new List<string>();
+        var dcb = new DataForge(dcbStream);
 
-        haystack = haystack.Concat(dcb.DataCore.Database.CachedStrings.Values.Concat(dcb.DataCore.Database.CachedStrings.Values));
-        haystack = haystack.Concat(["head_eyedetail"]);
-        haystack = haystack.Concat(enums.Select(x => x.Key));
-        haystack = haystack.Concat(enums.SelectMany(x => x.Value));
-        //haystack = haystack.Concat(StreamLines("strings.txt"));
-        //haystack = haystack.Concat(StreamLines(@"D:\New folder\oof2.txt"));
-        //haystack = haystack.Concat(StreamLines("mats.txt"));
-        //haystack = haystack.Concat(StreamLines("working.txt"));
+        IEnumerable<string> haystack = [];
 
-        haystack = haystack.Concat(Directory.EnumerateFiles(@"D:\StarCitizen\p4k\", "*", SearchOption.AllDirectories).Select(Path.GetFileNameWithoutExtension));
-        haystack = haystack.SelectMany(GetVariations);
+        haystack = new List<string>()
+            .Concat(EnumeratePaths(dcb.DataCore.Database.CachedStrings.Values, '/'))
+            .Concat(EnumeratePaths(dcb.DataCore.Database.CachedStrings2.Values, '/'))
+            .Concat(["head_eyedetail"])
+            .Concat(StreamLines("strings.txt"))
+            .Concat(StreamLines("mats.txt"))
+            .Concat(StreamLines("working.txt"))
+            .Concat(EnumeratePaths(p4k.Entries.Select(x => x.Name), '\\'));
+
         //TODO: charactercustomizer_pu.socpak
 
         var result = BruteForce(uintsToTest, haystack);
@@ -41,63 +41,67 @@ public static class StringCrc32c
 
         Console.WriteLine($"Number of found keys: {result.Values.Count(x => x.Count > 0)}");
         Console.WriteLine($"Number of missing keys: {result.Values.Count(x => x.Count == 0)}");
-        Console.WriteLine($"Number of tested strings: {tested}");
         return;
+    }
 
-        IEnumerable<string> GetVariations(string str)
+    static IEnumerable<string> GetVariations(string str)
+    {
+        foreach (var s in str.Split('/'))
         {
-            foreach (var s in str.Split('/'))
-            {
-                yield return s;
-            }
-            
-            foreach (var s in str.Split('_'))
-            {
-                yield return s;
-            }
-            
-            foreach (var s in str.Split('-'))
-            {
-                yield return s;
-            }
-            
-            foreach (var s in str.Split(' '))
-            {
-                yield return s;
-            }
-            
-            yield return str.ToLower();
-            yield return str.ToUpper();
-
-            //return this last so it gets replaced in the dictionary if it matches
-            yield return str;
+            yield return s;
         }
 
-        IEnumerable<string> GetNumbered(string str)
+        foreach (var s in str.Split('_'))
         {
-            yield return str;
-            for (var i = 0; i < 2; i++)
+            yield return s;
+        }
+
+        foreach (var s in str.Split('-'))
+        {
+            yield return s;
+        }
+
+        foreach (var s in str.Split(' '))
+        {
+            yield return s;
+        }
+
+        foreach (var s in GetNumbered(str))
+        {
+            yield return s;
+        }
+
+        yield return str.ToLower();
+        yield return str.ToUpper();
+
+        //return this last so it gets replaced in the dictionary if it matches
+        yield return str;
+    }
+
+    static IEnumerable<string> GetNumbered(string str)
+    {
+        yield return str;
+        for (var i = 0; i < 2; i++)
+        {
+            yield return $"{str}{i}";
+        }
+    }
+
+    static uint[] ReadKeys(string file)
+    {
+        var lines = File.ReadAllLines(file);
+        var keys = new List<uint>();
+
+        foreach (var line in lines)
+        {
+            if (line.StartsWith("0x") &&
+                uint.TryParse(line[2..], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var key))
             {
-                yield return $"{str}{i}";
+                keys.Add(key);
             }
         }
 
-        uint[] ReadKeys(string file)
-        {
-            var lines = File.ReadAllLines(file);
-            var keys = new List<uint>();
-
-            foreach (var line in lines)
-            {
-                if (line.StartsWith("0x") &&
-                    uint.TryParse(line[2..], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var key))
-                {
-                    keys.Add(key);
-                }
-            }
-
-            return keys.Distinct().Order().ToArray();
-        }
+        return keys.Distinct().Order().ToArray();
     }
 
     private static IEnumerable<string> StreamLines(string filePath)
@@ -106,6 +110,17 @@ public static class StringCrc32c
 
         while (reader.ReadLine() is { } line)
             yield return line;
+    }
+
+    private static IEnumerable<string> EnumeratePaths(IEnumerable<string> p4k, char separator)
+    {
+        foreach (var entry in p4k)
+        {
+            foreach (var part in entry.Split(separator))
+            {
+                yield return part;
+            }
+        }
     }
 
     /// <summary>
@@ -118,40 +133,30 @@ public static class StringCrc32c
         var dict = new ConcurrentDictionary<uint, HashSet<string>>(keys.ToDictionary(key => key, _ => new HashSet<string>()));
         var tested = 0;
 
-        var buffer = new byte[4096];
-
-        foreach (var str in strings)
+        Parallel.ForEach(strings, pr =>
         {
-            Interlocked.Increment(ref tested);
-            var byteLength = Encoding.ASCII.GetBytes(str, buffer);
-            var acc = 0xFFFFFFFFu;
+            var buffer = new byte[4096];
 
-            for (var i = 0; i < byteLength; i++)
+            foreach (var str in GetVariations(pr))
             {
-                acc = BitOperations.Crc32C(acc, buffer[i]);
-                var crc = ~acc;
-                if (keys.Contains(crc))
+                Interlocked.Increment(ref tested);
+
+                var byteLength = Encoding.ASCII.GetBytes(str, buffer);
+                var acc = 0xFFFFFFFFu;
+
+                for (var i = 0; i < byteLength; i++)
                 {
-                    dict[crc].Add(str[..(i + 1)]);
+                    acc = BitOperations.Crc32C(acc, buffer[i]);
+                    var crc = ~acc;
+                    if (keys.Contains(crc))
+                    {
+                        dict[crc].Add(str[..(i + 1)]);
+                    }
                 }
             }
+        });
 
-            // for (var i = byteLength - 1; i >= 0; i--)
-            // {
-            //     acc = 0xFFFFFFFFu;
-            //     for (var j = 0; j < byteLength; j++)
-            //     {
-            //         if (j == i) continue;
-            //         acc = BitOperations.Crc32C(acc, buffer[j]);
-            //     }
-            //
-            //     var crc = ~acc;
-            //     if (keys.Contains(crc))
-            //     {
-            //         dict[crc].Add(str.Substring(0, i));
-            //     }
-            // }
-        }
+        Console.WriteLine($"Number of tested strings: {tested}");
 
         return dict;
     }
