@@ -1,5 +1,4 @@
 ﻿using System.Collections.Frozen;
-using System.Text;
 using StarBreaker.Common;
 
 namespace StarBreaker.Chf;
@@ -67,21 +66,19 @@ public static class ItemPortKeys
         "Makeup3SmoothnessG",
         "Makeup3SmoothnessB",
         "DyePigmentVariation",
-        "BaseMelaninVariation",
+        "BaseMelaninVariation"
     ];
-    
+
     private static readonly FrozenDictionary<uint, string> _reverseCrc32c;
-    
+
     static ItemPortKeys()
     {
         var dict = new Dictionary<uint, string>();
         foreach (var name in _itemPortNames)
         {
-            var bytes = Encoding.ASCII.GetBytes(name).AsSpan();
-            var crc = Crc32c.FromSpan(bytes);
-            dict[crc] = name;
+            dict[Crc32c.FromString(name)] = name;
         }
-        
+
         //add here the ones we are not able to find, but roughly know the meaning of.
         dict[0x27424D58] = "body_material";
         dict[0xA047885E] = "eye_material";
@@ -91,7 +88,7 @@ public static class ItemPortKeys
 
         _reverseCrc32c = dict.ToFrozenDictionary();
     }
-    
+
     public static string GetKey(uint key)
     {
         return _reverseCrc32c[key];
@@ -102,11 +99,5 @@ public static class ItemPortKeys
         return _reverseCrc32c.TryGetValue(key, out name);
     }
 
-    public static uint GetUIntKey(string key)
-    {
-        var count = Encoding.ASCII.GetByteCount(key);
-        Span<byte> bytes = stackalloc byte[count];
-        Encoding.ASCII.GetBytes(key, bytes);
-        return Crc32c.FromSpan(bytes);
-    }
+    public static uint GetUIntKey(string key) => Crc32c.FromString(key);
 }

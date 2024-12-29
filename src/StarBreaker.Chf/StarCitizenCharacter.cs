@@ -68,6 +68,7 @@ public sealed class StarCitizenCharacter
             }
             else
             {
+                //0x9D8B687A
                 objs.Add(null);
                 Console.WriteLine($"Unexpected key: {key}");
             }
