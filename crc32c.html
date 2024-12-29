@@ -1,30 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>crc32c tester</title>
-    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css"/>
-</head>
-<body>
-<script src="https://cdn.sheetjs.com/crc-32-latest/package/crc32c.js"></script>
-<script>
-    const keys = [
-        0xa8770416, 0xa98beb34, 0xb29b1d90, 0xd5354502, 0xce9df055, 0xe3230e2f,
-        0xe1dd1d34, 0xbd530797, 0xa2c7c909, 0xa047885e, 0x9b274d93, 0x7d86e792,
-        0x078ac8bd, 0x6c836947, 0x66ebfad1, 0x66df165f, 0x65e740d3, 0x65d75204,
-        0x4bb0092c, 0x442a34ac, 0x2ec0e736, 0x2c3ef42d, 0x27424d58, 0x1a081a93,
-        0x15e90814,
-    ];
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css" />
+  </head>
+  <body>
+    <script src="https://cdn.sheetjs.com/crc-32-latest/package/crc32c.js"></script>
+    <script>
+      const keys = [
+        0x9b274d93, 0x051d7f6e, 0xc0f04c4d, 0x0f04f20d, 0x18877141, 0x46873e19,
+        0x37e9b030, 0x309078ee, 0xa98beb34, 0x65d75204, 0x65e740d3, 0x4bb0092c,
+        0x1a081a93, 0x26ef8f28, 0x66ebfad1, 0x7d86e792, 0x8653e035, 0xef76d125,
+        0xa098fd7c, 0xe3230e2f, 0xb29b1d90, 0xe63eed4a, 0xa047885e, 0xbbd28c5f,
+        0x6f014de4, 0x59e536e8, 0x442a34ac, 0x15e90814, 0xd5354502, 0x634ded4a,
+        0x7be12a49, 0x2b38cdb9, 0x2ec0e736, 0x60499f1e, 0x9fea7962, 0x44befe78,
+        0x078ac8bd, 0x86565c7b, 0x0218ee4e, 0xa2a13d1d, 0xca368ff2, 0x66df165f,
+        0x67448f99, 0x7f9c90c3, 0x6c836947, 0x56ade412, 0xd79f5991, 0x2c3ef42d,
+        0xe1dd1d34, 0x27424d58, 0x7d12578e, 0x1eb5ca39, 0x833b04eb, 0x0f003884,
+        0xf3a7acac, 0xa703f1d6, 0xbd530797, 0xa8770416, 0xce9df055,
+      ];
 
-    function handleInput() {
+      function handleInput() {
         const input = document.getElementById("input");
         const output = document.getElementById("output");
         const outputLowercase = document.getElementById("outputLowercase");
         if (input.value.length === 0) {
-            output.innerText = "0x00000000";
-            outputLowercase.innerText = "0x00000000";
-            return;
+          output.innerText = "0x00000000";
+          outputLowercase.innerText = "0x00000000";
+          return;
         }
 
         const result = CRC32C.str(input.value) >>> 0;
@@ -34,20 +39,20 @@
         outputLowercase.innerText = "0x" + resultLowercase.toString(16);
 
         if (keys.includes(result)) {
-            log.innerText += `\n${result}  - ${input.value}`;
+          log.innerText += `\n${result}  - ${input.value}`;
         }
         if (keys.includes(resultLowercase)) {
-            log.innerText += `\n${resultLowercase}  - ${input.value.toLowerCase()}`;
+          log.innerText += `\n${resultLowercase}  - ${input.value.toLowerCase()}`;
         }
-    }
-</script>
-<p></p>
-<label for="input">Input</label>
-<input type="text" id="input" oninput="handleInput()"/>
-<label for="output">Output</label>
-<pre id="output">0x00000000</pre>
-<label for="outputLowercase">Output (lowercase)</label>
-<pre id="outputLowercase">0x00000000</pre>
-<pre id="log">Found:</pre>
-</body>
+      }
+    </script>
+    <p></p>
+    <label for="input">Input</label>
+    <input type="text" id="input" oninput="handleInput()" />
+    <label for="output">Output</label>
+    <pre id="output">0x00000000</pre>
+    <label for="outputLowercase">Output (lowercase)</label>
+    <pre id="outputLowercase">0x00000000</pre>
+    <pre id="log">Found:</pre>
+  </body>
 </html>
