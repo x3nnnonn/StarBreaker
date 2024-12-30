@@ -24,8 +24,22 @@ public class DataCoreExtractCommand : ICommand
     {
         var p4k = P4k.P4kFile.FromFile(P4kFile);
         console.Output.WriteLine("P4k loaded.");
-        var dcbStream = p4k.OpenRead(@"Data\Game2.dcb");
-        console.Output.WriteLine("DataCore extracted.");
+        Stream? dcbStream = null;
+        if (p4k.FileExists(@"Data\Game2.dcb"))
+        {
+            dcbStream = p4k.OpenRead(@"Data\Game2.dcb");
+            console.Output.WriteLine("Game.dcb found");
+        }
+        else if (p4k.FileExists(@"Data\Game.dcb"))
+        {
+            dcbStream = p4k.OpenRead(@"Data\Game.dcb");
+            console.Output.WriteLine("Game.dcb found");
+        }
+        else
+        {
+            console.Output.WriteLine("DataCore not found.");
+            return default;
+        }
 
         var df = new DataForge(dcbStream);
 

@@ -108,4 +108,10 @@ public readonly struct CryXml
         WriteTo(writer);
         return sb.ToString();
     }
+
+    public void Save(string entry)
+    {
+        using var writer = XmlWriter.Create(entry, new XmlWriterSettings { Indent = true });
+        WriteTo(writer);
+    }
 }

@@ -8,6 +8,8 @@ namespace StarBreaker.DataCore;
 
 public class DataCoreDatabase
 {
+    public uint Version { get; }
+
     private readonly ConcurrentDictionary<int, DataCorePropertyDefinition[]> _propertiesCache = new();
     private readonly int DataSectionOffset;
     private readonly byte[] DataSection;
@@ -55,9 +57,9 @@ public class DataCoreDatabase
         using var reader = new BinaryReader(fs);
 
         _ = reader.ReadUInt32();
-        var fileVersion = reader.ReadUInt32();
-        if (fileVersion != 6)
-            throw new Exception($"Unsupported file version: {fileVersion}");
+        Version = reader.ReadUInt32();
+        if (Version is < 5 or > 6)
+            throw new Exception($"Unsupported file version: {Version}");
         _ = reader.ReadUInt32();
         _ = reader.ReadUInt32();
 
@@ -119,7 +121,10 @@ public class DataCoreDatabase
         EnumOptions = reader.ReadArray<DataCoreStringId2>(enumOptionCount);
 
         CachedStrings = ReadStringTable(reader.ReadBytes((int)textLength).AsSpan());
-        CachedStrings2 = ReadStringTable(reader.ReadBytes((int)textLength2).AsSpan());
+        if (Version >= 6)
+            CachedStrings2 = ReadStringTable(reader.ReadBytes((int)textLength2).AsSpan());
+        else
+            CachedStrings2 = FrozenDictionary<int, string>.Empty;
 
         var bytesRead = (int)fs.Position;
 
@@ -146,7 +151,14 @@ public class DataCoreDatabase
 
     public SpanReader GetReader(int offset) => new(DataSection, offset - DataSectionOffset);
     public string GetString(DataCoreStringId id) => CachedStrings[id.Id];
-    public string GetString2(DataCoreStringId2 id) => CachedStrings2[id.Id];
+    public string GetString2(DataCoreStringId2 id)
+    {
+        if (Version < 6)
+            return CachedStrings[id.Id];
+
+        return CachedStrings2[id.Id];
+    }
+
     public DataCoreRecord GetRecord(CigGuid guid) => RecordMap[guid];
 
     private static FrozenDictionary<int, string> ReadStringTable(ReadOnlySpan<byte> span)
