@@ -105,7 +105,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             {
                 _logger.LogInformation("cryxml");
                 var stringwriter = new StringWriter();
-                c.WriteXml(XmlWriter.Create(stringwriter, new XmlWriterSettings{Indent = true}));
+                c.WriteTo(XmlWriter.Create(stringwriter, new XmlWriterSettings{Indent = true}));
                 preview = new TextPreviewViewModel(stringwriter.ToString());
             }
             else if (plaintextExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
