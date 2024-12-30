@@ -8,6 +8,10 @@
       "commandName": "Project",
       "commandLineArgs": "dcb-extract --p4k \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\4.0_PREVIEW\\Data.p4k\" --output D:\\StarCitizen\\DataCoreExport"
     },
+    "dcb-extract-old": {
+      "commandName": "Project",
+      "commandLineArgs": "dcb-extract --p4k \"\\\\UNRAID\\backups\\StarCitizen\\Data.p4k\" --output \"D:\\StarCitizen2\\DataCoreExport\""
+    },
     "p4k-extract": {
       "commandName": "Project",
       "commandLineArgs": "p4k-extract --p4k \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\4.0_PREVIEW\\Data.p4k\" --output \"D:\\StarCitizen\\P4k\""

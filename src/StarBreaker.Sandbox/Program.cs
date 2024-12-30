@@ -13,5 +13,6 @@ using StarBreaker.Sandbox;
 //TimeP4kExtract.Run();
 //TagDatabase.Run();
 //StringCrc32c.Run();
-DdsUnsplit.Run();
+//DdsUnsplit.Run();
 //ZipFile.Run();
+CryXmlConvert.Run();
