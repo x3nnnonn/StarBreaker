@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml;
+using System.Xml.Linq;
 using StarBreaker.Common;
 
 namespace StarBreaker.CryXmlB;
@@ -50,7 +51,7 @@ public readonly struct CryXml
         return data.Length > magicLength && data[..magicLength].SequenceEqual(magic);
     }
 
-    public void WriteXml(XmlWriter writer)
+    public void WriteTo(XmlWriter writer)
     {
         if (_nodes[0].ParentIndex != -1)
             throw new Exception("Root node has parent");
@@ -81,6 +82,14 @@ public readonly struct CryXml
         writer.WriteEndElement();
     }
 
+    public XDocument ToXml()
+    {
+        var doc = new XDocument();
+        using var writer = doc.CreateWriter();
+        WriteTo(writer);
+        return doc;
+    }
+
     private static string GetString(Span<byte> data, int offset)
     {
         var relevantData = data[offset..];
@@ -96,7 +105,7 @@ public readonly struct CryXml
     {
         var sb = new StringBuilder();
         using var writer = XmlWriter.Create(sb, new XmlWriterSettings { Indent = true });
-        WriteXml(writer);
+        WriteTo(writer);
         return sb.ToString();
     }
 }
