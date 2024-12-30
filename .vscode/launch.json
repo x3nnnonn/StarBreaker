@@ -1,0 +1,115 @@
+{
+  "configurations": [
+    {
+      "name": "C#: StarBreaker.Tests",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}\\src\\StarBreaker.Tests\\StarBreaker.Tests.csproj",
+      "launchConfigurationId": "TargetFramework=;StarBreaker.Tests"
+    },
+    {
+      "name": "C#: StarBreaker",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}\\src\\StarBreaker\\StarBreaker.csproj",
+      "launchConfigurationId": "TargetFramework=;StarBreaker"
+    },
+    {
+      "name": "C#: StarBreaker.Cli [Default Configuration]",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}\\src\\StarBreaker.Cli\\StarBreaker.Cli.csproj"
+    },
+    {
+      "name": "C#: StarBreaker.Cli [help]",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}\\src\\StarBreaker.Cli\\StarBreaker.Cli.csproj",
+      "launchConfigurationId": "TargetFramework=;help"
+    },
+    {
+      "name": "C#: StarBreaker.Cli [dcb-extract]",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}\\src\\StarBreaker.Cli\\StarBreaker.Cli.csproj",
+      "launchConfigurationId": "TargetFramework=;dcb-extract"
+    },
+    {
+      "name": "C#: StarBreaker.Cli [p4k-extract-datacore]",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}\\src\\StarBreaker.Cli\\StarBreaker.Cli.csproj",
+      "launchConfigurationId": "TargetFramework=;p4k-extract-datacore"
+    },
+    {
+      "name": "C#: StarBreaker.Cli [chf-download]",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}\\src\\StarBreaker.Cli\\StarBreaker.Cli.csproj",
+      "launchConfigurationId": "TargetFramework=;chf-download"
+    },
+    {
+      "name": "C#: StarBreaker.Cli [chf-export-all]",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}\\src\\StarBreaker.Cli\\StarBreaker.Cli.csproj",
+      "launchConfigurationId": "TargetFramework=;chf-export-all"
+    },
+    {
+      "name": "C#: StarBreaker.Cli [chf-import-all]",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}\\src\\StarBreaker.Cli\\StarBreaker.Cli.csproj",
+      "launchConfigurationId": "TargetFramework=;chf-import-all"
+    },
+    {
+      "name": "C#: StarBreaker.Cli [chf-import-watch]",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}\\src\\StarBreaker.Cli\\StarBreaker.Cli.csproj",
+      "launchConfigurationId": "TargetFramework=;chf-import-watch"
+    },
+    {
+      "name": "C#: StarBreaker.Cli [chf-export-watch]",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}\\src\\StarBreaker.Cli\\StarBreaker.Cli.csproj",
+      "launchConfigurationId": "TargetFramework=;chf-export-watch"
+    },
+    {
+      "name": "C#: StarBreaker.Cli [chf-process]",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}\\src\\StarBreaker.Cli\\StarBreaker.Cli.csproj",
+      "launchConfigurationId": "TargetFramework=;chf-process"
+    },
+    {
+      "name": "C#: StarBreaker.Cli [chf-process-all]",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}\\src\\StarBreaker.Cli\\StarBreaker.Cli.csproj",
+      "launchConfigurationId": "TargetFramework=;chf-process-all"
+    },
+    {
+      "name": "C#: StarBreaker.Cli [proto-extract]",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}\\src\\StarBreaker.Cli\\StarBreaker.Cli.csproj",
+      "launchConfigurationId": "TargetFramework=;proto-extract"
+    },
+    {
+      "name": "C#: StarBreaker.Cli [proto-set-extract]",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}\\src\\StarBreaker.Cli\\StarBreaker.Cli.csproj",
+      "launchConfigurationId": "TargetFramework=;proto-set-extract"
+    },
+    {
+      "name": "C#: StarBreaker.Sandbox",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}\\src\\StarBreaker.Sandbox\\StarBreaker.Sandbox.csproj",
+      "launchConfigurationId": "TargetFramework=;StarBreaker.Sandbox"
+    }
+  ]
+}
