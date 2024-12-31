@@ -12,8 +12,7 @@ public readonly struct CentralDirectoryFileHeader
     public readonly ushort VersionNeededToExtract;
     public readonly ushort GeneralPurposeBitFlag;
     public readonly ushort CompressionMethod;
-    public readonly ushort LastModifiedTime;
-    public readonly ushort LastModifiedDate;
+    public readonly uint LastModifiedTimeAndDate;
     public readonly uint Crc32;
     public readonly uint CompressedSize;
     public readonly uint UncompressedSize;

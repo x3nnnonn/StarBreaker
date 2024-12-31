@@ -167,8 +167,7 @@ public sealed partial class P4kFile
                 header.CompressionMethod,
                 isCrypted,
                 localHeaderOffset,
-                header.LastModifiedTime,
-                header.LastModifiedDate
+                header.LastModifiedTimeAndDate
             );
         }
         finally
@@ -177,61 +176,9 @@ public sealed partial class P4kFile
         }
     }
 
-    public void Extract(string outputDir, string? filter = null, IProgress<double>? progress = null)
-    {
-        var filteredEntries = (filter is null
-            ? Entries
-            : Entries.Where(entry => FileSystemName.MatchesSimpleExpression(filter, entry.Name))).ToArray();
-
-        var numberOfEntries = filteredEntries.Length;
-        var fivePercent = numberOfEntries / 20;
-        var processedEntries = 0;
-
-        progress?.Report(0);
-
-        var lockObject = new Lock();
-
-        //TODO: Preprocessing step:
-        // 1. start with the list of total files
-        // 2. run the following according to the filter:
-        // 3. find one-shot single file procesors
-        // 4. find file -> multiple file processors
-        // 5. find multiple file -> single file unsplit processors - remove from the list so we don't double process
-        // run it!
-        Parallel.ForEach(filteredEntries, entry =>
-            {
-                if (entry.UncompressedSize == 0)
-                    return;
-
-                var entryPath = Path.Combine(outputDir, entry.Name);
-                if (File.Exists(entryPath))
-                    return;
-
-                Directory.CreateDirectory(Path.GetDirectoryName(entryPath) ?? throw new InvalidOperationException());
-                using (var writeStream = new FileStream(entryPath, FileMode.Create, FileAccess.Write, FileShare.None,
-                           bufferSize: entry.UncompressedSize > int.MaxValue ? 81920 : (int)entry.UncompressedSize, useAsync: true))
-                {
-                    using (var entryStream = Open(entry))
-                    {
-                        entryStream.CopyTo(writeStream);
-                    }
-                }
-
-                Interlocked.Increment(ref processedEntries);
-                if (processedEntries == numberOfEntries || processedEntries % fivePercent == 0)
-                {
-                    using (lockObject.EnterScope())
-                    {
-                        progress?.Report(processedEntries / (double)numberOfEntries);
-                    }
-                }
-            }
-        );
-    }
-
     public Stream Open(ZipEntry entry)
     {
-        var p4kStream = new FileStream(P4KPath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: (int)entry.CompressedSize, useAsync: false);
+        var p4kStream = new FileStream(P4KPath, FileMode.Open, FileAccess.Read, FileShare.Read);
 
         p4kStream.Seek((long)entry.Offset, SeekOrigin.Begin);
         if (p4kStream.Read<uint>() is not 0x14034B50 and not 0x04034B50)
@@ -318,5 +265,10 @@ public sealed partial class P4kFile
         }
 
         return fields;
+    }
+
+    public int GetBufferSize(ulong size)
+    {
+        return Math.Min(81920, size > int.MaxValue ? 81920 : (int)size);
     }
 }
