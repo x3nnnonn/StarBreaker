@@ -52,7 +52,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
                     CompareAscending = (a, b) => a.ZipEntry?.UncompressedSize.CompareTo(b.ZipEntry?.UncompressedSize) ?? 0,
                     CompareDescending = (a, b) => b.ZipEntry?.UncompressedSize.CompareTo(a.ZipEntry?.UncompressedSize) ?? 0
                 }),
-                new TextColumn<ZipNode, string>("Date", x => x.GetModifiedDate()),
+                new TextColumn<ZipNode, string>("Date", x => x.GetDate()),
                 // new TextColumn<ZipNode, string>("Compression", x => x.CompressionMethodUi),
                 // new TextColumn<ZipNode, string>("Encrypted", x => x.EncryptedUi)
             },
