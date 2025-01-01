@@ -27,7 +27,7 @@ public sealed class P4kExtractor
     {
         //TODO: if the filter is for *.dds, make sure to include *.dds.N too. Maybe do the pre processing before we filter?
         var filteredEntries = (filter is null
-            ? _p4KFile.Entries.OrderByDescending(entry => entry.UncompressedSize).Take(1000).ToArray()
+            ? _p4KFile.Entries.ToArray()
             : _p4KFile.Entries.Where(entry => FileSystemName.MatchesSimpleExpression(filter, entry.Name))).ToArray();
 
         var numberOfEntries = filteredEntries.Length;
@@ -46,10 +46,6 @@ public sealed class P4kExtractor
         // 5. find multiple file -> single file unsplit processors - remove from the list so we don't double process
         // run it!
         Parallel.ForEach(filteredEntries,
-            new ParallelOptions
-            {
-                MaxDegreeOfParallelism = 1
-            },
             entry =>
             {
                 if (entry.UncompressedSize == 0)
@@ -63,7 +59,7 @@ public sealed class P4kExtractor
                 using (var writeStream = new FileStream(entryPath, FileMode.Create, FileAccess.Write, FileShare.None,
                            bufferSize: entry.UncompressedSize > int.MaxValue ? 81920 : (int)entry.UncompressedSize, useAsync: true))
                 {
-                    using (var entryStream = _p4KFile.Open(entry))
+                    using (var entryStream = _p4KFile.OpenStream(entry))
                     {
                         entryStream.CopyTo(writeStream);
                     }
@@ -77,6 +73,9 @@ public sealed class P4kExtractor
                         progress?.Report(processedEntries / (double)numberOfEntries);
                     }
                 }
-            });
+            }
+        );
+
+        progress?.Report(1);
     }
 }

@@ -7,6 +7,7 @@ public  sealed partial class HexPreviewViewModel : FilePreviewViewModel
 {
     public HexPreviewViewModel(byte[] data)
     {
+        //TODO: make this use a Stream instead of a byte array?
         Document = new MemoryBinaryDocument(data, true);
     }
 

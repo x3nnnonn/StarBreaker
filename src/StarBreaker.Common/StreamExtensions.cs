@@ -23,42 +23,16 @@ public static class StreamExtensions
 
     public static void CopyAmountTo(this Stream source, Stream destination, int byteCount)
     {
-        var buffer = ArrayPool<byte>.Shared.Rent(byteCount);
+        var rent = ArrayPool<byte>.Shared.Rent(byteCount);
+        var buffer = rent.AsSpan(0, byteCount);
         try
         {
-            while (byteCount > 0)
-            {
-                var n = source.Read(buffer, 0, Math.Min(byteCount, buffer.Length));
-                if (n == 0)
-                    throw new Exception("Failed to read from stream");
-                destination.Write(buffer, 0, n);
-                byteCount -= n;
-            }
+            source.ReadExactly(buffer);
+            destination.Write(buffer);
         }
         finally
         {
-            ArrayPool<byte>.Shared.Return(buffer);
-        }
-    }
-    
-    public static byte[] ToArray(this Stream stream)
-    {
-        if (stream is MemoryStream ms)
-            return ms.ToArray();
-
-        try
-        {
-            var count = stream.Position;
-            var buffer = new byte[count];
-            stream.Position = 0;
-            stream.ReadExactly(buffer, 0, buffer.Length);
-            return buffer;
-        }
-        catch (NotSupportedException)
-        {
-            using var m = new MemoryStream();
-            stream.CopyTo(m);
-            return m.ToArray();
+            ArrayPool<byte>.Shared.Return(rent);
         }
     }
 }
