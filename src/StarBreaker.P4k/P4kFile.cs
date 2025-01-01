@@ -10,6 +10,7 @@ namespace StarBreaker.P4k;
 
 public sealed partial class P4kFile
 {
+    [ThreadStatic] private static Decompressor? decompressor;
     private readonly Aes _aes;
 
     public ZipEntry[] Entries { get; }
@@ -176,7 +177,8 @@ public sealed partial class P4kFile
         }
     }
 
-    public Stream Open(ZipEntry entry)
+    // Represents the raw stream from the p4k file, before any decryption or decompression
+    private StreamSegment OpenInternal(ZipEntry entry)
     {
         var p4kStream = new FileStream(P4KPath, FileMode.Open, FileAccess.Read, FileShare.Read);
 
@@ -187,88 +189,64 @@ public sealed partial class P4kFile
         var localHeader = p4kStream.Read<LocalFileHeader>();
 
         p4kStream.Seek(localHeader.FileNameLength + localHeader.ExtraFieldLength, SeekOrigin.Current);
-        Stream entryStream = new StreamSegment(p4kStream, p4kStream.Position, (long)entry.CompressedSize, false);
+
+        return new StreamSegment(p4kStream, p4kStream.Position, (long)entry.CompressedSize, false);
+    }
+
+    // Remarks: Streams returned by this method might not support seeking or length.
+    // If these are required, consider using OpenInMemory instead.
+    public Stream OpenStream(ZipEntry entry)
+    {
+        // Represents the raw stream from the p4k file, before any decryption or decompression
+        var entryStream = OpenInternal(entry);
 
         return entry switch
         {
-            { IsCrypted: true, CompressionMethod: 100 } => GetDecryptStream(entryStream, entry.UncompressedSize),
-            { IsCrypted: false, CompressionMethod: 100 } => GetDecompressionStream(entryStream, entry.UncompressedSize),
+            { IsCrypted: true, CompressionMethod: 100 } => GetDecryptStream(entryStream, entry.CompressedSize),
+            { IsCrypted: false, CompressionMethod: 100 } => GetDecompressionStream(entryStream),
             { IsCrypted: false, CompressionMethod: 0 } when entry.CompressedSize != entry.UncompressedSize => throw new Exception("Invalid stored file"),
             { IsCrypted: false, CompressionMethod: 0 } => entryStream,
             _ => throw new Exception("Invalid compression method")
         };
     }
 
-    private MemoryStream GetDecryptStream(Stream entryStream, ulong uncompressedSize)
+    private DecompressionStream GetDecryptStream(Stream entryStream, ulong compressedSize)
     {
         using var transform = _aes.CreateDecryptor();
+        var ms = new MemoryStream((int)compressedSize);
+        using (var crypto = new CryptoStream(entryStream, transform, CryptoStreamMode.Read))
+            crypto.CopyTo(ms);
 
-        var rent = ArrayPool<byte>.Shared.Rent((int)entryStream.Length);
-        try
-        {
-            using var rented = new MemoryStream(rent, 0, (int)entryStream.Length, true, true);
-            using (var crypto = new CryptoStream(entryStream, transform, CryptoStreamMode.Read))
-            {
-                crypto.CopyTo(rented);
-            }
+        // Trim NULL off end of stream
+        ms.Seek(-1, SeekOrigin.End);
+        while (ms.Position > 1 && ms.ReadByte() == 0)
+            ms.Seek(-2, SeekOrigin.Current);
+        ms.SetLength(ms.Position);
 
-            // Trim NULL off end of stream
-            rented.Seek(-1, SeekOrigin.End);
-            while (rented.Position > 1 && rented.ReadByte() == 0)
-                rented.Seek(-2, SeekOrigin.Current);
-            rented.SetLength(rented.Position);
+        ms.Seek(0, SeekOrigin.Begin);
 
-            rented.Seek(0, SeekOrigin.Begin);
-
-            using var decompressionStream = new DecompressionStream(rented, leaveOpen: true);
-            var finalStream = new MemoryStream((int)uncompressedSize);
-            decompressionStream.CopyTo(finalStream);
-
-            finalStream.Seek(0, SeekOrigin.Begin);
-
-            return finalStream;
-        }
-        finally
-        {
-            ArrayPool<byte>.Shared.Return(rent);
-        }
+        return GetDecompressionStream(ms);
     }
 
-    private static MemoryStream GetDecompressionStream(Stream entryStream, ulong uncompressedSize)
+    private static DecompressionStream GetDecompressionStream(Stream entryStream)
     {
-        // We need to make a new memoryStream and copy the data over.
-        // This is because the decompression stream doesn't support seeking/position/length.
-
-        var buffer = new MemoryStream((int)uncompressedSize);
-
-        //close the entryStream (p4k file probably) when we're done with it
-        using (var decompressionStream = new DecompressionStream(entryStream, leaveOpen: false))
-            decompressionStream.CopyTo(buffer);
-
-        buffer.Seek(0, SeekOrigin.Begin);
-
-        return buffer;
+        return new DecompressionStream(entryStream, decompressor: decompressor ??= new Decompressor());
     }
 
-    public static List<ZipExtraField> ReadExtraFields(BinaryReader br, ushort length)
+    public byte[] OpenInMemory(ZipEntry entry)
     {
-        var fields = new List<ZipExtraField>();
+        if (entry.UncompressedSize > int.MaxValue)
+            throw new Exception("File too large to load into memory. Use OpenStream instead");
 
-        while (length > 0)
-        {
-            var tag = br.ReadUInt16();
-            var size = br.ReadUInt16();
-            var data = br.ReadBytes(size - 4);
+        var uncompressedSize = checked((int)entry.UncompressedSize);
 
-            fields.Add(new ZipExtraField(tag, size, data));
-            length -= size;
-        }
+        var ms = new MemoryStream(uncompressedSize);
+        OpenStream(entry).CopyTo(ms);
 
-        return fields;
-    }
+        // If the stream is larger than the uncompressed size, trim it.
+        // This can happen because of decryption padding bytes :(
+        ms.SetLength(ms.Position);
 
-    public int GetBufferSize(ulong size)
-    {
-        return Math.Min(81920, size > int.MaxValue ? 81920 : (int)size);
+        return ms.ToArray();
     }
 }

@@ -87,6 +87,7 @@ public sealed partial class P4kFile : IFileSystem
         if (current.ZipEntry == null)
             throw new FileNotFoundException();
 
-        return Open(current.ZipEntry);
+        //Is this a bad idea? Most things that use this rely on the stream being seekable.
+        return new MemoryStream(OpenInMemory(current.ZipEntry));
     }
 }

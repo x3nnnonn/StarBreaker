@@ -85,48 +85,53 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             return;
         }
 
-        //if above 1gb, don't load
-        if (selectedEntry.ZipEntry.UncompressedSize > 1024 * 1024 * 1024)
+        if (selectedEntry.ZipEntry.UncompressedSize > int.MaxValue)
+        {
+            _logger.LogWarning("File too big to preview");
             return;
+        }
 
         //todo: for a big ass file show a loading screen or something
         Preview = null;
         Task.Run(() =>
         {
-            //TODO: move this to a service?
-            byte[] buffer;
-            using (var stream = _p4KService.P4kFile.Open(selectedEntry.ZipEntry))
-                buffer = stream.ToArray();
-
-            FilePreviewViewModel preview;
-
-            //check cryxml before extension since ".xml" sometimes is cxml sometimes plaintext
-            if (CryXmlB.CryXml.TryOpen(new MemoryStream(buffer), out var c))
+            try
             {
-                _logger.LogInformation("cryxml");
-                var stringwriter = new StringWriter();
-                c.WriteTo(XmlWriter.Create(stringwriter, new XmlWriterSettings{Indent = true}));
-                preview = new TextPreviewViewModel(stringwriter.ToString());
-            }
-            else if (plaintextExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
-            {
-                _logger.LogInformation("plaintextExtensions");
+                //TODO: move this to a service?
+                var buffer = _p4KService.P4kFile.OpenInMemory(selectedEntry.ZipEntry);
 
-                preview = new TextPreviewViewModel(Encoding.UTF8.GetString(buffer));
-            }
-            else if (ddsLodExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
-            {
-                _logger.LogInformation("ddsLodExtensions");
-                preview = new DdsPreviewViewModel(buffer);
-            }
-            else
-            {
-                _logger.LogInformation("hex");
-                preview = new HexPreviewViewModel(buffer);
-            }
-            //todo other types
+                FilePreviewViewModel preview;
 
-            Dispatcher.UIThread.Post(() => Preview = preview);
+                //check cryxml before extension since ".xml" sometimes is cxml sometimes plaintext
+                if (CryXmlB.CryXml.TryOpen(new MemoryStream(buffer), out var c))
+                {
+                    _logger.LogInformation("cryxml");
+                    preview = new TextPreviewViewModel(c.ToString());
+                }
+                else if (plaintextExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
+                {
+                    _logger.LogInformation("plaintextExtensions");
+
+                    preview = new TextPreviewViewModel(Encoding.UTF8.GetString(buffer));
+                }
+                else if (ddsLodExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
+                {
+                    _logger.LogInformation("ddsLodExtensions");
+                    preview = new DdsPreviewViewModel(buffer);
+                }
+                else
+                {
+                    _logger.LogInformation("hex");
+                    preview = new HexPreviewViewModel(buffer);
+                }
+                //todo other types
+
+                Dispatcher.UIThread.Post(() => Preview = preview);
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "Failed to preview file");
+            }
         });
     }
 }
