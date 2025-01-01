@@ -14,8 +14,8 @@ public static class ZipFile
         {
             var relativePath = file[@"D:\StarCitizen\P4k\".Length..];
             var entry = zip.CreateEntry(relativePath, CompressionLevel.NoCompression);
-            using (var stream = entry.Open())
-                stream.WriteByte(0);
+            using var stream = entry.Open();
+            stream.WriteByte(0);
         }
     }
 }

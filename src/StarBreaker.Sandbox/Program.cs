@@ -9,7 +9,6 @@ using StarBreaker.Sandbox;
 //await ChfProcessing.Run();
 //ExtractChunkFiles.Run();
 //ExtractSocPak.Run();
-//await GrpcClient.RunAsync();
 //TimeP4kExtract.Run();
 //TagDatabase.Run();
 //StringCrc32c.Run();
