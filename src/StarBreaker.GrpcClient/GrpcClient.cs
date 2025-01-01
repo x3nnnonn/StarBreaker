@@ -1,5 +1,4 @@
-﻿#if DEBUG
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using Google.Protobuf;
 using Grpc.Core;
@@ -197,5 +196,3 @@ public record LoginData
 [JsonSerializable(typeof(LoginData))]
 [JsonSerializable(typeof(StarNetwork))]
 public partial class JsonContext : JsonSerializerContext;
-
-#endif
