@@ -10,18 +10,6 @@ jobs:
       - name: Clone
         uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 9.x
-          cache: true
-          cache-dependency-path: |
-            src/StarBreaker/packages.lock.json
-            src/StarBreaker.Cli/packages.lock.json
-
-      - name: Restore
-        run: dotnet restore src --locked-mode
-
       - name: Publish
         run: dotnet publish src
 
