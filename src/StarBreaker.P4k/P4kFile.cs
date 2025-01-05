@@ -41,9 +41,9 @@ public sealed partial class P4kFile
         progress?.Report(0);
         using var reader = new BinaryReader(new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.None, 4096), Encoding.UTF8, false);
 
-        var eocdLocation = reader.Locate(EOCDRecord.Magic);
+        var eocdLocation = reader.BaseStream.Locate(EOCDRecord.Magic);
         reader.BaseStream.Seek(eocdLocation, SeekOrigin.Begin);
-        var eocd = reader.Read<EOCDRecord>();
+        var eocd = reader.BaseStream.Read<EOCDRecord>();
         var comment = reader.ReadBytes(eocd.CommentLength).AsSpan();
 
         if (!comment.StartsWith("CIG"u8))
@@ -53,13 +53,13 @@ public sealed partial class P4kFile
             throw new Exception("Not a zip64 archive");
 
         var bytesFromEnd = reader.BaseStream.Length - eocdLocation;
-        var zip64LocatorLocation = reader.Locate(Zip64Locator.Magic, bytesFromEnd);
+        var zip64LocatorLocation = reader.BaseStream.Locate(Zip64Locator.Magic, bytesFromEnd);
         reader.BaseStream.Seek(zip64LocatorLocation, SeekOrigin.Begin);
-        var zip64Locator = reader.Read<Zip64Locator>();
+        var zip64Locator = reader.BaseStream.Read<Zip64Locator>();
 
         reader.BaseStream.Seek((long)zip64Locator.Zip64EOCDOffset, SeekOrigin.Begin);
 
-        var eocd64 = reader.Read<EOCD64Record>();
+        var eocd64 = reader.BaseStream.Read<EOCD64Record>();
         if (eocd64.Signature != BitConverter.ToUInt32(EOCD64Record.Magic))
             throw new Exception("Invalid zip64 end of central directory locator");
 
@@ -105,7 +105,7 @@ public sealed partial class P4kFile
 
     private static ZipEntry ReadEntry(BinaryReader reader)
     {
-        var header = reader.Read<CentralDirectoryFileHeader>();
+        var header = reader.BaseStream.Read<CentralDirectoryFileHeader>();
         var length = header.FileNameLength + header.ExtraFieldLength + header.FileCommentLength;
         var rent = ArrayPool<byte>.Shared.Rent(length);
         try

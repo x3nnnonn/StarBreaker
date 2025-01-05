@@ -24,18 +24,21 @@ OPTIONS
   --version         Shows version information.
 
 COMMANDS
-  chf-download        Downloads all characters from the website and saves them to the website characters folder.
-  chf-export-all      Exports all modded characters into the Star Citizen folder.
-  chf-export-watch    Watch for new modded characters and export them to the star citizen folder.
-  chf-import-all      Imports all non-modded characters exported from the game into our local characters folder.
-  chf-import-watch    Watch for new characters in the Star Citizen folder and import them.
-  chf-process         Process a character file
-  chf-process-all     Processes all characters in the given folder.
-  dcb-extract         Extracts a DataCore binary file into separate xml files
-  dcb-extract-single  Extracts a DataCore binary file into a single xml
-  p4k-extract         Extracts a Game.p4k file
-  proto-extract       Extracts protobuf definitions from the Star Citizen executable.
-  proto-set-extract   Extracts the protobuf descriptor set from the Star Citizen executable.
+  chf-download      Downloads all characters from the website and saves them to the website characters folder.
+  chf-export-all    Exports all modded characters into the Star Citizen folder.
+  chf-export-watch  Watch for new modded characters and export them to the star citizen folder.
+  chf-import-all    Imports all non-modded characters exported from the game into our local characters folder.
+  chf-import-watch  Watch for new characters in the Star Citizen folder and import them.
+  chf-process       Process a character file
+  chf-process-all   Processes all characters in the given folder.
+  cryxml-convert    Converts a CryXmlB file to a XML file
+  cryxml-convert-all  Converts all CryXmlB files in a folder to XML files
+  dcb-extract       Extracts a DataCore binary file into separate xml files
+  dds-merge         Merges multiple DDS files into a single DDS file
+  dds-merge-all     Merges all DDS files in a folder into a single DDS file
+  p4k-extract       Extracts a Game.p4k file
+  proto-extract     Extracts protobuf definitions from the Star Citizen executable.
+  proto-set-extract  Extracts the protobuf descriptor set from the Star Citizen executable.
 
 You can run `StarBreaker.Cli [command] --help` to show help on a specific command.
 ```

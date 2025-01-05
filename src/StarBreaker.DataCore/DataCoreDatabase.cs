@@ -90,35 +90,35 @@ public class DataCoreDatabase
         var textLength = reader.ReadUInt32();
         var textLength2 = reader.ReadUInt32();
 
-        StructDefinitions = reader.ReadArray<DataCoreStructDefinition>(structDefinitionCount);
-        PropertyDefinitions = reader.ReadArray<DataCorePropertyDefinition>(propertyDefinitionCount);
-        EnumDefinitions = reader.ReadArray<DataCoreEnumDefinition>(enumDefinitionCount);
-        DataMappings = reader.ReadArray<DataCoreDataMapping>(dataMappingCount);
-        RecordDefinitions = reader.ReadArray<DataCoreRecord>(recordDefinitionCount);
+        StructDefinitions = reader.BaseStream.ReadArray<DataCoreStructDefinition>(structDefinitionCount);
+        PropertyDefinitions = reader.BaseStream.ReadArray<DataCorePropertyDefinition>(propertyDefinitionCount);
+        EnumDefinitions = reader.BaseStream.ReadArray<DataCoreEnumDefinition>(enumDefinitionCount);
+        DataMappings = reader.BaseStream.ReadArray<DataCoreDataMapping>(dataMappingCount);
+        RecordDefinitions = reader.BaseStream.ReadArray<DataCoreRecord>(recordDefinitionCount);
 
-        Int8Values = reader.ReadArray<sbyte>(int8ValueCount);
-        Int16Values = reader.ReadArray<short>(int16ValueCount);
-        Int32Values = reader.ReadArray<int>(int32ValueCount);
-        Int64Values = reader.ReadArray<long>(int64ValueCount);
+        Int8Values = reader.BaseStream.ReadArray<sbyte>(int8ValueCount);
+        Int16Values = reader.BaseStream.ReadArray<short>(int16ValueCount);
+        Int32Values = reader.BaseStream.ReadArray<int>(int32ValueCount);
+        Int64Values = reader.BaseStream.ReadArray<long>(int64ValueCount);
 
-        UInt8Values = reader.ReadArray<byte>(uint8ValueCount);
-        UInt16Values = reader.ReadArray<ushort>(uint16ValueCount);
-        UInt32Values = reader.ReadArray<uint>(uint32ValueCount);
-        UInt64Values = reader.ReadArray<ulong>(uint64ValueCount);
+        UInt8Values = reader.BaseStream.ReadArray<byte>(uint8ValueCount);
+        UInt16Values = reader.BaseStream.ReadArray<ushort>(uint16ValueCount);
+        UInt32Values = reader.BaseStream.ReadArray<uint>(uint32ValueCount);
+        UInt64Values = reader.BaseStream.ReadArray<ulong>(uint64ValueCount);
 
-        BooleanValues = reader.ReadArray<bool>(booleanValueCount);
-        SingleValues = reader.ReadArray<float>(singleValueCount);
-        DoubleValues = reader.ReadArray<double>(doubleValueCount);
-        GuidValues = reader.ReadArray<CigGuid>(guidValueCount);
+        BooleanValues = reader.BaseStream.ReadArray<bool>(booleanValueCount);
+        SingleValues = reader.BaseStream.ReadArray<float>(singleValueCount);
+        DoubleValues = reader.BaseStream.ReadArray<double>(doubleValueCount);
+        GuidValues = reader.BaseStream.ReadArray<CigGuid>(guidValueCount);
 
-        StringIdValues = reader.ReadArray<DataCoreStringId>(stringIdValueCount);
-        LocaleValues = reader.ReadArray<DataCoreStringId>(localeValueCount);
-        EnumValues = reader.ReadArray<DataCoreStringId>(enumValueCount);
+        StringIdValues = reader.BaseStream.ReadArray<DataCoreStringId>(stringIdValueCount);
+        LocaleValues = reader.BaseStream.ReadArray<DataCoreStringId>(localeValueCount);
+        EnumValues = reader.BaseStream.ReadArray<DataCoreStringId>(enumValueCount);
 
-        StrongValues = reader.ReadArray<DataCorePointer>(strongValueCount);
-        WeakValues = reader.ReadArray<DataCorePointer>(weakValueCount);
-        ReferenceValues = reader.ReadArray<DataCoreReference>(referenceValueCount);
-        EnumOptions = reader.ReadArray<DataCoreStringId2>(enumOptionCount);
+        StrongValues = reader.BaseStream.ReadArray<DataCorePointer>(strongValueCount);
+        WeakValues = reader.BaseStream.ReadArray<DataCorePointer>(weakValueCount);
+        ReferenceValues = reader.BaseStream.ReadArray<DataCoreReference>(referenceValueCount);
+        EnumOptions = reader.BaseStream.ReadArray<DataCoreStringId2>(enumOptionCount);
 
         CachedStrings = ReadStringTable(reader.ReadBytes((int)textLength).AsSpan());
         if (Version >= 6)
