@@ -149,24 +149,23 @@ public sealed class DataCoreBinary
 
     private XElement GetFromInstance(int structIndex, int instanceIndex, DataCoreExtractionContext context)
     {
-        //if (context.Tracker.Contains((structIndex, instanceIndex)))
-        if (!context.Tracker.Add((structIndex, instanceIndex)))
+        if (context.AlreadyWroteInstance(structIndex, instanceIndex))
         {
-            var circularNode = new XElement("CircularReference");
+            var instanceReference = new XElement("InstanceReference");
 
-            circularNode.Add(new XAttribute("__structName", Database.StructDefinitions[structIndex].GetName(Database)));
-            circularNode.Add(new XAttribute("__structIndex", structIndex.ToString(CultureInfo.InvariantCulture)));
-            circularNode.Add(new XAttribute("__instanceIndex", instanceIndex.ToString(CultureInfo.InvariantCulture)));
+            instanceReference.Add(new XAttribute("__structName", Database.StructDefinitions[structIndex].GetName(Database)));
+            instanceReference.Add(new XAttribute("__structIndex", structIndex.ToString(CultureInfo.InvariantCulture)));
+            instanceReference.Add(new XAttribute("__instanceIndex", instanceIndex.ToString(CultureInfo.InvariantCulture)));
 
-            return circularNode;
+            return instanceReference;
         }
 
-        //context.Tracker.Push((structIndex, instanceIndex));
+        context.Push(structIndex, instanceIndex);
 
         var reader = Database.GetReader(Database.Offsets[structIndex][instanceIndex]);
         var element = GetFromStruct(structIndex, ref reader, context);
 
-        //context.Tracker.Pop();
+        context.Pop();
 
         // add some metadata to the element, mostly so we can figure out what a CircularReference is pointing to
         element.Add(new XAttribute("__structIndex", structIndex.ToString(CultureInfo.InvariantCulture)));

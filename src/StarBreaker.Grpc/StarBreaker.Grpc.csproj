@@ -7,7 +7,7 @@
   </PropertyGroup>
   
   <PropertyGroup>
-    <ProtobufPath>C:\Development\StarCitizenProtobuf\protos</ProtobufPath>
+    <ProtobufPath>C:\Development\StarCitizen\StarCitizenProtobuf\protos</ProtobufPath>
   </PropertyGroup>
 
   <ItemGroup>

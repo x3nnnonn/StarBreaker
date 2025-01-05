@@ -34,7 +34,12 @@ public class DataForge
         return structsPerFileName;
     }
 
-    public XElement GetFromRecord(DataCoreRecord record) => DataCore.GetFromRecord(record, new DataCoreExtractionContext(record.GetFileName(DataCore.Database)));
+    public XElement GetFromRecord(DataCoreRecord record)
+    {
+        //TODO: strategy should be configurable
+        var context = new DataCoreExtractionContext(record.GetFileName(DataCore.Database), DataCoreRepeatedReferenceResolutionStrategy.PerFile);
+        return DataCore.GetFromRecord(record, context);
+    }
 
     public Dictionary<string, string[]> ExportEnums()
     {
@@ -75,6 +80,8 @@ public class DataForge
             if (currentProgress == total || currentProgress % 250 == 0)
                 progress?.Report(currentProgress / (double)total);
         }
+
+        progress?.Report(1);
     }
 
     public void ExtractAllParallel(string outputFolder, string? fileNameFilter = null, IProgress<double>? progress = null)
