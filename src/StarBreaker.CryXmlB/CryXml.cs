@@ -39,11 +39,11 @@ public readonly struct CryXml
         if (!magic.SequenceEqual(thisMagic))
             throw new Exception("Invalid CryXmlB file");
 
-        var header = br.Read<CryXmlHeader>();
-        _nodes = br.ReadArray<CryXmlNode>((int)header.NodeCount);
-        _childIndices = br.ReadArray<int>((int)header.ChildCount);
-        _attributes = br.ReadArray<CryXmlAttribute>((int)header.AttributeCount);
-        _stringData = br.ReadBytes((int)header.StringDataSize);
+        var header = br.BaseStream.Read<CryXmlHeader>();
+        _nodes = br.BaseStream.ReadArray<CryXmlNode>((int)header.NodeCount);
+        _childIndices = br.BaseStream.ReadArray<int>((int)header.ChildCount);
+        _attributes = br.BaseStream.ReadArray<CryXmlAttribute>((int)header.AttributeCount);
+        _stringData = br.BaseStream.ReadArray<byte>((int)header.StringDataSize);
     }
 
     public static bool IsCryXmlB(ReadOnlySpan<byte> data)
@@ -113,5 +113,22 @@ public readonly struct CryXml
     {
         using var writer = XmlWriter.Create(entry, new XmlWriterSettings { Indent = true });
         WriteTo(writer);
+    }
+
+    public HashSet<string> EnumerateAllStrings()
+    {
+        var strings = new HashSet<string>();
+        foreach (var node in _nodes)
+        {
+            strings.Add(GetString(_stringData, (int)node.TagStringOffset));
+        }
+
+        foreach (var attribute in _attributes)
+        {
+            strings.Add(GetString(_stringData, (int)attribute.KeyStringOffset));
+            strings.Add(GetString(_stringData, (int)attribute.ValueStringOffset));
+        }
+
+        return strings;
     }
 }

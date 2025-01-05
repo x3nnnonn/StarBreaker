@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Numerics;
 using System.Text;
 using StarBreaker.Common;
+using StarBreaker.CryXmlB;
 using StarBreaker.DataCore;
 using StarBreaker.P4k;
 
@@ -24,10 +25,11 @@ public static class Crc32CSandbox
         haystack = new List<string>()
             .Concat(EnumeratePaths(dcb.DataCore.Database.CachedStrings.Values, '/'))
             .Concat(EnumeratePaths(dcb.DataCore.Database.CachedStrings2.Values, '/'))
-            .Concat(["head_eyedetail"])
-            .Concat(StreamLines("strings.txt"))
+            //.Concat(["head_eyedetail"])
+            //.Concat(StreamLines("strings.txt"))
             .Concat(StreamLines("mats.txt"))
-            .Concat(StreamLines("working.txt"))
+            .Concat(EnumeratePaths(StreamLines("mats.txt"), '/'))
+            //.Concat(StreamLines("working.txt"))
             .Concat(EnumeratePaths(p4k.Entries.Select(x => x.Name), '\\'));
 
         //TODO: charactercustomizer_pu.socpak
@@ -159,5 +161,21 @@ public static class Crc32CSandbox
         Console.WriteLine($"Number of tested strings: {tested}");
 
         return dict;
+    }
+
+    public static IEnumerable<string> GetMaterialStrings()
+    {
+        const string s = @"D:\StarCitizen\P4k\Data\Objects\Characters\Human";
+        var strings = new HashSet<string>();
+        foreach (var file in Directory.EnumerateFiles(s, "*.mtl", SearchOption.AllDirectories))
+        {
+            using var fs = File.OpenRead(file);
+            if (!CryXml.TryOpen(fs, out var xml))
+                continue;
+
+            strings.UnionWith(xml.EnumerateAllStrings());
+        }
+
+        return strings;
     }
 }
