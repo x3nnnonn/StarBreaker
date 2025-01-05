@@ -4,7 +4,7 @@ using System.IO.Compression;
 namespace StarBreaker.Sandbox;
 
 //creates a dummy zip with the same structure as a star citizen p4k file, for testing purposes
-public static class ZipFile
+public static class ZipFileSandbox
 {
     public static void Run()
     {

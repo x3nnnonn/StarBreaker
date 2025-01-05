@@ -1,20 +1,18 @@
-﻿using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using CliFx;
+﻿using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
+using StarBreaker.Chf;
 
-namespace StarBreaker.Chf;
+namespace StarBreaker.Cli;
 
 [Command("chf-export-all", Description = "Exports all modded characters into the Star Citizen folder.")]
 public class ExportAllCommand : ICommand
 {
     [CommandOption("input", 'i', Description = "Input folder")]
-    public string InputFolder { get; set; } = DefaultPaths.ModdedCharacters;
+    public required string InputFolder { get; init; }
 
     [CommandOption("output", 'o', Description = "Output folder")]
-    public string OutputFolder { get; set; }  = DefaultPaths.StarCitizenCharactersFolder;
+    public required string OutputFolder { get; init; }
 
     public async ValueTask ExecuteAsync(IConsole console)
     {
@@ -32,7 +30,7 @@ public class ExportAllCommand : ICommand
                 return;
 
             var file = ChfFile.FromBin(b);
-            
+
             await console.Output.WriteLineAsync($"Exporting {Path.GetFileNameWithoutExtension((string?)b)}");
             await file.WriteToChfFileAsync(target);
         }));

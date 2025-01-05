@@ -1,8 +1,5 @@
 ﻿using CliFx;
-using StarBreaker.Chf;
 using StarBreaker.Cli;
-using StarBreaker.Cli.DataCoreCommands;
-using StarBreaker.Cli.P4kCommands;
 
 return await new CliApplicationBuilder()
     .SetExecutableName("StarBreaker.Cli")
@@ -17,5 +14,9 @@ return await new CliApplicationBuilder()
     .AddCommand<ExtractP4kCommand>()
     .AddCommand<ExtractProtobufsCommand>()
     .AddCommand<ExtractDescriptorSetCommand>()
+    .AddCommand<ConvertCryXmlBCommand>()
+    .AddCommand<ConvertAllCryXmlBCommand>()
+    .AddCommand<MergeDdsCommand>()
+    .AddCommand<MergeAllDdsCommand>()
     .Build()
     .RunAsync();

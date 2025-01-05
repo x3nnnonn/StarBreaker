@@ -1,6 +1,4 @@
-﻿using System.IO;
-using System.Threading.Tasks;
-using CliFx;
+﻿using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using StarBreaker.Chf;
@@ -11,11 +9,11 @@ namespace StarBreaker.Cli;
 public class WatchExportCommand : ICommand
 {
     [CommandOption("input", 'i', Description = "Input folder")]
-    public required string InputFolder { get; init; } = DefaultPaths.ModdedCharacters;
-    
+    public required string InputFolder { get; init; }
+
     [CommandOption("output", 'o', Description = "Output folder")]
-    public string OutputFolder { get; init; } = DefaultPaths.StarCitizenCharactersFolder;
-    
+    public required string OutputFolder { get; init; }
+
     public async ValueTask ExecuteAsync(IConsole console)
     {
         using var watcher = new FileSystemWatcher(InputFolder);
@@ -27,22 +25,22 @@ public class WatchExportCommand : ICommand
                                NotifyFilters.Size |
                                NotifyFilters.Security;
         watcher.Filter = "*.bin";
-        
+
         watcher.Renamed += async (_, eventArgs) =>
         {
-            if (eventArgs.Name  == null)
+            if (eventArgs.Name == null)
                 return;
-            
+
             await console.Output.WriteLineAsync($"New character detected: {eventArgs.FullPath}");
-            
+
             var target = Path.Combine(OutputFolder, Path.ChangeExtension(eventArgs.Name, ".chf"));
-            
+
             if (File.Exists(target))
                 return;
-            
+
             var chfFile = ChfFile.FromBin(eventArgs.FullPath);
             await chfFile.WriteToChfFileAsync(target);
-            
+
             await console.Output.WriteLineAsync($"Character Exported: {eventArgs.FullPath}");
         };
 

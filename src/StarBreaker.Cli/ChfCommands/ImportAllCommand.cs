@@ -1,19 +1,18 @@
-﻿using System.IO;
-using System.Threading.Tasks;
-using CliFx;
+﻿using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
+using StarBreaker.Chf;
 
-namespace StarBreaker.Chf;
+namespace StarBreaker.Cli;
 
 [Command("chf-import-all", Description = "Imports all non-modded characters exported from the game into our local characters folder.")]
 public class ImportAllCommand : ICommand
 {
     [CommandOption("output", 'o', Description = "Output folder")]
-    public string OutputFolder { get; set; } = DefaultPaths.LocalCharacters;
+    public required string OutputFolder { get; init; }
 
     [CommandOption("input", 'i', Description = "Input folder")]
-    public string InputFolder { get; set; } = DefaultPaths.StarCitizenCharactersFolder;
+    public required string InputFolder { get; init; }
 
     public async ValueTask ExecuteAsync(IConsole console)
     {

@@ -4,7 +4,7 @@ using StarBreaker.P4k;
 
 namespace StarBreaker.Sandbox;
 
-public static class TimeP4kExtract
+public static class P4kSandbox
 {
     private const string p4k = @"C:\Program Files\Roberts Space Industries\StarCitizen\4.0_PREVIEW\Data.p4k";
 

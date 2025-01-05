@@ -1,20 +1,16 @@
-﻿using System;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using CliFx;
+﻿using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
-using StarBreaker.Cli;
+using StarBreaker.Chf;
 using StarBreaker.Cli.Utils;
 
-namespace StarBreaker.Chf;
+namespace StarBreaker.Cli;
 
 [Command("chf-process-all", Description = "Processes all characters in the given folder.")]
 public class ProcessAllCommand : ICommand
 {
     [CommandOption("input", 'i', Description = "Input Folder to process.")]
-    public string InputFolder { get; set; } = Path.Combine(DefaultPaths.ResearchFolder);
+    public required string InputFolder { get; init; }
 
     public async ValueTask ExecuteAsync(IConsole console)
     {

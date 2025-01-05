@@ -1,12 +1,11 @@
 ﻿using System.Diagnostics;
-using System.Text.RegularExpressions;
 using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using StarBreaker.Cli.Utils;
 using StarBreaker.P4k;
 
-namespace StarBreaker.Cli.P4kCommands;
+namespace StarBreaker.Cli;
 
 [Command("p4k-extract", Description = "Extracts a Game.p4k file")]
 public class ExtractP4kCommand : ICommand

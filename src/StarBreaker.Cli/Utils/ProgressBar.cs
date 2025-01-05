@@ -8,7 +8,7 @@ public class ProgressBar : IProgress<double>
     private readonly IConsole _console;
     private int? _originalCursorLeft;
     private int? _originalCursorTop;
-    
+
     public ProgressBar(IConsole console)
     {
         _console = console;
@@ -29,23 +29,26 @@ public class ProgressBar : IProgress<double>
 
         var completedBlocks = (int)(progress * _totalBlocks);
         var progressBar = new string('#', completedBlocks) + new string('-', _totalBlocks - completedBlocks);
-        
+
         _console.Output.WriteLine($"[{progressBar}] {progress:P0}");
     }
 
     public void Report(double progress)
     {
-        var setCursorPosition = _originalCursorLeft != null && _originalCursorTop != null;
-        if (!_console.IsOutputRedirected)
+        lock (_console)
         {
-            var position = (_console.CursorLeft, _console.CursorTop);
-            
-            RenderProgress(progress);
-
-            if (setCursorPosition)
+            var setCursorPosition = _originalCursorLeft != null && _originalCursorTop != null;
+            if (!_console.IsOutputRedirected)
             {
-                _console.CursorLeft = position.CursorLeft;
-                _console.CursorTop = position.CursorTop;
+                var position = (_console.CursorLeft, _console.CursorTop);
+
+                RenderProgress(progress);
+
+                if (setCursorPosition)
+                {
+                    _console.CursorLeft = position.CursorLeft;
+                    _console.CursorTop = position.CursorTop;
+                }
             }
         }
     }

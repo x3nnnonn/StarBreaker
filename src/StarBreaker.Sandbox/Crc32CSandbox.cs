@@ -8,7 +8,7 @@ using StarBreaker.P4k;
 
 namespace StarBreaker.Sandbox;
 
-public static class StringCrc32c
+public static class Crc32CSandbox
 {
     public static void Run()
     {

@@ -3,7 +3,7 @@ using CliFx.Attributes;
 using CliFx.Infrastructure;
 using StarBreaker.Protobuf;
 
-namespace StarBreaker.Chf;
+namespace StarBreaker.Cli;
 
 [Command("proto-set-extract", Description = "Extracts the protobuf descriptor set from the Star Citizen executable.")]
 public class ExtractDescriptorSetCommand : ICommand

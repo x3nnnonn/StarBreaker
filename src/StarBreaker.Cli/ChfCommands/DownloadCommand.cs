@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Threading.Tasks;
+﻿using System.Net.Http.Json;
 using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
@@ -12,13 +6,13 @@ using CliFx.Infrastructure;
 // ReSharper disable ClassNeverInstantiated.Global
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 
-namespace StarBreaker.Chf;
+namespace StarBreaker.Cli;
 
 [Command("chf-download", Description = "Downloads all characters from the website and saves them to the website characters folder.")]
 public class DownloadCommand : ICommand
 {
     [CommandOption("OutputFolder", Description = "Download folder")]
-    public string OutputFolder { get; set; } = DefaultPaths.WebsiteCharacters;
+    public required string OutputFolder { get; init; }
 
     public async ValueTask ExecuteAsync(IConsole console)
     {
@@ -76,7 +70,7 @@ public class DownloadCommand : ICommand
         {
             var response = await httpClient.GetFromJsonAsync(
                 $"https://www.star-citizen-characters.com/api/heads?page={page++}&orderBy=latest",
-                StarBreakerSerializerContext.Default.SccRoot
+                CliSerializerContext.Default.SccRoot
             );
             foreach (var row in response!.body!.rows!)
             {

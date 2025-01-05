@@ -8,7 +8,7 @@ using StarBreaker.P4k;
 
 namespace StarBreaker.Sandbox;
 
-public static class TagDatabase
+public static class DataCoreSandbox
 {
     public static void Run()
     {
