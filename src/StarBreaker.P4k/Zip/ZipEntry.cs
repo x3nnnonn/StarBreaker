@@ -16,6 +16,7 @@ public sealed class ZipEntry
     public bool IsCrypted { get; }
     public ulong Offset { get; }
     public DateTime LastModified => FromDosDateTime(_dosDateTime);
+    public uint Crc32 { get; }
 
     public ZipEntry(
         string name,
@@ -24,7 +25,8 @@ public sealed class ZipEntry
         ushort compressionMethod,
         bool isCrypted,
         ulong offset,
-        uint lastModifiedDateTime
+        uint lastModifiedDateTime,
+        uint crc32
     )
     {
         Name = name;
@@ -34,6 +36,7 @@ public sealed class ZipEntry
         IsCrypted = isCrypted;
         Offset = offset;
         _dosDateTime = lastModifiedDateTime;
+        Crc32 = crc32;
     }
 
     //https://source.dot.net/#System.IO.Compression/System/IO/Compression/ZipHelper.cs,76523e345de18cc8

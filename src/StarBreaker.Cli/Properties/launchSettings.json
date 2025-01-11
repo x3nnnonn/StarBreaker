@@ -42,7 +42,15 @@
     },
     "dcb-extract": {
       "commandName": "Project",
-      "commandLineArgs": "dcb-extract -p \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\4.0_PREVIEW\\Data.p4k\" -o \"C:\\Development\\StarCitizen\\DataCoreExport\""
+      "commandLineArgs": "dcb-extract -p \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k\" -o \"C:\\Development\\StarCitizen\\DataCoreExport\""
+    },
+    "dcb-extract2": {
+      "commandName": "Project",
+      "commandLineArgs": "dcb-extract -d \"D:\\StarCitizen\\P4k\\Data\\Game2.dcb\" -o \"C:\\Development\\StarCitizen\\DataCoreExport\""
+    },
+    "diff": {
+      "commandName": "Project",
+      "commandLineArgs": "diff -g \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\" -o \"C:\\Development\\StarCitizen\\StarCitizenDiff\""
     },
     "dcb-extract-old": {
       "commandName": "Project",
@@ -58,15 +66,19 @@
     },
     "p4k-extract": {
       "commandName": "Project",
-      "commandLineArgs": "p4k-extract -p \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\4.0_PREVIEW\\Data.p4k\" -o \"D:\\StarCitizen\\P4k\""
+      "commandLineArgs": "p4k-extract -p \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k\" -o \"D:\\StarCitizen\\P4k\""
+    },
+    "p4k-dump": {
+      "commandName": "Project",
+      "commandLineArgs": "p4k-dump -p \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k\" -o \"C:\\Development\\StarCitizen\\DataCoreExport\""
     },
     "proto-extract": {
       "commandName": "Project",
-      "commandLineArgs": "proto-extract -i \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\4.0_PREVIEW\\Bin64\\StarCitizen.exe\" -o \"C:\\Development\\StarCitizen\\StarCitizenProtobuf\\protos\""
+      "commandLineArgs": "proto-extract -i \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Bin64\\StarCitizen.exe\" -o \"C:\\Development\\StarCitizen\\StarCitizenProtobuf\\protos\""
     },
     "proto-set-extract": {
       "commandName": "Project",
-      "commandLineArgs": "proto-set-extract -i \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\4.0_PREVIEW\\Bin64\\StarCitizen.exe\" -o \"C:\\Development\\StarCitizen\\StarCitizenProtobuf\\descriptorSet.bin\""
+      "commandLineArgs": "proto-set-extract -i \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Bin64\\StarCitizen.exe\" -o \"C:\\Development\\StarCitizen\\StarCitizenProtobuf\\descriptorSet.bin\""
     }
   }
 }

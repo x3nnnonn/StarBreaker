@@ -1,5 +1,5 @@
 ﻿using System.Buffers;
-using System.IO.Enumeration;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Channels;
@@ -39,7 +39,7 @@ public sealed partial class P4kFile
     public static P4kFile FromFile(string filePath, IProgress<double>? progress = null)
     {
         progress?.Report(0);
-        using var reader = new BinaryReader(new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.None, 4096), Encoding.UTF8, false);
+        using var reader = new BinaryReader(new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096), Encoding.UTF8, false);
 
         var eocdLocation = reader.BaseStream.Locate(EOCDRecord.Magic);
         reader.BaseStream.Seek(eocdLocation, SeekOrigin.Begin);
@@ -168,7 +168,8 @@ public sealed partial class P4kFile
                 header.CompressionMethod,
                 isCrypted,
                 localHeaderOffset,
-                header.LastModifiedTimeAndDate
+                header.LastModifiedTimeAndDate,
+                header.Crc32
             );
         }
         finally
@@ -188,9 +189,14 @@ public sealed partial class P4kFile
 
         var localHeader = p4kStream.Read<LocalFileHeader>();
 
-        p4kStream.Seek(localHeader.FileNameLength + localHeader.ExtraFieldLength, SeekOrigin.Current);
+        var offset = entry.Offset
+                     + sizeof(uint)
+                     + (ulong)Unsafe.SizeOf<LocalFileHeader>()
+                     + localHeader.FileNameLength
+                     + localHeader.ExtraFieldLength;
+        var length = entry.CompressedSize;
 
-        return new StreamSegment(p4kStream, p4kStream.Position, (long)entry.CompressedSize, false);
+        return new StreamSegment(p4kStream, (long)offset, (long)length, false);
     }
 
     // Remarks: Streams returned by this method might not support seeking or length.
