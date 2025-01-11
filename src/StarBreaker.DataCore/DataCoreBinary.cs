@@ -24,9 +24,9 @@ public sealed class DataCoreBinary
             {
                 //TODO: do we need to handle different types of arrays?
                 ConversionType.Attribute => GetAttribute(prop, ref reader, context),
-                ConversionType.ComplexArray => GetArray(prop, ref reader, context),
-                ConversionType.SimpleArray => GetArray(prop, ref reader, context),
-                ConversionType.ClassArray => GetArray(prop, ref reader, context),
+                ConversionType.ComplexArray => GetArray(prop, ref reader, context)?.WithAttribute("__type", "ComplexArray", context.ShouldWriteMetadata),
+                ConversionType.SimpleArray => GetArray(prop, ref reader, context)?.WithAttribute("__type", "SimpleArray", context.ShouldWriteMetadata),
+                ConversionType.ClassArray => GetArray(prop, ref reader, context)?.WithAttribute("__type", "ClassArray", context.ShouldWriteMetadata),
                 _ => throw new InvalidOperationException(nameof(ConversionType))
             });
         }
@@ -48,10 +48,10 @@ public sealed class DataCoreBinary
         {
             arrayNode.Add(prop.DataType switch
             {
-                DataType.Reference => GetFromReference(Database.ReferenceValues[i], context),
-                DataType.WeakPointer => GetFromPointer(Database.WeakValues[i], context),
-                DataType.StrongPointer => GetFromPointer(Database.StrongValues[i], context),
-                DataType.Class => GetFromInstance(prop.StructIndex, i, context),
+                DataType.Reference => GetFromReference(Database.ReferenceValues[i], context)?.WithAttribute("__type", "ArrReference", context.ShouldWriteMetadata),
+                DataType.WeakPointer => GetWeakPointer(Database.WeakValues[i], context)?.WithAttribute("__type", "ArrWeak", context.ShouldWriteMetadata),
+                DataType.StrongPointer => GetFromPointer(Database.StrongValues[i], context)?.WithAttribute("__type", "ArrStrong", context.ShouldWriteMetadata),
+                DataType.Class => GetFromInstance(prop.StructIndex, i, context)?.WithAttribute("__type", "ArrClass", context.ShouldWriteMetadata),
 
                 DataType.EnumChoice => new XElement(prop.DataType.ToStringFast(), Database.EnumValues[i].ToString(Database)),
                 DataType.Guid => new XElement(prop.DataType.ToStringFast(), Database.GuidValues[i].ToString()),
@@ -75,14 +75,14 @@ public sealed class DataCoreBinary
         return arrayNode;
     }
 
-    private XObject GetAttribute(DataCorePropertyDefinition prop, ref SpanReader reader, DataCoreExtractionContext context)
+    private XObject? GetAttribute(DataCorePropertyDefinition prop, ref SpanReader reader, DataCoreExtractionContext context)
     {
         return prop.DataType switch
         {
-            DataType.Reference => GetFromReference(reader.Read<DataCoreReference>(), context),
-            DataType.WeakPointer => GetFromPointer(reader.Read<DataCorePointer>(), context),
-            DataType.StrongPointer => GetFromPointer(reader.Read<DataCorePointer>(), context),
-            DataType.Class => GetFromStruct(prop.StructIndex, ref reader, context),
+            DataType.Reference => GetFromReference(reader.Read<DataCoreReference>(), context)?.WithAttribute("__type", "AttReference", context.ShouldWriteMetadata),
+            DataType.WeakPointer => GetWeakPointer(reader.Read<DataCorePointer>(), context)?.WithAttribute("__type", "AttWeak", context.ShouldWriteMetadata),
+            DataType.StrongPointer => GetFromPointer(reader.Read<DataCorePointer>(), context)?.WithAttribute("__type", "AttStrong", context.ShouldWriteMetadata),
+            DataType.Class => GetFromStruct(prop.StructIndex, ref reader, context)?.WithAttribute("__type", "AttClass", context.ShouldWriteMetadata),
 
             DataType.EnumChoice => new XAttribute(prop.GetName(Database), reader.Read<DataCoreStringId>().ToString(Database)),
             DataType.Guid => new XAttribute(prop.GetName(Database), reader.Read<CigGuid>().ToString()),
@@ -103,13 +103,20 @@ public sealed class DataCoreBinary
         };
     }
 
-    private XElement GetFromReference(DataCoreReference reference, DataCoreExtractionContext context)
+    private XElement? GetFromReference(DataCoreReference reference, DataCoreExtractionContext context)
     {
         if (reference.IsInvalid)
         {
+            if (!context.ShouldWriteNulls)
+                return null;
+
             var invalidNode = new XElement("NullReference");
-            invalidNode.Add(new XAttribute("__guid", reference.RecordId.ToString()));
-            invalidNode.Add(new XAttribute("__instanceIndex", reference.InstanceIndex.ToString(CultureInfo.InvariantCulture)));
+            invalidNode.Add(new XAttribute("guid", reference.RecordId.ToString()));
+            if (context.ShouldWriteMetadata)
+            {
+                invalidNode.Add(new XAttribute("__instanceIndex", reference.InstanceIndex.ToString(CultureInfo.InvariantCulture)));
+            }
+
             return invalidNode;
         }
 
@@ -119,59 +126,97 @@ public sealed class DataCoreBinary
         {
             //if we're referencing a full on file, just add a small mention to it
             var fileReferenceNode = new XElement("FileReference");
-            fileReferenceNode.Add(new XAttribute("__guid", reference.RecordId.ToString()));
-            fileReferenceNode.Add(new XAttribute("__filePath", ComputeRelativePath(record.GetFileName(Database), context.FileName)));
+            fileReferenceNode.Add(new XAttribute("guid", reference.RecordId.ToString()));
+            fileReferenceNode.Add(new XAttribute("filePath", ComputeRelativePath(record.GetFileName(Database), context.FileName)));
             return fileReferenceNode;
         }
 
         return GetFromRecord(record, context);
     }
 
-    public XElement GetFromRecord(DataCoreRecord record, DataCoreExtractionContext context)
+    private XElement GetFromRecord(DataCoreRecord record, DataCoreExtractionContext context)
     {
-        var element = GetFromInstance(record.StructIndex, record.InstanceIndex, context);
-        element.Add(new XAttribute("__recordGuid", record.Id.ToString()));
+        return GetFromInstance(record.StructIndex, record.InstanceIndex, context)
+            .WithAttribute("recordGuid", record.Id.ToString());
+    }
+
+    public XElement GetFromMainRecord(DataCoreRecord record, DataCoreExtractionContext context)
+    {
+        if (!Database.MainRecords.Contains(record.Id))
+            throw new InvalidOperationException("Can only extract main records");
+
+        var element = GetFromRecord(record, context);
+
+        //add weak pointers ids, so we can actually see what a weak pointer is pointing at
+        foreach (var weakPtr in context.GetWeakPointers())
+        {
+            var pointedAtElement = context.Elements[(weakPtr.structIndex, weakPtr.instanceIndex)];
+
+            pointedAtElement.Add(new XAttribute("weakPointerId", context.GetWeakPointerId(weakPtr.structIndex, weakPtr.instanceIndex).ToString(CultureInfo.InvariantCulture)));
+        }
+
         return element;
     }
 
-    private XElement GetFromPointer(DataCorePointer pointer, DataCoreExtractionContext context)
+    private XElement? GetFromPointer(DataCorePointer pointer, DataCoreExtractionContext context)
     {
         if (pointer.IsInvalid)
-        {
-            var invalidNode = new XElement("NullPointer");
-            invalidNode.Add(new XAttribute("__structIndex", pointer.StructIndex.ToString(CultureInfo.InvariantCulture)));
-            invalidNode.Add(new XAttribute("__instanceIndex", pointer.InstanceIndex.ToString(CultureInfo.InvariantCulture)));
-            return invalidNode;
-        }
+            return GetNullPointer(pointer, context);
 
         return GetFromInstance(pointer.StructIndex, pointer.InstanceIndex, context);
     }
 
     private XElement GetFromInstance(int structIndex, int instanceIndex, DataCoreExtractionContext context)
     {
-        if (context.AlreadyWroteInstance(structIndex, instanceIndex))
-        {
-            var instanceReference = new XElement("InstanceReference");
-
-            instanceReference.Add(new XAttribute("__structName", Database.StructDefinitions[structIndex].GetName(Database)));
-            instanceReference.Add(new XAttribute("__structIndex", structIndex.ToString(CultureInfo.InvariantCulture)));
-            instanceReference.Add(new XAttribute("__instanceIndex", instanceIndex.ToString(CultureInfo.InvariantCulture)));
-
-            return instanceReference;
-        }
-
-        context.Push(structIndex, instanceIndex);
-
         var reader = Database.GetReader(Database.Offsets[structIndex][instanceIndex]);
         var element = GetFromStruct(structIndex, ref reader, context);
 
-        context.Pop();
+        context.Elements[(structIndex, instanceIndex)] = element;
 
-        // add some metadata to the element, mostly so we can figure out what a CircularReference is pointing to
-        element.Add(new XAttribute("__structIndex", structIndex.ToString(CultureInfo.InvariantCulture)));
-        element.Add(new XAttribute("__instanceIndex", instanceIndex.ToString(CultureInfo.InvariantCulture)));
+        if (context.ShouldWriteMetadata)
+        {
+            element.Add(new XAttribute("__structIndex", structIndex.ToString(CultureInfo.InvariantCulture)));
+            element.Add(new XAttribute("__instanceIndex", instanceIndex.ToString(CultureInfo.InvariantCulture)));
+        }
 
         return element;
+    }
+
+    private XElement? GetWeakPointer(DataCorePointer pointer, DataCoreExtractionContext context)
+    {
+        if (pointer.IsInvalid)
+            return GetNullPointer(pointer, context);
+
+        var pointerId = context.AddWeakPointer(pointer.StructIndex, pointer.InstanceIndex);
+
+        var invalidNode = new XElement("WeakPointer");
+
+        invalidNode.Add(new XAttribute("weakPointerId", pointerId.ToString(CultureInfo.InvariantCulture)));
+        var structName = Database.StructDefinitions[pointer.StructIndex].GetName(Database);
+        invalidNode.Add(new XAttribute("structName", structName));
+
+        if (context.ShouldWriteMetadata)
+        {
+            invalidNode.Add(new XAttribute("__structIndex", pointer.StructIndex.ToString(CultureInfo.InvariantCulture)));
+            invalidNode.Add(new XAttribute("__instanceIndex", pointer.InstanceIndex.ToString(CultureInfo.InvariantCulture)));
+        }
+
+        return invalidNode;
+    }
+
+    private static XElement? GetNullPointer(DataCorePointer pointer, DataCoreExtractionContext context)
+    {
+        if (!context.ShouldWriteNulls)
+            return null;
+
+        var invalidNode = new XElement("NullPointer");
+        if (context.ShouldWriteMetadata)
+        {
+            invalidNode.Add(new XAttribute("__structIndex", pointer.StructIndex.ToString(CultureInfo.InvariantCulture)));
+            invalidNode.Add(new XAttribute("__instanceIndex", pointer.InstanceIndex.ToString(CultureInfo.InvariantCulture)));
+        }
+
+        return invalidNode;
     }
 
     public static string ComputeRelativePath(string filePath, string contextFileName)
