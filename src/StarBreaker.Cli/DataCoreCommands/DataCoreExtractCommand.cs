@@ -10,10 +10,11 @@ namespace StarBreaker.Cli;
 [Command("dcb-extract", Description = "Extracts a DataCore binary file into separate xml files")]
 public class DataCoreExtractCommand : ICommand
 {
-    private static readonly string[] _dataCoreFiles = [@"Data\Game2.dcb", @"Data\Game.dcb"];
-
     [CommandOption("p4k", 'p', Description = "Path to the Game.p4k")]
-    public required string P4kFile { get; init; }
+    public string? P4kFile { get; init; }
+
+    [CommandOption("dcb", 'd', Description = "Path to the Game.dcb")]
+    public string? DcbFile { get; init; }
     
     [CommandOption("output", 'o', Description = "Path to the output directory")]
     public required string OutputDirectory { get; init; }
@@ -23,16 +24,35 @@ public class DataCoreExtractCommand : ICommand
     
     public ValueTask ExecuteAsync(IConsole console)
     {
-        var p4k = P4k.P4kFile.FromFile(P4kFile);
-        console.Output.WriteLine("P4k loaded.");
-        Stream? dcbStream = null;
-        foreach (var file in _dataCoreFiles)
+        if (P4kFile == null && DcbFile == null)
         {
-            if (!p4k.FileExists(file)) continue;
+            console.Output.WriteLine("P4k and DCB files are required.");
+            return default;
+        }
+        if (!string.IsNullOrEmpty(P4kFile) && !string.IsNullOrEmpty(DcbFile))
+        {
+            console.Output.WriteLine("Only one of P4k and DCB files can be specified.");
+            return default;
+        }
 
-            dcbStream = p4k.OpenRead(file);
-            console.Output.WriteLine($"{file} found");
-            break;
+        Stream? dcbStream = null;
+        if (!string.IsNullOrEmpty(DcbFile))
+        {
+            dcbStream = File.OpenRead(DcbFile);
+            console.Output.WriteLine("DCB loaded.");
+        }
+        else if (!string.IsNullOrEmpty(P4kFile))
+        {
+            var p4k = P4k.P4kFile.FromFile(P4kFile);
+            console.Output.WriteLine("P4k loaded.");
+            foreach (var file in DataCoreUtils.KnownPaths)
+            {
+                if (!p4k.FileExists(file)) continue;
+
+                dcbStream = p4k.OpenRead(file);
+                console.Output.WriteLine($"{file} found");
+                break;
+            }
         }
 
         if (dcbStream == null)

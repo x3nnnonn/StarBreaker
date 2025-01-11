@@ -1,4 +1,5 @@
 ﻿using System.IO.Enumeration;
+using System.Text;
 
 namespace StarBreaker.P4k;
 
@@ -52,8 +53,8 @@ public sealed class P4kExtractor
                     return;
 
                 var entryPath = Path.Combine(outputDir, entry.Name);
-                if (File.Exists(entryPath))
-                    return;
+                //if (File.Exists(entryPath))
+                //    return;
 
                 Directory.CreateDirectory(Path.GetDirectoryName(entryPath) ?? throw new InvalidOperationException());
                 using (var writeStream = new FileStream(entryPath, FileMode.Create, FileAccess.Write, FileShare.None,
@@ -64,6 +65,73 @@ public sealed class P4kExtractor
                         entryStream.CopyTo(writeStream);
                     }
                 }
+
+                Interlocked.Increment(ref processedEntries);
+                if (processedEntries == numberOfEntries || processedEntries % fivePercent == 0)
+                {
+                    using (lockObject.EnterScope())
+                    {
+                        progress?.Report(processedEntries / (double)numberOfEntries);
+                    }
+                }
+            }
+        );
+
+        progress?.Report(1);
+    }
+
+    public void ExtractDummies(string outputDir, IProgress<double>? progress = null)
+    {
+        //TODO: if the filter is for *.dds, make sure to include *.dds.N too. Maybe do the pre processing before we filter?
+
+        var numberOfEntries = _p4KFile.Entries.Length;
+        var fivePercent = numberOfEntries / 20;
+        var processedEntries = 0;
+
+        progress?.Report(0);
+
+        var lockObject = new Lock();
+
+        //TODO: Preprocessing step:
+        // 1. start with the list of total files
+        // 2. run the following according to the filter:
+        // 3. find one-shot single file procesors
+        // 4. find file -> multiple file processors
+        // 5. find multiple file -> single file unsplit processors - remove from the list so we don't double process
+        // run it!
+        Parallel.ForEach(_p4KFile.Entries,
+            entry =>
+            {
+                var entryPath = Path.Combine(outputDir, entry.Name) + ".ini";
+                Directory.CreateDirectory(Path.GetDirectoryName(entryPath) ?? throw new InvalidOperationException());
+                //write metadata to the file instead of the actual data
+                var sb = new StringBuilder();
+
+                sb.Append("CRC32: 0x");
+                sb.Append(entry.Crc32.ToString("X8"));
+                sb.AppendLine();
+
+                sb.Append("LastModified: ");
+                sb.Append(entry.LastModified.ToString("s"));
+                sb.AppendLine();
+
+                sb.Append("UncompressedSize: ");
+                sb.Append(entry.UncompressedSize);
+                sb.AppendLine();
+
+                sb.Append("CompressedSize: ");
+                sb.Append(entry.CompressedSize);
+                sb.AppendLine();
+
+                sb.Append("CompressionType: ");
+                sb.Append(entry.CompressionMethod);
+                sb.AppendLine();
+
+                sb.Append("IsCrypted: ");
+                sb.Append(entry.IsCrypted);
+                sb.AppendLine();
+
+                File.WriteAllText(entryPath, sb.ToString());
 
                 Interlocked.Increment(ref processedEntries);
                 if (processedEntries == numberOfEntries || processedEntries % fivePercent == 0)
