@@ -1,6 +1,4 @@
 ﻿using System.IO.Enumeration;
-using System.Text;
-using System.Xml;
 using System.Xml.Linq;
 
 namespace StarBreaker.DataCore;
@@ -36,9 +34,9 @@ public class DataForge
 
     public XElement GetFromRecord(DataCoreRecord record)
     {
-        //TODO: strategy should be configurable
-        var context = new DataCoreExtractionContext(record.GetFileName(DataCore.Database), DataCoreRepeatedReferenceResolutionStrategy.PerFile);
-        return DataCore.GetFromRecord(record, context);
+        //TODO: metadata should be a parameter
+        var context = new DataCoreExtractionContext(record.GetFileName(DataCore.Database));
+        return DataCore.GetFromMainRecord(record, context);
     }
 
     public Dictionary<string, string[]> ExportEnums()

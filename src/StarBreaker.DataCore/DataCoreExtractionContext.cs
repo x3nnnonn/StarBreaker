@@ -1,69 +1,39 @@
-﻿namespace StarBreaker.DataCore;
+﻿using System.Runtime.InteropServices;
+using System.Xml.Linq;
 
-/// <summary>
-///     The strategy to use when resolving repeated references in the data core.
-/// </summary>
-public enum DataCoreRepeatedReferenceResolutionStrategy
-{
-    /// <summary>
-    ///     Each instance will be written once per file. Subsequent references will be written as a reference to the original instance.
-    /// </summary>
-    PerFile,
-
-    /// <summary>
-    ///     Each instance will be written once per node. References to the original instance will be used when they are children of the original.
-    ///     Otherwise, the instance will be written again.
-    /// </summary>
-    PerNode,
-}
+namespace StarBreaker.DataCore;
 
 public sealed class DataCoreExtractionContext
 {
-    private readonly HashSet<(int structIndex, int instanceIndex)> _hashSet;
-    private readonly Stack<(int structIndex, int instanceIndex)> _stack;
+    private readonly Dictionary<(int structIndex, int instanceIndex), int> _weakPointerIds;
+    private int _nextWeakPointerId = 0;
+
+    public Dictionary<(int structIndex, int instanceIndex), XElement> Elements { get; }
 
     public string FileName { get; }
-    public DataCoreRepeatedReferenceResolutionStrategy Strategy { get; }
+    public bool ShouldWriteMetadata { get; }
+    public bool ShouldWriteNulls { get; }
 
-    public DataCoreExtractionContext(string fileName, DataCoreRepeatedReferenceResolutionStrategy strategy)
+    public DataCoreExtractionContext(string fileName, bool shouldWriteMetadata = false, bool shouldWriteNulls = false)
     {
-        _hashSet = [];
-        _stack = [];
         FileName = fileName;
-        Strategy = strategy;
+        ShouldWriteMetadata = shouldWriteMetadata;
+        ShouldWriteNulls = shouldWriteNulls;
+        Elements = [];
+        _weakPointerIds = [];
     }
 
-    public bool AlreadyWroteInstance(int structIndex, int instanceIndex)
+    public int AddWeakPointer(int structIndex, int instanceIndex)
     {
-        return Strategy switch
-        {
-            DataCoreRepeatedReferenceResolutionStrategy.PerFile => _hashSet.Contains((structIndex, instanceIndex)),
-            DataCoreRepeatedReferenceResolutionStrategy.PerNode => _stack.Contains((structIndex, instanceIndex)),
-            _ => throw new ArgumentOutOfRangeException()
-        };
+        ref var id = ref CollectionsMarshal.GetValueRefOrAddDefault(_weakPointerIds, (structIndex, instanceIndex), out var existed);
+
+        if (!existed)
+            id = _nextWeakPointerId++;
+
+        return id;
     }
 
-    public void Push(int structIndex, int instanceIndex)
-    {
-        switch (Strategy)
-        {
-            case DataCoreRepeatedReferenceResolutionStrategy.PerFile:
-                _hashSet.Add((structIndex, instanceIndex));
-                break;
-            case DataCoreRepeatedReferenceResolutionStrategy.PerNode:
-                _stack.Push((structIndex, instanceIndex));
-                break;
-            default:
-                throw new ArgumentOutOfRangeException();
-        }
-    }
+    public int GetWeakPointerId(int structIndex, int instanceIndex) => _weakPointerIds[(structIndex, instanceIndex)];
 
-    public void Pop()
-    {
-        if (Strategy == DataCoreRepeatedReferenceResolutionStrategy.PerNode)
-            _stack.Pop();
-
-        // Otherwise, do nothing.
-    }
+    public IEnumerable<(int structIndex, int instanceIndex)> GetWeakPointers() => _weakPointerIds.Keys;
 }
-
