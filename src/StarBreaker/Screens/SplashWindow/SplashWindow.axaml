@@ -30,11 +30,12 @@
                 HorizontalAlignment="Center"
                 Text="Detected P4k files" />
 
-            <ItemsControl ItemsSource="{Binding Installations}" HorizontalAlignment="Center">
+            <ItemsControl ItemsSource="{Binding Installations}" HorizontalAlignment="Center" >
                 <ItemsControl.DataTemplates>
                     <DataTemplate x:DataType="vm:StarCitizenInstallationViewModel">
                         <!-- ReSharper disable once Xaml.PossibleNullReferenceException -->
                         <Button
+                            HorizontalAlignment="Center"
                             Margin="10"
                             ToolTip.Tip="{Binding Path}"
                             Content="{Binding DisplayVersion}"
