@@ -1,29 +1,29 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <!--Note: Don't add code to this project, keep it just
-  the grpc clients. Otherwise compilation takes ages-->
+    <!--Note: Don't add code to this project, keep it just
+    the grpc clients. Otherwise compilation takes ages-->
 
-  <PropertyGroup>
-    <NoWarn>CS8981</NoWarn>
-  </PropertyGroup>
-  
-  <PropertyGroup>
-    <ProtobufPath>C:\Development\StarCitizen\StarCitizenProtobuf\protos</ProtobufPath>
-  </PropertyGroup>
+    <PropertyGroup>
+        <NoWarn>CS8981</NoWarn>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <Protobuf ProtoRoot="$(ProtobufPath)" Include="$(ProtobufPath)\**\*.proto" />
-  </ItemGroup>
+    <PropertyGroup>
+        <ProtobufPath>$(SolutionDir)..\..\StarCitizenDiff\Protobuf</ProtobufPath>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <Protobuf ProtoRoot="$(ProtobufPath)" Include="$(ProtobufPath)\**\*.proto"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.29.2" />
-    <PackageReference Include="Grpc.Net.Client" Version="2.67.0" />
-    <PackageReference Include="Grpc.Tools" Version="2.68.1">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Google.Protobuf" Version="3.29.3"/>
+        <PackageReference Include="Grpc.Net.Client" Version="2.67.0"/>
+        <PackageReference Include="Grpc.Tools" Version="2.69.0">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\StarBreaker.Common\StarBreaker.Common.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\StarBreaker.Common\StarBreaker.Common.csproj"/>
+    </ItemGroup>
 </Project>
