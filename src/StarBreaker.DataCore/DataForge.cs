@@ -32,10 +32,9 @@ public class DataForge
         return structsPerFileName;
     }
 
-    public XElement GetFromRecord(DataCoreRecord record)
+    public XElement GetFromRecord(DataCoreRecord record, bool includeMetadata = false, bool keepNulls = false)
     {
-        //TODO: metadata should be a parameter
-        var context = new DataCoreExtractionContext(record.GetFileName(DataCore.Database));
+        var context = new DataCoreExtractionContext(record.GetFileName(DataCore.Database), includeMetadata, keepNulls);
         return DataCore.GetFromMainRecord(record, context);
     }
 
