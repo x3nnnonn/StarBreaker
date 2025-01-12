@@ -66,6 +66,30 @@ public sealed class ChunkFile
         }
     }
 
+    public byte[][] GetPartsCrChf()
+    {
+        //skip the signature
+        var reader = new SpanReader(_data, sizeof(uint));
+
+        var version = reader.ReadUInt32();
+        if (version != 0x746)
+            throw new Exception("Invalid version");
+
+        var chunkCount = reader.ReadUInt32();
+        var chunkTableOffset = reader.ReadUInt32();
+        Debug.Assert(chunkTableOffset == reader.Position);
+        var headers = reader.ReadSpan<ChunkHeaderCrCh>((int)chunkCount);
+
+        var chunks = new byte[headers.Length][];
+        for (var i = 0; i < headers.Length; i++)
+        {
+            ref readonly var header = ref headers[i];
+            chunks[i] = _data.AsSpan((int)header.Offset, (int)header.Size).ToArray();
+        }
+
+        return chunks;
+    }
+
     private static void WriteChCfTo(TextWriter writer, ref SpanReader reader)
     {
         var version = reader.ReadUInt32();
