@@ -15,8 +15,38 @@ public class DiffCommand : ICommand
     [CommandOption("output", 'o', Description = "Path to the output directory")]
     public required string OutputDirectory { get; init; }
 
+    [CommandOption("keep", 'k', Description = "Keep old files in the output directory")]
+    public bool KeepOld { get; init; }
+
     public async ValueTask ExecuteAsync(IConsole console)
     {
+        if (!KeepOld)
+        {
+            string[] deleteFolder =
+            [
+                Path.Combine(OutputDirectory, "Binaries"),
+                Path.Combine(OutputDirectory, "P4k"),
+                Path.Combine(OutputDirectory, "DataCore"),
+                Path.Combine(OutputDirectory, "Protobuf"),
+            ];
+            string[] deleteFile =
+            [
+                Path.Combine(OutputDirectory, "build_manifest.json"),
+            ];
+
+            foreach (var folder in deleteFolder)
+            {
+                if (Directory.Exists(folder))
+                    Directory.Delete(folder, true);
+            }
+
+            foreach (var file in deleteFile)
+            {
+                if (File.Exists(file))
+                    File.Delete(file);
+            }
+        }
+
         // Hide output from subcommands
         var fakeConsole = new FakeConsole();
 
@@ -52,6 +82,8 @@ public class DiffCommand : ICommand
         await extractDescriptor.ExecuteAsync(fakeConsole);
 
         await ExtractDataCoreIntoZip(p4kFile, Path.Combine(OutputDirectory, "DataCore", "DataCore.zip"));
+        await ExtractExecutableIntoZip(exeFile, Path.Combine(OutputDirectory, "Binaries", "StarCitizen.zip"));
+        File.Copy(Path.Combine(GameFolder, "build_manifest.id"), Path.Combine(OutputDirectory, "build_manifest.json"), true);
 
         await console.Output.WriteLineAsync("Done.");
     }
@@ -73,9 +105,20 @@ public class DiffCommand : ICommand
         if (dcbStream == null || dcbFile == null)
             throw new InvalidOperationException("DataCore not found.");
 
+        Directory.CreateDirectory(Path.GetDirectoryName(zipPath)!);
         using var zip = new ZipArchive(File.Create(zipPath), ZipArchiveMode.Create);
         var entry = zip.CreateEntry(Path.GetFileName(dcbFile), CompressionLevel.SmallestSize);
         await using var entryStream = entry.Open();
         await dcbStream.CopyToAsync(entryStream);
+    }
+
+    private static async Task ExtractExecutableIntoZip(string exeFile, string zipPath)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(zipPath)!);
+        using var zip = new ZipArchive(File.Create(zipPath), ZipArchiveMode.Create);
+        var entry = zip.CreateEntry(Path.GetFileName(exeFile), CompressionLevel.SmallestSize);
+        await using var entryStream = entry.Open();
+        await using var exeStream = File.OpenRead(exeFile);
+        await exeStream.CopyToAsync(entryStream);
     }
 }

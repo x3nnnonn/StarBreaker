@@ -73,7 +73,7 @@ public sealed partial class P4kFile
 
         var channelInsertTask = Task.Run(async () =>
         {
-            var fileSystem = new ZipNode("_root_");
+            var fileSystem = new ZipNode("Root");
 
             await foreach (var entry in channel.Reader.ReadAllAsync())
             {

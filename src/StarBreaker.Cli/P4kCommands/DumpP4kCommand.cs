@@ -1,8 +1,6 @@
-﻿using System.Text;
-using CliFx;
+﻿using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
-using StarBreaker.Cli.Utils;
 using StarBreaker.P4k;
 
 namespace StarBreaker.Cli;
@@ -20,7 +18,7 @@ public class DumpP4kCommand : ICommand
     {
         var p4k = P4k.P4kFile.FromFile(P4kFile);
         var p4kExtractor = new P4kExtractor(p4k);
-        p4kExtractor.ExtractDummies(OutputDirectory, new ProgressBar(console));
+        p4kExtractor.ExtractDummies(OutputDirectory);
 
         return default;
     }
