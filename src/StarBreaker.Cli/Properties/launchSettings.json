@@ -68,6 +68,10 @@
       "commandName": "Project",
       "commandLineArgs": "p4k-extract -p \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k\" -o \"D:\\StarCitizen\\P4k\""
     },
+    "p4k-extract-socpak": {
+      "commandName": "Project",
+      "commandLineArgs": "p4k-extract -p \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k\" -o \"D:\\StarCitizen\\P4kSocPak\" -f \"*.socpak\" "
+    },
     "p4k-dump": {
       "commandName": "Project",
       "commandLineArgs": "p4k-dump -p \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k\" -o \"C:\\Development\\StarCitizen\\DataCoreExport\""
