@@ -7,7 +7,7 @@ public static class DataCoreSandbox
 {
     public static void Run()
     {
-        var p4k = P4kFile.FromFile(@"C:\Program Files\Roberts Space Industries\StarCitizen\PTU\Data.p4k");
+        var p4k = new P4kFileSystem(P4kFile.FromFile(@"C:\Program Files\Roberts Space Industries\StarCitizen\PTU\Data.p4k"));
         var dcbStream = p4k.OpenRead(@"Data\Game2.dcb");
         var dcb = new DataForge(dcbStream);
 

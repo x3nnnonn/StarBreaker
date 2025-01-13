@@ -23,7 +23,7 @@ public sealed partial class DataCoreTabViewModel : PageViewModelBase
 
     private void Initialize()
     {
-        var entry = _p4KService.P4kFile.OpenRead(dataCorePath);
+        var entry = _p4KService.P4KFileSystem.OpenRead(dataCorePath);
         var dcb = new DataCoreBinary(entry);
         entry.Dispose();
         

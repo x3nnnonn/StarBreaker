@@ -2,8 +2,17 @@
 
 namespace StarBreaker.P4k;
 
-public sealed partial class P4kFile : IFileSystem
+public class P4kFileSystem : IFileSystem
 {
+    public IP4kFile P4kFile { get; }
+    public ZipNode Root { get; }
+
+    public P4kFileSystem(IP4kFile p4kFile)
+    {
+        P4kFile = p4kFile;
+        Root = p4kFile.Root;
+    }
+
     public IEnumerable<string> GetDirectories(string path)
     {
         Span<Range> ranges = stackalloc Range[20];
@@ -25,7 +34,7 @@ public sealed partial class P4kFile : IFileSystem
             yield return child.Name;
         }
     }
-    
+
     public IEnumerable<string> GetFiles(string path)
     {
         Span<Range> ranges = stackalloc Range[20];
@@ -88,6 +97,6 @@ public sealed partial class P4kFile : IFileSystem
             throw new FileNotFoundException();
 
         //Is this a bad idea? Most things that use this rely on the stream being seekable.
-        return new MemoryStream(OpenInMemory(current.ZipEntry));
+        return new MemoryStream(P4kFile.OpenInMemory(current.ZipEntry));
     }
 }

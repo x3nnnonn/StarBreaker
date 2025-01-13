@@ -15,7 +15,7 @@ public static class Crc32CSandbox
     {
         var uintsToTest = ReadKeys("keys.txt");
 
-        var p4k = P4kFile.FromFile(@"C:\Program Files\Roberts Space Industries\StarCitizen\4.0_PREVIEW\Data.p4k");
+        var p4k = new P4kFileSystem(P4kFile.FromFile(@"C:\Program Files\Roberts Space Industries\StarCitizen\4.0_PREVIEW\Data.p4k"));
         var dcbStream = p4k.OpenRead(@"Data\Game2.dcb");
 
         var dcb = new DataForge(dcbStream);
@@ -30,7 +30,7 @@ public static class Crc32CSandbox
             .Concat(StreamLines("mats.txt"))
             .Concat(EnumeratePaths(StreamLines("mats.txt"), '/'))
             //.Concat(StreamLines("working.txt"))
-            .Concat(EnumeratePaths(p4k.Entries.Select(x => x.Name), '\\'));
+            .Concat(EnumeratePaths(p4k.P4kFile.Entries.Select(x => x.Name), '\\'));
 
         //TODO: charactercustomizer_pu.socpak
 
