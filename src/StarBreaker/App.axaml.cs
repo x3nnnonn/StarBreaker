@@ -38,7 +38,7 @@ public partial class App : Application
 
         var collection = new ServiceCollection();
 
-        collection.RegisterServices();
+        collection.RegisterServices(Design.IsDesignMode);
         ViewLocator.RegisterViews();
 
         Services = collection.BuildServiceProvider();

@@ -12,6 +12,15 @@ public sealed class ZipNode
     public ZipEntry? ZipEntry { get; }
     public Dictionary<string, ZipNode> Children { get; }
 
+    public ZipNode(string name, IEnumerable<ZipEntry> entries)
+    {
+        Name = name;
+        ZipEntry = null;
+        Children = [];
+        foreach (var entry in entries)
+            Insert(entry);
+    }
+
     public ZipNode(string name)
     {
         Name = name;

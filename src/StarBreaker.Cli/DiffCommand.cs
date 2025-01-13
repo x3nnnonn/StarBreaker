@@ -3,6 +3,7 @@ using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using StarBreaker.DataCore;
+using StarBreaker.P4k;
 
 namespace StarBreaker.Cli;
 
@@ -90,7 +91,7 @@ public class DiffCommand : ICommand
 
     private static async Task ExtractDataCoreIntoZip(string p4kFile, string zipPath)
     {
-        var p4k = P4k.P4kFile.FromFile(p4kFile);
+        var p4k = new P4kFileSystem(P4kFile.FromFile(p4kFile));
         Stream? dcbStream = null;
         string? dcbFile = null;
         foreach (var file in DataCoreUtils.KnownPaths)

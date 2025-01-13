@@ -7,13 +7,25 @@ namespace StarBreaker.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static void RegisterServices(this ServiceCollection services)
+    public static void RegisterServices(this ServiceCollection services, bool isDesignMode)
     {
-        services.AddLogging(b => { b.AddSimpleConsole(options => { options.SingleLine = true; }); });
+        services.AddLogging(b =>
+        {
+            b.AddDebug();
+            b.AddConsole();
+        });
         services.AddTransient<MainWindowViewModel>();
         services.AddTransient<SplashWindowViewModel>();
         services.AddTransient<P4kTabViewModel>();
         services.AddTransient<DataCoreTabViewModel>();
-        services.AddSingleton<IP4kService, P4kService>();
+
+        if (isDesignMode)
+        {
+            services.AddSingleton<IP4kService, DesignP4kService>();
+        }
+        else
+        {
+            services.AddSingleton<IP4kService, P4kService>();
+        }
     }
 }

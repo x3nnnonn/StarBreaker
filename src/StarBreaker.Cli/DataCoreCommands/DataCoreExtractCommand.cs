@@ -4,6 +4,7 @@ using CliFx.Attributes;
 using CliFx.Infrastructure;
 using StarBreaker.Cli.Utils;
 using StarBreaker.DataCore;
+using StarBreaker.P4k;
 
 namespace StarBreaker.Cli;
 
@@ -43,7 +44,7 @@ public class DataCoreExtractCommand : ICommand
         }
         else if (!string.IsNullOrEmpty(P4kFile))
         {
-            var p4k = P4k.P4kFile.FromFile(P4kFile);
+            var p4k = new P4kFileSystem(P4k.P4kFile.FromFile(P4kFile));
             console.Output.WriteLine("P4k loaded.");
             foreach (var file in DataCoreUtils.KnownPaths)
             {

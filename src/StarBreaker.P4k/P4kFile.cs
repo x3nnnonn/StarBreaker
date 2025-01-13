@@ -8,13 +8,13 @@ using ZstdSharp;
 
 namespace StarBreaker.P4k;
 
-public sealed partial class P4kFile
+public sealed class P4kFile : IP4kFile
 {
     [ThreadStatic] private static Decompressor? decompressor;
     private readonly Aes _aes;
 
-    public ZipEntry[] Entries { get; }
     public string P4KPath { get; }
+    public ZipEntry[] Entries { get; }
     public ZipNode Root { get; }
 
     private P4kFile(string path, ZipEntry[] entries, ZipNode root)

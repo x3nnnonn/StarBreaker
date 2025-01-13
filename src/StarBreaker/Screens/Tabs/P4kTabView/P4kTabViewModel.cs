@@ -60,7 +60,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
 
         Source.RowSelection!.SingleSelect = true;
         Source.RowSelection.SelectionChanged += SelectionChanged;
-        Source.Items = _p4KService.P4kFile.Root.Children.Values;
+        Source.Items = _p4KService.P4KFileSystem.Root.Children.Values;
     }
 
     private void SelectionChanged(object? sender, TreeSelectionModelSelectionChangedEventArgs<ZipNode> e)
@@ -98,7 +98,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             try
             {
                 //TODO: move this to a service?
-                var buffer = _p4KService.P4kFile.OpenInMemory(selectedEntry.ZipEntry);
+                var buffer = _p4KService.P4KFileSystem.P4kFile.OpenInMemory(selectedEntry.ZipEntry);
 
                 FilePreviewViewModel preview;
 
