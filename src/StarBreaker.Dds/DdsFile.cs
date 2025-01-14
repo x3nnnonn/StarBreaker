@@ -60,9 +60,10 @@ public static class DdsFile
         var largest = mipMapSizes[0];
         var largestByteCount = GetMipmapSize(largest.Item1, largest.Item2, header.PixelFormat, readDx10Header ? headerDx10 : null);
 
-        //DDS_SURFACE_FLAGS_CUBEMAP
-        var faces = largestByteCount == mipMapFiles[0].Length  ? 1 : 6;
-        // var faces = headerDx10.ResourceDimension == ResourceDimension.D3D10_RESOURCE_DIMENSION_TEXTURE3D ? 6 : 1;
+        if (mipMapFiles[0].Length % largestByteCount != 0)
+            throw new ArgumentException("File is not a valid DDS file");
+
+        var faces = mipMapFiles[0].Length / largestByteCount;
         var smallOffset = 0;
         for (var cubeFace = 0; cubeFace < faces; cubeFace++)
         {
@@ -214,10 +215,10 @@ public static class DdsFile
 
         if (meta.Format != DXGI_FORMAT.R8G8B8A8_UNORM)
         {
-                var converted = tex.Convert(0, DXGI_FORMAT.R8G8B8A8_UNORM, TEX_FILTER_FLAGS.DEFAULT, 0.5f);
-                tex.Dispose();
-                tex = converted;
-                meta = tex.GetMetadata();
+            var converted = tex.Convert(0, DXGI_FORMAT.R8G8B8A8_UNORM, TEX_FILTER_FLAGS.DEFAULT, 0.5f);
+            tex.Dispose();
+            tex = converted;
+            meta = tex.GetMetadata();
         }
 
         var count = tex.GetImageCount();

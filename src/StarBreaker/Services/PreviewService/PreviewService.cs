@@ -20,6 +20,7 @@ public class PreviewService : IPreviewService
 
     private static readonly string[] plaintextExtensions = [".cfg", ".xml", ".txt", ".json"];
     private static readonly string[] ddsLodExtensions = [".dds"];
+    private static readonly string[] bitmapExtensions = [".bmp", ".jpg", ".jpeg", ".png"];
     //, ".dds.1", ".dds.2", ".dds.3", ".dds.4", ".dds.5", ".dds.6", ".dds.7", ".dds.8", ".dds.9"];
 
     public PreviewService(IP4kService p4kService, ILogger<PreviewService> logger)
@@ -70,6 +71,12 @@ public class PreviewService : IPreviewService
 
             _logger.LogInformation("ddsLodExtensions");
             preview = new DdsPreviewViewModel(new Bitmap(pngBytes));
+        }
+        else if (bitmapExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
+        {
+            var ms = new MemoryStream(buffer);
+            _logger.LogInformation("bitmapExtensions");
+            preview = new DdsPreviewViewModel(new Bitmap(ms));
         }
         else
         {
