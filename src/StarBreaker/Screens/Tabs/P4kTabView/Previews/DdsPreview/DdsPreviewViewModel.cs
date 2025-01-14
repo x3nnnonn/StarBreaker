@@ -1,18 +1,14 @@
-﻿using System.Runtime.InteropServices;
+﻿using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
-using Pfim;
-using SkiaSharp;
-using StarBreaker.Extensions;
-using AvaloniaIImage = Avalonia.Media.IImage;
 
 namespace StarBreaker.Screens;
 
 public partial class DdsPreviewViewModel : FilePreviewViewModel
 {
-    public DdsPreviewViewModel(Avalonia.Media.Imaging.Bitmap bitmap)
+    public DdsPreviewViewModel(IImage image)
     {
-        Image = bitmap;
+        Image = image;
     }
-
-    [ObservableProperty] private AvaloniaIImage? _image;
+//Data\Textures\physical_based_global\unified_detail\brushed_detail.dds
+    [ObservableProperty] private IImage? _image;
 }
