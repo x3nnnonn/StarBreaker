@@ -19,7 +19,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
     private readonly IP4kService _p4KService;
     private readonly IPreviewService _previewService;
 
-    [ObservableProperty] private HierarchicalTreeDataGridSource<ZipNode> _source;
+    [ObservableProperty] private HierarchicalTreeDataGridSource<IP4kNode> _source;
 
     [ObservableProperty] private FilePreviewViewModel? _preview;
 
@@ -29,27 +29,25 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
         _p4KService = p4kService;
         _logger = logger;
         _previewService = previewService;
-        Source = new HierarchicalTreeDataGridSource<ZipNode>(Array.Empty<ZipNode>())
+        Source = new HierarchicalTreeDataGridSource<IP4kNode>(Array.Empty<IP4kNode>())
         {
             Columns =
             {
-                new HierarchicalExpanderColumn<ZipNode>(
-                    new TextColumn<ZipNode, string>("Name", x => x.GetName(), options: new TextColumnOptions<ZipNode>()
+                new HierarchicalExpanderColumn<IP4kNode>(
+                    new TextColumn<IP4kNode, string>("Name", x => x.GetName(), options: new TextColumnOptions<IP4kNode>()
                     {
                         //TODO: make the sorting do folders first, then files
                         //CompareAscending = null,
                         //CompareDescending = null
                     }),
-                    x => x.Children.Values
+                    x => x.GetChildren()
                 ),
-                new TextColumn<ZipNode, string>("Size", x => x.GetSize(), options: new TextColumnOptions<ZipNode>()
+                new TextColumn<IP4kNode, string>("Size", x => x.GetSize(), options: new TextColumnOptions<IP4kNode>()
                 {
-                    CompareAscending = (a, b) => a.ZipEntry?.UncompressedSize.CompareTo(b.ZipEntry?.UncompressedSize) ?? 0,
-                    CompareDescending = (a, b) => b.ZipEntry?.UncompressedSize.CompareTo(a.ZipEntry?.UncompressedSize) ?? 0
+                    CompareAscending = (a, b) => (a?.SizeOrZero() ?? 0).CompareTo(b?.SizeOrZero() ?? 0),
+                    CompareDescending = (a, b) => (b?.SizeOrZero() ?? 0).CompareTo(a?.SizeOrZero() ?? 0)
                 }),
-                new TextColumn<ZipNode, string>("Date", x => x.GetDate()),
-                // new TextColumn<ZipNode, string>("Compression", x => x.CompressionMethodUi),
-                // new TextColumn<ZipNode, string>("Encrypted", x => x.EncryptedUi)
+                new TextColumn<IP4kNode, string>("Date", x => x.GetDate()),
             },
         };
 
@@ -58,7 +56,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
         Source.Items = _p4KService.P4KFileSystem.Root.Children.Values;
     }
 
-    private void SelectionChanged(object? sender, TreeSelectionModelSelectionChangedEventArgs<ZipNode> e)
+    private void SelectionChanged(object? sender, TreeSelectionModelSelectionChangedEventArgs<IP4kNode> e)
     {
         if (e.SelectedItems.Count != 1)
             return;
@@ -75,14 +73,13 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             return;
         }
 
-        if (selectedEntry.ZipEntry == null)
+        if (selectedEntry is not P4kFileNode selectedFile)
         {
             //we clicked on a folder, do nothing to the preview.
-            Console.WriteLine(selectedEntry.Name);
             return;
         }
 
-        if (selectedEntry.ZipEntry.UncompressedSize > int.MaxValue)
+        if (selectedFile.ZipEntry.UncompressedSize > int.MaxValue)
         {
             _logger.LogWarning("File too big to preview");
             return;
@@ -94,14 +91,14 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
         {
             try
             {
-                var p = _previewService.GetPreview(selectedEntry);
+                var p = _previewService.GetPreview(selectedFile);
                 Dispatcher.UIThread.Post(() => Preview = p);
             }
             // catch (Exception exception)
             // {
             //     _logger.LogError(exception, "Failed to preview file");
             // }
-            finally{ }
+            finally { }
         });
     }
 }

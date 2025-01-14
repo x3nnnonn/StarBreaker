@@ -4,9 +4,9 @@ public class FakeP4kFile : IP4kFile
 {
     public string P4KPath { get; }
     public ZipEntry[] Entries { get; }
-    public ZipNode Root { get; }
+    public P4kDirectoryNode Root { get; }
 
-    public FakeP4kFile(string path, ZipEntry[] entries, ZipNode root)
+    public FakeP4kFile(string path, ZipEntry[] entries, P4kDirectoryNode root)
     {
         P4KPath = path;
         Root = root;
