@@ -103,10 +103,14 @@ public readonly struct CryXml
 
     public override string ToString()
     {
-        var sb = new StringBuilder();
-        using var writer = XmlWriter.Create(sb, new XmlWriterSettings { Indent = true });
-        WriteTo(writer);
-        return sb.ToString();
+        using var sw = new StringWriter();
+
+        using (var writer = XmlWriter.Create(sw, new XmlWriterSettings { Indent = true }))
+        {
+            WriteTo(writer);
+        }
+
+        return sw.ToString();
     }
 
     public void Save(string entry)

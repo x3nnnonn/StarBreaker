@@ -1,9 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="DirectXTexNet" Version="1.0.7" />
     <PackageReference Include="SkiaSharp" Version="3.116.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\StarBreaker.Common\StarBreaker.Common.csproj" />
+    <ProjectReference Include="..\StarBreaker.FileSystem\StarBreaker.FileSystem.csproj" />
   </ItemGroup>
 </Project>

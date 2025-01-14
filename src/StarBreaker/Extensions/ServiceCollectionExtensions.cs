@@ -18,6 +18,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<SplashWindowViewModel>();
         services.AddTransient<P4kTabViewModel>();
         services.AddTransient<DataCoreTabViewModel>();
+        services.AddSingleton<IPreviewService, PreviewService>();
 
         if (isDesignMode)
         {
@@ -26,6 +27,7 @@ public static class ServiceCollectionExtensions
         else
         {
             services.AddSingleton<IP4kService, P4kService>();
+            services.AddSingleton<IPreviewService, PreviewService>();
         }
     }
 }

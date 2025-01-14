@@ -1,12 +1,9 @@
-using System.Text;
-using System.Xml;
 using Avalonia.Controls;
 using Avalonia.Controls.Models.TreeDataGrid;
 using Avalonia.Controls.Selection;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.Logging;
-using StarBreaker.Common;
 using StarBreaker.Extensions;
 using StarBreaker.P4k;
 using StarBreaker.Services;
@@ -20,20 +17,18 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
 
     private readonly ILogger<P4kTabViewModel> _logger;
     private readonly IP4kService _p4KService;
-    
+    private readonly IPreviewService _previewService;
+
     [ObservableProperty] private HierarchicalTreeDataGridSource<ZipNode> _source;
 
     [ObservableProperty] private FilePreviewViewModel? _preview;
 
-    private static readonly string[] plaintextExtensions = [".cfg", ".xml", ".txt", ".json"];
 
-    private static readonly string[] ddsLodExtensions = [".dds"];
-    //, ".dds.1", ".dds.2", ".dds.3", ".dds.4", ".dds.5", ".dds.6", ".dds.7", ".dds.8", ".dds.9"];
-
-    public P4kTabViewModel(IP4kService p4kService, ILogger<P4kTabViewModel> logger)
+    public P4kTabViewModel(IP4kService p4kService, ILogger<P4kTabViewModel> logger, IPreviewService previewService)
     {
         _p4KService = p4kService;
         _logger = logger;
+        _previewService = previewService;
         Source = new HierarchicalTreeDataGridSource<ZipNode>(Array.Empty<ZipNode>())
         {
             Columns =
@@ -70,7 +65,9 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
 
         //TODO: here, set some boolean that locks the entire UI until the preview is loaded.
         //That is needed to prevent race conditions where the user clicks on another file before the preview is loaded.
-        
+
+        //TODO: tabs?
+
         var selectedEntry = e.SelectedItems[0];
         if (selectedEntry == null)
         {
@@ -97,41 +94,14 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
         {
             try
             {
-                //TODO: move this to a service?
-                var buffer = _p4KService.P4KFileSystem.P4kFile.OpenInMemory(selectedEntry.ZipEntry);
-
-                FilePreviewViewModel preview;
-
-                //check cryxml before extension since ".xml" sometimes is cxml sometimes plaintext
-                if (CryXmlB.CryXml.TryOpen(new MemoryStream(buffer), out var c))
-                {
-                    _logger.LogInformation("cryxml");
-                    preview = new TextPreviewViewModel(c.ToString());
-                }
-                else if (plaintextExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
-                {
-                    _logger.LogInformation("plaintextExtensions");
-
-                    preview = new TextPreviewViewModel(Encoding.UTF8.GetString(buffer));
-                }
-                else if (ddsLodExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
-                {
-                    _logger.LogInformation("ddsLodExtensions");
-                    preview = new DdsPreviewViewModel(buffer);
-                }
-                else
-                {
-                    _logger.LogInformation("hex");
-                    preview = new HexPreviewViewModel(buffer);
-                }
-                //todo other types
-
-                Dispatcher.UIThread.Post(() => Preview = preview);
+                var p = _previewService.GetPreview(selectedEntry);
+                Dispatcher.UIThread.Post(() => Preview = p);
             }
-            catch (Exception exception)
-            {
-                _logger.LogError(exception, "Failed to preview file");
-            }
+            // catch (Exception exception)
+            // {
+            //     _logger.LogError(exception, "Failed to preview file");
+            // }
+            finally{ }
         });
     }
 }

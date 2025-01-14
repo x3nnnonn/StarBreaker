@@ -1,4 +1,5 @@
 ﻿using System.IO.Compression;
+using System.IO.Enumeration;
 
 namespace StarBreaker.FileSystem;
 
@@ -15,6 +16,13 @@ public sealed class ZipFileSystem : IFileSystem
     {
         return _archive.Entries
             .Where(entry => entry.FullName.StartsWith(path) && !entry.FullName.EndsWith('/'))
+            .Select(entry => entry.FullName);
+    }
+
+    public IEnumerable<string> GetFiles(string path, string searchPattern)
+    {
+        return _archive.Entries
+            .Where(entry => entry.FullName.StartsWith(path) && !entry.FullName.EndsWith('/') && FileSystemName.MatchesSimpleExpression(entry.Name, searchPattern))
             .Select(entry => entry.FullName);
     }
 
@@ -35,5 +43,18 @@ public sealed class ZipFileSystem : IFileSystem
             throw new FileNotFoundException("File not found in archive.", path);
         
         return entry.Open();
+    }
+
+    public byte[] ReadAllBytes(string path)
+    {
+        var entry = _archive.GetEntry(path);
+
+        if (entry == null)
+            throw new FileNotFoundException("File not found in archive.", path);
+
+        using var stream = entry.Open();
+        using var memoryStream = new MemoryStream();
+        stream.CopyTo(memoryStream);
+        return memoryStream.ToArray();
     }
 }

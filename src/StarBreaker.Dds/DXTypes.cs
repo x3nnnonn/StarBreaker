@@ -53,6 +53,40 @@ public struct DdsPixelFormat
     public uint ABitMask;
 }
 
+[Flags]
+public enum DDSHEADER_FLAGS : uint
+{
+    CAPS = 1,
+    HEIGHT = 2,
+    WIDTH = 4,
+    PITCH = 8,
+    PIXELFORMAT = 0x1000, // 0x00001000
+    MIPMAPCOUNT = 0x20000, // 0x00020000
+    LINEARSIZE = 0x80000, // 0x00080000
+    DEPTH = 0x800000, // 0x00800000
+}
+
+[Flags]
+public enum  DDSHEADER_CAPS : uint
+{
+    COMPLEX = 8,
+    MIPMAP = 0x400000,
+    TEXTURE = 0x1000,
+}
+
+[Flags]
+public enum DDSHEADER_CAPS2 : uint
+{
+    CUBEMAP = 0x200,
+    CUBEMAP_POSITIVEX = 0x400,
+    CUBEMAP_NEGATIVEX = 0x800,
+    CUBEMAP_POSITIVEY = 0x1000,
+    CUBEMAP_NEGATIVEY = 0x2000,
+    CUBEMAP_POSITIVEZ = 0x4000,
+    CUBEMAP_NEGATIVEZ = 0x8000,
+    VOLUME = 0x200000,
+}
+
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public record struct DdsHeader
 {
@@ -63,7 +97,7 @@ public record struct DdsHeader
     }
 
     public uint Size;
-    public uint Flags;
+    public DDSHEADER_FLAGS Flags;
     public uint Height;
     public uint Width;
     public uint PitchOrLinearSize;
@@ -71,8 +105,8 @@ public record struct DdsHeader
     public uint MipMapCount;
     public DdsReserved Reserved1;
     public DdsPixelFormat PixelFormat;
-    public uint Caps;
-    public uint Caps2;
+    public DDSHEADER_CAPS Caps;
+    public DDSHEADER_CAPS2 Caps2;
     public uint Caps3;
     public uint Caps4;
     public uint Reserved2;
