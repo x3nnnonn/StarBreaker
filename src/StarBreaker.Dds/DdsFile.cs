@@ -1,6 +1,8 @@
 ﻿using System.Buffers;
+using System.Runtime.InteropServices;
 using DirectXTexNet;
 using StarBreaker.Common;
+using StarBreaker.FileSystem;
 
 namespace StarBreaker.Dds;
 
@@ -8,15 +10,21 @@ public static class DdsFile
 {
     public static ReadOnlySpan<byte> Magic => "DDS "u8;
 
-    public static Stream MergeToStream(string fullPath)
+    public static MemoryStream MergeToStream(string fullPath, IFileSystem? fileSystem = null)
     {
+        fileSystem ??= RealFileSystem.Instance;
         if (!fullPath.EndsWith(".dds", StringComparison.OrdinalIgnoreCase) && !fullPath.EndsWith(".dds.a", StringComparison.OrdinalIgnoreCase))
             throw new ArgumentException("File must be a DDS file");
 
         var containingFolder = Path.GetDirectoryName(fullPath)!;
-        var files = Directory.GetFiles(containingFolder, Path.GetFileName(fullPath) + ".*").Where(p => char.IsDigit(p[^1]));
+        var files = fileSystem.GetFiles(containingFolder, Path.GetFileName(fullPath) + ".*")
+            .Where(p => char.IsDigit(p[^1]))
+            .ToArray();
 
-        var mainFile = new BinaryReader(File.OpenRead(fullPath));
+        if (files.Length == 0)
+            return new MemoryStream(fileSystem.ReadAllBytes(fullPath));
+
+        var mainFile = new BinaryReader(fileSystem.OpenRead(fullPath));
 
         var magic = mainFile.ReadBytes(4);
         if (!Magic.SequenceEqual(magic))
@@ -47,10 +55,13 @@ public static class DdsFile
 
         //order by the number at the end. e.g. 8 is the largest, 0 is the smallest.
         // we want to write the largest mipmap first.
-        var mipMapFiles = files.OrderDescending().Select(File.ReadAllBytes).ToArray();
+        var mipMapFiles = files.OrderDescending().Select(fileSystem.ReadAllBytes).ToArray();
+
+        var largest = mipMapSizes[0];
+        var largestByteCount = GetMipmapSize(largest.Item1, largest.Item2, header.PixelFormat, readDx10Header ? headerDx10 : null);
 
         //DDS_SURFACE_FLAGS_CUBEMAP
-        var faces = (header.Caps & 0x8) != 0 ? 6 : 1;
+        var faces = largestByteCount == mipMapFiles[0].Length  ? 1 : 6;
         // var faces = headerDx10.ResourceDimension == ResourceDimension.D3D10_RESOURCE_DIMENSION_TEXTURE3D ? 6 : 1;
         var smallOffset = 0;
         for (var cubeFace = 0; cubeFace < faces; cubeFace++)
@@ -58,7 +69,7 @@ public static class DdsFile
             for (var mipMap = 0; mipMap < mipMapSizes.Length; mipMap++)
             {
                 var mipMapSize = mipMapSizes[mipMap];
-                var mipMapByteCount = GetMipmapSize(mipMapSize.Item1, mipMapSize.Item2);
+                var mipMapByteCount = GetMipmapSize(mipMapSize.Item1, mipMapSize.Item2, header.PixelFormat, readDx10Header ? headerDx10 : null);
 
                 if (mipMap < mipMapFiles.Length)
                 {
@@ -92,9 +103,22 @@ public static class DdsFile
         return mipMapSizes;
     }
 
-    private static int GetMipmapSize(int width, int height)
+    private static int GetMipmapSize(int width, int height, DdsPixelFormat format, DdsHeaderDxt10? dx10Header = null)
     {
-        return Math.Max(1, (width + 3) / 4) * Math.Max(1, (height + 3) / 4) * 16;
+        //TODO: is this even correct?
+        var blockSize = format.FourCC switch
+        {
+            CompressionAlgorithm.D3DFMT_DXT1 => 8,
+            CompressionAlgorithm.BC4S => 8,
+            CompressionAlgorithm.BC4U => 8,
+            _ => 16
+        };
+        if (dx10Header?.DxgiFormat is DXGI_FORMAT.BC4_SNORM or DXGI_FORMAT.BC4_UNORM or DXGI_FORMAT.BC4_TYPELESS)
+        {
+            blockSize = 8;
+        }
+
+        return Math.Max(1, (width + 3) / 4) * Math.Max(1, (height + 3) / 4) * blockSize;
     }
 
     public static void MergeToFile(string ddsFullPath, string pngFullPath)
@@ -158,6 +182,57 @@ public static class DdsFile
         {
             var path = Path.Combine(Path.GetDirectoryName(pngFullPath)!, $"{pathWithoutExtension}_{i}.jpg");
             tex.SaveToWICFile(i, WIC_FLAGS.NONE, TexHelper.Instance.GetWICCodec(WICCodecs.JPEG), path);
+            var bytes = tex.SaveToWICMemory(i, WIC_FLAGS.NONE, TexHelper.Instance.GetWICCodec(WICCodecs.PNG));
         }
+    }
+
+    public static unsafe MemoryStream ConvertToPng(byte[] dds)
+    {
+        ScratchImage? tex = null;
+        fixed (byte* ptr = dds)
+        {
+            tex = TexHelper.Instance.LoadFromDDSMemory((IntPtr)ptr, dds.Length, DDS_FLAGS.NONE);
+        }
+
+        var meta = tex.GetMetadata();
+
+        // if (!TexHelper.Instance.IsPlanar(meta.Format))
+        // {
+        //     var planar = tex.ConvertToSinglePlane();
+        //     tex.Dispose();
+        //     tex = planar;
+        //     meta = tex.GetMetadata();
+        // }
+
+        if (TexHelper.Instance.IsCompressed(meta.Format))
+        {
+            var decompressed = tex.Decompress(DXGI_FORMAT.UNKNOWN);
+            tex.Dispose();
+            tex = decompressed;
+            meta = tex.GetMetadata();
+        }
+
+        if (meta.Format != DXGI_FORMAT.R8G8B8A8_UNORM)
+        {
+                var converted = tex.Convert(0, DXGI_FORMAT.R8G8B8A8_UNORM, TEX_FILTER_FLAGS.DEFAULT, 0.5f);
+                tex.Dispose();
+                tex = converted;
+                meta = tex.GetMetadata();
+        }
+
+        var count = tex.GetImageCount();
+
+        if (count == 0)
+            throw new InvalidOperationException("No images found in DDS file");
+        var stream = new MemoryStream();
+
+        using var bytes = tex.SaveToWICMemory(0, WIC_FLAGS.NONE, TexHelper.Instance.GetWICCodec(WICCodecs.PNG));
+
+        //TODO: convert cubemap dds to a x-cross
+        bytes.CopyTo(stream);
+
+        stream.Position = 0;
+
+        return stream;
     }
 }

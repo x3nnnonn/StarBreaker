@@ -1,4 +1,5 @@
-﻿using StarBreaker.FileSystem;
+﻿using System.IO.Enumeration;
+using StarBreaker.FileSystem;
 
 namespace StarBreaker.P4k;
 
@@ -58,6 +59,36 @@ public class P4kFileSystem : IFileSystem
         }
     }
 
+    public IEnumerable<string> GetFiles(string path, string searchPattern)
+    {
+        Span<Range> ranges = stackalloc Range[20];
+        var span = path.AsSpan();
+        var partsCount = span.Split(ranges, '\\');
+
+        var current = Root;
+
+        for (var index = 0; index < partsCount; index++)
+        {
+            var part = ranges[index];
+            if (!current.Children.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(span[part], out var value))
+                yield break;
+
+            current = value;
+        }
+
+        foreach (var child in current.Children.Values)
+        {
+            if (child.ZipEntry == null)
+                continue;
+
+            if (!FileSystemName.MatchesSimpleExpression(searchPattern, child.ZipEntry.Name.Split('\\').Last()))
+                continue;
+
+            yield return child.ZipEntry.Name;
+
+        }
+    }
+
     public bool FileExists(string path)
     {
         Span<Range> ranges = stackalloc Range[20];
@@ -98,5 +129,27 @@ public class P4kFileSystem : IFileSystem
 
         //Is this a bad idea? Most things that use this rely on the stream being seekable.
         return new MemoryStream(P4kFile.OpenInMemory(current.ZipEntry));
+    }
+
+    public byte[] ReadAllBytes(string path)
+    {
+        Span<Range> ranges = stackalloc Range[20];
+        var span = path.AsSpan();
+        var partsCount = span.Split(ranges, '\\');
+        var current = Root;
+
+        for (var index = 0; index < partsCount; index++)
+        {
+            var part = ranges[index];
+            if (!current.Children.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(span[part], out var value))
+                throw new FileNotFoundException();
+
+            current = value;
+        }
+
+        if (current.ZipEntry == null)
+            throw new FileNotFoundException();
+
+        return P4kFile.OpenInMemory(current.ZipEntry);
     }
 }
