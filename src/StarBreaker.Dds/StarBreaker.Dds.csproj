@@ -8,6 +8,5 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\StarBreaker.Common\StarBreaker.Common.csproj" />
-    <ProjectReference Include="..\StarBreaker.FileSystem\StarBreaker.FileSystem.csproj" />
   </ItemGroup>
 </Project>

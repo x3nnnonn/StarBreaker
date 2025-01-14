@@ -14,7 +14,7 @@ public class P4kFileSystem : IFileSystem
         Root = p4kFile.Root;
     }
 
-    public IEnumerable<string> GetDirectories(string path)
+    public IEnumerable<string> EnumerateDirectories(string path)
     {
         Span<Range> ranges = stackalloc Range[20];
         var span = path.AsSpan();
@@ -36,7 +36,7 @@ public class P4kFileSystem : IFileSystem
         }
     }
 
-    public IEnumerable<string> GetFiles(string path)
+    public IEnumerable<string> EnumerateFiles(string path)
     {
         Span<Range> ranges = stackalloc Range[20];
         var span = path.AsSpan();
@@ -59,7 +59,7 @@ public class P4kFileSystem : IFileSystem
         }
     }
 
-    public IEnumerable<string> GetFiles(string path, string searchPattern)
+    public IEnumerable<string> EnumerateFiles(string path, string searchPattern)
     {
         Span<Range> ranges = stackalloc Range[20];
         var span = path.AsSpan();

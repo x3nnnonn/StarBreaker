@@ -17,7 +17,7 @@ public static class DdsFile
             throw new ArgumentException("File must be a DDS file");
 
         var containingFolder = Path.GetDirectoryName(fullPath)!;
-        var files = fileSystem.GetFiles(containingFolder, Path.GetFileName(fullPath) + ".*")
+        var files = fileSystem.EnumerateFiles(containingFolder, Path.GetFileName(fullPath) + ".*")
             .Where(p => char.IsDigit(p[^1]))
             .ToArray();
 
