@@ -9,7 +9,11 @@ public class DesignP4kService : IP4kService
     public DesignP4kService()
     {
         var entries = GetFakeEntries();
-        var root = new ZipNode("Root", entries);
+        var root = new P4kDirectoryNode("Root", null!);
+        foreach (var entry in entries)
+        {
+            root.Insert(entry);
+        }
 
         P4KFileSystem = new P4kFileSystem(new FakeP4kFile(@"C:\This\Is\A\Path", entries, root));
     }

@@ -6,7 +6,7 @@ namespace StarBreaker.P4k;
 public class P4kFileSystem : IFileSystem
 {
     public IP4kFile P4kFile { get; }
-    public ZipNode Root { get; }
+    public P4kDirectoryNode Root { get; }
 
     public P4kFileSystem(IP4kFile p4kFile)
     {
@@ -27,10 +27,13 @@ public class P4kFileSystem : IFileSystem
             if (!current.Children.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(span[part], out var value))
                 yield break;
 
-            current = value;
+            if (value is not P4kDirectoryNode directory)
+                yield break;
+
+            current = directory;
         }
 
-        foreach (var child in current.Children.Values.Where(x => x.ZipEntry == null))
+        foreach (var child in current.Children.Values.OfType<P4kDirectoryNode>())
         {
             yield return child.Name;
         }
@@ -50,12 +53,15 @@ public class P4kFileSystem : IFileSystem
             if (!current.Children.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(span[part], out var value))
                 yield break;
 
-            current = value;
+            if (value is not P4kDirectoryNode directory)
+                yield break;
+
+            current = directory;
         }
 
-        foreach (var child in current.Children.Values.Where(x => x.ZipEntry != null))
+        foreach (var child in current.Children.Values.OfType<P4kFileNode>())
         {
-            yield return child.Name;
+            yield return child.ZipEntry.Name;
         }
     }
 
@@ -73,14 +79,14 @@ public class P4kFileSystem : IFileSystem
             if (!current.Children.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(span[part], out var value))
                 yield break;
 
-            current = value;
+            if (value is not P4kDirectoryNode directory)
+                yield break;
+
+            current = directory;
         }
 
-        foreach (var child in current.Children.Values)
+        foreach (var child in current.Children.Values.OfType<P4kFileNode>())
         {
-            if (child.ZipEntry == null)
-                continue;
-
             if (!FileSystemName.MatchesSimpleExpression(searchPattern, child.ZipEntry.Name.Split('\\').Last()))
                 continue;
 
@@ -102,10 +108,13 @@ public class P4kFileSystem : IFileSystem
             if (!current.Children.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(span[part], out var value))
                 return false;
 
-            current = value;
+            if (value is P4kDirectoryNode directory)
+                current = directory;
+            else
+                return value is P4kFileNode && index == partsCount - 1;
         }
 
-        return current.ZipEntry != null;
+        return false;
     }
 
     public Stream OpenRead(string path)
@@ -121,14 +130,15 @@ public class P4kFileSystem : IFileSystem
             if (!current.Children.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(span[part], out var value))
                 throw new FileNotFoundException();
 
-            current = value;
+            if (value is P4kDirectoryNode directory)
+                current = directory;
+            else if (value is P4kFileNode file && index == partsCount - 1)
+                return new MemoryStream(P4kFile.OpenInMemory(file.ZipEntry));
+            else
+                throw new FileNotFoundException();
         }
 
-        if (current.ZipEntry == null)
-            throw new FileNotFoundException();
-
-        //Is this a bad idea? Most things that use this rely on the stream being seekable.
-        return new MemoryStream(P4kFile.OpenInMemory(current.ZipEntry));
+        throw new FileNotFoundException();
     }
 
     public byte[] ReadAllBytes(string path)
@@ -144,12 +154,14 @@ public class P4kFileSystem : IFileSystem
             if (!current.Children.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(span[part], out var value))
                 throw new FileNotFoundException();
 
-            current = value;
+            if (value is P4kDirectoryNode directory)
+                current = directory;
+            else if (value is P4kFileNode file && index == partsCount - 1)
+                return P4kFile.OpenInMemory(file.ZipEntry);
+            else
+                throw new FileNotFoundException();
         }
 
-        if (current.ZipEntry == null)
-            throw new FileNotFoundException();
-
-        return P4kFile.OpenInMemory(current.ZipEntry);
+        throw new FileNotFoundException();
     }
 }

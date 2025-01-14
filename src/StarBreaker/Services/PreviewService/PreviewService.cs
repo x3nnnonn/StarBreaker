@@ -10,7 +10,7 @@ namespace StarBreaker.Services;
 
 public interface IPreviewService
 {
-    FilePreviewViewModel GetPreview(ZipNode clickedNode);
+    FilePreviewViewModel GetPreview(P4kFileNode clickedNode);
 }
 
 public class PreviewService : IPreviewService
@@ -29,7 +29,7 @@ public class PreviewService : IPreviewService
         _logger = logger;
     }
 
-    public FilePreviewViewModel GetPreview(ZipNode selectedEntry)
+    public FilePreviewViewModel GetPreview(P4kFileNode selectedEntry)
     {
         //TODO: move this to a service?
         var buffer = _p4KService.P4KFileSystem.P4kFile.OpenInMemory(selectedEntry.ZipEntry);

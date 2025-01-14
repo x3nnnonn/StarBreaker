@@ -1,7 +1,6 @@
 ﻿using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Globalization;
-using System.IO.Abstractions;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -14,7 +13,7 @@ public readonly record struct CigGuid
 {
     public static readonly CigGuid Empty = default;
     private static readonly char[] _map = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
-    
+
     internal readonly byte _0;
     internal readonly byte _1;
     internal readonly byte _2;
@@ -40,7 +39,7 @@ public readonly record struct CigGuid
         }
 
         var span = input.AsSpan();
-        
+
         _7 = ParseHexDigit(span, 00);
         _6 = ParseHexDigit(span, 02);
         _5 = ParseHexDigit(span, 04);
@@ -61,14 +60,14 @@ public readonly record struct CigGuid
         _a = ParseHexDigit(span, 30);
         _9 = ParseHexDigit(span, 32);
         _8 = ParseHexDigit(span, 34);
-        
+
         return;
-        
+
         static byte ParseHexDigit(ReadOnlySpan<char> input, int offset)
         {
             if (!byte.TryParse(input.Slice(offset, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var result))
                 throw new FormatException("Input string was not in a correct format.");
-            
+
             return result;
         }
     }
@@ -79,11 +78,11 @@ public readonly record struct CigGuid
         WriteInto(str);
         return str.ToString();
     }
-    
+
     public void WriteInto(TextWriter writer)
     {
         Span<char> buffer = stackalloc char[36];
-        
+
         WriteHexDigit(buffer, _7, 00);
         WriteHexDigit(buffer, _6, 02);
         WriteHexDigit(buffer, _5, 04);
@@ -104,11 +103,11 @@ public readonly record struct CigGuid
         WriteHexDigit(buffer, _a, 30);
         WriteHexDigit(buffer, _9, 32);
         WriteHexDigit(buffer, _8, 34);
-        
+
         writer.Write(buffer);
-        
+
         return;
-        
+
         static void WriteHexDigit(Span<char> buffer, byte value, int offset)
         {
             buffer[offset] = _map[value >> 4];

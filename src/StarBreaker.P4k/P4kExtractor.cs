@@ -87,43 +87,40 @@ public sealed class P4kExtractor
         WriteFileForNode(outputDir, _p4KFile.Root);
     }
 
-    private static void WriteFileForNode(string baseDir, ZipNode node)
+    private static void WriteFileForNode(string baseDir, P4kDirectoryNode directoryNode)
     {
-        if (string.IsNullOrWhiteSpace(node.Name) || node.ZipEntry != null)
-            throw new InvalidOperationException("Node name is not a directory");
-
         var dir = new XElement("Directory",
-            new XAttribute("Name", node.Name)
+            new XAttribute("Name", directoryNode.Name)
         );
 
-        foreach (var (_, childNode) in node.Children.OrderBy(x => x.Key))
+        foreach (var (_, childNode) in directoryNode.Children.OrderBy(x => x.Key))
         {
-            if (childNode.ZipEntry == null)
+            switch (childNode)
             {
-                if (string.IsNullOrWhiteSpace(childNode.Name))
-                    throw new InvalidOperationException("Node name is not a directory");
-
-                //if we're a directory, Call ourselves recursively
-                WriteFileForNode(Path.Combine(baseDir, childNode.Name), childNode);
-            }
-            else
-            {
-                dir.Add(new XElement("File",
-                    new XAttribute("Name", Path.GetFileName(childNode.ZipEntry.Name)),
-                    new XAttribute("CRC32", $"0x{childNode.ZipEntry.Crc32:X8}"),
-                    //Revisit: they seem to change lastmodified a lot while the crc32 stays the same. I'll just ignore the date for now.
-                    // new XAttribute("LastModified", childNode.ZipEntry.LastModified.ToString("O")),
-                    new XAttribute("Size", childNode.ZipEntry.UncompressedSize.ToString(CultureInfo.InvariantCulture)),
-                    //new XAttribute("CompressedSize", childNode.ZipEntry.CompressedSize.ToString(CultureInfo.InvariantCulture)),
-                    new XAttribute("CompressionType", childNode.ZipEntry.CompressionMethod.ToString(CultureInfo.InvariantCulture)),
-                    new XAttribute("Encrypted", childNode.ZipEntry.IsCrypted.ToString(CultureInfo.InvariantCulture))
-                ));
+                case P4kDirectoryNode childDirectoryNode:
+                    //if we're a directory, Call ourselves recursively
+                    WriteFileForNode(Path.Combine(baseDir, childDirectoryNode.Name), childDirectoryNode);
+                    break;
+                case P4kFileNode childFileNode:
+                    dir.Add(new XElement("File",
+                            new XAttribute("Name", Path.GetFileName(childFileNode.ZipEntry.Name)),
+                            new XAttribute("CRC32", $"0x{childFileNode.ZipEntry.Crc32:X8}"),
+                            //Revisit: they seem to change lastmodified a lot while the crc32 stays the same. I'll just ignore the date for now.
+                            // new XAttribute("LastModified", childFileNode.ZipEntry.LastModified.ToString("O")),
+                            new XAttribute("Size", childFileNode.ZipEntry.UncompressedSize.ToString(CultureInfo.InvariantCulture)),
+                            //new XAttribute("CompressedSize", childFileNode.ZipEntry.CompressedSize.ToString(CultureInfo.InvariantCulture)),
+                            new XAttribute("CompressionType", childFileNode.ZipEntry.CompressionMethod.ToString(CultureInfo.InvariantCulture)),
+                            new XAttribute("Encrypted", childFileNode.ZipEntry.IsCrypted.ToString(CultureInfo.InvariantCulture))
+                        ));
+                    break;
+                default:
+                    throw new InvalidOperationException("Unknown node type");
             }
         }
 
         if (dir.HasElements)
         {
-            var filePath = Path.Combine(baseDir, node.Name) + ".xml";
+            var filePath = Path.Combine(baseDir, directoryNode.Name) + ".xml";
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
             dir.Save(filePath);
         }

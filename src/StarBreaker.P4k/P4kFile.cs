@@ -15,9 +15,9 @@ public sealed class P4kFile : IP4kFile
 
     public string P4KPath { get; }
     public ZipEntry[] Entries { get; }
-    public ZipNode Root { get; }
+    public P4kDirectoryNode Root { get; }
 
-    private P4kFile(string path, ZipEntry[] entries, ZipNode root)
+    private P4kFile(string path, ZipEntry[] entries, P4kDirectoryNode root)
     {
         P4KPath = path;
         Root = root;
@@ -73,7 +73,7 @@ public sealed class P4kFile : IP4kFile
 
         var channelInsertTask = Task.Run(async () =>
         {
-            var fileSystem = new ZipNode("Root");
+            var fileSystem = new P4kDirectoryNode("Root", null!);
 
             await foreach (var entry in channel.Reader.ReadAllAsync())
             {
