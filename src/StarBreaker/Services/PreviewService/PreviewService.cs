@@ -18,7 +18,7 @@ public class PreviewService : IPreviewService
     private readonly ILogger<PreviewService> _logger;
     private readonly IP4kService _p4KService;
 
-    private static readonly string[] plaintextExtensions = [".cfg", ".xml", ".txt", ".json"];
+    private static readonly string[] plaintextExtensions = [".cfg", ".xml", ".txt", ".json", "eco"];
     private static readonly string[] ddsLodExtensions = [".dds"];
     private static readonly string[] bitmapExtensions = [".bmp", ".jpg", ".jpeg", ".png"];
     //, ".dds.1", ".dds.2", ".dds.3", ".dds.4", ".dds.5", ".dds.6", ".dds.7", ".dds.8", ".dds.9"];
