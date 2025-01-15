@@ -2,7 +2,7 @@
 
 namespace StarBreaker.DataCore;
 
-public static class XObjectExtensions
+public static class XElementExtensions
 {
     public static XElement WithAttribute(this XElement xObject, string name, string value, bool write = true)
     {
