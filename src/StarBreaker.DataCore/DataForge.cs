@@ -23,9 +23,6 @@ public class DataForge
             if (fileNameFilter != null && !FileSystemName.MatchesSimpleExpression(fileNameFilter, fileName))
                 continue;
 
-            //this looks a lil wonky, but it's correct.
-            //we will either find only on record for any given name,
-            //or when we find multiple, we only care about the last one.
             structsPerFileName[fileName] = record;
         }
 
