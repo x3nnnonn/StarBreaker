@@ -9,6 +9,4 @@ public readonly record struct DataCorePointer
     public readonly int InstanceIndex;
 
     public bool IsInvalid => StructIndex == -1 || InstanceIndex == -1;
-
-    public override string ToString() => $"Pointer.{StructIndex}.{InstanceIndex}";
 }

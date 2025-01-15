@@ -4,7 +4,8 @@ using StarBreaker.Sandbox;
 //Project just so I can run throwaway code without adding a project for each thing.
 
 //SocPakSandbox.Run();
-P4kSandbox.Run();
+DataCoreSandbox.Run();
+// P4kSandbox.Run();
 return;
 //Crc32CSandbox.Run();
 

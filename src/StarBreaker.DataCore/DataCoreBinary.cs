@@ -138,6 +138,9 @@ public sealed class DataCoreBinary
     {
         return GetFromInstance(record.StructIndex, record.InstanceIndex, context)
             .WithAttribute("recordGuid", record.Id.ToString());
+            //Note: Maybe we should add the name? It seems to be mostly useless. Usually it's
+            //      just a combination of the record type and the filename | recordId.
+            //.WithAttribute("recordName", record.GetName(Database));
     }
 
     public XElement GetFromMainRecord(DataCoreRecord record, DataCoreExtractionContext context)

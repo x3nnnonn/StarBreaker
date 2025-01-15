@@ -6,7 +6,6 @@ namespace StarBreaker.DataCore;
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public readonly record struct DataCoreStructDefinition
 {
-    private static readonly ConcurrentDictionary<DataCoreStructDefinition, DataCorePropertyDefinition[]> _propertiesCache = new();
     private readonly DataCoreStringId2 NameOffset;
     public readonly int ParentTypeIndex;
     public readonly ushort AttributeCount;
