@@ -23,6 +23,7 @@ public class DiffCommand : ICommand
     {
         if (!KeepOld)
         {
+            await console.Output.WriteLineAsync("Deleting old files...");
             string[] deleteFolder =
             [
                 Path.Combine(OutputDirectory, "Binaries"),
@@ -46,6 +47,8 @@ public class DiffCommand : ICommand
                 if (File.Exists(file))
                     File.Delete(file);
             }
+
+            await console.Output.WriteLineAsync("Old files deleted.");
         }
 
         // Hide output from subcommands
@@ -60,6 +63,7 @@ public class DiffCommand : ICommand
             OutputDirectory = Path.Combine(OutputDirectory, "P4k")
         };
         await dumpP4k.ExecuteAsync(fakeConsole);
+        await console.Output.WriteLineAsync("P4k dumped.");
 
         var dcbExtract = new DataCoreExtractCommand
         {
@@ -67,6 +71,7 @@ public class DiffCommand : ICommand
             OutputDirectory = Path.Combine(OutputDirectory, "DataCore")
         };
         await dcbExtract.ExecuteAsync(fakeConsole);
+        await console.Output.WriteLineAsync("DataCore extracted.");
 
         var extractProtobufs = new ExtractProtobufsCommand
         {
@@ -74,6 +79,7 @@ public class DiffCommand : ICommand
             Output = Path.Combine(OutputDirectory, "Protobuf")
         };
         await extractProtobufs.ExecuteAsync(fakeConsole);
+        await console.Output.WriteLineAsync("Protobufs extracted.");
 
         var extractDescriptor = new ExtractDescriptorSetCommand
         {
@@ -81,10 +87,12 @@ public class DiffCommand : ICommand
             Output = Path.Combine(OutputDirectory, "Protobuf", "descriptor_set.bin")
         };
         await extractDescriptor.ExecuteAsync(fakeConsole);
+        await console.Output.WriteLineAsync("Descriptor set extracted.");
 
         await ExtractDataCoreIntoZip(p4kFile, Path.Combine(OutputDirectory, "DataCore", "DataCore.zip"));
         await ExtractExecutableIntoZip(exeFile, Path.Combine(OutputDirectory, "Binaries", "StarCitizen.zip"));
         File.Copy(Path.Combine(GameFolder, "build_manifest.id"), Path.Combine(OutputDirectory, "build_manifest.json"), true);
+        await console.Output.WriteLineAsync("Zipped DataCore and StarCitizen.");
 
         await console.Output.WriteLineAsync("Done.");
     }
