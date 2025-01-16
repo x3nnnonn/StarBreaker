@@ -23,8 +23,8 @@ public static class Crc32CSandbox
         IEnumerable<string> haystack = [];
 
         haystack = new List<string>()
-            .Concat(EnumeratePaths(dcb.DataCore.Database.CachedStrings.Values, '/'))
-            .Concat(EnumeratePaths(dcb.DataCore.Database.CachedStrings2.Values, '/'))
+            //.Concat(EnumeratePaths(dcb.DataCore.Database.CachedStrings.Values, '/'))
+            //.Concat(EnumeratePaths(dcb.DataCore.Database.CachedStrings2.Values, '/'))
             //.Concat(["head_eyedetail"])
             //.Concat(StreamLines("strings.txt"))
             .Concat(StreamLines("mats.txt"))

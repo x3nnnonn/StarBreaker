@@ -16,7 +16,7 @@ public static class DataCoreSandbox
         var dcb = new DataForge(new MemoryStream(File.ReadAllBytes(@"D:\StarCitizen\P4k\Data\Game2.dcb")));
         timer.LogReset("Loaded DataForge");
         Directory.CreateDirectory(@"D:\StarCitizen\DataCore\Sandbox");
-        dcb.ExtractAll(@"D:\StarCitizen\DataCore\Sandbox");
+        dcb.ExtractAllParallel(@"D:\StarCitizen\DataCore\Sandbox");
         timer.LogReset("Extracted all records.");
     }
 

@@ -171,7 +171,7 @@ public sealed class DataCoreBinary
 
     private XElement GetFromInstance(int structIndex, int instanceIndex, DataCoreExtractionContext context)
     {
-        var reader = Database.GetReader(Database.Offsets[structIndex][instanceIndex]);
+        var reader = Database.GetReader(structIndex, instanceIndex);
         var element = GetFromStruct(structIndex, ref reader, context);
 
         context.Elements[(structIndex, instanceIndex)] = element;

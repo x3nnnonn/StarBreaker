@@ -17,7 +17,7 @@ public class DataForge
         var structsPerFileName = new Dictionary<string, DataCoreRecord>();
         foreach (var recordId in DataCore.Database.MainRecords)
         {
-            var record = DataCore.Database.RecordMap[recordId];
+            var record = DataCore.Database.GetRecord(recordId);
             var fileName = record.GetFileName(DataCore.Database);
 
             if (fileNameFilter != null && !FileSystemName.MatchesSimpleExpression(fileNameFilter, fileName))

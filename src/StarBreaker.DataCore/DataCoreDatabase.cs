@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -6,11 +5,8 @@ using StarBreaker.Common;
 
 namespace StarBreaker.DataCore;
 
-public class DataCoreDatabase
+public sealed class DataCoreDatabase
 {
-    public uint Version { get; }
-
-    private readonly ConcurrentDictionary<int, DataCorePropertyDefinition[]> _propertiesCache = new();
     private readonly int DataSectionOffset;
     private readonly byte[] DataSection;
 
@@ -44,22 +40,22 @@ public class DataCoreDatabase
     public readonly DataCoreReference[] ReferenceValues;
 
     public readonly DataCoreStringId2[] EnumOptions;
-
-    public readonly FrozenDictionary<int, int[]> Offsets;
-
-    public readonly FrozenDictionary<int, string> CachedStrings;
-    public readonly FrozenDictionary<int, string> CachedStrings2;
-    public readonly FrozenDictionary<CigGuid, DataCoreRecord> RecordMap;
     public readonly FrozenSet<CigGuid> MainRecords;
+
+    private readonly FrozenDictionary<int, StructOffsetAndSize> Offsets;
+    private readonly DataCorePropertyDefinition[][] Properties;
+    private readonly FrozenDictionary<int, string> CachedStrings;
+    private readonly FrozenDictionary<int, string> CachedStrings2;
+    private readonly FrozenDictionary<CigGuid, DataCoreRecord> RecordMap;
 
     public DataCoreDatabase(Stream fs)
     {
         using var reader = new BinaryReader(fs);
 
         _ = reader.ReadUInt32();
-        Version = reader.ReadUInt32();
-        if (Version is < 5 or > 6)
-            throw new Exception($"Unsupported file version: {Version}");
+        var version = reader.ReadUInt32();
+        if (version is < 5 or > 6)
+            throw new Exception($"Unsupported file version: {version}");
         _ = reader.ReadUInt32();
         _ = reader.ReadUInt32();
 
@@ -121,26 +117,23 @@ public class DataCoreDatabase
         EnumOptions = reader.BaseStream.ReadArray<DataCoreStringId2>(enumOptionCount);
 
         CachedStrings = ReadStringTable(reader.ReadBytes((int)textLength).AsSpan());
-        if (Version >= 6)
+        if (version >= 6)
             CachedStrings2 = ReadStringTable(reader.ReadBytes((int)textLength2).AsSpan());
         else
-            CachedStrings2 = FrozenDictionary<int, string>.Empty;
+            CachedStrings2 = CachedStrings;
 
         var bytesRead = (int)fs.Position;
 
+        Properties = ReadProperties();
         Offsets = ReadOffsets(bytesRead, DataMappings);
         DataSectionOffset = bytesRead;
-        DataSection = new byte[fs.Length - bytesRead];
-        if (reader.Read(DataSection, 0, DataSection.Length) != DataSection.Length)
-            throw new Exception("Failed to read data section");
+        DataSection = reader.ReadBytes((int)(fs.Length - bytesRead));
 
         RecordMap = RecordDefinitions.ToFrozenDictionary(x => x.Id);
 
         var mainRecords = new Dictionary<string, DataCoreRecord>();
         foreach (var record in RecordDefinitions)
-        {
             mainRecords[record.GetFileName(this)] = record;
-        }
 
         MainRecords = mainRecords.Values.Select(x => x.Id).ToFrozenSet();
 
@@ -149,17 +142,17 @@ public class DataCoreDatabase
 #endif
     }
 
-    public SpanReader GetReader(int offset) => new(DataSection, offset - DataSectionOffset);
-    public string GetString(DataCoreStringId id) => CachedStrings[id.Id];
-    public string GetString2(DataCoreStringId2 id)
+    public SpanReader GetReader(int structIndex, int instanceIndex)
     {
-        if (Version < 6)
-            return CachedStrings[id.Id];
-
-        return CachedStrings2[id.Id];
+        var info = Offsets[structIndex];
+        var offset = info.Offset + info.Size * instanceIndex;
+        return new SpanReader(DataSection, offset - DataSectionOffset);
     }
 
+    public string GetString(DataCoreStringId id) => CachedStrings[id.Id];
+    public string GetString2(DataCoreStringId2 id) => CachedStrings2[id.Id];
     public DataCoreRecord GetRecord(CigGuid guid) => RecordMap[guid];
+    public DataCorePropertyDefinition[] GetProperties(int structIndex) => Properties[structIndex];
 
     private static FrozenDictionary<int, string> ReadStringTable(ReadOnlySpan<byte> span)
     {
@@ -178,68 +171,73 @@ public class DataCoreDatabase
         return strings.ToFrozenDictionary();
     }
 
-    private FrozenDictionary<int, int[]> ReadOffsets(int initialOffset, Span<DataCoreDataMapping> mappings)
+    private FrozenDictionary<int, StructOffsetAndSize> ReadOffsets(int initialOffset, ReadOnlySpan<DataCoreDataMapping> mappings)
     {
-        var instances = new Dictionary<int, int[]>(mappings.Length);
+        var instances = new Dictionary<int, StructOffsetAndSize>();
 
+        var offset = initialOffset;
         foreach (var mapping in mappings)
         {
-            var arr = new int[mapping.StructCount];
-
-            for (var i = 0; i < mapping.StructCount; i++)
-            {
-                arr[i] = initialOffset;
-                initialOffset += CalculateStructSize(mapping.StructIndex);
-            }
-
-            instances.Add(mapping.StructIndex, arr);
+            var size = CalculateStructSize(mapping.StructIndex);
+            instances[mapping.StructIndex] = new StructOffsetAndSize(offset, size);
+            offset += (int)(size * mapping.StructCount);
         }
 
         return instances.ToFrozenDictionary();
     }
 
-    public DataCorePropertyDefinition[] GetProperties(int structIndex) =>
-        _propertiesCache.GetOrAdd(structIndex, static (index, db) =>
+    private DataCorePropertyDefinition[][] ReadProperties()
+    {
+        var result = new DataCorePropertyDefinition[StructDefinitions.Length][];
+
+        for (var i = 0; i < StructDefinitions.Length; i++)
         {
-            var @this = db.StructDefinitions[index];
-            var structs = db.StructDefinitions.AsSpan();
-            var properties = db.PropertyDefinitions.AsSpan();
+            result[i] = GetStructProperties(i, this);
+        }
 
-            if (@this is { AttributeCount: 0, ParentTypeIndex: -1 })
-                return [];
+        return result;
+    }
 
-            // Calculate total property count to avoid resizing
-            int totalPropertyCount = @this.AttributeCount;
-            var baseStruct = @this;
-            while (baseStruct.ParentTypeIndex != -1)
-            {
-                baseStruct = structs[baseStruct.ParentTypeIndex];
-                totalPropertyCount += baseStruct.AttributeCount;
-            }
+    private static DataCorePropertyDefinition[] GetStructProperties(int index, DataCoreDatabase db)
+    {
+        var @this = db.StructDefinitions[index];
+        var structs = db.StructDefinitions.AsSpan();
+        var properties = db.PropertyDefinitions.AsSpan();
 
-            // Pre-allocate array with exact size needed
-            var result = new DataCorePropertyDefinition[totalPropertyCount];
+        if (@this is { AttributeCount: 0, ParentTypeIndex: -1 }) return [];
 
-            // Reset to start struct for actual property copying
-            baseStruct = @this;
-            var currentPosition = totalPropertyCount;
+        // Calculate total property count to avoid resizing
+        int totalPropertyCount = @this.AttributeCount;
+        var baseStruct = @this;
+        while (baseStruct.ParentTypeIndex != -1)
+        {
+            baseStruct = structs[baseStruct.ParentTypeIndex];
+            totalPropertyCount += baseStruct.AttributeCount;
+        }
 
-            // Copy properties in reverse order to avoid InsertRange
-            do
-            {
-                int count = baseStruct.AttributeCount;
-                currentPosition -= count;
-                properties.Slice(baseStruct.FirstAttributeIndex, count)
-                    .CopyTo(result.AsSpan(currentPosition, count));
+        // Pre-allocate array with exact size needed
+        var result = new DataCorePropertyDefinition[totalPropertyCount];
 
-                if (baseStruct.ParentTypeIndex == -1) break;
-                baseStruct = structs[baseStruct.ParentTypeIndex];
-            } while (true);
+        // Reset to start struct for actual property copying
+        baseStruct = @this;
+        var currentPosition = totalPropertyCount;
 
-            return result;
-        }, this);
+        // Copy properties in reverse order to avoid InsertRange
+        do
+        {
+            int count = baseStruct.AttributeCount;
+            currentPosition -= count;
+            properties.Slice(baseStruct.FirstAttributeIndex, count)
+                .CopyTo(result.AsSpan(currentPosition, count));
 
-    public int CalculateStructSize(int structIndex)
+            if (baseStruct.ParentTypeIndex == -1) break;
+            baseStruct = structs[baseStruct.ParentTypeIndex];
+        } while (true);
+
+        return result;
+    }
+
+    private int CalculateStructSize(int structIndex)
     {
         var size = 0;
 
@@ -278,5 +276,17 @@ public class DataCoreDatabase
         }
 
         return size;
+    }
+
+    public readonly struct StructOffsetAndSize
+    {
+        public readonly int Offset;
+        public readonly int Size;
+
+        public StructOffsetAndSize(int offset, int size)
+        {
+            Offset = offset;
+            Size = size;
+        }
     }
 }
