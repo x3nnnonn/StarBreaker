@@ -222,14 +222,14 @@ public sealed class DataCoreBinary
         return invalidNode;
     }
 
-    public static string ComputeRelativePath(string filePath, string contextFileName)
+    public static string ComputeRelativePath(ReadOnlySpan<char> filePath, ReadOnlySpan<char> contextFileName)
     {
-        var slashes = contextFileName.Count(c => c == '/');
+        var slashes = contextFileName.Count('/');
         var sb = new StringBuilder("file://./");
+
         for (var i = 0; i < slashes; i++)
-        {
             sb.Append("../");
-        }
+
         sb.Append(filePath);
         return sb.ToString();
     }
