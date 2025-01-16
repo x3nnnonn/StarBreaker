@@ -21,6 +21,5 @@ public readonly record struct DataCoreRecord
     public string Name => DebugGlobal.Database.GetString2(NameOffset);
     public string FileName => DebugGlobal.Database.GetString(FileNameOffset);
     public DataCoreStructDefinition Struct => DebugGlobal.Database.StructDefinitions[StructIndex];
-    public int Offset => DebugGlobal.Database.Offsets[StructIndex][InstanceIndex];
 #endif
 }
