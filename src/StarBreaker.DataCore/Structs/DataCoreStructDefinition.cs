@@ -10,7 +10,7 @@ public readonly record struct DataCoreStructDefinition
     public readonly int ParentTypeIndex;
     public readonly ushort AttributeCount;
     public readonly ushort FirstAttributeIndex;
-    public readonly uint NodeType;
+    public readonly uint StructSize;
 
     public string GetName(DataCoreDatabase db) => db.GetString2(NameOffset);
 

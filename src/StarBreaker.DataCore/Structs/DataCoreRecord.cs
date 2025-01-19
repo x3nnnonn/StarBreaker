@@ -11,9 +11,8 @@ public readonly record struct DataCoreRecord
     public readonly int StructIndex;
     public readonly CigGuid Id;
     public readonly ushort InstanceIndex;
-    //TODO: what is this
-    public readonly ushort OtherIndex;
-    
+    public readonly ushort StructSize;
+
     public string GetName(DataCoreDatabase db) => db.GetString2(NameOffset);
     public string GetFileName(DataCoreDatabase db) => db.GetString(FileNameOffset);
     
