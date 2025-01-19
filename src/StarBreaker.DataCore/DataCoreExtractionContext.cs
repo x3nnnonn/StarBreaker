@@ -11,14 +11,14 @@ public sealed class DataCoreExtractionContext
     public Dictionary<(int structIndex, int instanceIndex), XElement> Elements { get; }
 
     public string FileName { get; }
-    public bool ShouldWriteMetadata { get; }
-    public bool ShouldWriteNulls { get; }
+    public DataCoreExtractionOptions Options { get; }
 
-    public DataCoreExtractionContext(string fileName, bool shouldWriteMetadata = false, bool shouldWriteNulls = false)
+
+    public DataCoreExtractionContext(string fileName, DataCoreExtractionOptions options)
     {
         FileName = fileName;
-        ShouldWriteMetadata = shouldWriteMetadata;
-        ShouldWriteNulls = shouldWriteNulls;
+        Options = options;
+
         Elements = [];
         _weakPointerIds = [];
     }

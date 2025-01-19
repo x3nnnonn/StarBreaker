@@ -29,9 +29,9 @@ public class DataForge
         return structsPerFileName;
     }
 
-    public XElement GetFromRecord(DataCoreRecord record, bool includeMetadata = false, bool keepNulls = false)
+    public XElement GetFromRecord(DataCoreRecord record, DataCoreExtractionOptions? options = null)
     {
-        var context = new DataCoreExtractionContext(record.GetFileName(DataCore.Database), includeMetadata, keepNulls);
+        var context = new DataCoreExtractionContext(record.GetFileName(DataCore.Database), options ?? GetDefaultExtractionOptions());
         return DataCore.GetFromMainRecord(record, context);
     }
 
@@ -53,7 +53,7 @@ public class DataForge
         return result;
     }
 
-    public void ExtractAll(string outputFolder, string? fileNameFilter = null, IProgress<double>? progress = null)
+    public void ExtractAll(string outputFolder, string? fileNameFilter = null, IProgress<double>? progress = null, DataCoreExtractionOptions? options = null)
     {
         var progressValue = 0;
         var recordsByFileName = GetRecordsByFileName(fileNameFilter);
@@ -65,7 +65,7 @@ public class DataForge
 
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
 
-            var node = GetFromRecord(record);
+            var node = GetFromRecord(record, options);
 
             node.Save(filePath);
 
@@ -78,7 +78,7 @@ public class DataForge
         progress?.Report(1);
     }
 
-    public void ExtractAllParallel(string outputFolder, string? fileNameFilter = null, IProgress<double>? progress = null)
+    public void ExtractAllParallel(string outputFolder, string? fileNameFilter = null, IProgress<double>? progress = null, DataCoreExtractionOptions? options = null)
     {
         var progressValue = 0;
         var recordsByFileName = GetRecordsByFileName(fileNameFilter);
@@ -91,7 +91,7 @@ public class DataForge
 
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
 
-            var node = GetFromRecord(record);
+            var node = GetFromRecord(record, options);
 
             node.Save(filePath);
 
@@ -103,4 +103,38 @@ public class DataForge
 
         progress?.Report(1);
     }
+
+    public void ExtractUnp4k(string outputFileName, IProgress<double>? progress = null, DataCoreExtractionOptions? options = null)
+    {
+        var progressValue = 0;
+        var total = DataCore.Database.MainRecords.Count;
+
+        var doc = new XDocument(new XElement("DataCore"));
+
+        foreach (var recordId in DataCore.Database.MainRecords)
+        {
+            var record = DataCore.Database.GetRecord(recordId);
+            var context = new DataCoreExtractionContext(record.GetFileName(DataCore.Database), options ?? GetDefaultExtractionOptions());
+            var node = DataCore.GetFromMainRecord(record, context);
+
+            doc.Root?.Add(node);
+
+            var currentProgress = Interlocked.Increment(ref progressValue);
+            //only report progress every 250 records and when we are done
+            if (currentProgress == total || currentProgress % 250 == 0)
+                progress?.Report(currentProgress / (double)total);
+        }
+
+        doc.Save(outputFileName);
+    }
+
+    private static DataCoreExtractionOptions GetDefaultExtractionOptions() => new()
+    {
+        ShouldWriteMetadata = false,
+        ShouldWriteEmptyArrays = false,
+        ShouldWriteTypeNames = false,
+        ShouldWriteBaseTypeNames = false,
+        ShouldWriteDataTypes = false,
+        ShouldWriteNulls = false
+    };
 }

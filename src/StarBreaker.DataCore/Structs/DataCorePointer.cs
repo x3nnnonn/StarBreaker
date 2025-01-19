@@ -7,6 +7,4 @@ public readonly record struct DataCorePointer
 {
     public readonly int StructIndex;
     public readonly int InstanceIndex;
-
-    public bool IsInvalid => StructIndex == -1 || InstanceIndex == -1;
 }
