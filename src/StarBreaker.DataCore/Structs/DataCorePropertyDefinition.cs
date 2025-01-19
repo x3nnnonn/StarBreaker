@@ -10,7 +10,7 @@ public readonly record struct DataCorePropertyDefinition
     public readonly DataType DataType;
     public readonly ConversionType ConversionType;
     private readonly ushort _padding;
-    
+
     public string GetName(DataCoreDatabase db) => db.GetString2(NameOffset);
 
 #if DEBUG

@@ -1,5 +1,4 @@
 using System.Collections.Frozen;
-using System.Runtime.CompilerServices;
 using System.Text;
 using StarBreaker.Common;
 
@@ -42,7 +41,7 @@ public sealed class DataCoreDatabase
     public readonly DataCoreStringId2[] EnumOptions;
     public readonly FrozenSet<CigGuid> MainRecords;
 
-    private readonly FrozenDictionary<int, StructOffsetAndSize> Offsets;
+    public readonly int[] Offsets;
     private readonly DataCorePropertyDefinition[][] Properties;
     private readonly FrozenDictionary<int, string> CachedStrings;
     private readonly FrozenDictionary<int, string> CachedStrings2;
@@ -144,9 +143,10 @@ public sealed class DataCoreDatabase
 
     public SpanReader GetReader(int structIndex, int instanceIndex)
     {
-        var info = Offsets[structIndex];
-        var offset = info.Offset + info.Size * instanceIndex;
-        return new SpanReader(DataSection, offset - DataSectionOffset);
+        var structTypeOffset = Offsets[structIndex];
+        var size = StructDefinitions[structIndex].StructSize;
+        var offset = structTypeOffset + size * instanceIndex;
+        return new SpanReader(DataSection, (int)offset - DataSectionOffset);
     }
 
     public string GetString(DataCoreStringId id) => CachedStrings[id.Id];
@@ -171,19 +171,19 @@ public sealed class DataCoreDatabase
         return strings.ToFrozenDictionary();
     }
 
-    private FrozenDictionary<int, StructOffsetAndSize> ReadOffsets(int initialOffset, ReadOnlySpan<DataCoreDataMapping> mappings)
+    private int[] ReadOffsets(int initialOffset, ReadOnlySpan<DataCoreDataMapping> mappings)
     {
-        var instances = new Dictionary<int, StructOffsetAndSize>();
+        var offsets = new int[StructDefinitions.Length];
 
         var offset = initialOffset;
         foreach (var mapping in mappings)
         {
-            var size = CalculateStructSize(mapping.StructIndex);
-            instances[mapping.StructIndex] = new StructOffsetAndSize(offset, size);
+            var size = StructDefinitions[mapping.StructIndex].StructSize;
+            offsets[mapping.StructIndex] = offset;
             offset += (int)(size * mapping.StructCount);
         }
 
-        return instances.ToFrozenDictionary();
+        return offsets;
     }
 
     private DataCorePropertyDefinition[][] ReadProperties()
@@ -235,58 +235,5 @@ public sealed class DataCoreDatabase
         } while (true);
 
         return result;
-    }
-
-    private int CalculateStructSize(int structIndex)
-    {
-        var size = 0;
-
-        foreach (var attribute in GetProperties(structIndex))
-        {
-            if (attribute.ConversionType != ConversionType.Attribute)
-            {
-                //array count + array offset
-                size += sizeof(int) * 2;
-                continue;
-            }
-
-            size += attribute.DataType switch
-            {
-                DataType.Reference => Unsafe.SizeOf<DataCoreReference>(),
-                DataType.WeakPointer => Unsafe.SizeOf<DataCorePointer>(),
-                DataType.StrongPointer => Unsafe.SizeOf<DataCorePointer>(),
-                DataType.EnumChoice => Unsafe.SizeOf<DataCoreStringId>(),
-                DataType.Guid => Unsafe.SizeOf<CigGuid>(),
-                DataType.Locale => Unsafe.SizeOf<DataCoreStringId>(),
-                DataType.Double => Unsafe.SizeOf<double>(),
-                DataType.Single => Unsafe.SizeOf<float>(),
-                DataType.String => Unsafe.SizeOf<DataCoreStringId>(),
-                DataType.UInt64 => Unsafe.SizeOf<ulong>(),
-                DataType.UInt32 => Unsafe.SizeOf<uint>(),
-                DataType.UInt16 => Unsafe.SizeOf<ushort>(),
-                DataType.Byte => Unsafe.SizeOf<byte>(),
-                DataType.Int64 => Unsafe.SizeOf<long>(),
-                DataType.Int32 => Unsafe.SizeOf<int>(),
-                DataType.Int16 => Unsafe.SizeOf<short>(),
-                DataType.SByte => Unsafe.SizeOf<sbyte>(),
-                DataType.Boolean => Unsafe.SizeOf<byte>(),
-                DataType.Class => CalculateStructSize(attribute.StructIndex),
-                _ => throw new InvalidOperationException(nameof(DataType))
-            };
-        }
-
-        return size;
-    }
-
-    public readonly struct StructOffsetAndSize
-    {
-        public readonly int Offset;
-        public readonly int Size;
-
-        public StructOffsetAndSize(int offset, int size)
-        {
-            Offset = offset;
-            Size = size;
-        }
     }
 }
