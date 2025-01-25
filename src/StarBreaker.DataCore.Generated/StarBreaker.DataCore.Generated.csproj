@@ -1,0 +1,8 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+      <ProjectReference Include="..\StarBreaker.Common\StarBreaker.Common.csproj" />
+      <ProjectReference Include="..\StarBreaker.DataCore\StarBreaker.DataCore.csproj" />
+    </ItemGroup>
+
+</Project>
