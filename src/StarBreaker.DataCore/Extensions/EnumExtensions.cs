@@ -1,6 +1,6 @@
 ﻿namespace StarBreaker.DataCore;
 
-public static class DataTypeExtensions
+public static class EnumExtensions
 {
     public static string ToStringFast(this DataType dataType) => dataType switch
     {
@@ -24,5 +24,13 @@ public static class DataTypeExtensions
         DataType.SByte => "SByte",
         DataType.Boolean => "Boolean",
         _ => throw new ArgumentOutOfRangeException(nameof(dataType), dataType, null)
+    };
+
+    public static string ToStringFast(this ConversionType conversionType) => conversionType switch
+    {
+        ConversionType.Attribute => "Attribute",
+        ConversionType.ClassArray => "ClassArray",
+        ConversionType.ComplexArray => "ComplexArray",
+        ConversionType.SimpleArray => "SimpleArray",
     };
 }

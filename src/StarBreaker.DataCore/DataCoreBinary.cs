@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text;
 using System.Xml.Linq;
 using StarBreaker.Common;
 
@@ -9,138 +8,122 @@ public sealed class DataCoreBinary
 {
     public DataCoreDatabase Database { get; }
 
-    public DataCoreBinary(Stream fs)
+    public DataCoreBinary(DataCoreDatabase db)
     {
-        Database = new DataCoreDatabase(fs);
+        Database = db;
     }
 
-    private XElement GetFromStruct(int structIndex, ref SpanReader reader, DataCoreExtractionContext context)
+    private XElement GetFromStruct(string name, int structIndex, ref SpanReader reader, DataCoreExtractionContext context)
     {
-        var node = new XElement(Database.StructDefinitions[structIndex].GetName(Database));
+        var node = new XElement(name);
 
         foreach (var prop in Database.GetProperties(structIndex))
         {
+            var propName = prop.GetName(Database);
             node.Add(prop.ConversionType switch
             {
-                //TODO: do we need to handle different types of arrays?
-                ConversionType.Attribute => GetAttribute(prop, ref reader, context),
-                ConversionType.ComplexArray => GetArray(prop, ref reader, context)?.WithAttribute("__type", "ComplexArray", context.Options.ShouldWriteMetadata),
-                ConversionType.SimpleArray => GetArray(prop, ref reader, context)?.WithAttribute("__type", "SimpleArray", context.Options.ShouldWriteMetadata),
-                ConversionType.ClassArray => GetArray(prop, ref reader, context)?.WithAttribute("__type", "ClassArray", context.Options.ShouldWriteMetadata),
-                _ => throw new InvalidOperationException(nameof(ConversionType))
+                ConversionType.Attribute => GetAttribute(propName, prop, ref reader, context),
+                _ => GetArray(propName, prop, ref reader, context)?.WithAttribute("__dataType", prop.ConversionType.ToStringFast(), context.Options.ShouldWriteEnumMetadata)
             });
         }
 
         return node;
     }
 
-    private XElement? GetArray(DataCorePropertyDefinition prop, ref SpanReader reader, DataCoreExtractionContext context)
+    private XElement? GetArray(string propName, DataCorePropertyDefinition prop, ref SpanReader reader, DataCoreExtractionContext context)
     {
         var count = reader.ReadInt32();
         var firstIndex = reader.ReadInt32();
 
-        if (count == 0)
+        if (count == 0 && context.Options.ShouldSkipEmptyArrays)
             return null;
 
-        var arrayNode = new XElement(prop.GetName(Database));
+        var arrayNode = new XElement(propName).WithAttribute("__arrayLength", count.ToString(CultureInfo.InvariantCulture));
+
+        var structName = Database.StructDefinitions[prop.StructIndex].GetName(Database);
+        var dataTypeName = prop.DataType.ToStringFast();
 
         for (var i = firstIndex; i < firstIndex + count; i++)
         {
             arrayNode.Add(prop.DataType switch
             {
-                DataType.Reference => GetFromReference(Database.ReferenceValues[i], context)?.WithAttribute("__type", "ArrReference", context.Options.ShouldWriteMetadata),
-                DataType.WeakPointer => GetWeakPointer(Database.WeakValues[i], context)?.WithAttribute("__type", "ArrWeak", context.Options.ShouldWriteMetadata),
-                DataType.StrongPointer => GetFromPointer(Database.StrongValues[i], context)?.WithAttribute("__type", "ArrStrong", context.Options.ShouldWriteMetadata),
-                DataType.Class => GetFromInstance(prop.StructIndex, i, context)?.WithAttribute("__type", "ArrClass", context.Options.ShouldWriteMetadata),
+                DataType.Reference => GetFromReference(structName, Database.ReferenceValues[i], context, true).WithAttribute("__dataType", "ArrStrong", context.Options.ShouldWriteEnumMetadata),
+                DataType.WeakPointer => GetWeakPointer(structName, Database.WeakValues[i], context, true).WithAttribute("__dataType", "ArrWeak", context.Options.ShouldWriteEnumMetadata),
+                DataType.StrongPointer => GetFromPointer(structName, Database.StrongValues[i], context, true).WithAttribute("__dataType", "ArrStrong", context.Options.ShouldWriteEnumMetadata),
+                DataType.Class => GetFromInstance(structName, prop.StructIndex, i, context, true).WithAttribute("__dataType", "ArrClass", context.Options.ShouldWriteEnumMetadata),
 
-                DataType.EnumChoice => new XElement(prop.DataType.ToStringFast(), Database.EnumValues[i].ToString(Database)),
-                DataType.Guid => new XElement(prop.DataType.ToStringFast(), Database.GuidValues[i].ToString()),
-                DataType.Locale => new XElement(prop.DataType.ToStringFast(), Database.LocaleValues[i].ToString(Database)),
-                DataType.Double => new XElement(prop.DataType.ToStringFast(), Database.DoubleValues[i].ToString(CultureInfo.InvariantCulture)),
-                DataType.Single => new XElement(prop.DataType.ToStringFast(), Database.SingleValues[i].ToString(CultureInfo.InvariantCulture)),
-                DataType.String => new XElement(prop.DataType.ToStringFast(), Database.StringIdValues[i].ToString(Database)),
-                DataType.UInt64 => new XElement(prop.DataType.ToStringFast(), Database.UInt64Values[i].ToString(CultureInfo.InvariantCulture)),
-                DataType.UInt32 => new XElement(prop.DataType.ToStringFast(), Database.UInt32Values[i].ToString(CultureInfo.InvariantCulture)),
-                DataType.UInt16 => new XElement(prop.DataType.ToStringFast(), Database.UInt16Values[i].ToString(CultureInfo.InvariantCulture)),
-                DataType.Byte => new XElement(prop.DataType.ToStringFast(), Database.UInt8Values[i].ToString(CultureInfo.InvariantCulture)),
-                DataType.Int64 => new XElement(prop.DataType.ToStringFast(), Database.Int64Values[i].ToString(CultureInfo.InvariantCulture)),
-                DataType.Int32 => new XElement(prop.DataType.ToStringFast(), Database.Int32Values[i].ToString(CultureInfo.InvariantCulture)),
-                DataType.Int16 => new XElement(prop.DataType.ToStringFast(), Database.Int16Values[i].ToString(CultureInfo.InvariantCulture)),
-                DataType.SByte => new XElement(prop.DataType.ToStringFast(), Database.Int8Values[i].ToString(CultureInfo.InvariantCulture)),
-                DataType.Boolean => new XElement(prop.DataType.ToStringFast(), Database.BooleanValues[i].ToString(CultureInfo.InvariantCulture)),
+                DataType.EnumChoice => new XElement(Database.EnumDefinitions[prop.StructIndex].GetName(Database), Database.EnumValues[i].ToString(Database)),
+                DataType.Guid => new XElement(dataTypeName, Database.GuidValues[i].ToString()),
+                DataType.Locale => new XElement(dataTypeName, Database.LocaleValues[i].ToString(Database)),
+                DataType.Double => new XElement(dataTypeName, Database.DoubleValues[i].ToString(CultureInfo.InvariantCulture)),
+                DataType.Single => new XElement(dataTypeName, Database.SingleValues[i].ToString(CultureInfo.InvariantCulture)),
+                DataType.String => new XElement(dataTypeName, Database.StringIdValues[i].ToString(Database)),
+                DataType.UInt64 => new XElement(dataTypeName, Database.UInt64Values[i].ToString(CultureInfo.InvariantCulture)),
+                DataType.UInt32 => new XElement(dataTypeName, Database.UInt32Values[i].ToString(CultureInfo.InvariantCulture)),
+                DataType.UInt16 => new XElement(dataTypeName, Database.UInt16Values[i].ToString(CultureInfo.InvariantCulture)),
+                DataType.Byte => new XElement(dataTypeName, Database.UInt8Values[i].ToString(CultureInfo.InvariantCulture)),
+                DataType.Int64 => new XElement(dataTypeName, Database.Int64Values[i].ToString(CultureInfo.InvariantCulture)),
+                DataType.Int32 => new XElement(dataTypeName, Database.Int32Values[i].ToString(CultureInfo.InvariantCulture)),
+                DataType.Int16 => new XElement(dataTypeName, Database.Int16Values[i].ToString(CultureInfo.InvariantCulture)),
+                DataType.SByte => new XElement(dataTypeName, Database.Int8Values[i].ToString(CultureInfo.InvariantCulture)),
+                DataType.Boolean => new XElement(dataTypeName, Database.BooleanValues[i].ToString(CultureInfo.InvariantCulture)),
                 _ => throw new InvalidOperationException(nameof(DataType))
             });
         }
 
+        WriteMetadata(arrayNode, prop.StructIndex, firstIndex, context);
+        WriteTypeNames(arrayNode, prop.StructIndex, context);
+
         return arrayNode;
     }
 
-    private XObject? GetAttribute(DataCorePropertyDefinition prop, ref SpanReader reader, DataCoreExtractionContext context)
+    private XObject GetAttribute(string propertyName, DataCorePropertyDefinition prop, ref SpanReader reader, DataCoreExtractionContext context)
     {
         return prop.DataType switch
         {
-            DataType.Reference => GetFromReference(reader.Read<DataCoreReference>(), context)?.WithAttribute("__type", "AttReference", context.Options.ShouldWriteMetadata),
-            DataType.WeakPointer => GetWeakPointer(reader.Read<DataCorePointer>(), context)?.WithAttribute("__type", "AttWeak", context.Options.ShouldWriteMetadata),
-            DataType.StrongPointer => GetFromPointer(reader.Read<DataCorePointer>(), context)?.WithAttribute("__type", "AttStrong", context.Options.ShouldWriteMetadata),
-            DataType.Class => GetFromStruct(prop.StructIndex, ref reader, context)?.WithAttribute("__type", "AttClass", context.Options.ShouldWriteMetadata),
+            DataType.Reference => GetFromReference(propertyName, reader.Read<DataCoreReference>(), context).WithAttribute("__dataType", "AttReference", context.Options.ShouldWriteEnumMetadata),
+            DataType.WeakPointer => GetWeakPointer(propertyName, reader.Read<DataCorePointer>(), context).WithAttribute("__dataType", "AttWeak", context.Options.ShouldWriteEnumMetadata),
+            DataType.StrongPointer => GetFromPointer(propertyName, reader.Read<DataCorePointer>(), context).WithAttribute("__dataType", "AttStrong", context.Options.ShouldWriteEnumMetadata),
+            DataType.Class => GetFromStruct(propertyName, prop.StructIndex, ref reader, context).WithAttribute("__dataType", "AttClass", context.Options.ShouldWriteEnumMetadata),
 
-            DataType.EnumChoice => new XAttribute(prop.GetName(Database), reader.Read<DataCoreStringId>().ToString(Database)),
-            DataType.Guid => new XAttribute(prop.GetName(Database), reader.Read<CigGuid>().ToString()),
-            DataType.Locale => new XAttribute(prop.GetName(Database), reader.Read<DataCoreStringId>().ToString(Database)),
-            DataType.Double => new XAttribute(prop.GetName(Database), reader.ReadDouble().ToString(CultureInfo.InvariantCulture)),
-            DataType.Single => new XAttribute(prop.GetName(Database), reader.ReadSingle().ToString(CultureInfo.InvariantCulture)),
-            DataType.String => new XAttribute(prop.GetName(Database), reader.Read<DataCoreStringId>().ToString(Database)),
-            DataType.UInt64 => new XAttribute(prop.GetName(Database), reader.ReadUInt64().ToString(CultureInfo.InvariantCulture)),
-            DataType.UInt32 => new XAttribute(prop.GetName(Database), reader.ReadUInt32().ToString(CultureInfo.InvariantCulture)),
-            DataType.UInt16 => new XAttribute(prop.GetName(Database), reader.ReadUInt16().ToString(CultureInfo.InvariantCulture)),
-            DataType.Byte => new XAttribute(prop.GetName(Database), reader.ReadByte().ToString(CultureInfo.InvariantCulture)),
-            DataType.Int64 => new XAttribute(prop.GetName(Database), reader.ReadInt64().ToString(CultureInfo.InvariantCulture)),
-            DataType.Int32 => new XAttribute(prop.GetName(Database), reader.ReadInt32().ToString(CultureInfo.InvariantCulture)),
-            DataType.Int16 => new XAttribute(prop.GetName(Database), reader.ReadInt16().ToString(CultureInfo.InvariantCulture)),
-            DataType.SByte => new XAttribute(prop.GetName(Database), reader.ReadSByte().ToString(CultureInfo.InvariantCulture)),
-            DataType.Boolean => new XAttribute(prop.GetName(Database), reader.ReadBoolean().ToString(CultureInfo.InvariantCulture)),
+            DataType.EnumChoice => new XAttribute(propertyName, reader.Read<DataCoreStringId>().ToString(Database)),
+            DataType.Guid => new XAttribute(propertyName, reader.Read<CigGuid>().ToString()),
+            DataType.Locale => new XAttribute(propertyName, reader.Read<DataCoreStringId>().ToString(Database)),
+            DataType.Double => new XAttribute(propertyName, reader.ReadDouble().ToString(CultureInfo.InvariantCulture)),
+            DataType.Single => new XAttribute(propertyName, reader.ReadSingle().ToString(CultureInfo.InvariantCulture)),
+            DataType.String => new XAttribute(propertyName, reader.Read<DataCoreStringId>().ToString(Database)),
+            DataType.UInt64 => new XAttribute(propertyName, reader.ReadUInt64().ToString(CultureInfo.InvariantCulture)),
+            DataType.UInt32 => new XAttribute(propertyName, reader.ReadUInt32().ToString(CultureInfo.InvariantCulture)),
+            DataType.UInt16 => new XAttribute(propertyName, reader.ReadUInt16().ToString(CultureInfo.InvariantCulture)),
+            DataType.Byte => new XAttribute(propertyName, reader.ReadByte().ToString(CultureInfo.InvariantCulture)),
+            DataType.Int64 => new XAttribute(propertyName, reader.ReadInt64().ToString(CultureInfo.InvariantCulture)),
+            DataType.Int32 => new XAttribute(propertyName, reader.ReadInt32().ToString(CultureInfo.InvariantCulture)),
+            DataType.Int16 => new XAttribute(propertyName, reader.ReadInt16().ToString(CultureInfo.InvariantCulture)),
+            DataType.SByte => new XAttribute(propertyName, reader.ReadSByte().ToString(CultureInfo.InvariantCulture)),
+            DataType.Boolean => new XAttribute(propertyName, reader.ReadBoolean().ToString(CultureInfo.InvariantCulture)),
             _ => throw new ArgumentOutOfRangeException()
         };
     }
 
-    private XElement? GetFromReference(DataCoreReference reference, DataCoreExtractionContext context)
+    private XElement GetFromReference(string name, DataCoreReference reference, DataCoreExtractionContext context, bool overrideName = false)
     {
         if (reference.InstanceIndex == -1 || reference.RecordId == CigGuid.Empty)
-        {
-            if (!context.Options.ShouldWriteNulls)
-                return null;
-
-            var invalidNode = new XElement("NullReference");
-            invalidNode.Add(new XAttribute("guid", reference.RecordId.ToString()));
-            if (context.Options.ShouldWriteMetadata)
-            {
-                invalidNode.Add(new XAttribute("__instanceIndex", reference.InstanceIndex.ToString(CultureInfo.InvariantCulture)));
-            }
-
-            return invalidNode;
-        }
+            return GetNull(name, context, -1, reference.InstanceIndex);
 
         var record = Database.GetRecord(reference.RecordId);
 
         if (Database.MainRecords.Contains(reference.RecordId))
         {
             //if we're referencing a full on file, just add a small mention to it
-            var fileReferenceNode = new XElement("FileReference");
-            fileReferenceNode.Add(new XAttribute("guid", reference.RecordId.ToString()));
-            fileReferenceNode.Add(new XAttribute("filePath", DataCoreUtils.ComputeRelativePath(record.GetFileName(Database), context.FileName)));
+            var fileReferenceNode = new XElement(name);
+            fileReferenceNode.Add(new XAttribute("__recordId", reference.RecordId.ToString()));
+            fileReferenceNode.Add(new XAttribute("__recordPath", DataCoreUtils.ComputeRelativePath(record.GetFileName(Database), context.FileName)));
+            if (context.Options.ShouldWriteTypeNames)
+                fileReferenceNode.Add(new XAttribute("__typeName", Database.StructDefinitions[record.StructIndex].GetName(Database)));
             return fileReferenceNode;
         }
 
-        return GetFromRecord(record, context);
-    }
-
-    private XElement GetFromRecord(DataCoreRecord record, DataCoreExtractionContext context)
-    {
-        return GetFromInstance(record.StructIndex, record.InstanceIndex, context)
-            .WithAttribute("recordGuid", record.Id.ToString());
-            //Note: Maybe we should add the name? It seems to be mostly useless. Usually it's
-            //      just a combination of the record type and the filename | recordId.
-            //.WithAttribute("recordName", record.GetName(Database));
+        return GetFromInstance(name, record.StructIndex, record.InstanceIndex, context, overrideName).WithAttribute("recordGuid", record.Id.ToString());
     }
 
     public XElement GetFromMainRecord(DataCoreRecord record, DataCoreExtractionContext context)
@@ -148,77 +131,115 @@ public sealed class DataCoreBinary
         if (!Database.MainRecords.Contains(record.Id))
             throw new InvalidOperationException("Can only extract main records");
 
-        var element = GetFromRecord(record, context);
+        var recordName = record.GetName(Database)
+            .Replace("'", "_")
+            .Replace(" ", "_")
+            .Replace("/", "_")
+            .Replace("&", "_");
+
+        var element = GetFromInstance(recordName, record.StructIndex, record.InstanceIndex, context)
+            .WithAttribute("__recordGuid", record.Id.ToString());
 
         //add weak pointers ids, so we can actually see what a weak pointer is pointing at
         foreach (var weakPtr in context.GetWeakPointers())
         {
             var pointedAtElement = context.Elements[(weakPtr.structIndex, weakPtr.instanceIndex)];
 
-            pointedAtElement.Add(new XAttribute("weakPointerId", context.GetWeakPointerId(weakPtr.structIndex, weakPtr.instanceIndex).ToString(CultureInfo.InvariantCulture)));
+            pointedAtElement.Add(new XAttribute("__weakPointerId", context.GetWeakPointerId(weakPtr.structIndex, weakPtr.instanceIndex).ToString(CultureInfo.InvariantCulture)));
         }
 
         return element;
     }
 
-    private XElement? GetFromPointer(DataCorePointer pointer, DataCoreExtractionContext context)
-    {
-        if (pointer.InstanceIndex == -1 || pointer.StructIndex == -1)
-            return GetNullPointer(pointer, context);
+    private XElement GetFromPointer(string name, DataCorePointer pointer, DataCoreExtractionContext context, bool overrideName = false) =>
+        GetFromInstance(name, pointer.StructIndex, pointer.InstanceIndex, context, overrideName);
 
-        return GetFromInstance(pointer.StructIndex, pointer.InstanceIndex, context);
-    }
-
-    private XElement GetFromInstance(int structIndex, int instanceIndex, DataCoreExtractionContext context)
+    private XElement GetFromInstance(string name, int structIndex, int instanceIndex, DataCoreExtractionContext context, bool overrideName = false)
     {
+        if (structIndex == -1 || instanceIndex == -1)
+            return GetNull(name, context, structIndex, instanceIndex);
+
         var reader = Database.GetReader(structIndex, instanceIndex);
-        var element = GetFromStruct(structIndex, ref reader, context);
+
+        // We override the name in some cases.
+        // The name we get from our parent can either be the name of a property (useful),
+        // Or the base datatype of our struct (not really useful, we'd rather have our actual type name in that case).
+        // When that happens, we override our parent's name with our actual type name.
+
+        //This seems to only be required when we're in an array, since the array can be of the base type.
+        // When we're a property/field, the name is custom (and usually more informative), and the type name is written separately
+        if (overrideName)
+            name = Database.StructDefinitions[structIndex].GetName(Database);
+
+        var element = GetFromStruct(name, structIndex, ref reader, context);
 
         context.Elements[(structIndex, instanceIndex)] = element;
 
-        if (context.Options.ShouldWriteMetadata)
-        {
-            element.Add(new XAttribute("__structIndex", structIndex.ToString(CultureInfo.InvariantCulture)));
-            element.Add(new XAttribute("__instanceIndex", instanceIndex.ToString(CultureInfo.InvariantCulture)));
-        }
+        WriteMetadata(element, structIndex, instanceIndex, context);
+        WriteTypeNames(element, structIndex, context);
 
         return element;
     }
 
-    private XElement? GetWeakPointer(DataCorePointer pointer, DataCoreExtractionContext context)
+    private XElement GetWeakPointer(string name, DataCorePointer pointer, DataCoreExtractionContext context, bool overrideName = false)
     {
         if (pointer.InstanceIndex == -1 || pointer.StructIndex == -1)
-            return GetNullPointer(pointer, context);
+            return GetNull(name, context, pointer.StructIndex, pointer.InstanceIndex);
+
+        var weakPointer = new XElement(Database.StructDefinitions[pointer.StructIndex].GetName(Database));
 
         var pointerId = context.AddWeakPointer(pointer.StructIndex, pointer.InstanceIndex);
 
-        var invalidNode = new XElement("WeakPointer");
+        weakPointer.Add(new XAttribute("__weakPointerId", pointerId.ToString(CultureInfo.InvariantCulture)));
+        weakPointer.Add(new XAttribute("__pointsTo_Name", name));
+        weakPointer.Add(new XAttribute("__pointsTo_TypeName", Database.StructDefinitions[pointer.StructIndex].GetName(Database)));
 
-        invalidNode.Add(new XAttribute("weakPointerId", pointerId.ToString(CultureInfo.InvariantCulture)));
-        var structName = Database.StructDefinitions[pointer.StructIndex].GetName(Database);
-        invalidNode.Add(new XAttribute("structName", structName));
+        WriteMetadata(weakPointer, pointer.StructIndex, pointer.InstanceIndex, context);
+        WriteTypeNames(weakPointer, pointer.StructIndex, context);
 
-        if (context.Options.ShouldWriteMetadata)
-        {
-            invalidNode.Add(new XAttribute("__structIndex", pointer.StructIndex.ToString(CultureInfo.InvariantCulture)));
-            invalidNode.Add(new XAttribute("__instanceIndex", pointer.InstanceIndex.ToString(CultureInfo.InvariantCulture)));
-        }
-
-        return invalidNode;
+        return weakPointer;
     }
 
-    private static XElement? GetNullPointer(DataCorePointer pointer, DataCoreExtractionContext context)
+    private XElement GetNull(string name, DataCoreExtractionContext context, int structIndex, int instanceIndex)
     {
-        if (!context.Options.ShouldWriteNulls)
-            return null;
+        var element = new XElement(name);
+        element.Add(new XAttribute("__value", "null"));
 
-        var invalidNode = new XElement("NullPointer");
-        if (context.Options.ShouldWriteMetadata)
+        WriteMetadata(element, structIndex, instanceIndex, context);
+        WriteTypeNames(element, structIndex, context);
+
+        return element;
+    }
+
+    private void WriteTypeNames(XElement element, int structIndex, DataCoreExtractionContext context)
+    {
+        if (structIndex == -1)
+            return;
+
+        var structType = Database.StructDefinitions[structIndex];
+
+        if (context.Options.ShouldWriteTypeNames)
+            element.Add(new XAttribute("__typeName", structType.GetName(Database)));
+
+        if (context.Options.ShouldWriteBaseTypeNames)
         {
-            invalidNode.Add(new XAttribute("__structIndex", pointer.StructIndex.ToString(CultureInfo.InvariantCulture)));
-            invalidNode.Add(new XAttribute("__instanceIndex", pointer.InstanceIndex.ToString(CultureInfo.InvariantCulture)));
+            var i = 0;
+            var @this = structType;
+            while (@this.ParentTypeIndex != -1)
+            {
+                @this = Database.StructDefinitions[@this.ParentTypeIndex];
+                element.Add(new XAttribute($"__baseTypeName{i}", @this.GetName(Database)));
+                i++;
+            }
         }
+    }
 
-        return invalidNode;
+    private static void WriteMetadata(XElement element, int structIndex, int instanceIndex, DataCoreExtractionContext context)
+    {
+        if (!context.Options.ShouldWriteMetadata)
+            return;
+
+        element.Add(new XAttribute("__structIndex", structIndex.ToString(CultureInfo.InvariantCulture)));
+        element.Add(new XAttribute("__instanceIndex", instanceIndex.ToString(CultureInfo.InvariantCulture)));
     }
 }
