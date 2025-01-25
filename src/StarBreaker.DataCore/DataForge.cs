@@ -1,5 +1,6 @@
 ﻿using System.IO.Enumeration;
 using System.Xml.Linq;
+using StarBreaker.Common;
 
 namespace StarBreaker.DataCore;
 
@@ -31,7 +32,14 @@ public class DataForge
 
     public XElement GetFromRecord(DataCoreRecord record, DataCoreExtractionOptions? options = null)
     {
-        var context = new DataCoreExtractionContext(record.GetFileName(DataCore.Database), options ?? GetDefaultExtractionOptions());
+        var context = new DataCoreExtractionContext<XElement>(record.GetFileName(DataCore.Database), options ?? GetDefaultExtractionOptions());
+        return DataCore.GetFromMainRecord(record, context);
+    }
+
+    public XElement GetFromRecord(CigGuid recordGuid, DataCoreExtractionOptions? options = null)
+    {
+        var record = DataCore.Database.GetRecord(recordGuid);
+        var context = new DataCoreExtractionContext<XElement>(record.GetFileName(DataCore.Database), options ?? GetDefaultExtractionOptions());
         return DataCore.GetFromMainRecord(record, context);
     }
 
@@ -114,7 +122,7 @@ public class DataForge
         foreach (var recordId in DataCore.Database.MainRecords)
         {
             var record = DataCore.Database.GetRecord(recordId);
-            var context = new DataCoreExtractionContext(record.GetFileName(DataCore.Database), options ?? GetDefaultExtractionOptions());
+            var context = new DataCoreExtractionContext<XElement>(record.GetFileName(DataCore.Database), options ?? GetDefaultExtractionOptions());
             var node = DataCore.GetFromMainRecord(record, context);
 
             doc.Root?.Add(node);
@@ -131,9 +139,9 @@ public class DataForge
     private static DataCoreExtractionOptions GetDefaultExtractionOptions() => new()
     {
         ShouldWriteMetadata = false,
-        ShouldWriteTypeNames = true,
+        ShouldWriteTypeNames = false,
         ShouldWriteBaseTypeNames = false,
         ShouldWriteEnumMetadata = false,
-        ShouldSkipEmptyArrays = true
+        ShouldSkipEmptyArrays = false
     };
 }

@@ -124,7 +124,7 @@ public sealed class DataCoreDatabase
         var bytesRead = (int)fs.Position;
 
         Properties = ReadProperties();
-        Offsets = ReadOffsets(bytesRead, DataMappings);
+        Offsets = ReadOffsets(bytesRead);
         DataSectionOffset = bytesRead;
         DataSection = reader.ReadBytes((int)(fs.Length - bytesRead));
 
@@ -171,12 +171,12 @@ public sealed class DataCoreDatabase
         return strings.ToFrozenDictionary();
     }
 
-    private int[] ReadOffsets(int initialOffset, ReadOnlySpan<DataCoreDataMapping> mappings)
+    private int[] ReadOffsets(int initialOffset)
     {
         var offsets = new int[StructDefinitions.Length];
 
         var offset = initialOffset;
-        foreach (var mapping in mappings)
+        foreach (var mapping in DataMappings)
         {
             var size = StructDefinitions[mapping.StructIndex].StructSize;
             offsets[mapping.StructIndex] = offset;
@@ -192,17 +192,17 @@ public sealed class DataCoreDatabase
 
         for (var i = 0; i < StructDefinitions.Length; i++)
         {
-            result[i] = GetStructProperties(i, this);
+            result[i] = GetStructProperties(i);
         }
 
         return result;
     }
 
-    private static DataCorePropertyDefinition[] GetStructProperties(int index, DataCoreDatabase db)
+    private DataCorePropertyDefinition[] GetStructProperties(int index)
     {
-        var @this = db.StructDefinitions[index];
-        var structs = db.StructDefinitions.AsSpan();
-        var properties = db.PropertyDefinitions.AsSpan();
+        var @this = StructDefinitions[index];
+        var structs = StructDefinitions.AsSpan();
+        var properties = PropertyDefinitions.AsSpan();
 
         if (@this is { AttributeCount: 0, ParentTypeIndex: -1 }) return [];
 

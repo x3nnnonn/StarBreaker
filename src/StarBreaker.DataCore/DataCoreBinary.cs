@@ -13,7 +13,7 @@ public sealed class DataCoreBinary
         Database = db;
     }
 
-    private XElement GetFromStruct(string name, int structIndex, ref SpanReader reader, DataCoreExtractionContext context)
+    private XElement GetFromStruct(string name, int structIndex, ref SpanReader reader, DataCoreExtractionContext<XElement> context)
     {
         var node = new XElement(name);
 
@@ -30,7 +30,7 @@ public sealed class DataCoreBinary
         return node;
     }
 
-    private XElement? GetArray(string propName, DataCorePropertyDefinition prop, ref SpanReader reader, DataCoreExtractionContext context)
+    private XElement? GetArray(string propName, DataCorePropertyDefinition prop, ref SpanReader reader, DataCoreExtractionContext<XElement> context)
     {
         var count = reader.ReadInt32();
         var firstIndex = reader.ReadInt32();
@@ -77,7 +77,7 @@ public sealed class DataCoreBinary
         return arrayNode;
     }
 
-    private XObject GetAttribute(string propertyName, DataCorePropertyDefinition prop, ref SpanReader reader, DataCoreExtractionContext context)
+    private XElement GetAttribute(string propertyName, DataCorePropertyDefinition prop, ref SpanReader reader, DataCoreExtractionContext<XElement> context)
     {
         return prop.DataType switch
         {
@@ -86,26 +86,26 @@ public sealed class DataCoreBinary
             DataType.StrongPointer => GetFromPointer(propertyName, reader.Read<DataCorePointer>(), context).WithAttribute("__dataType", "AttStrong", context.Options.ShouldWriteEnumMetadata),
             DataType.Class => GetFromStruct(propertyName, prop.StructIndex, ref reader, context).WithAttribute("__dataType", "AttClass", context.Options.ShouldWriteEnumMetadata),
 
-            DataType.EnumChoice => new XAttribute(propertyName, reader.Read<DataCoreStringId>().ToString(Database)),
-            DataType.Guid => new XAttribute(propertyName, reader.Read<CigGuid>().ToString()),
-            DataType.Locale => new XAttribute(propertyName, reader.Read<DataCoreStringId>().ToString(Database)),
-            DataType.Double => new XAttribute(propertyName, reader.ReadDouble().ToString(CultureInfo.InvariantCulture)),
-            DataType.Single => new XAttribute(propertyName, reader.ReadSingle().ToString(CultureInfo.InvariantCulture)),
-            DataType.String => new XAttribute(propertyName, reader.Read<DataCoreStringId>().ToString(Database)),
-            DataType.UInt64 => new XAttribute(propertyName, reader.ReadUInt64().ToString(CultureInfo.InvariantCulture)),
-            DataType.UInt32 => new XAttribute(propertyName, reader.ReadUInt32().ToString(CultureInfo.InvariantCulture)),
-            DataType.UInt16 => new XAttribute(propertyName, reader.ReadUInt16().ToString(CultureInfo.InvariantCulture)),
-            DataType.Byte => new XAttribute(propertyName, reader.ReadByte().ToString(CultureInfo.InvariantCulture)),
-            DataType.Int64 => new XAttribute(propertyName, reader.ReadInt64().ToString(CultureInfo.InvariantCulture)),
-            DataType.Int32 => new XAttribute(propertyName, reader.ReadInt32().ToString(CultureInfo.InvariantCulture)),
-            DataType.Int16 => new XAttribute(propertyName, reader.ReadInt16().ToString(CultureInfo.InvariantCulture)),
-            DataType.SByte => new XAttribute(propertyName, reader.ReadSByte().ToString(CultureInfo.InvariantCulture)),
-            DataType.Boolean => new XAttribute(propertyName, reader.ReadBoolean().ToString(CultureInfo.InvariantCulture)),
-            _ => throw new ArgumentOutOfRangeException()
+            DataType.EnumChoice => new XElement(propertyName, reader.Read<DataCoreStringId>().ToString(Database)),
+            DataType.Guid => new XElement(propertyName, reader.Read<CigGuid>().ToString()),
+            DataType.Locale => new XElement(propertyName, reader.Read<DataCoreStringId>().ToString(Database)),
+            DataType.Double => new XElement(propertyName, reader.ReadDouble().ToString(CultureInfo.InvariantCulture)),
+            DataType.Single => new XElement(propertyName, reader.ReadSingle().ToString(CultureInfo.InvariantCulture)),
+            DataType.String => new XElement(propertyName, reader.Read<DataCoreStringId>().ToString(Database)),
+            DataType.UInt64 => new XElement(propertyName, reader.ReadUInt64().ToString(CultureInfo.InvariantCulture)),
+            DataType.UInt32 => new XElement(propertyName, reader.ReadUInt32().ToString(CultureInfo.InvariantCulture)),
+            DataType.UInt16 => new XElement(propertyName, reader.ReadUInt16().ToString(CultureInfo.InvariantCulture)),
+            DataType.Byte => new XElement(propertyName, reader.ReadByte().ToString(CultureInfo.InvariantCulture)),
+            DataType.Int64 => new XElement(propertyName, reader.ReadInt64().ToString(CultureInfo.InvariantCulture)),
+            DataType.Int32 => new XElement(propertyName, reader.ReadInt32().ToString(CultureInfo.InvariantCulture)),
+            DataType.Int16 => new XElement(propertyName, reader.ReadInt16().ToString(CultureInfo.InvariantCulture)),
+            DataType.SByte => new XElement(propertyName, reader.ReadSByte().ToString(CultureInfo.InvariantCulture)),
+            DataType.Boolean => new XElement(propertyName, reader.ReadBoolean().ToString(CultureInfo.InvariantCulture)),
+            _ => throw new ArgumentOutOfRangeException(nameof(prop))
         };
     }
 
-    private XElement GetFromReference(string name, DataCoreReference reference, DataCoreExtractionContext context, bool overrideName = false)
+    private XElement GetFromReference(string name, DataCoreReference reference, DataCoreExtractionContext<XElement> context, bool overrideName = false)
     {
         if (reference.InstanceIndex == -1 || reference.RecordId == CigGuid.Empty)
             return GetNull(name, context, -1, reference.InstanceIndex);
@@ -126,7 +126,7 @@ public sealed class DataCoreBinary
         return GetFromInstance(name, record.StructIndex, record.InstanceIndex, context, overrideName).WithAttribute("recordGuid", record.Id.ToString());
     }
 
-    public XElement GetFromMainRecord(DataCoreRecord record, DataCoreExtractionContext context)
+    public XElement GetFromMainRecord(DataCoreRecord record, DataCoreExtractionContext<XElement> context)
     {
         if (!Database.MainRecords.Contains(record.Id))
             throw new InvalidOperationException("Can only extract main records");
@@ -151,10 +151,10 @@ public sealed class DataCoreBinary
         return element;
     }
 
-    private XElement GetFromPointer(string name, DataCorePointer pointer, DataCoreExtractionContext context, bool overrideName = false) =>
+    private XElement GetFromPointer(string name, DataCorePointer pointer, DataCoreExtractionContext<XElement> context, bool overrideName = false) =>
         GetFromInstance(name, pointer.StructIndex, pointer.InstanceIndex, context, overrideName);
 
-    private XElement GetFromInstance(string name, int structIndex, int instanceIndex, DataCoreExtractionContext context, bool overrideName = false)
+    private XElement GetFromInstance(string name, int structIndex, int instanceIndex, DataCoreExtractionContext<XElement> context, bool overrideName = false)
     {
         if (structIndex == -1 || instanceIndex == -1)
             return GetNull(name, context, structIndex, instanceIndex);
@@ -181,7 +181,7 @@ public sealed class DataCoreBinary
         return element;
     }
 
-    private XElement GetWeakPointer(string name, DataCorePointer pointer, DataCoreExtractionContext context, bool overrideName = false)
+    private XElement GetWeakPointer(string name, DataCorePointer pointer, DataCoreExtractionContext<XElement> context, bool overrideName = false)
     {
         if (pointer.InstanceIndex == -1 || pointer.StructIndex == -1)
             return GetNull(name, context, pointer.StructIndex, pointer.InstanceIndex);
@@ -200,7 +200,7 @@ public sealed class DataCoreBinary
         return weakPointer;
     }
 
-    private XElement GetNull(string name, DataCoreExtractionContext context, int structIndex, int instanceIndex)
+    private XElement GetNull(string name, DataCoreExtractionContext<XElement> context, int structIndex, int instanceIndex)
     {
         var element = new XElement(name);
         element.Add(new XAttribute("__value", "null"));
@@ -211,7 +211,7 @@ public sealed class DataCoreBinary
         return element;
     }
 
-    private void WriteTypeNames(XElement element, int structIndex, DataCoreExtractionContext context)
+    private void WriteTypeNames(XElement element, int structIndex, DataCoreExtractionContext<XElement> context)
     {
         if (structIndex == -1)
             return;
@@ -234,7 +234,7 @@ public sealed class DataCoreBinary
         }
     }
 
-    private static void WriteMetadata(XElement element, int structIndex, int instanceIndex, DataCoreExtractionContext context)
+    private static void WriteMetadata(XElement element, int structIndex, int instanceIndex, DataCoreExtractionContext<XElement> context)
     {
         if (!context.Options.ShouldWriteMetadata)
             return;
