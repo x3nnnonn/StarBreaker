@@ -9,7 +9,7 @@ public class DataForge
 
     public DataForge(Stream stream)
     {
-        DataCore = new DataCoreBinary(stream);
+        DataCore = new DataCoreBinary(new DataCoreDatabase(stream));
     }
 
     public Dictionary<string, DataCoreRecord> GetRecordsByFileName(string? fileNameFilter = null)
@@ -131,10 +131,9 @@ public class DataForge
     private static DataCoreExtractionOptions GetDefaultExtractionOptions() => new()
     {
         ShouldWriteMetadata = false,
-        ShouldWriteEmptyArrays = false,
-        ShouldWriteTypeNames = false,
+        ShouldWriteTypeNames = true,
         ShouldWriteBaseTypeNames = false,
-        ShouldWriteDataTypes = false,
-        ShouldWriteNulls = false
+        ShouldWriteEnumMetadata = false,
+        ShouldSkipEmptyArrays = true
     };
 }
