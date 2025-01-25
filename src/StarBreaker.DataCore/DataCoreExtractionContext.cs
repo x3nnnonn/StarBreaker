@@ -3,12 +3,12 @@ using System.Xml.Linq;
 
 namespace StarBreaker.DataCore;
 
-public sealed class DataCoreExtractionContext
+public sealed class DataCoreExtractionContext<T>
 {
     private readonly Dictionary<(int structIndex, int instanceIndex), int> _weakPointerIds;
     private int _nextWeakPointerId = 0;
 
-    public Dictionary<(int structIndex, int instanceIndex), XElement> Elements { get; }
+    public Dictionary<(int structIndex, int instanceIndex), T> Elements { get; }
 
     public string FileName { get; }
     public DataCoreExtractionOptions Options { get; }
