@@ -3,7 +3,7 @@ using StarBreaker.DataCore;
 
 namespace StarBreaker.DataCoreGenerated;
 
-public static class DataCoreHelper
+internal static class DataCoreHelper
 {
     public static T? ReadFromReference<T>(DataCoreDatabase db, DataCoreReference reference) where T : class, IDataCoreReadable<T>
     {
