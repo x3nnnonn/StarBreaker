@@ -80,14 +80,10 @@ public static class DataCoreSandbox
         var unittest = df.GetRecordsByFileName("*unittesta*").Values.Single();
         var zeroggraph = df.GetRecordsByFileName("*playerzerogtraversalgraph*").Values.Single();
         var another = df.DataCore.Database.GetRecord(new CigGuid("04cd25f7-e0c6-4564-95ae-ecfc998e285f"));
-        var bruh = TypeMap.ReadFromRecord(df.DataCore.Database, tagDatabase.StructIndex, tagDatabase.InstanceIndex);
+        var bruh = df.GetFromRecord(tagDatabase);
 
         var yy = df.DataCore.Database.MainRecords
-            .Select(x =>
-            {
-                var y = df.DataCore.Database.GetRecord(x);
-                return TypeMap.ReadFromRecord(df.DataCore.Database, y.StructIndex, y.InstanceIndex);
-            }).ToList();
+            .Select(x => df.GetFromRecord(x)).ToList();
         timer.LogReset("Extracted all records.");
 
         var zeroGTraversalGraphs = yy.OfType<ZeroGTraversalGraph>().ToList();
