@@ -64,7 +64,7 @@ public class DataCoreExtractCommand : ICommand
             return default;
         }
 
-        var df = new DataForge<XElement>(
+        var df = new DataForge<string>(
             new DataCoreBinaryXml(
                 new DataCoreDatabase(dcbStream)
             )

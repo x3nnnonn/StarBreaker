@@ -19,7 +19,7 @@ public static class Crc32CSandbox
         var p4k = new P4kFileSystem(P4kFile.FromFile(@"C:\Program Files\Roberts Space Industries\StarCitizen\4.0_PREVIEW\Data.p4k"));
         var dcbStream = p4k.OpenRead(@"Data\Game2.dcb");
 
-        var dcb = new DataForge<XElement>(
+        var dcb = new DataForge<string>(
             new DataCoreBinaryXml(
                 new DataCoreDatabase(dcbStream)
             )
