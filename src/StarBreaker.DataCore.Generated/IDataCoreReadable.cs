@@ -1,6 +1,7 @@
 ﻿using StarBreaker.Common;
+using StarBreaker.DataCore;
 
-namespace StarBreaker.DataCore;
+namespace StarBreaker.DataCoreGenerated;
 
 public interface IDataCoreReadable;
 
