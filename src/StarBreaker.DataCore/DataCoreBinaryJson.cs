@@ -65,7 +65,6 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
     {
         var reader = Database.GetReader(structIndex, instanceIndex);
 
-        context.Writer.WriteString("Type_", Database.StructDefinitions[structIndex].GetName(Database));
         context.Writer.WriteString("Pointer_", $"ptr:{structIndex},{instanceIndex}");
 
         WriteStruct(structIndex, ref reader, context);
@@ -73,6 +72,8 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
 
     private void WriteStruct(int structIndex, ref SpanReader reader, Context context)
     {
+        context.Writer.WriteString("Type_", Database.StructDefinitions[structIndex].GetName(Database));
+
         foreach (var prop in Database.GetProperties(structIndex))
         {
             if (prop.ConversionType == ConversionType.Attribute)
@@ -219,7 +220,7 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
         if (Database.MainRecords.Contains(reference.RecordId))
         {
             //if we're referencing a full on file, just add a small mention to it
-            var relativePath = DataCoreUtils.ComputeRelativePath(record.GetFileName(Database), context.Path);
+            var relativePath = Path.ChangeExtension(DataCoreUtils.ComputeRelativePath(record.GetFileName(Database), context.Path), "json");
             if (propName == null)
                 context.Writer.WriteStringValue(relativePath);
             else

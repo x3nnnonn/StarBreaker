@@ -10,10 +10,10 @@ public static class DataCoreSandbox
 {
     public static void Run()
     {
-        ExtractGenerated();
+        //ExtractGenerated();
         //ExtractProblematic();
         //ExtractAll();
-        //WriteJson();
+        ExtractJson();
     }
 
     private static void ExtractProblematic()
