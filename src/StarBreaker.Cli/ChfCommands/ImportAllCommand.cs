@@ -8,10 +8,10 @@ namespace StarBreaker.Cli;
 [Command("chf-import-all", Description = "Imports all non-modded characters exported from the game into our local characters folder.")]
 public class ImportAllCommand : ICommand
 {
-    [CommandOption("output", 'o', Description = "Output folder")]
+    [CommandOption("output", 'o', Description = "Output folder", EnvironmentVariable = "OUTPUT_FOLDER")]
     public required string OutputFolder { get; init; }
 
-    [CommandOption("input", 'i', Description = "Input folder")]
+    [CommandOption("input", 'i', Description = "Input folder", EnvironmentVariable = "INPUT_FOLDER")]
     public required string InputFolder { get; init; }
 
     public async ValueTask ExecuteAsync(IConsole console)

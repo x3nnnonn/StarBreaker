@@ -8,10 +8,10 @@ namespace StarBreaker.Cli;
 [Command("cryxml-convert-all", Description = "Converts all CryXmlB files in a folder to XML files")]
 public sealed class ConvertAllCryXmlBCommand : ICommand
 {
-    [CommandOption("input", 'i', Description = "Input folder")]
+    [CommandOption("input", 'i', Description = "Input folder", EnvironmentVariable = "INPUT_FOLDER")]
     public required string? Input { get; set; }
 
-    [CommandOption("output", 'o', Description = "Output folder")]
+    [CommandOption("output", 'o', Description = "Output folder", EnvironmentVariable = "OUTPUT_FOLDER")]
     public required string? Output { get; set; }
 
     public ValueTask ExecuteAsync(IConsole console)

@@ -8,10 +8,10 @@ namespace StarBreaker.Cli;
 [Command("dds-merge", Description = "Merges multiple DDS files into a single DDS file")]
 public class MergeDdsCommand : ICommand
 {
-    [CommandOption("input", 'i', Description = "Input DDS file. Must be main *.dds file")]
+    [CommandOption("input", 'i', Description = "Input DDS file. Must be main *.dds file", EnvironmentVariable = "INPUT_FILE")]
     public required string Input { get; init; }
 
-    [CommandOption("output", 'o', Description = "Output DDS file")]
+    [CommandOption("output", 'o', Description = "Output DDS file", EnvironmentVariable = "OUTPUT_FILE")]
     public required string Output { get; init; }
 
     public ValueTask ExecuteAsync(IConsole console)

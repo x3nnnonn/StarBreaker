@@ -8,10 +8,10 @@ namespace StarBreaker.Cli;
 [Command("chf-import-watch", Description = "Watch for new characters in the Star Citizen folder and import them.")]
 public class WatchImportCommand : ICommand
 {
-    [CommandOption("input", 'i', Description = "Input folder")]
+    [CommandOption("input", 'i', Description = "Input folder", EnvironmentVariable = "INPUT_FOLDER")]
     public required string InputFolder { get; init; }
     
-    [CommandOption("output", 'o', Description = "Output folder")]
+    [CommandOption("output", 'o', Description = "Output folder", EnvironmentVariable = "OUTPUT_FOLDER")]
     public required string OutputFolder { get; init; }
     
     public async ValueTask ExecuteAsync(IConsole console)

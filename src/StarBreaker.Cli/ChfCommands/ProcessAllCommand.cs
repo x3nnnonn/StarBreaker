@@ -9,7 +9,7 @@ namespace StarBreaker.Cli;
 [Command("chf-process-all", Description = "Processes all characters in the given folder.")]
 public class ProcessAllCommand : ICommand
 {
-    [CommandOption("input", 'i', Description = "Input Folder to process.")]
+    [CommandOption("input", 'i', Description = "Input Folder to process.", EnvironmentVariable = "INPUT_FOLDER")]
     public required string InputFolder { get; init; }
 
     public async ValueTask ExecuteAsync(IConsole console)

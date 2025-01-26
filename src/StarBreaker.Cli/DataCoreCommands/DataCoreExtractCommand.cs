@@ -12,23 +12,26 @@ namespace StarBreaker.Cli;
 [Command("dcb-extract", Description = "Extracts a DataCore binary file into separate xml files")]
 public class DataCoreExtractCommand : ICommand
 {
-    [CommandOption("p4k", 'p', Description = "Path to the Data.p4k")]
+    [CommandOption("p4k", 'p', Description = "Path to the Data.p4k", EnvironmentVariable = "INPUT_P4K")]
     public string? P4kFile { get; init; }
 
-    [CommandOption("dcb", 'd', Description = "Path to the Game.dcb")]
+    [CommandOption("dcb", 'd', Description = "Path to the Game.dcb", EnvironmentVariable = "INPUT_DCB")]
     public string? DcbFile { get; init; }
 
-    [CommandOption("output", 'o', Description = "Path to the output directory")]
+    [CommandOption("output", 'o', Description = "Path to the output directory", EnvironmentVariable = "OUTPUT_FOLDER")]
     public required string OutputDirectory { get; init; }
 
-    [CommandOption("filter", 'f', Description = "Pattern to filter entries")]
+    [CommandOption("filter", 'f', Description = "Pattern to filter entries", EnvironmentVariable = "FILTER")]
     public string? Filter { get; init; }
+    
+    [CommandOption("text-format", 't', Description = "Output text format", EnvironmentVariable = "TEXT_FORMAT")]
+    public string? TextFormat { get; init; }
 
     public ValueTask ExecuteAsync(IConsole console)
     {
         if (P4kFile == null && DcbFile == null)
         {
-            console.Output.WriteLine("P4k and DCB files are required.");
+            console.Output.WriteLine("P4k or DCB files are required.");
             return default;
         }
 
@@ -63,15 +66,15 @@ public class DataCoreExtractCommand : ICommand
             console.Output.WriteLine("DataCore not found.");
             return default;
         }
-
-        var df = new DataForge<string>(
-            new DataCoreBinaryXml(
-                new DataCoreDatabase(dcbStream)
-            )
-        );
+        
+        var df = TextFormat switch
+        {   
+            "json" => DataForge.FromDcbStreamJson(dcbStream),
+            _ => DataForge.FromDcbStreamXml(dcbStream),
+        };
 
         console.Output.WriteLine("DataCore loaded.");
-        console.Output.WriteLine("Exporting...");
+        console.Output.WriteLine($"Exporting as {TextFormat ?? "xml"} to {OutputDirectory}...");
 
         var sw = Stopwatch.StartNew();
         df.ExtractAllParallel(OutputDirectory, Filter, new ProgressBar(console));

@@ -8,10 +8,10 @@ namespace StarBreaker.Cli;
 [Command("chf-export-all", Description = "Exports all modded characters into the Star Citizen folder.")]
 public class ExportAllCommand : ICommand
 {
-    [CommandOption("input", 'i', Description = "Input folder")]
+    [CommandOption("input", 'i', Description = "Input folder", EnvironmentVariable = "INPUT_FOLDER")]
     public required string InputFolder { get; init; }
 
-    [CommandOption("output", 'o', Description = "Output folder")]
+    [CommandOption("output", 'o', Description = "Output folder", EnvironmentVariable = "OUTPUT_FOLDER")]
     public required string OutputFolder { get; init; }
 
     public async ValueTask ExecuteAsync(IConsole console)
