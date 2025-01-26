@@ -30,14 +30,14 @@ public class DataForge<T>
         return structsPerFileName;
     }
 
-    public T GetFromRecord(DataCoreRecord record, DataCoreExtractionOptions? options = null)
+    public T GetFromRecord(DataCoreRecord record)
     {
-        return DataCore.GetFromMainRecord(record, options ?? GetDefaultExtractionOptions());
+        return DataCore.GetFromMainRecord(record);
     }
 
-    public T GetFromRecord(CigGuid recordGuid, DataCoreExtractionOptions? options = null)
+    public T GetFromRecord(CigGuid recordGuid)
     {
-        return DataCore.GetFromMainRecord(DataCore.Database.GetRecord(recordGuid), options ?? GetDefaultExtractionOptions());
+        return DataCore.GetFromMainRecord(DataCore.Database.GetRecord(recordGuid));
     }
 
     public Dictionary<string, string[]> ExportEnums()
@@ -58,13 +58,12 @@ public class DataForge<T>
         return result;
     }
 
-    public void ExtractAll(string outputFolder, string? fileNameFilter = null, IProgress<double>? progress = null, DataCoreExtractionOptions? options = null)
+    public void ExtractAll(string outputFolder, string? fileNameFilter = null, IProgress<double>? progress = null)
     {
         var progressValue = 0;
         var recordsByFileName = GetRecordsByFileName(fileNameFilter);
         var total = recordsByFileName.Count;
 
-        var options1 = options ?? GetDefaultExtractionOptions();
         
         foreach (var (fileName, record) in recordsByFileName)
         {
@@ -72,7 +71,7 @@ public class DataForge<T>
 
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
 
-            DataCore.SaveToFile(record, options1, filePath);
+            DataCore.SaveToFile(record, filePath);
 
             var currentProgress = Interlocked.Increment(ref progressValue);
             //only report progress every 250 records and when we are done
@@ -83,13 +82,12 @@ public class DataForge<T>
         progress?.Report(1);
     }
 
-    public void ExtractAllParallel(string outputFolder, string? fileNameFilter = null, IProgress<double>? progress = null, DataCoreExtractionOptions? options = null)
+    public void ExtractAllParallel(string outputFolder, string? fileNameFilter = null, IProgress<double>? progress = null)
     {
         var progressValue = 0;
         var recordsByFileName = GetRecordsByFileName(fileNameFilter);
         var total = recordsByFileName.Count;
 
-        var options1 = options ?? GetDefaultExtractionOptions();
         
         Parallel.ForEach(recordsByFileName, kvp =>
         {
@@ -98,7 +96,7 @@ public class DataForge<T>
 
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
 
-            DataCore.SaveToFile(record, options1, filePath);
+            DataCore.SaveToFile(record, filePath);
 
             var currentProgress = Interlocked.Increment(ref progressValue);
             //only report progress every 250 records and when we are done
@@ -109,19 +107,18 @@ public class DataForge<T>
         progress?.Report(1);
     }
 
-    public void ExtractUnp4k(string outputFileName, IProgress<double>? progress = null, DataCoreExtractionOptions? options = null)
+    public void ExtractUnp4k(string outputFileName, IProgress<double>? progress = null)
     {
         var progressValue = 0;
         var total = DataCore.Database.MainRecords.Count;
 
         var doc = new XDocument(new XElement("DataCore"));
         
-        var options1 = options ?? GetDefaultExtractionOptions();
 
         foreach (var recordId in DataCore.Database.MainRecords)
         {
             var record = DataCore.Database.GetRecord(recordId);
-            var node = DataCore.GetFromMainRecord(record, options1);
+            var node = DataCore.GetFromMainRecord(record);
 
             doc.Root?.Add(node);
 
@@ -133,13 +130,4 @@ public class DataForge<T>
 
         doc.Save(outputFileName);
     }
-
-    private static DataCoreExtractionOptions GetDefaultExtractionOptions() => new()
-    {
-        ShouldWriteMetadata = false,
-        ShouldWriteTypeNames = false,
-        ShouldWriteBaseTypeNames = false,
-        ShouldWriteEnumMetadata = false,
-        ShouldSkipEmptyArrays = false
-    };
 }

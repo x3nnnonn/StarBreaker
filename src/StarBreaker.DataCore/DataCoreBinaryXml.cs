@@ -17,7 +17,7 @@ public sealed class DataCoreBinaryXml : IDataCoreBinary<string>
         Database = db;
     }
 
-    public void SaveToFile(DataCoreRecord record, DataCoreExtractionOptions options, string path)
+    public void SaveToFile(DataCoreRecord record, string path)
     {
         using var fileStream = new FileStream(Path.ChangeExtension(path, "xml"), FileMode.Create);
         using var writer = XmlWriter.Create(fileStream, new XmlWriterSettings
@@ -25,7 +25,7 @@ public sealed class DataCoreBinaryXml : IDataCoreBinary<string>
             Indent = true
         });
 
-        var context = new Context(record.GetFileName(Database), options, writer);
+        var context = new Context(record.GetFileName(Database), writer);
 
         writer.WriteStartElement(XmlConvert.EncodeName(record.GetName(Database)));
         context.Writer.WriteAttributeString("RecordId", record.Id.ToString());
@@ -37,7 +37,7 @@ public sealed class DataCoreBinaryXml : IDataCoreBinary<string>
         context.Writer.Flush();
     }
 
-    public string GetFromMainRecord(DataCoreRecord record, DataCoreExtractionOptions options)
+    public string GetFromMainRecord(DataCoreRecord record)
     {
         if (!Database.MainRecords.Contains(record.Id))
             throw new InvalidOperationException("Can only extract main records");
@@ -48,7 +48,7 @@ public sealed class DataCoreBinaryXml : IDataCoreBinary<string>
             Indent = true
         });
 
-        var context = new Context(record.GetFileName(Database), options, writer);
+        var context = new Context(record.GetFileName(Database), writer);
 
         writer.WriteStartElement(XmlConvert.EncodeName(record.GetName(Database)));
         writer.WriteAttributeString("RecordId", record.Id.ToString());
@@ -256,14 +256,11 @@ public sealed class DataCoreBinaryXml : IDataCoreBinary<string>
     private sealed class Context
     {
         public string Path { get; }
-        public DataCoreExtractionOptions Options { get; }
-
         public XmlWriter Writer { get; }
 
-        public Context(string path, DataCoreExtractionOptions options, XmlWriter writer)
+        public Context(string path, XmlWriter writer)
         {
             Path = path;
-            Options = options;
             Writer = writer;
         }
     }

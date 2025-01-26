@@ -163,7 +163,7 @@ public sealed class DataCoreBinaryObjects : IDataCoreBinary<IDataCoreObject>
         return GetFromInstance(name, record.StructIndex, record.InstanceIndex, context, overrideName);
     }
 
-    public IDataCoreObject GetFromMainRecord(DataCoreRecord record, DataCoreExtractionOptions options)
+    public IDataCoreObject GetFromMainRecord(DataCoreRecord record)
     {
         if (!Database.MainRecords.Contains(record.Id))
             throw new InvalidOperationException("Can only extract main records");
@@ -174,7 +174,7 @@ public sealed class DataCoreBinaryObjects : IDataCoreBinary<IDataCoreObject>
             .Replace("/", "_")
             .Replace("&", "_");
 
-        var context = new Context(record.GetFileName(Database), options);
+        var context = new Context(record.GetFileName(Database));
 
         var element = GetFromInstance(recordName, record.StructIndex, record.InstanceIndex, context);
 
@@ -189,7 +189,7 @@ public sealed class DataCoreBinaryObjects : IDataCoreBinary<IDataCoreObject>
         return element;
     }
 
-    public void SaveToFile(DataCoreRecord record, DataCoreExtractionOptions options, string path)
+    public void SaveToFile(DataCoreRecord record, string path)
     {
         throw new NotImplementedException();
     }
@@ -248,13 +248,10 @@ public sealed class DataCoreBinaryObjects : IDataCoreBinary<IDataCoreObject>
         public Dictionary<(int structIndex, int instanceIndex), IDataCoreObject> Elements { get; }
 
         public string FileName { get; }
-        public DataCoreExtractionOptions Options { get; }
 
-        public Context(string fileName, DataCoreExtractionOptions options)
+        public Context(string fileName)
         {
             FileName = fileName;
-            Options = options;
-
             Elements = [];
             _weakPointerIds = [];
         }
