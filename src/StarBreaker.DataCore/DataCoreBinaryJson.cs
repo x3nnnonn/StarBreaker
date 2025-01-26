@@ -25,12 +25,10 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
         var context = new Context(record.GetFileName(Database), writer, options);
 
         context.Writer.WriteStartObject();
-        context.Writer.WriteString("__Name", record.GetName(Database));
-        context.Writer.WriteString("__RecordId", record.Id.ToString());
+        context.Writer.WriteString("RecordName_", record.GetName(Database));
+        context.Writer.WriteString("RecordId_", record.Id.ToString());
 
-        //context.Writer.WriteStartObject("__Record");
         WriteInstance(record.StructIndex, record.InstanceIndex, context);
-        //context.Writer.WriteEndObject();
 
         context.Writer.WriteEndObject();
 
@@ -51,8 +49,8 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
         var context = new Context(record.GetFileName(Database), writer, options);
 
         writer.WriteStartObject();
-        writer.WriteString("__Name", record.GetName(Database));
-        writer.WriteString("__RecordId", record.Id.ToString());
+        writer.WriteString("RecordName_", record.GetName(Database));
+        writer.WriteString("RecordId_", record.Id.ToString());
 
         WriteInstance(record.StructIndex, record.InstanceIndex, context);
 
@@ -67,8 +65,8 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
     {
         var reader = Database.GetReader(structIndex, instanceIndex);
 
-        context.Writer.WriteString("__Type", Database.StructDefinitions[structIndex].GetName(Database));
-        context.Writer.WriteString("__Pointer", $"__ptr:{structIndex},{instanceIndex}");
+        context.Writer.WriteString("Type_", Database.StructDefinitions[structIndex].GetName(Database));
+        context.Writer.WriteString("Pointer_", $"ptr:{structIndex},{instanceIndex}");
 
         WriteStruct(structIndex, ref reader, context);
     }
@@ -93,15 +91,9 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
             case DataType.Reference:
                 var reference = reader.Read<DataCoreReference>();
                 if (reference.RecordId == CigGuid.Empty || reference.InstanceIndex == -1)
-                {
                     context.Writer.WriteNull(propName);
-                }
                 else
-                {
-                    context.Writer.WriteStartObject(propName);
-                    WriteFromReference(reference, context);
-                    context.Writer.WriteEndObject();
-                }
+                    WriteFromReference(reference, context, propName);
 
                 break;
             case DataType.WeakPointer:
@@ -109,7 +101,7 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
                 if (weakPointer.StructIndex == -1 || weakPointer.InstanceIndex == -1)
                     context.Writer.WriteNull(propName);
                 else
-                    context.Writer.WriteString(propName, $"__ptr:{weakPointer.StructIndex},{weakPointer.InstanceIndex}");
+                    context.Writer.WriteString(propName, $"ptr:{weakPointer.StructIndex},{weakPointer.InstanceIndex}");
 
                 break;
             case DataType.StrongPointer:
@@ -121,7 +113,7 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
                 else
                 {
                     context.Writer.WriteStartObject(propName);
-                    WriteFromStrongPointer(strongPointer, context);
+                    WriteInstance(strongPointer.StructIndex, strongPointer.InstanceIndex, context);
                     context.Writer.WriteEndObject();
                 }
 
@@ -166,27 +158,17 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
                 case DataType.Reference:
                     var reference = Database.ReferenceValues[i];
                     if (reference.RecordId == CigGuid.Empty || reference.InstanceIndex == -1)
-                    {
                         context.Writer.WriteNullValue();
-                    }
                     else
-                    {
-                        context.Writer.WriteStartObject();
-                        WriteFromReference(Database.ReferenceValues[i], context);
-                        context.Writer.WriteEndObject();
-                    }
+                        WriteFromReference(Database.ReferenceValues[i], context, null);
 
                     break;
                 case DataType.WeakPointer:
                     var weakPointer = Database.WeakValues[i];
                     if (weakPointer.StructIndex == -1 || weakPointer.InstanceIndex == -1)
-                    {
                         context.Writer.WriteNullValue();
-                    }
                     else
-                    {
-                        context.Writer.WriteStringValue($"__ptr:{weakPointer.StructIndex},{weakPointer.InstanceIndex}");
-                    }
+                        context.Writer.WriteStringValue($"ptr:{weakPointer.StructIndex},{weakPointer.InstanceIndex}");
 
                     break;
                 case DataType.StrongPointer:
@@ -198,7 +180,7 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
                     else
                     {
                         context.Writer.WriteStartObject();
-                        WriteFromStrongPointer(Database.StrongValues[i], context);
+                        WriteInstance(strongPointer.StructIndex, strongPointer.InstanceIndex, context);
                         context.Writer.WriteEndObject();
                     }
 
@@ -230,22 +212,29 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
         context.Writer.WriteEndArray();
     }
 
-    private void WriteFromStrongPointer(DataCorePointer pointer, Context context) => WriteInstance(pointer.StructIndex, pointer.InstanceIndex, context);
-
-    private void WriteFromReference(DataCoreReference reference, Context context)
+    private void WriteFromReference(DataCoreReference reference, Context context, string? propName)
     {
         var record = Database.GetRecord(reference.RecordId);
 
         if (Database.MainRecords.Contains(reference.RecordId))
         {
             //if we're referencing a full on file, just add a small mention to it
-            context.Writer.WriteString("RecordId", record.Id.ToString());
-            context.Writer.WriteString("Type", Database.StructDefinitions[record.StructIndex].GetName(Database));
-            context.Writer.WriteString("File", Path.ChangeExtension(DataCoreUtils.ComputeRelativePath(record.GetFileName(Database), context.Path), "json"));
+            var relativePath = DataCoreUtils.ComputeRelativePath(record.GetFileName(Database), context.Path);
+            if (propName == null)
+                context.Writer.WriteStringValue(relativePath);
+            else
+                context.Writer.WriteString(propName, relativePath);
+            
             return;
         }
 
+        if (propName != null)
+            context.Writer.WriteStartObject(propName);
+        else
+            context.Writer.WriteStartObject();
+        
         WriteInstance(record.StructIndex, record.InstanceIndex, context);
+        context.Writer.WriteEndObject();
     }
 
     private sealed class Context

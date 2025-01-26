@@ -15,8 +15,8 @@ public static class DataCoreSandbox
 
         //ExtractUnp4k();
         //ExtractProblematic();
-        ExtractAll();
-        //WriteJson();
+        //ExtractAll();
+        WriteJson();
     }
 
     private static void GenerateTypes()
