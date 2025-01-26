@@ -13,7 +13,6 @@ public static class DataCoreSandbox
         //GenerateTypes();
         //ExtractGenerated();
 
-        //ExtractUnp4k();
         //ExtractProblematic();
         //ExtractAll();
         WriteJson();
@@ -28,21 +27,6 @@ public static class DataCoreSandbox
         dcr.Generate(@"C:\Development\StarCitizen\StarBreaker\src\StarBreaker.DataCore.Generated\Generated");
 
         timer.LogReset("Generate");
-    }
-
-    private static void ExtractUnp4k()
-    {
-        var timer = new TimeLogger();
-        var dcb = new DataForge<string>(
-            new DataCoreBinaryXml(
-                new DataCoreDatabase(
-                    new MemoryStream(File.ReadAllBytes(@"D:\StarCitizen\P4k\Data\Game2.dcb"))
-                )
-            )
-        );
-        timer.LogReset("Loaded DataForge");
-        dcb.ExtractUnp4k(@"D:\unp4k\Unpak.xml");
-        timer.LogReset("Extracted all records.");
     }
 
     private static void ExtractAll()

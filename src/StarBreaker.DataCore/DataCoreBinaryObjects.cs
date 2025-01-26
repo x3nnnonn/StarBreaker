@@ -3,6 +3,10 @@ using StarBreaker.Common;
 
 namespace StarBreaker.DataCore;
 
+//TODO: can we just use Dictionary<string, Something> instead of IDataCoreObject?
+// honestly I'd rather just delete this crap and use the type-genned things. 
+// The point of this was to make it easier to write code around after all.
+// for text (diffs), we just use the other exporters for json and xml
 public sealed class DataCoreBinaryObjects : IDataCoreBinary<IDataCoreObject>
 {
     public DataCoreDatabase Database { get; }

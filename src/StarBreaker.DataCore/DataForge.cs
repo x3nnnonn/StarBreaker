@@ -106,28 +106,4 @@ public class DataForge<T>
 
         progress?.Report(1);
     }
-
-    public void ExtractUnp4k(string outputFileName, IProgress<double>? progress = null)
-    {
-        var progressValue = 0;
-        var total = DataCore.Database.MainRecords.Count;
-
-        var doc = new XDocument(new XElement("DataCore"));
-        
-
-        foreach (var recordId in DataCore.Database.MainRecords)
-        {
-            var record = DataCore.Database.GetRecord(recordId);
-            var node = DataCore.GetFromMainRecord(record);
-
-            doc.Root?.Add(node);
-
-            var currentProgress = Interlocked.Increment(ref progressValue);
-            //only report progress every 250 records and when we are done
-            if (currentProgress == total || currentProgress % 250 == 0)
-                progress?.Report(currentProgress / (double)total);
-        }
-
-        doc.Save(outputFileName);
-    }
 }
