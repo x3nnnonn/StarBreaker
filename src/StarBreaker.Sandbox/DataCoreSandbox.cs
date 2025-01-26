@@ -16,36 +16,13 @@ public static class DataCoreSandbox
         //WriteJson();
     }
 
-    private static void ExtractAll()
-    {
-        var timer = new TimeLogger();
-        var dcb = DataForge.FromDcbXml(@"D:\StarCitizen\P4k\Data\Game2.dcb");
-        timer.LogReset("Loaded DataForge");
-        Directory.CreateDirectory(@"D:\StarCitizen\DataCore\Sandbox");
-#if DEBUG
-        dcb.ExtractAll(@"D:\StarCitizen\DataCore\Sandbox");
-#else
-        dcb.ExtractAllParallel(@"D:\StarCitizen\DataCore\Sandbox");
-#endif
-        timer.LogReset("Extracted all records.");
-    }
-
     private static void ExtractProblematic()
     {
         var timer = new TimeLogger();
 
         var dcb = DataForge.FromDcbXml(@"D:\StarCitizen\P4k\Data\Game2.dcb");
         timer.LogReset("Loaded DataForge");
-
-        var yy = dcb.DataCore.Database.MainRecords
-            .AsParallel()
-            .Select(x => dcb.GetFromRecord(x)).ToArray();
-
-        timer.LogReset("Extracted all records.");
-
-        return;
-        Directory.CreateDirectory(@"D:\StarCitizen\DataCore\Sandbox");
-
+        
         var megaMap = dcb.GetRecordsByFileName("*megamap.pu*").Values.Single();
         var tagDatabase = dcb.GetRecordsByFileName("*TagDatabase*").Values.Single();
         var broker = dcb.GetRecordsByFileName("*missionbroker.pu*").Values.Single();
@@ -70,28 +47,36 @@ public static class DataCoreSandbox
         var p4k = new P4kFileSystem(P4kFile.FromFile(@"C:\Program Files\Roberts Space Industries\StarCitizen\PTU\Data.p4k"));
         var dcbStream = p4k.OpenRead(@"Data\Game2.dcb");
 
-        var df = new DataForge<IDataCoreReadable>(new DataCoreBinaryGenerated(new DataCoreDatabase(dcbStream)));
+        var df = new DataForge<DataCoreTypedRecord>(new DataCoreBinaryGenerated(new DataCoreDatabase(dcbStream)));
         
         timer.LogReset("Loaded DataForge");
 
-        var megaMap = df.GetRecordsByFileName("*megamap.pu*").Values.Single();
-        var tagDatabase = df.GetRecordsByFileName("*TagDatabase*").Values.Single();
-        var broker = df.GetRecordsByFileName("*missionbroker.pu*").Values.Single();
-        var unittest = df.GetRecordsByFileName("*unittesta*").Values.Single();
-        var zeroggraph = df.GetRecordsByFileName("*playerzerogtraversalgraph*").Values.Single();
-        var another = df.DataCore.Database.GetRecord(new CigGuid("04cd25f7-e0c6-4564-95ae-ecfc998e285f"));
-        var bruh = df.GetFromRecord(tagDatabase);
-
-        var yy = df.DataCore.Database.MainRecords
+        var allRecords = df.DataCore.Database.MainRecords
+            .AsParallel()
             .Select(x => df.GetFromRecord(x)).ToList();
         timer.LogReset("Extracted all records.");
 
-        var zeroGTraversalGraphs = yy.OfType<ZeroGTraversalGraph>().ToList();
-
+        var classDefinitions = allRecords.Where(r => r.Data is EntityClassDefinition).Select(r => r.Data as EntityClassDefinition).ToList();
+        //var spaceships = classDefinitions.Where(x => x.Data.tags.Any(t => t?.tagName == "Ship")).ToList();
+        
         Console.WriteLine();
     }
+    
+    private static void ExtractXml()
+    {
+        var timer = new TimeLogger();
+        var dcb = DataForge.FromDcbXml(@"D:\StarCitizen\P4k\Data\Game2.dcb");
+        timer.LogReset("Loaded DataForge");
+        Directory.CreateDirectory(@"D:\StarCitizen\DataCore\Sandbox");
+#if DEBUG
+        dcb.ExtractAll(@"D:\StarCitizen\DataCore\Sandbox");
+#else
+        dcb.ExtractAllParallel(@"D:\StarCitizen\DataCore\Sandbox");
+#endif
+        timer.LogReset("Extracted all records.");
+    }
 
-    private static void WriteJson()
+    private static void ExtractJson()
     {
         var timer = new TimeLogger();
         var dcb = DataForge.FromDcbJson(@"D:\StarCitizen\P4k\Data\Game2.dcb");
