@@ -4,6 +4,24 @@ using StarBreaker.Common;
 
 namespace StarBreaker.DataCore;
 
+public static class DataForge
+{
+    public static DataForge<string> FromDcbJson(string path)
+    {
+        return new DataForge<string>(new DataCoreBinaryJson(new DataCoreDatabase(File.OpenRead(path))));
+    }
+    
+    public static DataForge<string> FromDcbXml(string path)
+    {
+        return new DataForge<string>(new DataCoreBinaryXml(new DataCoreDatabase(File.OpenRead(path))));
+    }
+    
+    public static DataForge<IDataCoreObject> FromDcbObjects(string path)
+    {
+        return new DataForge<IDataCoreObject>(new DataCoreBinaryObjects(new DataCoreDatabase(File.OpenRead(path))));
+    }
+}
+
 public class DataForge<T>
 {
     public IDataCoreBinary<T> DataCore { get;  }

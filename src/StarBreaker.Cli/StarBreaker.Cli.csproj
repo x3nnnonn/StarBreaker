@@ -10,6 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="..\StarBreaker.Chf\StarBreaker.Chf.csproj" />
     <ProjectReference Include="..\StarBreaker.CryChunkFile\StarBreaker.CryChunkFile.csproj" />
+    <ProjectReference Include="..\StarBreaker.DataCore.TypeGenerator\StarBreaker.DataCore.TypeGenerator.csproj" />
     <ProjectReference Include="..\StarBreaker.DataCore\StarBreaker.DataCore.csproj" />
     <ProjectReference Include="..\StarBreaker.Dds\StarBreaker.Dds.csproj" />
     <ProjectReference Include="..\StarBreaker.P4k\StarBreaker.P4k.csproj" />

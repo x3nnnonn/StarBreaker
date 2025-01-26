@@ -1,12 +1,12 @@
 ﻿using System.Text;
 
-namespace StarBreaker.DataCore;
+namespace StarBreaker.DataCore.TypeGenerator;
 
-public class DataCoreCodeGenerator
+public class DataCoreTypeGenerator
 {
     private readonly DataCoreDatabase Database;
 
-    public DataCoreCodeGenerator(DataCoreDatabase database)
+    public DataCoreTypeGenerator(DataCoreDatabase database)
     {
         Database = database;
     }
@@ -256,16 +256,14 @@ public class DataCoreCodeGenerator
     private void WriteSpecialConstructor(StringBuilder sb, DataCoreStructDefinition structDefinition, int structIndex)
     {
         if (structDefinition.ParentTypeIndex != -1)
-            sb.AppendLine($"    public new static {structDefinition.GetName(Database)} Read(DataCoreDatabase db, DataCoreStructDefinition structDefinition, ref SpanReader reader)");
+            sb.AppendLine($"    public new static {structDefinition.GetName(Database)} Read(DataCoreDatabase db, ref SpanReader reader)");
         else
-            sb.AppendLine($"    public static {structDefinition.GetName(Database)} Read(DataCoreDatabase db, DataCoreStructDefinition structDefinition, ref SpanReader reader)");
+            sb.AppendLine($"    public static {structDefinition.GetName(Database)} Read(DataCoreDatabase db, ref SpanReader reader)");
 
         var allprops = Database.GetProperties(structIndex).AsSpan();
 
         //for now we ignore parent types
         sb.AppendLine("    {");
-        sb.AppendLine($"        return new {structDefinition.GetName(Database)}");
-        sb.AppendLine("        {");
 
         foreach (var property in allprops)
         {
@@ -274,6 +272,17 @@ public class DataCoreCodeGenerator
             else
                 WriteArrayRead(sb, property);
         }
+
+        sb.AppendLine();
+        sb.AppendLine($"        return new {structDefinition.GetName(Database)}");
+        sb.AppendLine("        {");
+
+        foreach (var property in allprops)
+        {
+            var name = property.GetName(Database);
+            sb.AppendLine($"            @{name} = _{name},");
+        }
+
 
         sb.AppendLine("        };");
 
@@ -288,28 +297,41 @@ public class DataCoreCodeGenerator
         switch (property.DataType)
         {
             case DataType.Class:
-                sb.AppendLine($"            @{name} = {propertyType}.Read(db, structDefinition, ref reader),");
+                sb.AppendLine($"        var _{name} = {propertyType}.Read(db, ref reader);");
                 break;
             case DataType.EnumChoice:
-            {
                 var enumName = Database.EnumDefinitions[property.StructIndex].GetName(Database);
-                sb.AppendLine($"            @{name} = DataCoreHelper.EnumParse<{enumName}>(reader.Read<DataCoreStringId>().ToString(db), {enumName}.__Unknown),");
+                sb.AppendLine($"        var _{name} = DataCoreHelper.EnumParse<{enumName}>(reader.Read<DataCoreStringId>().ToString(db), {enumName}.__Unknown);");
                 break;
-            }
             case DataType.Reference:
-                sb.AppendLine($"            @{name} = DataCoreHelper.ReadFromReference<{propertyType}>(db, reader.Read<DataCoreReference>()),");
+                sb.AppendLine($"        var _{name} = DataCoreHelper.ReadFromReference<{propertyType}>(db, reader.Read<DataCoreReference>());");
                 break;
             case DataType.StrongPointer:
-                sb.AppendLine($"            @{name} = DataCoreHelper.ReadFromPointer<{propertyType}>(db, reader.Read<DataCorePointer>()),");
+                sb.AppendLine($"        var _{name} = DataCoreHelper.ReadFromPointer<{propertyType}>(db, reader.Read<DataCorePointer>());");
                 break;
             case DataType.WeakPointer:
                 //do as default. we probably should handle this, it's actually feasible now :D
-                sb.AppendLine($"            @{name} = reader.Read<{propertyType}>(),");
+                sb.AppendLine($"        var _{name} = reader.Read<{propertyType}>();");
+                break;
+            case DataType.Guid:
+            case DataType.Locale:
+            case DataType.Double:
+            case DataType.Single:
+            case DataType.String:
+            case DataType.UInt64:
+            case DataType.UInt32:
+            case DataType.UInt16:
+            case DataType.Byte:
+            case DataType.Int64:
+            case DataType.Int32:
+            case DataType.Int16:
+            case DataType.SByte:
+            case DataType.Boolean:
+                //this one should be fine for everything else.
+                sb.AppendLine($"        var _{name} = reader.Read<{propertyType}>();");
                 break;
             default:
-                //this one should be fine for everything else.
-                sb.AppendLine($"            @{name} = reader.Read<{propertyType}>(),");
-                break;
+                throw new ArgumentOutOfRangeException();
         }
     }
 
@@ -321,68 +343,64 @@ public class DataCoreCodeGenerator
         switch (property.DataType)
         {
             case DataType.Reference:
-                sb.AppendLine($"            @{name} = DataCoreHelper.ReadReferenceArray<{propertyType}>(db, ref reader),");
+                sb.AppendLine($"        var _{name} = DataCoreHelper.ReadReferenceArray<{propertyType}>(db, ref reader);");
                 break;
             case DataType.StrongPointer:
-                sb.AppendLine($"            @{name} = DataCoreHelper.ReadStrongPointerArray<{propertyType}>(db, ref reader),");
+                sb.AppendLine($"        var _{name} = DataCoreHelper.ReadStrongPointerArray<{propertyType}>(db, ref reader);");
                 break;
             case DataType.WeakPointer:
-                sb.AppendLine($"            @{name} = DataCoreHelper.ReadWeakPointerArray<{propertyType}>(db, ref reader),");
+                sb.AppendLine($"        var _{name} = DataCoreHelper.ReadWeakPointerArray<{propertyType}>(db, ref reader);");
                 break;
             case DataType.Class:
-                sb.AppendLine($"            @{name} = DataCoreHelper.ReadClassArray<{propertyType}>(db, ref reader, {property.StructIndex}),");
+                sb.AppendLine($"        var _{name} = DataCoreHelper.ReadClassArray<{propertyType}>(db, ref reader, {property.StructIndex});");
                 break;
             case DataType.Boolean:
-                sb.AppendLine($"            @{name} = DataCoreHelper.ReadBoolArray(db, ref reader),");
+                sb.AppendLine($"        var _{name} = DataCoreHelper.ReadBoolArray(db, ref reader);");
                 break;
             case DataType.Byte:
-                sb.AppendLine($"            @{name} = DataCoreHelper.ReadByteArray(db, ref reader),");
+                sb.AppendLine($"        var _{name} = DataCoreHelper.ReadByteArray(db, ref reader);");
                 break;
             case DataType.SByte:
-                sb.AppendLine($"            @{name} = DataCoreHelper.ReadSByteArray(db, ref reader),");
+                sb.AppendLine($"        var _{name} = DataCoreHelper.ReadSByteArray(db, ref reader);");
                 break;
             case DataType.Int16:
-                sb.AppendLine($"            @{name} = DataCoreHelper.ReadInt16Array(db, ref reader),");
+                sb.AppendLine($"        var _{name} = DataCoreHelper.ReadInt16Array(db, ref reader);");
                 break;
             case DataType.UInt16:
-                sb.AppendLine($"            @{name} = DataCoreHelper.ReadUInt16Array(db, ref reader),");
+                sb.AppendLine($"        var _{name} = DataCoreHelper.ReadUInt16Array(db, ref reader);");
                 break;
             case DataType.Int32:
-                sb.AppendLine($"            @{name} = DataCoreHelper.ReadInt32Array(db, ref reader),");
+                sb.AppendLine($"        var _{name} = DataCoreHelper.ReadInt32Array(db, ref reader);");
                 break;
             case DataType.UInt32:
-                sb.AppendLine($"            @{name} = DataCoreHelper.ReadUInt32Array(db, ref reader),");
+                sb.AppendLine($"        var _{name} = DataCoreHelper.ReadUInt32Array(db, ref reader);");
                 break;
             case DataType.Int64:
-                sb.AppendLine($"            @{name} = DataCoreHelper.ReadInt64Array(db, ref reader),");
+                sb.AppendLine($"        var _{name} = DataCoreHelper.ReadInt64Array(db, ref reader);");
                 break;
             case DataType.UInt64:
-                sb.AppendLine($"            @{name} = DataCoreHelper.ReadUInt64Array(db, ref reader),");
+                sb.AppendLine($"        var _{name} = DataCoreHelper.ReadUInt64Array(db, ref reader);");
                 break;
             case DataType.Single:
-                sb.AppendLine($"            @{name} = DataCoreHelper.ReadSingleArray(db, ref reader),");
+                sb.AppendLine($"        var _{name} = DataCoreHelper.ReadSingleArray(db, ref reader);");
                 break;
             case DataType.Double:
-                sb.AppendLine($"            @{name} = DataCoreHelper.ReadDoubleArray(db, ref reader),");
+                sb.AppendLine($"        var _{name} = DataCoreHelper.ReadDoubleArray(db, ref reader);");
                 break;
             case DataType.Guid:
-                sb.AppendLine($"            @{name} = DataCoreHelper.ReadGuidArray(db, ref reader),");
+                sb.AppendLine($"        var _{name} = DataCoreHelper.ReadGuidArray(db, ref reader);");
                 break;
             case DataType.Locale:
-                sb.AppendLine($"            @{name} = DataCoreHelper.ReadLocaleArray(db, ref reader),");
+                sb.AppendLine($"        var _{name} = DataCoreHelper.ReadLocaleArray(db, ref reader);");
                 break;
             case DataType.String:
-                sb.AppendLine($"            @{name} = DataCoreHelper.ReadStringArray(db, ref reader),");
+                sb.AppendLine($"        var _{name} = DataCoreHelper.ReadStringArray(db, ref reader);");
                 break;
             case DataType.EnumChoice:
-            {
-                var enumName = Database.EnumDefinitions[property.StructIndex].GetName(Database);
-                sb.AppendLine($"            @{name} = DataCoreHelper.ReadEnumArray<{enumName}>(db, ref reader),");
+                sb.AppendLine($"        var _{name} = DataCoreHelper.ReadEnumArray<{Database.EnumDefinitions[property.StructIndex].GetName(Database)}>(db, ref reader);");
                 break;
-            }
             default:
-                sb.AppendLine($"            @{name} = DataCoreHelper.ReadDummyArray<{propertyType}>(db, ref reader),");
-                break;
+                throw new ArgumentOutOfRangeException();
         }
     }
 }

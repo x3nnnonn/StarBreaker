@@ -1,16 +1,15 @@
-using System.Diagnostics;
-using System.Xml.Linq;
-using CliFx;
+﻿using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
-using StarBreaker.Cli.Utils;
+using StarBreaker.Common;
 using StarBreaker.DataCore;
+using StarBreaker.DataCore.TypeGenerator;
 using StarBreaker.P4k;
 
 namespace StarBreaker.Cli;
 
-[Command("dcb-extract", Description = "Extracts a DataCore binary file into separate xml files")]
-public class DataCoreExtractCommand : ICommand
+[Command("dcb-generate", Description = "Generates C# types for DataCore structs and enums. Allows typesafe access to DataCore records.")]
+public class DataCoreTypeGeneratorCommand : ICommand
 {
     [CommandOption("p4k", 'p', Description = "Path to the Data.p4k")]
     public string? P4kFile { get; init; }
@@ -20,10 +19,7 @@ public class DataCoreExtractCommand : ICommand
 
     [CommandOption("output", 'o', Description = "Path to the output directory")]
     public required string OutputDirectory { get; init; }
-
-    [CommandOption("filter", 'f', Description = "Pattern to filter entries")]
-    public string? Filter { get; init; }
-
+    
     public ValueTask ExecuteAsync(IConsole console)
     {
         if (P4kFile == null && DcbFile == null)
@@ -63,22 +59,15 @@ public class DataCoreExtractCommand : ICommand
             console.Output.WriteLine("DataCore not found.");
             return default;
         }
+        
 
-        var df = new DataForge<string>(
-            new DataCoreBinaryXml(
-                new DataCoreDatabase(dcbStream)
-            )
-        );
+        console.Output.WriteLine("Generating DataCore types...");
+        var dcr = new DataCoreTypeGenerator(new DataCoreDatabase(dcbStream));
 
-        console.Output.WriteLine("DataCore loaded.");
-        console.Output.WriteLine("Exporting...");
-
-        var sw = Stopwatch.StartNew();
-        df.ExtractAllParallel(OutputDirectory, Filter, new ProgressBar(console));
-        sw.Stop();
-
-        console.Output.WriteLine();
-        console.Output.WriteLine($"Export completed in {sw.ElapsedMilliseconds}ms.");
+        console.Output.WriteLine("Writing DataCore types...");
+        dcr.Generate(OutputDirectory);
+        
+        console.Output.WriteLine("Done.");
 
         return default;
     }
