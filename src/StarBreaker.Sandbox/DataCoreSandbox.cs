@@ -17,7 +17,7 @@ public static class DataCoreSandbox
     {
         var timer = new TimeLogger();
 
-        var dcb = DataForge.FromDcbXml(@"D:\StarCitizen\P4k\Data\Game2.dcb");
+        var dcb = DataForge.FromDcbPathXml(@"D:\StarCitizen\P4k\Data\Game2.dcb");
         timer.LogReset("Loaded DataForge");
         
         var megaMap = dcb.GetRecordsByFileName("*megamap.pu*").Values.Single();
@@ -41,7 +41,7 @@ public static class DataCoreSandbox
     private static void ExtractXml()
     {
         var timer = new TimeLogger();
-        var dcb = DataForge.FromDcbXml(@"D:\StarCitizen\P4k\Data\Game2.dcb");
+        var dcb = DataForge.FromDcbPathXml(@"D:\StarCitizen\P4k\Data\Game2.dcb");
         timer.LogReset("Loaded DataForge");
         Directory.CreateDirectory(@"D:\StarCitizen\DataCore\Sandbox");
 #if DEBUG
@@ -55,7 +55,7 @@ public static class DataCoreSandbox
     private static void ExtractJson()
     {
         var timer = new TimeLogger();
-        var dcb = DataForge.FromDcbJson(@"D:\StarCitizen\P4k\Data\Game2.dcb");
+        var dcb = DataForge.FromDcbPathJson(@"D:\StarCitizen\P4k\Data\Game2.dcb");
         timer.LogReset("Loaded DataForge");
         Directory.CreateDirectory(@"D:\StarCitizen\DataCore\SandboxJson");
 #if DEBUG

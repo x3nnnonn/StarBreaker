@@ -66,7 +66,6 @@ public sealed class DataCoreBinaryXml : IDataCoreBinary<string>
     {
         var reader = Database.GetReader(structIndex, instanceIndex);
 
-        context.Writer.WriteAttributeString("Type", Database.StructDefinitions[structIndex].GetName(Database));
         context.Writer.WriteAttributeString("Pointer", $"{structIndex},{instanceIndex}");
 
         WriteStruct(structIndex, ref reader, context);
@@ -74,6 +73,8 @@ public sealed class DataCoreBinaryXml : IDataCoreBinary<string>
 
     private void WriteStruct(int structIndex, ref SpanReader reader, Context context)
     {
+        context.Writer.WriteAttributeString("Type", Database.StructDefinitions[structIndex].GetName(Database));
+
         foreach (var prop in Database.GetProperties(structIndex))
         {
             if (prop.ConversionType == ConversionType.Attribute)

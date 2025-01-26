@@ -8,10 +8,10 @@ namespace StarBreaker.Cli;
 [Command("cryxml-convert", Description = "Converts a CryXmlB file to a XML file")]
 public sealed class ConvertCryXmlBCommand : ICommand
 {
-    [CommandOption("input", 'i', Description = "Input CryXmlB file")]
+    [CommandOption("input", 'i', Description = "Input CryXmlB file", EnvironmentVariable = "INPUT_FILE")]
     public required string? Input { get; set; }
 
-    [CommandOption("output", 'o', Description = "Output XML file")]
+    [CommandOption("output", 'o', Description = "Output XML file", EnvironmentVariable = "OUTPUT_FILE")]
     public required string? Output { get; set; }
 
     public ValueTask ExecuteAsync(IConsole console)

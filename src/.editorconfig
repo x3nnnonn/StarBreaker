@@ -1,6 +1,6 @@
 
 [*]
-charset = utf-8-bom
+charset = utf-8
 end_of_line = crlf
 insert_final_newline = false
 indent_style = space
@@ -83,24 +83,3 @@ resharper_web_config_module_not_resolved_highlighting = warning
 resharper_web_config_type_not_resolved_highlighting = warning
 resharper_web_config_wrong_module_highlighting = warning
 resharper_xaml_constructor_warning_highlighting = none
-
-[{*.bash,*.sh,*.zsh}]
-indent_style = space
-indent_size = 2
-
-[{*.bin,*.proto}]
-indent_style = space
-indent_size = 2
-
-[{*.har,*.jsb2,*.jsb3,*.json,*.jsonc,.babelrc,.eslintrc,.prettierrc,.stylelintrc,.ws-context,jest.config}]
-indent_style = space
-indent_size = 2
-
-[{*.yaml,*.yml}]
-indent_style = space
-indent_size = 2
-
-[*.{appxmanifest,asax,ascx,aspx,axaml,blockshader,build,cg,cginc,compute,cs,cshtml,dtd,fs,fsi,fsscript,fsx,fx,fxh,hlsl,hlsli,hlslinc,master,ml,mli,nuspec,paml,razor,resw,resx,shaderFoundry,skin,urtshader,usf,ush,vb,xaml,xamlx,xoml,xsd}]
-indent_style = space
-indent_size = 4
-tab_width = 4

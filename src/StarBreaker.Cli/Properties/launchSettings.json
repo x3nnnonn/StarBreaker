@@ -1,92 +1,156 @@
 {
-  "profiles": {
-    "help": {
-      "commandName": "Project",
-      "commandLineArgs": "-h"
-    },
-    "chf-download": {
-      "commandName": "Project",
-      "commandLineArgs": "chf-download \"C:\\Development\\StarCitizen\\StarBreaker\\research\\websiteCharacters\""
-    },
-    "chf-export-all": {
-      "commandName": "Project",
-      "commandLineArgs": "chf-export-all -i \"C:\\Development\\StarCitizen\\StarBreaker\\research\\moddedCharacters\" -o \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\4.0_PREVIEW\\user\\client\\0\\CustomCharacters\""
-    },
-    "chf-export-watch": {
-      "commandName": "Project",
-      "commandLineArgs": "chf-export-watch -i \"C:\\Development\\StarCitizen\\StarBreaker\\research\\moddedCharacters\" -o \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\4.0_PREVIEW\\user\\client\\0\\CustomCharacters\""
-    },
-    "chf-import-all": {
-      "commandName": "Project",
-      "commandLineArgs": "chf-import-all -i \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\4.0_PREVIEW\\user\\client\\0\\CustomCharacters\" -o \"C:\\Development\\StarCitizen\\StarBreaker\\research\\localCharacters\""
-    },
-    "chf-import-watch": {
-      "commandName": "Project",
-      "commandLineArgs": "chf-import-watch -i \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\4.0_PREVIEW\\user\\client\\0\\CustomCharacters\" -o \"C:\\Development\\StarCitizen\\StarBreaker\\research\\localCharacters\""
-    },
-    "chf-process": {
-      "commandName": "Project",
-      "commandLineArgs": "chf-process \"C:\\Development\\StarCitizen\\StarBreaker\\research\\localCharacters\\everything\\everything.chf\""
-    },
-    "chf-process-all": {
-      "commandName": "Project",
-      "commandLineArgs": "chf-process-all -i \"C:\\Development\\StarCitizen\\StarBreaker\\research\""
-    },
-    "cryxml-convert": {
-      "commandName": "Project",
-      "commandLineArgs": "cryxml-convert -i \"D:\\StarCitizen\\P4k\\Data\\Scripts\\Shooter.xml\" -o \"D:\\StarCitizen\\CryXml\\Data\\Scripts\\Shooter.xml\""
-    },
-    "cryxml-convert-all": {
-      "commandName": "Project",
-      "commandLineArgs": "cryxml-convert-all -i \"D:\\StarCitizen\\P4k\\Data\\Scripts\" -o \"D:\\StarCitizen\\CryXml\\Data\\Scripts\""
-    },
-    "dcb-extract": {
-      "commandName": "Project",
-      "commandLineArgs": "dcb-extract -p \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k\" -o \"C:\\Development\\StarCitizen\\DataCoreExport\""
-    },
-    "dcb-extract2": {
-      "commandName": "Project",
-      "commandLineArgs": "dcb-extract -d \"D:\\StarCitizen\\P4k\\Data\\Game2.dcb\" -o \"C:\\Development\\StarCitizen\\DataCoreExport\""
-    },
-    "diff": {
-      "commandName": "Project",
-      "commandLineArgs": "diff -g \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\" -o \"C:\\Development\\StarCitizen\\StarCitizenDiff\""
-    },
-    "dcb-extract-old": {
-      "commandName": "Project",
-      "commandLineArgs": "dcb-extract -p \"\\\\UNRAID\\backups\\StarCitizen\\Data.p4k\" -o \"C:\\Development\\StarCitizen\\DataCoreExport\""
-    },
-    "dcb-generate": {
-      "commandName": "Project",
-      "commandLineArgs": "dcb-generate -p \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k\" -o \"C:\\Development\\StarCitizen\\StarBreaker\\src\\StarBreaker.DataCore.Generated\\Generated\""
-    },
-    "dds-merge": {
-      "commandName": "Project",
-      "commandLineArgs": "dds-merge -i \"D:\\StarCitizen\\P4k\\Data\\Textures\\bubble_ddna.dds\" -o \"D:\\StarCitizen\\DDS\\bubble_ddna.dds\""
-    },
-    "dds-merge-all": {
-      "commandName": "Project",
-      "commandLineArgs": "dds-merge-all -i \"D:\\StarCitizen\\P4k\\Data\\Textures\" -o \"D:\\StarCitizen\\DDS\\Data\\Textures\""
-    },
-    "p4k-extract": {
-      "commandName": "Project",
-      "commandLineArgs": "p4k-extract -p \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k\" -o \"D:\\StarCitizen\\P4k\""
-    },
-    "p4k-extract-socpak": {
-      "commandName": "Project",
-      "commandLineArgs": "p4k-extract -p \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k\" -o \"D:\\StarCitizen\\P4kSocPak\" -f \"*.socpak\" "
-    },
-    "p4k-dump": {
-      "commandName": "Project",
-      "commandLineArgs": "p4k-dump -p \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k\" -o \"C:\\Development\\StarCitizen\\DataCoreExport\""
-    },
-    "proto-extract": {
-      "commandName": "Project",
-      "commandLineArgs": "proto-extract -i \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Bin64\\StarCitizen.exe\" -o \"C:\\Development\\StarCitizen\\StarCitizenProtobuf\\protos\""
-    },
-    "proto-set-extract": {
-      "commandName": "Project",
-      "commandLineArgs": "proto-set-extract -i \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Bin64\\StarCitizen.exe\" -o \"C:\\Development\\StarCitizen\\StarCitizenProtobuf\\descriptorSet.bin\""
+    "$schema": "https://json.schemastore.org/launchsettings.json",
+    "readme": "I have some of the options as env variables mostly to keep this file cleaner, they work all the same as regular cli arguments. Consult help for more information.",
+    "profiles": {
+        "help": {
+            "commandName": "Project",
+            "commandLineArgs": "-h"
+        },
+        "chf-download": {
+            "commandName": "Project",
+            "commandLineArgs": "chf-download \"C:\\Development\\StarCitizen\\StarBreaker\\research\\websiteCharacters\""
+        },
+        "chf-export-all": {
+            "commandName": "Project",
+            "commandLineArgs": "chf-export-all",
+            "environmentVariables": {
+                "INPUT_FOLDER": "C:\\Development\\StarCitizen\\StarBreaker\\research\\moddedCharacters",
+                "OUTPUT_FOLDER": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\4.0_PREVIEW\\user\\client\\0\\CustomCharacters"
+            }
+        },
+        "chf-export-watch": {
+            "commandName": "Project",
+            "commandLineArgs": "chf-export-watch",
+            "environmentVariables": {
+                "INPUT_FOLDER": "C:\\Development\\StarCitizen\\StarBreaker\\research\\moddedCharacters",
+                "OUTPUT_FOLDER": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\4.0_PREVIEW\\user\\client\\0\\CustomCharacters"
+            }
+        },
+        "chf-import-all": {
+            "commandName": "Project",
+            "commandLineArgs": "chf-import-all",
+            "environmentVariables": {
+                "INPUT_FOLDER": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\4.0_PREVIEW\\user\\client\\0\\CustomCharacters",
+                "OUTPUT_FOLDER": "C:\\Development\\StarCitizen\\StarBreaker\\research\\localCharacters"
+            }
+        },
+        "chf-import-watch": {
+            "commandName": "Project",
+            "commandLineArgs": "chf-import-watch",
+            "environmentVariables": {
+                "INPUT_FOLDER": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\4.0_PREVIEW\\user\\client\\0\\CustomCharacters",
+                "OUTPUT_FOLDER": "C:\\Development\\StarCitizen\\StarBreaker\\research\\localCharacters"
+            }
+        },
+        "chf-process-all": {
+            "commandName": "Project",
+            "commandLineArgs": "chf-process-all",
+            "environmentVariables": {
+                "INPUT_FOLDER": "C:\\Development\\StarCitizen\\StarBreaker\\research"
+            }
+        },
+        "cryxml-convert": {
+            "commandName": "Project",
+            "commandLineArgs": "cryxml-convert",
+            "environmentVariables": {
+                "INPUT_FILE": "D:\\StarCitizen\\P4k\\Data\\Scripts\\Shooter.xml",
+                "OUTPUT_FILE": "D:\\StarCitizen\\CryXml\\Data\\Scripts\\Shooter.xml"
+            }
+        },
+        "cryxml-convert-all": {
+            "commandName": "Project",
+            "commandLineArgs": "cryxml-convert-all",
+            "environmentVariables": {
+                "INPUT_FOLDER": "D:\\StarCitizen\\P4k\\Data\\Scripts",
+                "OUTPUT_FOLDER": "D:\\StarCitizen\\CryXml\\Data\\Scripts"
+            }
+        },
+        "dcb-extract": {
+            "commandName": "Project",
+            "commandLineArgs": "dcb-extract",
+            "environmentVariables": {
+                "INPUT_P4K": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k",
+                "INPUT_P4K_OLD": "\\\\UNRAID\\backups\\StarCitizen\\Data.p4k",
+                "OUTPUT_FOLDER": "C:\\Development\\StarCitizen\\DataCoreExport",
+                "FILTER": "*",
+                "TEXT_FORMAT": "xml",
+                "TEXT_FORMAT2": "json"
+            }
+        },
+        "dcb-generate": {
+            "commandName": "Project",
+            "commandLineArgs": "dcb-generate",
+            "environmentVariables": {
+                "INPUT_P4K": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k",
+                "OUTPUT_FOLDER": "C:\\Development\\StarCitizen\\StarBreaker\\src\\StarBreaker.DataCore.Generated\\Generated"
+            }
+        },
+        "diff": {
+            "commandName": "Project",
+            "commandLineArgs": "diff",
+            "environmentVariables": {
+                "GAME_FOLDER": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU",
+                "OUTPUT_FOLDER": "C:\\Development\\StarCitizen\\StarCitizenDiff2",
+                "KEEP_OLD": "false"
+            }
+        },
+        "dds-merge": {
+            "commandName": "Project",
+            "commandLineArgs": "dds-merge",
+            "environmentVariables": {
+                "INPUT_FILE": "D:\\StarCitizen\\P4k\\Data\\Textures\\bubble_ddna.dds",
+                "OUTPUT_FILE": "D:\\StarCitizen\\DDS\\bubble_ddna.dds"
+            }
+        },
+        "dds-merge-all": {
+            "commandName": "Project",
+            "commandLineArgs": "dds-merge-all",
+            "environmentVariables": {
+                "INPUT_FOLDER": "D:\\StarCitizen\\P4k\\Data\\Textures",
+                "OUTPUT_FOLDER": "D:\\StarCitizen\\DDS\\Data\\Textures"
+            }
+        },
+        "p4k-extract": {
+            "commandName": "Project",
+            "commandLineArgs": "p4k-extract",
+            "environmentVariables": {
+                "INPUT_P4K": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k",
+                "OUTPUT_FOLDER": "D:\\StarCitizen\\P4k",
+                "FILTER": "*"
+            }
+        },
+        "p4k-extract-socpak": {
+            "commandName": "Project",
+            "commandLineArgs": "p4k-extract",
+            "environmentVariables": {
+                "INPUT_P4K": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k",
+                "OUTPUT_FOLDER": "D:\\StarCitizen\\P4kSocPak",
+                "FILTER": "*.socpak"
+            }
+        },
+        "p4k-dump": {
+            "commandName": "Project",
+            "commandLineArgs": "p4k-dump",
+            "environmentVariables": {
+                "INPUT_P4K": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k",
+                "OUTPUT_FOLDER": "C:\\Development\\StarCitizen\\DataCoreExport"
+            }
+        },
+        "proto-extract": {
+            "commandName": "Project",
+            "commandLineArgs": "proto-extract",
+            "environmentVariables": {
+                "INPUT_FILE": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Bin64\\StarCitizen.exe",
+                "OUTPUT_FOLDER": "C:\\Development\\StarCitizen\\StarCitizenProtobuf\\protos"
+            }
+        },
+        "proto-set-extract": {
+            "commandName": "Project",
+            "commandLineArgs": "proto-set-extract",
+            "environmentVariables": {
+                "INPUT_FILE": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Bin64\\StarCitizen.exe",
+                "OUTPUT_FILE": "C:\\Development\\StarCitizen\\StarCitizenProtobuf\\descriptorSet.bin"
+            }
+        }
     }
-  }
 }

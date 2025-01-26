@@ -11,13 +11,13 @@ namespace StarBreaker.Cli;
 [Command("dcb-generate", Description = "Generates C# types for DataCore structs and enums. Allows typesafe access to DataCore records.")]
 public class DataCoreTypeGeneratorCommand : ICommand
 {
-    [CommandOption("p4k", 'p', Description = "Path to the Data.p4k")]
+    [CommandOption("p4k", 'p', Description = "Path to the Data.p4k", EnvironmentVariable = "INPUT_P4K")]
     public string? P4kFile { get; init; }
 
-    [CommandOption("dcb", 'd', Description = "Path to the Game.dcb")]
+    [CommandOption("dcb", 'd', Description = "Path to the Game.dcb", EnvironmentVariable = "INPUT_DCB")]
     public string? DcbFile { get; init; }
 
-    [CommandOption("output", 'o', Description = "Path to the output directory")]
+    [CommandOption("output", 'o', Description = "Path to the output directory", EnvironmentVariable = "OUTPUT_FOLDER")]
     public required string OutputDirectory { get; init; }
     
     public ValueTask ExecuteAsync(IConsole console)

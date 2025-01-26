@@ -10,13 +10,13 @@ namespace StarBreaker.Cli;
 [Command("diff", Description = "Dumps game information into plain text files for comparison")]
 public class DiffCommand : ICommand
 {
-    [CommandOption("game", 'g', Description = "Path to the game folder")]
+    [CommandOption("game", 'g', Description = "Path to the game folder", EnvironmentVariable = "GAME_FOLDER")]
     public required string GameFolder { get; init; }
 
-    [CommandOption("output", 'o', Description = "Path to the output directory")]
+    [CommandOption("output", 'o', Description = "Path to the output directory", EnvironmentVariable = "OUTPUT_FOLDER")]
     public required string OutputDirectory { get; init; }
 
-    [CommandOption("keep", 'k', Description = "Keep old files in the output directory")]
+    [CommandOption("keep", 'k', Description = "Keep old files in the output directory", EnvironmentVariable = "KEEP_OLD")]
     public bool KeepOld { get; init; }
 
     public async ValueTask ExecuteAsync(IConsole console)

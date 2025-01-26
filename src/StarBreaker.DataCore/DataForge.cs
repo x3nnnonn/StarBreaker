@@ -6,14 +6,24 @@ namespace StarBreaker.DataCore;
 
 public static class DataForge
 {
-    public static DataForge<string> FromDcbJson(string path)
+    public static DataForge<string> FromDcbPathJson(string path)
     {
         return new DataForge<string>(new DataCoreBinaryJson(new DataCoreDatabase(File.OpenRead(path))));
     }
     
-    public static DataForge<string> FromDcbXml(string path)
+    public static DataForge<string> FromDcbStreamJson(Stream dcbStream)
+    {
+        return new DataForge<string>(new DataCoreBinaryJson(new DataCoreDatabase(dcbStream)));
+    }
+    
+    public static DataForge<string> FromDcbPathXml(string path)
     {
         return new DataForge<string>(new DataCoreBinaryXml(new DataCoreDatabase(File.OpenRead(path))));
+    }
+    
+    public static DataForge<string> FromDcbStreamXml(Stream dcbStream)
+    {
+        return new DataForge<string>(new DataCoreBinaryXml(new DataCoreDatabase(dcbStream)));
     }
 }
 

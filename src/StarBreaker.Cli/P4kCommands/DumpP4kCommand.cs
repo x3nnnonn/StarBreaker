@@ -8,10 +8,10 @@ namespace StarBreaker.Cli;
 [Command("p4k-dump", Description = "Dumps the contents a Game.p4k file")]
 public class DumpP4kCommand : ICommand
 {
-    [CommandOption("p4k", 'p', Description = "Path to the Game.p4k")]
+    [CommandOption("p4k", 'p', Description = "Path to the Game.p4k", EnvironmentVariable = "INPUT_P4K")]
     public required string P4kFile { get; init; }
 
-    [CommandOption("output", 'o', Description = "Path to the output directory")]
+    [CommandOption("output", 'o', Description = "Path to the output directory", EnvironmentVariable = "OUTPUT_FOLDER")]
     public required string OutputDirectory { get; init; }
 
     public ValueTask ExecuteAsync(IConsole console)

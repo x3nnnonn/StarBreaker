@@ -8,10 +8,10 @@ namespace StarBreaker.Cli;
 [Command("proto-set-extract", Description = "Extracts the protobuf descriptor set from the Star Citizen executable.")]
 public class ExtractDescriptorSetCommand : ICommand
 {
-    [CommandOption("input", 'i', Description = "The path to the Star Citizen executable.")]
+    [CommandOption("input", 'i', Description = "The path to the Star Citizen executable.", EnvironmentVariable = "INPUT_FILE")]
     public required string Input { get; init; } = string.Empty;
 
-    [CommandOption("output", 'o', Description = "The path to the output file.")]
+    [CommandOption("output", 'o', Description = "The path to the output file.", EnvironmentVariable = "OUTPUT_FILE")]
     public required string Output { get; init; } = string.Empty;
 
     public ValueTask ExecuteAsync(IConsole console)
