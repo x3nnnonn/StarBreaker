@@ -28,7 +28,7 @@ public static class DataCoreHelper
             return null;
 
         var reader = db.GetReader(structIndex, instanceIndex);
-        return T.Read(db, db.StructDefinitions[structIndex], ref reader);
+        return T.Read(db, ref reader);
     }
 
     public static T EnumParse<T>(string value, T unknown) where T : struct, Enum

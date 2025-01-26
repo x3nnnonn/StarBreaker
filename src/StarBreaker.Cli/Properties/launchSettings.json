@@ -56,6 +56,10 @@
       "commandName": "Project",
       "commandLineArgs": "dcb-extract -p \"\\\\UNRAID\\backups\\StarCitizen\\Data.p4k\" -o \"C:\\Development\\StarCitizen\\DataCoreExport\""
     },
+    "dcb-generate": {
+      "commandName": "Project",
+      "commandLineArgs": "dcb-generate -p \"C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k\" -o \"C:\\Development\\StarCitizen\\StarBreaker\\src\\StarBreaker.DataCore.Generated\\Generated\""
+    },
     "dds-merge": {
       "commandName": "Project",
       "commandLineArgs": "dds-merge -i \"D:\\StarCitizen\\P4k\\Data\\Textures\\bubble_ddna.dds\" -o \"D:\\StarCitizen\\DDS\\bubble_ddna.dds\""
