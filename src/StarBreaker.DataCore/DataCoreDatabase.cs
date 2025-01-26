@@ -47,6 +47,10 @@ public sealed class DataCoreDatabase
     private readonly FrozenDictionary<int, string> CachedStrings2;
     private readonly FrozenDictionary<CigGuid, DataCoreRecord> RecordMap;
 
+    public int StructsHash => StructDefinitions.Sum(x => x.FirstAttributeIndex ^ x.AttributeCount);
+
+    public int EnumsHash => EnumDefinitions.Sum(x => x.FirstValueIndex ^ x.ValueCount);
+    
     public DataCoreDatabase(Stream fs)
     {
         using var reader = new BinaryReader(fs);
