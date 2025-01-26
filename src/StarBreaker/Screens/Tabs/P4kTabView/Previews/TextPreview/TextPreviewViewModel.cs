@@ -1,6 +1,4 @@
-﻿using AvaloniaEdit.Document;
-using CommunityToolkit.Mvvm.ComponentModel;
-using StarBreaker.CryXmlB;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace StarBreaker.Screens;
 
