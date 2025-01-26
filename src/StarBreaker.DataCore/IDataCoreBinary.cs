@@ -4,7 +4,7 @@ public interface IDataCoreBinary<out T>
 {
     DataCoreDatabase Database { get; }
     
-    T GetFromMainRecord(DataCoreRecord record, DataCoreExtractionOptions options);
+    T GetFromMainRecord(DataCoreRecord record);
     
-    void SaveToFile(DataCoreRecord record, DataCoreExtractionOptions options, string path);
+    void SaveToFile(DataCoreRecord record, string path);
 }

@@ -14,7 +14,7 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
         Database = db;
     }
 
-    public void SaveToFile(DataCoreRecord record, DataCoreExtractionOptions options, string path)
+    public void SaveToFile(DataCoreRecord record, string path)
     {
         using var fileStream = new FileStream(Path.ChangeExtension(path, "json"), FileMode.Create);
         using var writer = new Utf8JsonWriter(fileStream, new JsonWriterOptions
@@ -22,7 +22,7 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
             Indented = true,
         });
 
-        var context = new Context(record.GetFileName(Database), writer, options);
+        var context = new Context(record.GetFileName(Database), writer);
 
         context.Writer.WriteStartObject();
         context.Writer.WriteString("RecordName_", record.GetName(Database));
@@ -35,7 +35,7 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
         context.Writer.Flush();
     }
 
-    public string GetFromMainRecord(DataCoreRecord record, DataCoreExtractionOptions options)
+    public string GetFromMainRecord(DataCoreRecord record)
     {
         if (!Database.MainRecords.Contains(record.Id))
             throw new InvalidOperationException("Can only extract main records");
@@ -46,7 +46,7 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
             Indented = false
         });
 
-        var context = new Context(record.GetFileName(Database), writer, options);
+        var context = new Context(record.GetFileName(Database), writer);
 
         writer.WriteStartObject();
         writer.WriteString("RecordName_", record.GetName(Database));
@@ -241,13 +241,11 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
     {
         public string Path { get; }
         public Utf8JsonWriter Writer { get; }
-        public DataCoreExtractionOptions Options { get; }
 
-        public Context(string path, Utf8JsonWriter writer, DataCoreExtractionOptions options)
+        public Context(string path, Utf8JsonWriter writer)
         {
             Path = path;
             Writer = writer;
-            Options = options;
         }
     }
 }
