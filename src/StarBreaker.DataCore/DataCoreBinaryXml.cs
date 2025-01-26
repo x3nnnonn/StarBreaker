@@ -28,7 +28,7 @@ public sealed class DataCoreBinaryXml : IDataCoreBinary<string>
         var context = new Context(record.GetFileName(Database), options, writer);
 
         writer.WriteStartElement(XmlConvert.EncodeName(record.GetName(Database)));
-        context.Writer.WriteAttributeString("__RecordId", record.Id.ToString());
+        context.Writer.WriteAttributeString("RecordId", record.Id.ToString());
 
         WriteInstance(record.StructIndex, record.InstanceIndex, context);
 
@@ -51,7 +51,7 @@ public sealed class DataCoreBinaryXml : IDataCoreBinary<string>
         var context = new Context(record.GetFileName(Database), options, writer);
 
         writer.WriteStartElement(XmlConvert.EncodeName(record.GetName(Database)));
-        writer.WriteAttributeString("__RecordId", record.Id.ToString());
+        writer.WriteAttributeString("RecordId", record.Id.ToString());
 
         WriteInstance(record.StructIndex, record.InstanceIndex, context);
 
@@ -66,8 +66,8 @@ public sealed class DataCoreBinaryXml : IDataCoreBinary<string>
     {
         var reader = Database.GetReader(structIndex, instanceIndex);
 
-        context.Writer.WriteAttributeString("__Type", Database.StructDefinitions[structIndex].GetName(Database));
-        context.Writer.WriteAttributeString("__Pointer", $"__ptr:{structIndex},{instanceIndex}");
+        context.Writer.WriteAttributeString("Type", Database.StructDefinitions[structIndex].GetName(Database));
+        context.Writer.WriteAttributeString("Pointer", $"{structIndex},{instanceIndex}");
 
         WriteStruct(structIndex, ref reader, context);
     }
@@ -103,8 +103,7 @@ public sealed class DataCoreBinaryXml : IDataCoreBinary<string>
                 var weakPointer = reader.Read<DataCorePointer>();
                 context.Writer.WriteStartElement(propName);
 
-                if (weakPointer.StructIndex != -1 && weakPointer.InstanceIndex != -1)
-                    context.Writer.WriteAttributeString("__ptr", $"{weakPointer.StructIndex},{weakPointer.InstanceIndex}");
+                context.Writer.WriteAttributeString("Pointer", $"{weakPointer.StructIndex},{weakPointer.InstanceIndex}");
 
                 context.Writer.WriteEndElement();
                 break;
@@ -151,8 +150,8 @@ public sealed class DataCoreBinaryXml : IDataCoreBinary<string>
 
         var propName = prop.GetName(Database);
         context.Writer.WriteStartElement(propName);
-        context.Writer.WriteAttributeString("__Count", count.ToString(CultureInfo.InvariantCulture));
-        context.Writer.WriteAttributeString("__Type", Database.StructDefinitions[prop.StructIndex].GetName(Database));
+        context.Writer.WriteAttributeString("Type", Database.StructDefinitions[prop.StructIndex].GetName(Database));
+        context.Writer.WriteAttributeString("Count", count.ToString(CultureInfo.InvariantCulture));
 
         for (var i = firstIndex; i < firstIndex + count; i++)
         {
@@ -191,7 +190,7 @@ public sealed class DataCoreBinaryXml : IDataCoreBinary<string>
                         context.Writer.WriteStartElement(Database.StructDefinitions[prop.StructIndex].GetName(Database));
                     }
 
-                    context.Writer.WriteAttributeString("__ptr", $"{weakPointer.StructIndex},{weakPointer.InstanceIndex}");
+                    context.Writer.WriteAttributeString("Pointer", $"{weakPointer.StructIndex},{weakPointer.InstanceIndex}");
 
                     context.Writer.WriteEndElement();
 
@@ -247,9 +246,7 @@ public sealed class DataCoreBinaryXml : IDataCoreBinary<string>
         if (Database.MainRecords.Contains(reference.RecordId))
         {
             //if we're referencing a full on file, just add a small mention to it
-            context.Writer.WriteElementString("RecordId", record.Id.ToString());
-            context.Writer.WriteElementString("Type", Database.StructDefinitions[record.StructIndex].GetName(Database));
-            context.Writer.WriteElementString("File", DataCoreUtils.ComputeRelativePath(record.GetFileName(Database), context.Path));
+            context.Writer.WriteAttributeString("ReferencedFile", DataCoreUtils.ComputeRelativePath(record.GetFileName(Database), context.Path));
             return;
         }
 
@@ -263,7 +260,7 @@ public sealed class DataCoreBinaryXml : IDataCoreBinary<string>
 
         public XmlWriter Writer { get; }
 
-        public Context(string path, DataCoreExtractionOptions options, XmlWriter writer = null)
+        public Context(string path, DataCoreExtractionOptions options, XmlWriter writer)
         {
             Path = path;
             Options = options;

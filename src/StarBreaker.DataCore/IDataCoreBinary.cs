@@ -1,6 +1,4 @@
-﻿using System.Xml.Linq;
-
-namespace StarBreaker.DataCore;
+﻿namespace StarBreaker.DataCore;
 
 public interface IDataCoreBinary<out T>
 {
