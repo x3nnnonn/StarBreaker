@@ -88,9 +88,7 @@ public class DataCoreCodeGenerator
 
             for (var i = 0; i < enumDefinition.ValueCount; i++)
             {
-                var id = Database.EnumOptions[enumDefinition.FirstValueIndex + i];
-                var value = Database.GetString2(id);
-                sb.AppendLine($"    {value},");
+                sb.AppendLine($"    {Database.EnumOptions[enumDefinition.FirstValueIndex + i].ToString(Database)},");
             }
 
             sb.AppendLine("}");

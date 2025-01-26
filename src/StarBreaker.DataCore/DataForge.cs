@@ -4,13 +4,13 @@ using StarBreaker.Common;
 
 namespace StarBreaker.DataCore;
 
-public class DataForge
+public class DataForge<T>
 {
-    public DataCoreBinary DataCore { get; }
+    public IDataCoreBinary<T> DataCore { get;  }
 
-    public DataForge(Stream stream)
+    public DataForge(IDataCoreBinary<T> dataCore)
     {
-        DataCore = new DataCoreBinary(new DataCoreDatabase(stream));
+        DataCore = dataCore;
     }
 
     public Dictionary<string, DataCoreRecord> GetRecordsByFileName(string? fileNameFilter = null)
@@ -30,17 +30,14 @@ public class DataForge
         return structsPerFileName;
     }
 
-    public XElement GetFromRecord(DataCoreRecord record, DataCoreExtractionOptions? options = null)
+    public T GetFromRecord(DataCoreRecord record, DataCoreExtractionOptions? options = null)
     {
-        var context = new DataCoreExtractionContext<XElement>(record.GetFileName(DataCore.Database), options ?? GetDefaultExtractionOptions());
-        return DataCore.GetFromMainRecord(record, context);
+        return DataCore.GetFromMainRecord(record, options ?? GetDefaultExtractionOptions());
     }
 
-    public XElement GetFromRecord(CigGuid recordGuid, DataCoreExtractionOptions? options = null)
+    public T GetFromRecord(CigGuid recordGuid, DataCoreExtractionOptions? options = null)
     {
-        var record = DataCore.Database.GetRecord(recordGuid);
-        var context = new DataCoreExtractionContext<XElement>(record.GetFileName(DataCore.Database), options ?? GetDefaultExtractionOptions());
-        return DataCore.GetFromMainRecord(record, context);
+        return DataCore.GetFromMainRecord(DataCore.Database.GetRecord(recordGuid), options ?? GetDefaultExtractionOptions());
     }
 
     public Dictionary<string, string[]> ExportEnums()
@@ -67,15 +64,15 @@ public class DataForge
         var recordsByFileName = GetRecordsByFileName(fileNameFilter);
         var total = recordsByFileName.Count;
 
+        var options1 = options ?? GetDefaultExtractionOptions();
+        
         foreach (var (fileName, record) in recordsByFileName)
         {
             var filePath = Path.Combine(outputFolder, fileName);
 
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
 
-            var node = GetFromRecord(record, options);
-
-            node.Save(filePath);
+            DataCore.SaveToFile(record, options1, filePath);
 
             var currentProgress = Interlocked.Increment(ref progressValue);
             //only report progress every 250 records and when we are done
@@ -92,6 +89,8 @@ public class DataForge
         var recordsByFileName = GetRecordsByFileName(fileNameFilter);
         var total = recordsByFileName.Count;
 
+        var options1 = options ?? GetDefaultExtractionOptions();
+        
         Parallel.ForEach(recordsByFileName, kvp =>
         {
             var (fileName, record) = kvp;
@@ -99,9 +98,7 @@ public class DataForge
 
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
 
-            var node = GetFromRecord(record, options);
-
-            node.Save(filePath);
+            DataCore.SaveToFile(record, options1, filePath);
 
             var currentProgress = Interlocked.Increment(ref progressValue);
             //only report progress every 250 records and when we are done
@@ -118,12 +115,13 @@ public class DataForge
         var total = DataCore.Database.MainRecords.Count;
 
         var doc = new XDocument(new XElement("DataCore"));
+        
+        var options1 = options ?? GetDefaultExtractionOptions();
 
         foreach (var recordId in DataCore.Database.MainRecords)
         {
             var record = DataCore.Database.GetRecord(recordId);
-            var context = new DataCoreExtractionContext<XElement>(record.GetFileName(DataCore.Database), options ?? GetDefaultExtractionOptions());
-            var node = DataCore.GetFromMainRecord(record, context);
+            var node = DataCore.GetFromMainRecord(record, options1);
 
             doc.Root?.Add(node);
 

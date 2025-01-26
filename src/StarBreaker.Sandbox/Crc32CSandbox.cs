@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Numerics;
 using System.Text;
+using System.Xml.Linq;
 using StarBreaker.Common;
 using StarBreaker.CryXmlB;
 using StarBreaker.DataCore;
@@ -18,7 +19,11 @@ public static class Crc32CSandbox
         var p4k = new P4kFileSystem(P4kFile.FromFile(@"C:\Program Files\Roberts Space Industries\StarCitizen\4.0_PREVIEW\Data.p4k"));
         var dcbStream = p4k.OpenRead(@"Data\Game2.dcb");
 
-        var dcb = new DataForge(dcbStream);
+        var dcb = new DataForge<XElement>(
+            new DataCoreBinaryXml(
+                new DataCoreDatabase(dcbStream)
+            )
+        );
 
         IEnumerable<string> haystack = [];
 

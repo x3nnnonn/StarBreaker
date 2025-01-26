@@ -50,7 +50,6 @@ public sealed class DataCoreDatabase
     public DataCoreDatabase(Stream fs)
     {
         using var reader = new BinaryReader(fs);
-
         _ = reader.ReadUInt32();
         var version = reader.ReadUInt32();
         if (version is < 5 or > 6)
@@ -115,30 +114,36 @@ public sealed class DataCoreDatabase
         ReferenceValues = reader.BaseStream.ReadArray<DataCoreReference>(referenceValueCount);
         EnumOptions = reader.BaseStream.ReadArray<DataCoreStringId2>(enumOptionCount);
 
-        CachedStrings = ReadStringTable(reader.ReadBytes((int)textLength).AsSpan());
+        var stringTable1 = reader.ReadBytes((int)textLength);
+        var stringTable2 = reader.ReadBytes((int)textLength2);
+
+        CachedStrings = ReadStringTable(stringTable1);
         if (version >= 6)
-            CachedStrings2 = ReadStringTable(reader.ReadBytes((int)textLength2).AsSpan());
+            CachedStrings2 = ReadStringTable(stringTable2);
         else
             CachedStrings2 = CachedStrings;
 
         var bytesRead = (int)fs.Position;
 
-        Properties = ReadProperties();
         Offsets = ReadOffsets(bytesRead);
         DataSectionOffset = bytesRead;
+        Properties = ReadProperties();
         DataSection = reader.ReadBytes((int)(fs.Length - bytesRead));
-
         RecordMap = RecordDefinitions.ToFrozenDictionary(x => x.Id);
-
-        var mainRecords = new Dictionary<string, DataCoreRecord>();
-        foreach (var record in RecordDefinitions)
-            mainRecords[record.GetFileName(this)] = record;
-
-        MainRecords = mainRecords.Values.Select(x => x.Id).ToFrozenSet();
-
+        MainRecords = ReadMainRecords();
 #if DEBUG
         DebugGlobal.Database = this;
 #endif
+    }
+
+    private FrozenSet<CigGuid> ReadMainRecords()
+    {
+        var mainRecords = new Dictionary<int, DataCoreRecord>();
+
+        foreach (var record in RecordDefinitions)
+            mainRecords[record.FileNameOffset.Id] = record;
+
+        return mainRecords.Values.Select(x => x.Id).ToFrozenSet();
     }
 
     public SpanReader GetReader(int structIndex, int instanceIndex)
@@ -150,6 +155,7 @@ public sealed class DataCoreDatabase
     }
 
     public string GetString(DataCoreStringId id) => CachedStrings[id.Id];
+
     public string GetString2(DataCoreStringId2 id) => CachedStrings2[id.Id];
     public DataCoreRecord GetRecord(CigGuid guid) => RecordMap[guid];
     public DataCorePropertyDefinition[] GetProperties(int structIndex) => Properties[structIndex];
@@ -171,12 +177,27 @@ public sealed class DataCoreDatabase
         return strings.ToFrozenDictionary();
     }
 
+    private static FrozenDictionary<int, int> ReadStringTableLengths(ReadOnlySpan<byte> span)
+    {
+        var strings = new Dictionary<int, int>();
+        var offset = 0;
+
+        while (offset < span.Length)
+        {
+            var length = span[offset..].IndexOf((byte)0);
+            strings[offset] = length;
+            offset += length + 1;
+        }
+
+        return strings.ToFrozenDictionary();
+    }
+
     private int[] ReadOffsets(int initialOffset)
     {
         var offsets = new int[StructDefinitions.Length];
 
         var offset = initialOffset;
-        foreach (var mapping in DataMappings)
+        foreach (var mapping in DataMappings.AsSpan())
         {
             var size = StructDefinitions[mapping.StructIndex].StructSize;
             offsets[mapping.StructIndex] = offset;

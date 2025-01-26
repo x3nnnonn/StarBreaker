@@ -1,3 +1,4 @@
+using System.Xml.Linq;
 using StarBreaker.DataCore;
 
 namespace StarBreaker.Tests;
@@ -10,7 +11,13 @@ public class Tests
     [Test]
     public async Task TestTagDatabase()
     {
-        var df = new DataForge(File.OpenRead(@"D:\StarCitizen\P4k\Data\Game.dcb"));
+        var df = new DataForge<XElement>(
+            new DataCoreBinaryXml(
+                new DataCoreDatabase(
+                    File.OpenRead(@"D:\StarCitizen\P4k\Data\Game.dcb")
+                )
+            )
+        );
         var tagdatabase = df.GetRecordsByFileName("*TagDatabase*");
 
         var writer = new StringWriter();
@@ -24,7 +31,13 @@ public class Tests
     [Test]
     public async Task Enums()
     {
-        var dcb = new DataForge(File.OpenRead(@"D:\StarCitizen\P4k\Data\Game.dcb"));
+        var dcb = new DataForge<XElement>(
+            new DataCoreBinaryXml(
+                new DataCoreDatabase(
+                    File.OpenRead(@"D:\StarCitizen\P4k\Data\Game.dcb")
+                )
+            )
+        );
         var enums = dcb.ExportEnums();
 
         await Assert.That(enums).IsNotEmpty();
