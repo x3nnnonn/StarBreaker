@@ -15,8 +15,8 @@ public static class DataCoreSandbox
 
         //ExtractUnp4k();
         //ExtractProblematic();
-        // ExtractAll();
-        WriteJson();
+        ExtractAll();
+        //WriteJson();
     }
 
     private static void GenerateTypes()
@@ -33,7 +33,7 @@ public static class DataCoreSandbox
     private static void ExtractUnp4k()
     {
         var timer = new TimeLogger();
-        var dcb = new DataForge<XElement>(
+        var dcb = new DataForge<string>(
             new DataCoreBinaryXml(
                 new DataCoreDatabase(
                     new MemoryStream(File.ReadAllBytes(@"D:\StarCitizen\P4k\Data\Game2.dcb"))
@@ -48,7 +48,7 @@ public static class DataCoreSandbox
     private static void ExtractAll()
     {
         var timer = new TimeLogger();
-        var dcb = new DataForge<XElement>(
+        var dcb = new DataForge<string>(
             new DataCoreBinaryXml(
                 new DataCoreDatabase(
                     new MemoryStream(File.ReadAllBytes(@"D:\StarCitizen\P4k\Data\Game2.dcb"))
@@ -69,7 +69,7 @@ public static class DataCoreSandbox
     {
         var timer = new TimeLogger();
 
-        var dcb = new DataForge<XElement>(
+        var dcb = new DataForge<string>(
             new DataCoreBinaryXml(
                 new DataCoreDatabase(
                     new MemoryStream(File.ReadAllBytes(@"D:\StarCitizen\P4k\Data\Game2.dcb"))
@@ -109,7 +109,7 @@ public static class DataCoreSandbox
     {
         var timer = new TimeLogger();
 
-        var dcb = new DataForge<XElement>(new DataCoreBinaryXml(new DataCoreDatabase(new MemoryStream(File.ReadAllBytes(@"D:\StarCitizen\P4k\Data\Game2.dcb")))));
+        var dcb = new DataForge<string>(new DataCoreBinaryXml(new DataCoreDatabase(new MemoryStream(File.ReadAllBytes(@"D:\StarCitizen\P4k\Data\Game2.dcb")))));
         timer.LogReset("Loaded DataForge");
 
 
@@ -149,13 +149,12 @@ public static class DataCoreSandbox
     {
         var timer = new TimeLogger();
         var dcb = new DataForge<string>(new DataCoreBinaryJson(new DataCoreDatabase(File.OpenRead(@"D:\StarCitizen\P4k\Data\Game2.dcb"))));
-        return;
         timer.LogReset("Loaded DataForge");
         Directory.CreateDirectory(@"D:\StarCitizen\DataCore\SandboxJson");
 #if DEBUG
         dcb.ExtractAll(@"D:\StarCitizen\DataCore\SandboxJson");
 #else
-        dcb.ExtractAllParallel(@"C:\StarCitizen\DataCore\SandboxJson");
+        dcb.ExtractAllParallel(@"D:\StarCitizen\DataCore\SandboxJson");
 #endif
         timer.LogReset("Extracted all records.");
     }

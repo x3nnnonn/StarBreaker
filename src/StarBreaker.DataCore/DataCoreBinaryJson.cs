@@ -25,20 +25,16 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
         var context = new Context(record.GetFileName(Database), writer, options);
 
         context.Writer.WriteStartObject();
-        context.Writer.WriteString("__RecordId", record.Id.ToString());
         context.Writer.WriteString("__Name", record.GetName(Database));
-        context.Writer.WriteString("__Type", Database.StructDefinitions[record.StructIndex].GetName(Database));
+        context.Writer.WriteString("__RecordId", record.Id.ToString());
 
-        context.Writer.WriteStartObject("__Record");
+        //context.Writer.WriteStartObject("__Record");
         WriteInstance(record.StructIndex, record.InstanceIndex, context);
-        context.Writer.WriteEndObject();
+        //context.Writer.WriteEndObject();
 
-        //add metadata here?
         context.Writer.WriteEndObject();
 
         context.Writer.Flush();
-
-        //handle weakptr here?
     }
 
     public string GetFromMainRecord(DataCoreRecord record, DataCoreExtractionOptions options)
@@ -55,16 +51,12 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
         var context = new Context(record.GetFileName(Database), writer, options);
 
         writer.WriteStartObject();
-        writer.WriteString("__RecordId", record.Id.ToString());
         writer.WriteString("__Name", record.GetName(Database));
-        writer.WriteString("__Type", Database.StructDefinitions[record.StructIndex].GetName(Database));
+        writer.WriteString("__RecordId", record.Id.ToString());
 
-        writer.WriteStartObject("__Record");
         WriteInstance(record.StructIndex, record.InstanceIndex, context);
-        writer.WriteEndObject();
-        
-        writer.WriteEndObject();
 
+        writer.WriteEndObject();
 
         writer.Flush();
 
@@ -75,6 +67,7 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
     {
         var reader = Database.GetReader(structIndex, instanceIndex);
 
+        context.Writer.WriteString("__Type", Database.StructDefinitions[structIndex].GetName(Database));
         context.Writer.WriteString("__Pointer", $"__ptr:{structIndex},{instanceIndex}");
 
         WriteStruct(structIndex, ref reader, context);
@@ -82,8 +75,6 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
 
     private void WriteStruct(int structIndex, ref SpanReader reader, Context context)
     {
-        context.Writer.WriteString("__Type", Database.StructDefinitions[structIndex].GetName(Database));
-
         foreach (var prop in Database.GetProperties(structIndex))
         {
             if (prop.ConversionType == ConversionType.Attribute)
@@ -116,13 +107,9 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
             case DataType.WeakPointer:
                 var weakPointer = reader.Read<DataCorePointer>();
                 if (weakPointer.StructIndex == -1 || weakPointer.InstanceIndex == -1)
-                {
                     context.Writer.WriteNull(propName);
-                }
                 else
-                {
                     context.Writer.WriteString(propName, $"__ptr:{weakPointer.StructIndex},{weakPointer.InstanceIndex}");
-                }
 
                 break;
             case DataType.StrongPointer:
@@ -144,51 +131,21 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
                 WriteStruct(prop.StructIndex, ref reader, context);
                 context.Writer.WriteEndObject();
                 break;
-            case DataType.EnumChoice:
-                context.Writer.WriteString(propName, reader.Read<DataCoreStringId>().ToString(Database));
-                break;
-            case DataType.Guid:
-                context.Writer.WriteString(propName, reader.Read<CigGuid>().ToString());
-                break;
-            case DataType.Locale:
-                context.Writer.WriteString(propName, reader.Read<DataCoreStringId>().ToString(Database));
-                break;
-            case DataType.Double:
-                context.Writer.WriteNumber(propName, reader.ReadDouble());
-                break;
-            case DataType.Single:
-                context.Writer.WriteNumber(propName, reader.ReadSingle());
-                break;
-            case DataType.String:
-                context.Writer.WriteString(propName, reader.Read<DataCoreStringId>().ToString(Database));
-                break;
-            case DataType.UInt64:
-                context.Writer.WriteNumber(propName, reader.ReadUInt64());
-                break;
-            case DataType.UInt32:
-                context.Writer.WriteNumber(propName, reader.ReadUInt32());
-                break;
-            case DataType.UInt16:
-                context.Writer.WriteNumber(propName, reader.ReadUInt16());
-                break;
-            case DataType.Byte:
-                context.Writer.WriteNumber(propName, reader.ReadByte());
-                break;
-            case DataType.Int64:
-                context.Writer.WriteNumber(propName, reader.ReadInt64());
-                break;
-            case DataType.Int32:
-                context.Writer.WriteNumber(propName, reader.ReadInt32());
-                break;
-            case DataType.Int16:
-                context.Writer.WriteNumber(propName, reader.ReadInt16());
-                break;
-            case DataType.SByte:
-                context.Writer.WriteNumber(propName, reader.ReadSByte());
-                break;
-            case DataType.Boolean:
-                context.Writer.WriteBoolean(propName, reader.ReadBoolean());
-                break;
+            case DataType.EnumChoice: context.Writer.WriteString(propName, reader.Read<DataCoreStringId>().ToString(Database)); break;
+            case DataType.Guid: context.Writer.WriteString(propName, reader.Read<CigGuid>().ToString()); break;
+            case DataType.Locale: context.Writer.WriteString(propName, reader.Read<DataCoreStringId>().ToString(Database)); break;
+            case DataType.Double: context.Writer.WriteNumber(propName, reader.ReadDouble()); break;
+            case DataType.Single: context.Writer.WriteNumber(propName, reader.ReadSingle()); break;
+            case DataType.String: context.Writer.WriteString(propName, reader.Read<DataCoreStringId>().ToString(Database)); break;
+            case DataType.UInt64: context.Writer.WriteNumber(propName, reader.ReadUInt64()); break;
+            case DataType.UInt32: context.Writer.WriteNumber(propName, reader.ReadUInt32()); break;
+            case DataType.UInt16: context.Writer.WriteNumber(propName, reader.ReadUInt16()); break;
+            case DataType.Byte: context.Writer.WriteNumber(propName, reader.ReadByte()); break;
+            case DataType.Int64: context.Writer.WriteNumber(propName, reader.ReadInt64()); break;
+            case DataType.Int32: context.Writer.WriteNumber(propName, reader.ReadInt32()); break;
+            case DataType.Int16: context.Writer.WriteNumber(propName, reader.ReadInt16()); break;
+            case DataType.SByte: context.Writer.WriteNumber(propName, reader.ReadSByte()); break;
+            case DataType.Boolean: context.Writer.WriteBoolean(propName, reader.ReadBoolean()); break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
@@ -251,53 +208,22 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
                     WriteInstance(prop.StructIndex, i, context);
                     context.Writer.WriteEndObject();
                     break;
-                case DataType.EnumChoice:
-                    context.Writer.WriteStringValue(Database.EnumValues[i].ToString(Database));
-                    break;
-                case DataType.Guid:
-                    context.Writer.WriteStringValue(Database.GuidValues[i].ToString());
-                    break;
-                case DataType.Locale:
-                    context.Writer.WriteStringValue(Database.LocaleValues[i].ToString(Database));
-                    break;
-                case DataType.Double:
-                    context.Writer.WriteNumberValue(Database.DoubleValues[i]);
-                    break;
-                case DataType.Single:
-                    context.Writer.WriteNumberValue(Database.SingleValues[i]);
-                    break;
-                case DataType.String:
-                    context.Writer.WriteStringValue(Database.StringIdValues[i].ToString(Database));
-                    break;
-                case DataType.UInt64:
-                    context.Writer.WriteNumberValue(Database.UInt64Values[i]);
-                    break;
-                case DataType.UInt32:
-                    context.Writer.WriteNumberValue(Database.UInt32Values[i]);
-                    break;
-                case DataType.UInt16:
-                    context.Writer.WriteNumberValue(Database.UInt16Values[i]);
-                    break;
-                case DataType.Byte:
-                    context.Writer.WriteNumberValue(Database.UInt8Values[i]);
-                    break;
-                case DataType.Int64:
-                    context.Writer.WriteNumberValue(Database.Int64Values[i]);
-                    break;
-                case DataType.Int32:
-                    context.Writer.WriteNumberValue(Database.Int32Values[i]);
-                    break;
-                case DataType.Int16:
-                    context.Writer.WriteNumberValue(Database.Int16Values[i]);
-                    break;
-                case DataType.SByte:
-                    context.Writer.WriteNumberValue(Database.Int8Values[i]);
-                    break;
-                case DataType.Boolean:
-                    context.Writer.WriteBooleanValue(Database.BooleanValues[i]);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
+                case DataType.EnumChoice: context.Writer.WriteStringValue(Database.EnumValues[i].ToString(Database)); break;
+                case DataType.Guid: context.Writer.WriteStringValue(Database.GuidValues[i].ToString()); break;
+                case DataType.Locale: context.Writer.WriteStringValue(Database.LocaleValues[i].ToString(Database)); break;
+                case DataType.Double: context.Writer.WriteNumberValue(Database.DoubleValues[i]); break;
+                case DataType.Single: context.Writer.WriteNumberValue(Database.SingleValues[i]); break;
+                case DataType.String: context.Writer.WriteStringValue(Database.StringIdValues[i].ToString(Database)); break;
+                case DataType.UInt64: context.Writer.WriteNumberValue(Database.UInt64Values[i]); break;
+                case DataType.UInt32: context.Writer.WriteNumberValue(Database.UInt32Values[i]); break;
+                case DataType.UInt16: context.Writer.WriteNumberValue(Database.UInt16Values[i]); break;
+                case DataType.Byte: context.Writer.WriteNumberValue(Database.UInt8Values[i]); break;
+                case DataType.Int64: context.Writer.WriteNumberValue(Database.Int64Values[i]); break;
+                case DataType.Int32: context.Writer.WriteNumberValue(Database.Int32Values[i]); break;
+                case DataType.Int16: context.Writer.WriteNumberValue(Database.Int16Values[i]); break;
+                case DataType.SByte: context.Writer.WriteNumberValue(Database.Int8Values[i]); break;
+                case DataType.Boolean: context.Writer.WriteBooleanValue(Database.BooleanValues[i]); break;
+                default: throw new ArgumentOutOfRangeException();
             }
         }
 
