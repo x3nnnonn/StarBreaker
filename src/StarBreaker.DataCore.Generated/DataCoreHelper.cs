@@ -1,7 +1,7 @@
 ﻿using StarBreaker.Common;
-using StarBreaker.DataCoreGenerated;
+using StarBreaker.DataCore;
 
-namespace StarBreaker.DataCore;
+namespace StarBreaker.DataCoreGenerated;
 
 public static class DataCoreHelper
 {
@@ -45,12 +45,12 @@ public static class DataCoreHelper
         return eVal;
     }
 
-    public static T[] ReadReferenceArray<T>(DataCoreDatabase db, ref SpanReader reader) where T : class, IDataCoreReadable<T>
+    public static T?[] ReadReferenceArray<T>(DataCoreDatabase db, ref SpanReader reader) where T : class, IDataCoreReadable<T>
     {
         var count = reader.ReadInt32();
         var firstIndex = reader.ReadInt32();
 
-        var array = new T[count];
+        var array = new T?[count];
 
         for (var i = firstIndex; i < firstIndex + count; i++)
         {
