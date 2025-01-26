@@ -2,6 +2,8 @@
 
 namespace StarBreaker.DataCore;
 
+//TODO: come up with a way of hashing the types we generated, then verify that the datacore file we're reading matches the types we have.
+// if they don't match we *WILL* fail to read it. We should throw before this.
 public sealed class DataCoreBinaryGenerated : IDataCoreBinary<IDataCoreReadable>
 {
     public DataCoreDatabase Database { get; }

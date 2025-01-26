@@ -125,7 +125,6 @@ public class DataCoreTypeGenerator
             }
             else
             {
-                //sb.AppendLine($"public class {structDefinition.GetName(Database)}");
                 sb.AppendLine($"public record {structDefinition.GetName(Database)} : IDataCoreReadable<{structDefinition.GetName(Database)}>");
             }
 
@@ -137,7 +136,7 @@ public class DataCoreTypeGenerator
                 var propertyType = GetPropertyType(property);
                 var name = property.GetName(Database);
 
-                sb.AppendLine($"    public {propertyType} @{name} {{ get; init; }}");
+                sb.AppendLine($"    public required {propertyType} @{name} {{ get; init; }}");
             }
 
             sb.AppendLine();
@@ -152,57 +151,7 @@ public class DataCoreTypeGenerator
         }
     }
 
-    private void WriteBasicConstructor(StringBuilder sb, DataCoreStructDefinition structDefinition, int structIndex)
-    {
-        // The constructor should take as arguments the properties in the order we expect.
-        // Which is base type -> derived type -> derived type -> our type strictly.
-        // then we handle passing the properties to the following constructor.
-        var allprops = Database.GetProperties(structIndex).AsSpan();
-        sb.AppendLine($"    public {structDefinition.GetName(Database)}(");
-        for (var i = 0; i < allprops.Length; i++)
-        {
-            var property = allprops[i];
-            var propertyType = GetPropertyType(property);
-            var name = property.GetName(Database);
-
-            sb.Append($"        {propertyType} _{name}");
-            if (i != allprops.Length - 1)
-                sb.AppendLine(",");
-            else sb.AppendLine();
-        }
-
-        sb.AppendLine("    )");
-
-        if (structDefinition.ParentTypeIndex != -1)
-        {
-            sb.AppendLine("        : base(");
-            //we take all properties from all parent types. We will consume our own in our constructor, and pass down the rest.
-            var propsForConstructor = allprops[..^structDefinition.AttributeCount];
-            for (var i = 0; i < propsForConstructor.Length; i++)
-            {
-                var property = propsForConstructor[i];
-                var name = property.GetName(Database);
-                sb.Append($"            _{name}");
-                if (i != propsForConstructor.Length - 1)
-                    sb.AppendLine(",");
-                else sb.AppendLine();
-            }
-
-            sb.AppendLine("        )");
-        }
-
-        sb.AppendLine("    {");
-        var thisProps = Database.PropertyDefinitions.AsSpan(structDefinition.FirstAttributeIndex, structDefinition.AttributeCount);
-        foreach (var property in thisProps)
-        {
-            var name = property.GetName(Database);
-            sb.AppendLine($"        @{name} = _{name};");
-        }
-
-        sb.AppendLine("    }");
-    }
-
-    private string GetSimplePropertyType(DataCorePropertyDefinition property) => property.DataType switch
+    private string GetScalarPropertyType(DataCorePropertyDefinition property) => property.DataType switch
     {
         DataType.Boolean => "bool",
         DataType.Byte => "byte",
@@ -216,42 +165,78 @@ public class DataCoreTypeGenerator
         DataType.Single => "float",
         DataType.Double => "double",
         DataType.Guid => "CigGuid",
-        DataType.Locale => "DataCoreStringId",
-        DataType.String => "DataCoreStringId",
+        DataType.Locale => "string",
+        DataType.String => "string",
+
+        DataType.EnumChoice => Database.EnumDefinitions[property.StructIndex].GetName(Database),
+        DataType.Reference => $"{Database.StructDefinitions[property.StructIndex].GetName(Database)}?",
+        DataType.StrongPointer => $"{Database.StructDefinitions[property.StructIndex].GetName(Database)}?",
+        DataType.Class => Database.StructDefinitions[property.StructIndex].GetName(Database),
+
+        DataType.WeakPointer => "DataCorePointer",
+        // DataType.WeakPointer => Database.StructDefinitions[property.StructIndex].GetName(Database)?,
+        _ => throw new ArgumentOutOfRangeException()
+    };
+    
+    private string GetGenericPropertyType(DataCorePropertyDefinition property) => property.DataType switch
+    {
+        DataType.Boolean => "bool",
+        DataType.Byte => "byte",
+        DataType.SByte => "sbyte",
+        DataType.Int16 => "short",
+        DataType.UInt16 => "ushort",
+        DataType.Int32 => "int",
+        DataType.UInt32 => "uint",
+        DataType.Int64 => "long",
+        DataType.UInt64 => "ulong",
+        DataType.Single => "float",
+        DataType.Double => "double",
+        DataType.Guid => "CigGuid",
+        DataType.Locale => "string",
+        DataType.String => "string",
 
         DataType.EnumChoice => Database.EnumDefinitions[property.StructIndex].GetName(Database),
         DataType.Reference => Database.StructDefinitions[property.StructIndex].GetName(Database),
-        DataType.WeakPointer => "DataCorePointer",
         DataType.StrongPointer => Database.StructDefinitions[property.StructIndex].GetName(Database),
         DataType.Class => Database.StructDefinitions[property.StructIndex].GetName(Database),
 
-        //todo
-        // DataType.EnumChoice => Database.EnumDefinitions[property.StructIndex].GetName(Database),
-        // DataType.Class => Database.StructDefinitions[property.StructIndex].GetName(Database),
-        // DataType.Reference => Database.StructDefinitions[property.StructIndex].GetName(Database),
-        // DataType.WeakPointer => Database.StructDefinitions[property.StructIndex].GetName(Database),
-        // DataType.StrongPointer => Database.StructDefinitions[property.StructIndex].GetName(Database),
+        DataType.WeakPointer => "DataCorePointer",
+        // DataType.WeakPointer => Database.StructDefinitions[property.StructIndex].GetName(Database)?,
         _ => throw new ArgumentOutOfRangeException()
     };
 
-
-    private string GetPropertyType(DataCorePropertyDefinition property)
+    private string GetArrayPropertyType(DataCorePropertyDefinition property) => property.DataType switch
     {
-        var baseProperty = GetSimplePropertyType(property);
+        DataType.Boolean => "bool[]",
+        DataType.Byte => "byte[]",
+        DataType.SByte => "sbyte[]",
+        DataType.Int16 => "short[]",
+        DataType.UInt16 => "ushort[]",
+        DataType.Int32 => "int[]",
+        DataType.UInt32 => "uint[]",
+        DataType.Int64 => "long[]",
+        DataType.UInt64 => "ulong[]",
+        DataType.Single => "float[]",
+        DataType.Double => "double[]",
+        DataType.Guid => "CigGuid[]",
+        DataType.Locale => "string[]",
+        DataType.String => "string[]",
 
-        return property.ConversionType switch
-        {
-            ConversionType.Attribute => baseProperty,
-            _ => $"{baseProperty}[]"
-        };
-    }
+        DataType.EnumChoice => $"{Database.EnumDefinitions[property.StructIndex].GetName(Database)}[]",
+        DataType.Reference => $"{Database.StructDefinitions[property.StructIndex].GetName(Database)}?[]",
+        DataType.StrongPointer => $"{Database.StructDefinitions[property.StructIndex].GetName(Database)}?[]",
+        DataType.Class => $"{Database.StructDefinitions[property.StructIndex].GetName(Database)}[]",
 
-    //TODO: generate a constructor that accepts something useful like a SpanReader and a database.
-    // it should then, based on its properties, generate  either:
-    // if attribute, reader.Read<t>(). For struct types, we *have* to pass down the spanreader or it gets out of sync.
-    //      For references or pointers, we can just read that and ski the actual data for a POC impl.
-    // if array, we probably pass it down to a generic method that handles reading the array i and count, and reads the elements as needed.
-    //      for a poc, realistically we read those two ints and skip. things should work fine from there on even half complete.
+        DataType.WeakPointer => "DataCorePointer[]",
+        // DataType.WeakPointer => $"{Database.StructDefinitions[property.StructIndex].GetName(Database)}?[]",
+        _ => throw new ArgumentOutOfRangeException()
+    };
+
+    private string GetPropertyType(DataCorePropertyDefinition property) => property.ConversionType switch
+    {
+        ConversionType.Attribute => GetScalarPropertyType(property),
+        _ => GetArrayPropertyType(property)
+    };
 
     private void WriteSpecialConstructor(StringBuilder sb, DataCoreStructDefinition structDefinition, int structIndex)
     {
@@ -291,7 +276,7 @@ public class DataCoreTypeGenerator
 
     private void WriteSingleRead(StringBuilder sb, DataCorePropertyDefinition property)
     {
-        var propertyType = GetSimplePropertyType(property);
+        var propertyType = GetGenericPropertyType(property);
         var name = property.GetName(Database);
 
         switch (property.DataType)
@@ -301,7 +286,7 @@ public class DataCoreTypeGenerator
                 break;
             case DataType.EnumChoice:
                 var enumName = Database.EnumDefinitions[property.StructIndex].GetName(Database);
-                sb.AppendLine($"        var _{name} = DataCoreHelper.EnumParse<{enumName}>(reader.Read<DataCoreStringId>().ToString(db), {enumName}.__Unknown);");
+                sb.AppendLine($"        var _{name} = DataCoreHelper.EnumParse(reader.Read<DataCoreStringId>().ToString(db), {enumName}.__Unknown);");
                 break;
             case DataType.Reference:
                 sb.AppendLine($"        var _{name} = DataCoreHelper.ReadFromReference<{propertyType}>(db, reader.Read<DataCoreReference>());");
@@ -313,11 +298,13 @@ public class DataCoreTypeGenerator
                 //do as default. we probably should handle this, it's actually feasible now :D
                 sb.AppendLine($"        var _{name} = reader.Read<{propertyType}>();");
                 break;
-            case DataType.Guid:
+            case DataType.String:
             case DataType.Locale:
+                sb.AppendLine($"        var _{name} = reader.Read<DataCoreStringId>().ToString(db);");
+                break;
+            case DataType.Guid:
             case DataType.Double:
             case DataType.Single:
-            case DataType.String:
             case DataType.UInt64:
             case DataType.UInt32:
             case DataType.UInt16:
@@ -337,7 +324,7 @@ public class DataCoreTypeGenerator
 
     private void WriteArrayRead(StringBuilder sb, DataCorePropertyDefinition property)
     {
-        var propertyType = GetSimplePropertyType(property);
+        var propertyType = GetGenericPropertyType(property);
         var name = property.GetName(Database);
 
         switch (property.DataType)
