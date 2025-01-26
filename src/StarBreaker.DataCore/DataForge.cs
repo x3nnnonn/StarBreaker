@@ -15,11 +15,6 @@ public static class DataForge
     {
         return new DataForge<string>(new DataCoreBinaryXml(new DataCoreDatabase(File.OpenRead(path))));
     }
-    
-    public static DataForge<IDataCoreObject> FromDcbObjects(string path)
-    {
-        return new DataForge<IDataCoreObject>(new DataCoreBinaryObjects(new DataCoreDatabase(File.OpenRead(path))));
-    }
 }
 
 public class DataForge<T>
