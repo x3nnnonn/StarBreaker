@@ -1,8 +1,9 @@
+using System.Runtime.InteropServices;
 using StarBreaker.Common;
 
 namespace StarBreaker.DataCore;
 
-public sealed class DataCoreBinaryObjects
+public sealed class DataCoreBinaryObjects : IDataCoreBinary<IDataCoreObject>
 {
     public DataCoreDatabase Database { get; }
 
@@ -11,7 +12,7 @@ public sealed class DataCoreBinaryObjects
         Database = db;
     }
 
-    private DataCoreObject GetFromStruct(string name, int structIndex, ref SpanReader reader, DataCoreExtractionContext<DataCoreObject> context)
+    private DataCoreObject GetFromStruct(string name, int structIndex, ref SpanReader reader, Context context)
     {
         var properties = Database.GetProperties(structIndex);
 
@@ -32,7 +33,7 @@ public sealed class DataCoreBinaryObjects
         return new DataCoreObject(name, arr);
     }
 
-    public IDataCoreObject GetArray(string propName, DataCorePropertyDefinition prop, ref SpanReader reader, DataCoreExtractionContext<DataCoreObject> context)
+    private IDataCoreObject GetArray(string propName, DataCorePropertyDefinition prop, ref SpanReader reader, Context context)
     {
         var count = reader.ReadInt32();
         var firstIndex = reader.ReadInt32();
@@ -65,7 +66,7 @@ public sealed class DataCoreBinaryObjects
         };
     }
 
-    private IDataCoreObject[] GetFromReferences(string structName, int start, int count, DataCoreExtractionContext<DataCoreObject> context)
+    private IDataCoreObject[] GetFromReferences(string structName, int start, int count, Context context)
     {
         var arr = new IDataCoreObject[count];
 
@@ -77,7 +78,7 @@ public sealed class DataCoreBinaryObjects
         return arr;
     }
 
-    private IDataCoreObject[] GetFromWeakPointers(string structName, int start, int count, DataCoreExtractionContext<DataCoreObject> context)
+    private IDataCoreObject[] GetFromWeakPointers(string structName, int start, int count, Context context)
     {
         var arr = new IDataCoreObject[count];
 
@@ -89,7 +90,7 @@ public sealed class DataCoreBinaryObjects
         return arr;
     }
 
-    private IDataCoreObject[] GetFromPointers(string structName, int start, int count, DataCoreExtractionContext<DataCoreObject> context)
+    private IDataCoreObject[] GetFromPointers(string structName, int start, int count, Context context)
     {
         var arr = new IDataCoreObject[count];
 
@@ -101,7 +102,7 @@ public sealed class DataCoreBinaryObjects
         return arr;
     }
 
-    private IDataCoreObject[] GetFromInstances(string structName, int structIndex, int i, int count, DataCoreExtractionContext<DataCoreObject> context)
+    private IDataCoreObject[] GetFromInstances(string structName, int structIndex, int i, int count, Context context)
     {
         var arr = new IDataCoreObject[count];
 
@@ -113,7 +114,7 @@ public sealed class DataCoreBinaryObjects
         return arr;
     }
 
-    private IDataCoreObject GetAttribute(string propertyName, DataCorePropertyDefinition prop, ref SpanReader reader, DataCoreExtractionContext<DataCoreObject> context)
+    private IDataCoreObject GetAttribute(string propertyName, DataCorePropertyDefinition prop, ref SpanReader reader, Context context)
     {
         return prop.DataType switch
         {
@@ -141,7 +142,7 @@ public sealed class DataCoreBinaryObjects
         };
     }
 
-    private IDataCoreObject GetFromReference(string name, DataCoreReference reference, DataCoreExtractionContext<DataCoreObject> context, bool overrideName = false)
+    private IDataCoreObject GetFromReference(string name, DataCoreReference reference, Context context, bool overrideName = false)
     {
         if (reference.InstanceIndex == -1 || reference.RecordId == CigGuid.Empty)
             return new DataCoreValue<object?>(name, null);
@@ -162,7 +163,7 @@ public sealed class DataCoreBinaryObjects
         return GetFromInstance(name, record.StructIndex, record.InstanceIndex, context, overrideName);
     }
 
-    public IDataCoreObject GetFromMainRecord(DataCoreRecord record, DataCoreExtractionContext<DataCoreObject> context)
+    public IDataCoreObject GetFromMainRecord(DataCoreRecord record, DataCoreExtractionOptions options)
     {
         if (!Database.MainRecords.Contains(record.Id))
             throw new InvalidOperationException("Can only extract main records");
@@ -172,6 +173,8 @@ public sealed class DataCoreBinaryObjects
             .Replace(" ", "_")
             .Replace("/", "_")
             .Replace("&", "_");
+
+        var context = new Context(record.GetFileName(Database), options);
 
         var element = GetFromInstance(recordName, record.StructIndex, record.InstanceIndex, context);
 
@@ -186,12 +189,17 @@ public sealed class DataCoreBinaryObjects
         return element;
     }
 
-    private IDataCoreObject GetFromPointer(string name, DataCorePointer pointer, DataCoreExtractionContext<DataCoreObject> context, bool overrideName = false)
+    public void SaveToFile(DataCoreRecord record, DataCoreExtractionOptions options, string path)
+    {
+        throw new NotImplementedException();
+    }
+
+    private IDataCoreObject GetFromPointer(string name, DataCorePointer pointer, Context context, bool overrideName = false)
     {
         return GetFromInstance(name, pointer.StructIndex, pointer.InstanceIndex, context, overrideName);
     }
-    
-    private IDataCoreObject GetFromInstance(string name, int structIndex, int instanceIndex, DataCoreExtractionContext<DataCoreObject> context, bool overrideName = false)
+
+    private IDataCoreObject GetFromInstance(string name, int structIndex, int instanceIndex, Context context, bool overrideName = false)
     {
         if (structIndex == -1 || instanceIndex == -1)
             return new DataCoreValue<object?>(name, null);
@@ -215,7 +223,7 @@ public sealed class DataCoreBinaryObjects
         return element;
     }
 
-    private IDataCoreObject GetWeakPointer(string name, DataCorePointer pointer, DataCoreExtractionContext<DataCoreObject> context, bool overrideName = false)
+    private IDataCoreObject GetWeakPointer(string name, DataCorePointer pointer, Context context, bool overrideName = false)
     {
         if (pointer.InstanceIndex == -1 || pointer.StructIndex == -1)
             return new DataCoreValue<object?>(name, null);
@@ -230,5 +238,39 @@ public sealed class DataCoreBinaryObjects
         ]);
 
         return weakPointer;
+    }
+
+    private sealed class Context
+    {
+        private readonly Dictionary<(int structIndex, int instanceIndex), int> _weakPointerIds;
+        private int _nextWeakPointerId = 0;
+
+        public Dictionary<(int structIndex, int instanceIndex), IDataCoreObject> Elements { get; }
+
+        public string FileName { get; }
+        public DataCoreExtractionOptions Options { get; }
+
+        public Context(string fileName, DataCoreExtractionOptions options)
+        {
+            FileName = fileName;
+            Options = options;
+
+            Elements = [];
+            _weakPointerIds = [];
+        }
+
+        public int AddWeakPointer(int structIndex, int instanceIndex)
+        {
+            ref var id = ref CollectionsMarshal.GetValueRefOrAddDefault(_weakPointerIds, (structIndex, instanceIndex), out var existed);
+
+            if (!existed)
+                id = _nextWeakPointerId++;
+
+            return id;
+        }
+
+        public int GetWeakPointerId(int structIndex, int instanceIndex) => _weakPointerIds[(structIndex, instanceIndex)];
+
+        public IEnumerable<(int structIndex, int instanceIndex)> GetWeakPointers() => _weakPointerIds.Keys;
     }
 }

@@ -1,19 +1,20 @@
 using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Xml.Linq;
 using StarBreaker.Common;
 
 namespace StarBreaker.DataCore;
 
-public sealed class DataCoreBinary
+public sealed class DataCoreBinaryXml : IDataCoreBinary<XElement>
 {
     public DataCoreDatabase Database { get; }
 
-    public DataCoreBinary(DataCoreDatabase db)
+    public DataCoreBinaryXml(DataCoreDatabase db)
     {
         Database = db;
     }
 
-    private XElement GetFromStruct(string name, int structIndex, ref SpanReader reader, DataCoreExtractionContext<XElement> context)
+    private XElement GetFromStruct(string name, int structIndex, ref SpanReader reader, Context context)
     {
         var node = new XElement(name);
 
@@ -30,7 +31,7 @@ public sealed class DataCoreBinary
         return node;
     }
 
-    private XElement? GetArray(string propName, DataCorePropertyDefinition prop, ref SpanReader reader, DataCoreExtractionContext<XElement> context)
+    private XElement? GetArray(string propName, DataCorePropertyDefinition prop, ref SpanReader reader, Context context)
     {
         var count = reader.ReadInt32();
         var firstIndex = reader.ReadInt32();
@@ -77,7 +78,7 @@ public sealed class DataCoreBinary
         return arrayNode;
     }
 
-    private XElement GetAttribute(string propertyName, DataCorePropertyDefinition prop, ref SpanReader reader, DataCoreExtractionContext<XElement> context)
+    private XElement GetAttribute(string propertyName, DataCorePropertyDefinition prop, ref SpanReader reader, Context context)
     {
         return prop.DataType switch
         {
@@ -105,7 +106,7 @@ public sealed class DataCoreBinary
         };
     }
 
-    private XElement GetFromReference(string name, DataCoreReference reference, DataCoreExtractionContext<XElement> context, bool overrideName = false)
+    private XElement GetFromReference(string name, DataCoreReference reference, Context context, bool overrideName = false)
     {
         if (reference.InstanceIndex == -1 || reference.RecordId == CigGuid.Empty)
             return GetNull(name, context, -1, reference.InstanceIndex);
@@ -126,7 +127,7 @@ public sealed class DataCoreBinary
         return GetFromInstance(name, record.StructIndex, record.InstanceIndex, context, overrideName).WithAttribute("recordGuid", record.Id.ToString());
     }
 
-    public XElement GetFromMainRecord(DataCoreRecord record, DataCoreExtractionContext<XElement> context)
+    public XElement GetFromMainRecord(DataCoreRecord record, DataCoreExtractionOptions options)
     {
         if (!Database.MainRecords.Contains(record.Id))
             throw new InvalidOperationException("Can only extract main records");
@@ -136,6 +137,8 @@ public sealed class DataCoreBinary
             .Replace(" ", "_")
             .Replace("/", "_")
             .Replace("&", "_");
+
+        var context = new Context(record.GetFileName(Database), options);
 
         var element = GetFromInstance(recordName, record.StructIndex, record.InstanceIndex, context)
             .WithAttribute("__recordGuid", record.Id.ToString());
@@ -151,10 +154,13 @@ public sealed class DataCoreBinary
         return element;
     }
 
-    private XElement GetFromPointer(string name, DataCorePointer pointer, DataCoreExtractionContext<XElement> context, bool overrideName = false) =>
+    public void SaveToFile(DataCoreRecord record, DataCoreExtractionOptions options, string path) =>
+        GetFromMainRecord(record, options).Save(path);
+
+    private XElement GetFromPointer(string name, DataCorePointer pointer, Context context, bool overrideName = false) =>
         GetFromInstance(name, pointer.StructIndex, pointer.InstanceIndex, context, overrideName);
 
-    private XElement GetFromInstance(string name, int structIndex, int instanceIndex, DataCoreExtractionContext<XElement> context, bool overrideName = false)
+    private XElement GetFromInstance(string name, int structIndex, int instanceIndex, Context context, bool overrideName = false)
     {
         if (structIndex == -1 || instanceIndex == -1)
             return GetNull(name, context, structIndex, instanceIndex);
@@ -181,7 +187,7 @@ public sealed class DataCoreBinary
         return element;
     }
 
-    private XElement GetWeakPointer(string name, DataCorePointer pointer, DataCoreExtractionContext<XElement> context, bool overrideName = false)
+    private XElement GetWeakPointer(string name, DataCorePointer pointer, Context context, bool overrideName = false)
     {
         if (pointer.InstanceIndex == -1 || pointer.StructIndex == -1)
             return GetNull(name, context, pointer.StructIndex, pointer.InstanceIndex);
@@ -200,7 +206,7 @@ public sealed class DataCoreBinary
         return weakPointer;
     }
 
-    private XElement GetNull(string name, DataCoreExtractionContext<XElement> context, int structIndex, int instanceIndex)
+    private XElement GetNull(string name, Context context, int structIndex, int instanceIndex)
     {
         var element = new XElement(name);
         element.Add(new XAttribute("__value", "null"));
@@ -211,7 +217,7 @@ public sealed class DataCoreBinary
         return element;
     }
 
-    private void WriteTypeNames(XElement element, int structIndex, DataCoreExtractionContext<XElement> context)
+    private void WriteTypeNames(XElement element, int structIndex, Context context)
     {
         if (structIndex == -1)
             return;
@@ -234,12 +240,47 @@ public sealed class DataCoreBinary
         }
     }
 
-    private static void WriteMetadata(XElement element, int structIndex, int instanceIndex, DataCoreExtractionContext<XElement> context)
+    private static void WriteMetadata(XElement element, int structIndex, int instanceIndex, Context context)
     {
         if (!context.Options.ShouldWriteMetadata)
             return;
 
         element.Add(new XAttribute("__structIndex", structIndex.ToString(CultureInfo.InvariantCulture)));
         element.Add(new XAttribute("__instanceIndex", instanceIndex.ToString(CultureInfo.InvariantCulture)));
+    }
+
+    private sealed class Context
+    {
+        private readonly Dictionary<(int structIndex, int instanceIndex), int> _weakPointerIds;
+        private int _nextWeakPointerId = 0;
+
+        public Dictionary<(int structIndex, int instanceIndex), XElement> Elements { get; }
+
+        public string FileName { get; }
+        public DataCoreExtractionOptions Options { get; }
+
+
+        public Context(string fileName, DataCoreExtractionOptions options)
+        {
+            FileName = fileName;
+            Options = options;
+
+            Elements = [];
+            _weakPointerIds = [];
+        }
+
+        public int AddWeakPointer(int structIndex, int instanceIndex)
+        {
+            ref var id = ref CollectionsMarshal.GetValueRefOrAddDefault(_weakPointerIds, (structIndex, instanceIndex), out var existed);
+
+            if (!existed)
+                id = _nextWeakPointerId++;
+
+            return id;
+        }
+
+        public int GetWeakPointerId(int structIndex, int instanceIndex) => _weakPointerIds[(structIndex, instanceIndex)];
+
+        public IEnumerable<(int structIndex, int instanceIndex)> GetWeakPointers() => _weakPointerIds.Keys;
     }
 }

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Xml.Linq;
 using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
@@ -16,13 +17,13 @@ public class DataCoreExtractCommand : ICommand
 
     [CommandOption("dcb", 'd', Description = "Path to the Game.dcb")]
     public string? DcbFile { get; init; }
-    
+
     [CommandOption("output", 'o', Description = "Path to the output directory")]
     public required string OutputDirectory { get; init; }
-    
+
     [CommandOption("filter", 'f', Description = "Pattern to filter entries")]
     public string? Filter { get; init; }
-    
+
     public ValueTask ExecuteAsync(IConsole console)
     {
         if (P4kFile == null && DcbFile == null)
@@ -30,6 +31,7 @@ public class DataCoreExtractCommand : ICommand
             console.Output.WriteLine("P4k and DCB files are required.");
             return default;
         }
+
         if (!string.IsNullOrEmpty(P4kFile) && !string.IsNullOrEmpty(DcbFile))
         {
             console.Output.WriteLine("Only one of P4k and DCB files can be specified.");
@@ -62,7 +64,11 @@ public class DataCoreExtractCommand : ICommand
             return default;
         }
 
-        var df = new DataForge(dcbStream);
+        var df = new DataForge<XElement>(
+            new DataCoreBinaryXml(
+                new DataCoreDatabase(dcbStream)
+            )
+        );
 
         console.Output.WriteLine("DataCore loaded.");
         console.Output.WriteLine("Exporting...");
@@ -70,10 +76,10 @@ public class DataCoreExtractCommand : ICommand
         var sw = Stopwatch.StartNew();
         df.ExtractAllParallel(OutputDirectory, Filter, new ProgressBar(console));
         sw.Stop();
-        
+
         console.Output.WriteLine();
         console.Output.WriteLine($"Export completed in {sw.ElapsedMilliseconds}ms.");
-        
+
         return default;
     }
 }

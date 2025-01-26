@@ -24,14 +24,14 @@ public sealed partial class DataCoreTabViewModel : PageViewModelBase
     private void Initialize()
     {
         var entry = _p4KService.P4KFileSystem.OpenRead(dataCorePath);
-        var dcb = new DataCoreBinary(new DataCoreDatabase(entry));
+        var dcb = new DataCoreBinaryXml(new DataCoreDatabase(entry));
         entry.Dispose();
         
         Dispatcher.UIThread.InvokeAsync(() => DataCore = dcb);
     }
 
     [ObservableProperty] 
-    private DataCoreBinary? _dataCore;
+    private DataCoreBinaryXml? _dataCore;
 
     public string Yes => DataCore?.Database.RecordDefinitions.Length.ToString() ?? "No";
 }
