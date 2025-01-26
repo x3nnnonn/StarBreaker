@@ -21,6 +21,7 @@ public class DataCoreTypeGenerator
         GenerateTypes(path);
         GenerateEnums(path);
         GenerateTypeMap(path);
+        GenerateConstantsFile(path);
     }
 
     private void GenerateTypeMap(string path)
@@ -385,5 +386,21 @@ public class DataCoreTypeGenerator
             default:
                 throw new ArgumentOutOfRangeException();
         }
+    }
+    
+    private void GenerateConstantsFile(string path)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("namespace StarBreaker.DataCoreGenerated;");
+        sb.AppendLine();
+        sb.AppendLine("public static class DataCoreConstants");
+        sb.AppendLine("{");
+        sb.AppendLine($"    public const int StructCount = {Database.StructDefinitions.Length};");
+        sb.AppendLine($"    public const int EnumCount = {Database.EnumDefinitions.Length};");
+        sb.AppendLine($"    public const int StructsHash = {Database.StructsHash};");
+        sb.AppendLine($"    public const int EnumsHash = {Database.EnumsHash};");
+        sb.AppendLine("}");
+        
+        File.WriteAllText(Path.Combine(path, "Constants.cs"), sb.ToString());
     }
 }

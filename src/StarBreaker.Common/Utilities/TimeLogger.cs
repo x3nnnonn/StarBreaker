@@ -11,7 +11,6 @@ public struct TimeLogger
         timestamp = Stopwatch.GetTimestamp();
     }
 
-    [Conditional("DEBUG")]
     public void LogReset(string message)
     {
         var elapsed = Stopwatch.GetElapsedTime(timestamp);
@@ -19,7 +18,6 @@ public struct TimeLogger
         timestamp = Stopwatch.GetTimestamp();
     }
     
-    [Conditional("DEBUG")]
     public void LogContinue(string message)
     {
         var elapsed = Stopwatch.GetElapsedTime(timestamp);

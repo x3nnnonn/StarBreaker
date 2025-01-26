@@ -1,16 +1,27 @@
-﻿using StarBreaker.Common;
+﻿using System.Diagnostics;
+using StarBreaker.Common;
 using StarBreaker.DataCore;
 
 namespace StarBreaker.DataCoreGenerated;
 
-//TODO: come up with a way of hashing the types we generated, then verify that the datacore file we're reading matches the types we have.
-// if they don't match we *WILL* fail to read it. We should throw before this.
 public sealed partial class DataCoreBinaryGenerated : IDataCoreBinary<DataCoreTypedRecord>
 {
     public DataCoreDatabase Database { get; }
 
     public DataCoreBinaryGenerated(DataCoreDatabase database)
     {
+        if (DataCoreConstants.StructCount != database.StructDefinitions.Length)
+            throw new InvalidOperationException($"DataCoreBinaryGenerated: Struct count mismatch. Expected {DataCoreConstants.StructCount}, got {database.StructDefinitions.Length}");
+        
+        if (DataCoreConstants.EnumCount != database.EnumDefinitions.Length)
+            throw new InvalidOperationException($"DataCoreBinaryGenerated: Enum count mismatch. Expected {DataCoreConstants.EnumCount}, got {database.EnumDefinitions.Length}");
+        
+        if (DataCoreConstants.StructsHash != database.StructsHash)
+            throw new InvalidOperationException($"DataCoreBinaryGenerated: Structs hash mismatch. Expected {DataCoreConstants.StructsHash}, got {database.StructsHash}");
+        
+        if (DataCoreConstants.EnumsHash != database.EnumsHash)
+            throw new InvalidOperationException($"DataCoreBinaryGenerated: Enums hash mismatch. Expected {DataCoreConstants.EnumsHash}, got {database.EnumsHash}");
+
         Database = database;
     }
 
@@ -58,14 +69,13 @@ public sealed partial class DataCoreBinaryGenerated : IDataCoreBinary<DataCoreTy
     public T EnumParse<T>(DataCoreStringId stringId, T unknown) where T : struct, Enum
     {
         var value = stringId.ToString(Database);
-        
+
         if (value == "")
             return unknown;
 
         if (!Enum.TryParse<T>(value, out var eVal))
         {
-            var type = typeof(T);
-            Console.WriteLine($"Error parsing Enum of type {type.Name} with value {value}. Setting to unknown.");
+            Debug.WriteLine($"Error parsing Enum of type {typeof(T).Name} with value {value}. Setting to unknown.");
             return unknown;
         }
 

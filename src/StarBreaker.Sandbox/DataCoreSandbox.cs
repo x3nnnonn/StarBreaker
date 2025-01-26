@@ -53,7 +53,8 @@ public static class DataCoreSandbox
 
         var allRecords = df.DataCore.Database.MainRecords
             .AsParallel()
-            .Select(x => df.GetFromRecord(x)).ToList();
+            .Select(x => df.GetFromRecord(x))
+            .ToList();
         timer.LogReset("Extracted all records.");
 
         var classDefinitions = allRecords.Where(r => r.Data is EntityClassDefinition).Select(r => r.Data as EntityClassDefinition).ToList();
