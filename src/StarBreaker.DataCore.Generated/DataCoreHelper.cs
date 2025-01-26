@@ -94,12 +94,12 @@ public static class DataCoreHelper
         return array;
     }
 
-    public static T[] ReadStrongPointerArray<T>(DataCoreDatabase db, ref SpanReader reader) where T : class, IDataCoreReadable<T>
+    public static T?[] ReadStrongPointerArray<T>(DataCoreDatabase db, ref SpanReader reader) where T : class, IDataCoreReadable<T>
     {
         var count = reader.ReadInt32();
         var firstIndex = reader.ReadInt32();
 
-        var array = new T[count];
+        var array = new T?[count];
 
         for (var i = firstIndex; i < firstIndex + count; i++)
         {
@@ -125,7 +125,8 @@ public static class DataCoreHelper
 
         for (var i = firstIndex; i < firstIndex + count; i++)
         {
-            array[i - firstIndex] = ReadFromInstance<T>(db, structIndex, i);
+            array[i - firstIndex] = ReadFromInstance<T>(db, structIndex, i) 
+                                    ?? throw new Exception($"ReadFromInstance failed to read instance of {typeof(T)}");
         }
 
         return array;
@@ -146,18 +147,28 @@ public static class DataCoreHelper
         return array;
     }
 
-    public static DataCoreStringId[] ReadStringArray(DataCoreDatabase db, ref SpanReader reader)
+    public static string[] ReadStringArray(DataCoreDatabase db, ref SpanReader reader)
     {
         var count = reader.ReadInt32();
         var firstIndex = reader.ReadInt32();
-        return db.StringIdValues.AsSpan(firstIndex, count).ToArray();
+        var result = new string[count];
+        
+        for (var i = 0; i < count; i++)
+            result[i] = db.StringIdValues[firstIndex + i].ToString(db);
+        
+        return result;
     }
 
-    public static DataCoreStringId[] ReadLocaleArray(DataCoreDatabase db, ref SpanReader reader)
+    public static string[] ReadLocaleArray(DataCoreDatabase db, ref SpanReader reader)
     {
         var count = reader.ReadInt32();
         var firstIndex = reader.ReadInt32();
-        return db.LocaleValues.AsSpan(firstIndex, count).ToArray();
+        var result = new string[count];
+        
+        for (var i = 0; i < count; i++)
+            result[i] = db.LocaleValues[firstIndex + i].ToString(db);
+        
+        return result;
     }
 
     public static sbyte[] ReadSByteArray(DataCoreDatabase db, ref SpanReader reader)
