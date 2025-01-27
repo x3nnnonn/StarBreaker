@@ -13,13 +13,11 @@ public static class ChfSandbox
         int i = 0;
         await CreateCharactersFromDnaStrings(load.Select(x => ($"female_{i++}.chf", x)));
 
-        return;
-
-        await FixDnaStrings();
-        
-        var hugeData = Path.Combine(SandboxPaths.ResearchFolder, "dna", "huge_fixed.csv");
-        var huge_fixed = (await File.ReadAllLinesAsync(hugeData)).Select(x => x.Split(',')).Select(x => (x[1], x[0])).ToArray();
-        await CreateCharactersFromDnaStrings(huge_fixed);
+        // await FixDnaStrings();
+        //
+        // var hugeData = Path.Combine(SandboxPaths.ResearchFolder, "dna", "huge_fixed.csv");
+        // var huge_fixed = (await File.ReadAllLinesAsync(hugeData)).Select(x => x.Split(',')).Select(x => (x[1], x[0])).ToArray();
+        // await CreateCharactersFromDnaStrings(huge_fixed);
     }
 
     private static Dictionary<FacePart, DnaPart[]> ParseDnaString(string dnaString)
@@ -120,10 +118,10 @@ public static class ChfSandbox
                 male = true;
             else
                 continue;
-            
+
             var sanitized_name = name.Split('\\').Last();
             var path = Path.Combine(dump, $"{(male ? 'm' : 'f')}_{sanitized_name}.chf");
-            
+
             await CreateCharacterFromDnaString(f1, path, male);
         }
     }
@@ -132,16 +130,16 @@ public static class ChfSandbox
     {
         if (dna.Length != 384)
             throw new ArgumentException("Invalid length", nameof(dna));
-        
+
         if (!name.EndsWith(".chf"))
             throw new ArgumentException("Not a chf file", nameof(name));
-        
+
         const string bDirectory = @"C:\Development\StarCitizenChf\src\StarCitizenChf\bin\data\localCharacters";
 
         var default_c = male ? Path.Combine(bDirectory, "default_m", "default_m.chf") : Path.Combine(bDirectory, "default_f", "default_f.chf");
         var chf = ChfFile.FromChf(default_c);
         var dnaBytes = Convert.FromHexString(dna);
-            
+
         //overwrite the dna
         const uint dnaStart = 0x30; //0x9493
 
@@ -149,7 +147,7 @@ public static class ChfSandbox
         chf.Data[dnaStart + 0x16] = 0;
         //This^ is very strange. Setting the value to 0xff makes the character look like the default 0x00 one.
         //anything other than ff works?
-        
+
         Verify(chf);
 
         await chf.WriteToChfFileAsync(name);
@@ -164,12 +162,12 @@ public static class ChfSandbox
         var gender = BodyTypeChunk.Read(ref reader);
         var dna = DnaChunk.Read(ref reader);
     }
-    
+
     public static string FixWeirdDnaString(string dna)
     {
         if (dna.Length != 384)
             throw new ArgumentException("Invalid length", nameof(dna));
-        
+
         var stringBuilder = new StringBuilder();
 
         //reverse endianness
@@ -182,7 +180,7 @@ public static class ChfSandbox
             stringBuilder.Append(part[2..4]);
             stringBuilder.Append(part[0..2]);
         }
-        
+
         return stringBuilder.ToString();
     }
 }

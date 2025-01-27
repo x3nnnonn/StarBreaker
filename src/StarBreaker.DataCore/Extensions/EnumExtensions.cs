@@ -32,5 +32,6 @@ public static class EnumExtensions
         ConversionType.ClassArray => "ClassArray",
         ConversionType.ComplexArray => "ComplexArray",
         ConversionType.SimpleArray => "SimpleArray",
+        _ => throw new ArgumentOutOfRangeException(nameof(conversionType), conversionType, null)
     };
 }

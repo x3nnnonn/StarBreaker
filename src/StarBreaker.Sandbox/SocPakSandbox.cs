@@ -8,21 +8,30 @@ public static class SocPakSandbox
 {
     public static void Run()
     {
-        var socParts = Directory.EnumerateFiles(@"D:\StarCitizen\P4kSocPak", "*.socpart", SearchOption.AllDirectories);
-        foreach (var socPart in socParts)
+        // extract all socpaks
+        var socPaks = Directory.EnumerateFiles(@"D:\StarCitizen\P4kSocPak", "*.socpak", SearchOption.AllDirectories);
+        foreach (var socPak in socPaks)
         {
-            var fs = File.OpenRead(socPart);
-            if (CryXml.TryOpen(fs, out var cryXml))
-            {
-                var path = socPart.Replace(".socpart", ".xml");
-                cryXml.Save(path);
-                fs.Dispose();
-                File.Delete(socPart);
-            }
+            var zip = new ZipArchive(File.OpenRead(socPak));
+            var path = socPak.Replace(".socpak", "");
+            Directory.CreateDirectory(path);
+            zip.ExtractToDirectory(path);
+            zip.Dispose();
+
+            File.Delete(socPak);
         }
 
-        return;
+        //convert all entxml to xml
+        var entxml = Directory.EnumerateFiles(@"D:\StarCitizen\P4kSocPak", "*.entxml", SearchOption.AllDirectories);
+        foreach (var entXml in entxml)
+        {
+            using var fs = File.OpenRead(entXml);
+            var path = entXml.Replace(".entxml", ".xml");
+            if (CryXml.TryOpen(fs, out var cryXml))
+                cryXml.Save(path);
+        }
 
+        //split all soc files (crychunk files)
         var socs = Directory.EnumerateFiles(@"D:\StarCitizen\P4kSocPak", "*.soc", SearchOption.AllDirectories);
         foreach (var soc in socs)
         {
@@ -44,32 +53,18 @@ public static class SocPakSandbox
             }
         }
 
-        return;
-
-
-        var entxml = Directory.EnumerateFiles(@"D:\StarCitizen\P4kSocPak", "*.entxml", SearchOption.AllDirectories);
-        foreach (var entXml in entxml)
+        //convert cryxml chunks to actual xml
+        var socParts = Directory.EnumerateFiles(@"D:\StarCitizen\P4kSocPak", "*.socpart", SearchOption.AllDirectories);
+        foreach (var socPart in socParts)
         {
-            File.Delete(entXml);
-            continue;
-            using var fs = File.OpenRead(entXml);
-            var path = entXml.Replace(".entxml", ".xml");
+            var fs = File.OpenRead(socPart);
             if (CryXml.TryOpen(fs, out var cryXml))
+            {
+                var path = socPart.Replace(".socpart", ".xml");
                 cryXml.Save(path);
-        }
-
-        return;
-
-        var socPaks = Directory.EnumerateFiles(@"D:\StarCitizen\P4kSocPak", "*.socpak", SearchOption.AllDirectories);
-        foreach (var socPak in socPaks)
-        {
-            var zip = new ZipArchive(File.OpenRead(socPak));
-            var path = socPak.Replace(".socpak", "");
-            Directory.CreateDirectory(path);
-            zip.ExtractToDirectory(path);
-            zip.Dispose();
-
-            File.Delete(socPak);
+                fs.Dispose();
+                File.Delete(socPart);
+            }
         }
     }
 }

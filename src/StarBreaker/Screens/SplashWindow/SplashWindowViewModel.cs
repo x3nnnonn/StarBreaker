@@ -179,12 +179,12 @@ public sealed class StarCitizenInstallationViewModel
     public required string Path { get; init; }
     public BuildManifest? Manifest { get; set; }
 
-    public string DisplayVersion => $"{ChannelName} - {Manifest?.Data.Branch}-{Manifest?.Data.RequestedP4ChangeNum}";
+    public string DisplayVersion => $"{ChannelName} - {Manifest?.Data?.Branch}-{Manifest?.Data?.RequestedP4ChangeNum}";
 }
 
 public class BuildManifest
 {
-    public BuildManifestData Data { get; set; }
+    public BuildManifestData? Data { get; set; }
 }
 
 public class BuildManifestData

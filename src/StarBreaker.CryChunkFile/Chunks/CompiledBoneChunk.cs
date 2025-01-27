@@ -8,13 +8,11 @@ namespace StarBreaker.CryChunkFile;
 
 public class CompiledBoneChunk : IChunk
 {
-    public string[] BoneNames { get; private set; }
-    public CompiledBoneData[] Bones { get; private set; }
+    public required string[] BoneNames { get; init; }
+    public required CompiledBoneData[] Bones { get; init; }
     
     public static IChunk Read(ref SpanReader reader)
     {
-        var chunk = new CompiledBoneChunk();
-
         var numBones = reader.ReadUInt32();
         var bones = reader.ReadSpan<CompiledBoneData>((int)numBones);
         var names = new string[numBones];
@@ -25,11 +23,12 @@ public class CompiledBoneChunk : IChunk
             names[i] = Encoding.ASCII.GetString(bytes[..length]);
             reader.Advance(length + 1);
         }
-        
-        chunk.Bones = bones.ToArray();
-        chunk.BoneNames = names;
-        
-        return chunk;
+
+        return new CompiledBoneChunk
+        {
+            Bones = bones.ToArray(),
+            BoneNames = names
+        };
     }
 
     public void WriteXmlTo(TextWriter writer)

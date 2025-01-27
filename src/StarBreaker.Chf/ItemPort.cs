@@ -6,10 +6,10 @@ namespace StarBreaker.Chf;
 [DebuggerDisplay("{Name}")]
 public class ItemPort
 {
-    public uint Key { get; init; }
-    public string? Name { get; init; }
-    public CigGuid Id { get; init; }
-    public ItemPort[] Children { get; init; }
+    public required uint Key { get; init; }
+    public required string? Name { get; init; }
+    public required CigGuid Id { get; init; }
+    public required ItemPort[] Children { get; init; }
 
     public static ItemPort Read(ref SpanReader reader)
     {
@@ -35,6 +35,6 @@ public class ItemPort
             Children = children
         };
     }
-    
+
     public int TotalChildren() => Children.Length + Children.Sum(x => x.TotalChildren());
 }

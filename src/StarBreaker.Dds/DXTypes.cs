@@ -92,6 +92,7 @@ public enum DDS_RESV1_FLAGS : uint
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public record struct DdsHeader
 {
+#pragma warning disable CS0169 // Field is never used
     public struct DdsReserved
     {
         private uint _field0;
@@ -106,6 +107,7 @@ public record struct DdsHeader
         private uint _field9;
         private uint _fielda;
     }
+#pragma warning restore CS0169 // Field is never used
 
     public struct ColorFloat
     {
