@@ -18,6 +18,9 @@ public class DiffCommand : ICommand
 
     [CommandOption("keep", 'k', Description = "Keep old files in the output directory", EnvironmentVariable = "KEEP_OLD")]
     public bool KeepOld { get; init; }
+    
+    [CommandOption("format", 'f', Description = "Output format", EnvironmentVariable = "TEXT_FORMAT")]
+    public string TextFormat { get; init; } = "xml";
 
     public async ValueTask ExecuteAsync(IConsole console)
     {
@@ -68,7 +71,8 @@ public class DiffCommand : ICommand
         var dcbExtract = new DataCoreExtractCommand
         {
             P4kFile = p4kFile,
-            OutputDirectory = Path.Combine(OutputDirectory, "DataCore")
+            OutputDirectory = Path.Combine(OutputDirectory, "DataCore"),
+            TextFormat = TextFormat
         };
         await dcbExtract.ExecuteAsync(fakeConsole);
         await console.Output.WriteLineAsync("DataCore extracted.");

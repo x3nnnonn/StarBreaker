@@ -4,10 +4,6 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
-    </PropertyGroup>
-
-    <PropertyGroup>
         <IsAotCompatible>true</IsAotCompatible>
-        <PublishAot>true</PublishAot>
     </PropertyGroup>
 </Project>
