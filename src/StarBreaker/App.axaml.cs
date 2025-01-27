@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -24,17 +25,19 @@ public partial class App : Application
             RequestedThemeVariant = ThemeVariant.Dark;
         }
     }
-    
+
     private SplashWindow? _splashWindow;
     private MainWindow? _mainWindow;
 
+    [UnconditionalSuppressMessage(
+        "AssemblyLoadTrimming",
+        "IL2026:RequiresUnreferencedCode",
+        Justification = "Everything referenced in the loaded assembly is manually preserved, so it's safe")]
     public override void OnFrameworkInitializationCompleted()
     {
         // Line below is needed to remove Avalonia data validation.
         // Without this line you will get duplicate validations from both Avalonia and CT
-#pragma warning disable IL2026
         BindingPlugins.DataValidators.RemoveAt(0);
-#pragma warning restore IL2026
 
         var collection = new ServiceCollection();
 
@@ -59,12 +62,12 @@ public partial class App : Application
 
     private void SwapWindows(object? sender, EventArgs e)
     {
-        if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) 
+        if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
             return;
-        
+
         var mainVm = Services.GetRequiredService<MainWindowViewModel>();
         _mainWindow = new MainWindow { DataContext = mainVm };
-                
+
         //do not change the order of these
         _mainWindow.Show();
         _splashWindow!.Close();

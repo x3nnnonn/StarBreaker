@@ -76,11 +76,6 @@ public class DataCoreTypeGenerator
             sb.AppendLine($"public enum {enumDefinition.GetName(Database)} : int");
             sb.AppendLine("{");
 
-            if ("SinglePlayerOrMultiplayer" == enumDefinition.GetName(Database))
-            {
-                Console.WriteLine();
-            }
-
             sb.AppendLine($"    __Unknown = -1,");
 
             for (var i = 0; i < enumDefinition.ValueCount; i++)
@@ -174,7 +169,7 @@ public class DataCoreTypeGenerator
         // DataType.WeakPointer => Database.StructDefinitions[property.StructIndex].GetName(Database)?,
         _ => throw new ArgumentOutOfRangeException()
     };
-    
+
     private string GetGenericPropertyType(DataCorePropertyDefinition property) => property.DataType switch
     {
         DataType.Boolean => "bool",
@@ -387,7 +382,7 @@ public class DataCoreTypeGenerator
                 throw new ArgumentOutOfRangeException();
         }
     }
-    
+
     private void GenerateConstantsFile(string path)
     {
         var sb = new StringBuilder();
@@ -400,7 +395,7 @@ public class DataCoreTypeGenerator
         sb.AppendLine($"    public const int StructsHash = {Database.StructsHash};");
         sb.AppendLine($"    public const int EnumsHash = {Database.EnumsHash};");
         sb.AppendLine("}");
-        
+
         File.WriteAllText(Path.Combine(path, "Constants.cs"), sb.ToString());
     }
 }
