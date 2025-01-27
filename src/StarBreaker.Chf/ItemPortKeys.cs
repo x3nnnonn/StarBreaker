@@ -1,4 +1,5 @@
 ﻿using System.Collections.Frozen;
+using System.Diagnostics.CodeAnalysis;
 using StarBreaker.Common;
 
 namespace StarBreaker.Chf;
@@ -94,7 +95,7 @@ public static class ItemPortKeys
         return _reverseCrc32c[key];
     }
 
-    public static bool TryGetKey(uint key, out string name)
+    public static bool TryGetKey(uint key, [NotNullWhen(true)] out string? name)
     {
         return _reverseCrc32c.TryGetValue(key, out name);
     }

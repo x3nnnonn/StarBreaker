@@ -8,7 +8,6 @@ public static class AppWindowExtensions
 {
     public static void EnableMicaTransparency(this AppWindow window)
     {
-        return;
         window.TransparencyLevelHint = [WindowTransparencyLevel.Mica];
         window.Background = new SolidColorBrush(new Color(0, 0, 0, 0));
     }

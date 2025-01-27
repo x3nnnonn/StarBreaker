@@ -4,7 +4,7 @@ namespace StarBreaker.CryChunkFile;
 
 internal class UnknownChunk5 : IChunk
 {
-    public Unknown5Child[] Children { get; private set; }
+    public required Unknown5Child[] Children { get; init; }
     
     public static IChunk Read(ref SpanReader reader)
     {
@@ -30,9 +30,9 @@ internal class UnknownChunk5 : IChunk
 
     internal class Unknown5Child
     {
-        public string Name { get; private set; }
-        public byte[] Data { get; private set; }
-        public uint Flag { get; private set; }
+        public required string Name { get; init; }
+        public required byte[] Data { get; init; }
+        public required uint Flag { get; init; }
         
         public static Unknown5Child Read(ref SpanReader reader)
         {

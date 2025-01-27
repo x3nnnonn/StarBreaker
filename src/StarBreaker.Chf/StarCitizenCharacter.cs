@@ -30,7 +30,7 @@ public sealed class StarCitizenCharacter
         EyeMaterialChunk? eyeMaterial = null;
         BodyMaterialChunk? bodyMaterial = null;
         var props = new List<DyeChunk>();
-        var objs = new List<object>();
+        var objs = new List<object?>();
         while (reader.Remaining > 0)
         {
             var key = reader.Peek<uint>();
@@ -78,11 +78,11 @@ public sealed class StarCitizenCharacter
         {
             BodyType = gender,
             Dna = dnaProperty,
-            Body = body,
-            HeadMaterial = headMaterial,
-            FaceMaterial = faceMaterial,
-            EyeMaterial = eyeMaterial,
-            BodyMaterial = bodyMaterial,
+            Body = body ?? throw new Exception("Body not found"),
+            HeadMaterial = headMaterial ?? throw new Exception("Head material not found"),
+            FaceMaterial = faceMaterial ?? throw new Exception("Face material not found"),
+            EyeMaterial = eyeMaterial ?? throw new Exception("Eye material not found"),
+            BodyMaterial = bodyMaterial ?? throw new Exception("Body material not found"),
             Dyes = props
         };
     }
@@ -109,14 +109,14 @@ public sealed class StarCitizenCharacter
         var someOtherItemPort = MaterialItemPort.Read(ref reader);
         return new StarCitizenCharacter()
         {
-            Body = null,
-            BodyMaterial = null,
-            BodyType = null,
-            Dna = null,
-            Dyes = null,
-            EyeMaterial = null,
-            FaceMaterial = null,
-            HeadMaterial = null
+            Body = null!,
+            BodyMaterial = null!,
+            BodyType = null!,
+            Dna = null!,
+            Dyes = null!,
+            EyeMaterial = null!,
+            FaceMaterial = null!,
+            HeadMaterial = null!
         };
     }
 }

@@ -45,18 +45,13 @@ public static class DynamicGrpcPrinter
 
     private static void ToProtoString(this FileDescriptor file, DynamicGrpcPrinterContext context)
     {
-        bool requiresNewLine = false;
-        switch (file.Syntax)
-        {
-            case Syntax.Proto2:
-                context.WriteLine("syntax = \"proto2\";");
-                requiresNewLine = true;
-                break;
-            case Syntax.Proto3:
-                context.WriteLine("syntax = \"proto3\";");
-                requiresNewLine = true;
-                break;
-        }
+        var isProto3 = file.IsProto3();
+        if (isProto3)
+            context.WriteLine("syntax = \"proto3\";");
+        else
+            context.WriteLine("syntax = \"proto2\";");
+
+        var requiresNewLine = true;
 
         // Dump package
         if (requiresNewLine) context.WriteLine();
@@ -124,7 +119,6 @@ public static class DynamicGrpcPrinter
             context.UnIndent();
             context.WriteLine("}");
         }
-
     }
 
     private static void ToProtoString(this ServiceDescriptor service, DynamicGrpcPrinterContext context)
@@ -133,8 +127,10 @@ public static class DynamicGrpcPrinter
         context.Indent();
         foreach (var method in service.Methods)
         {
-            context.WriteLine($"rpc {method.Name} ({(method.IsClientStreaming ? "stream" : "")} {context.GetTypeName(method.InputType)} ) returns ({(method.IsServerStreaming ? "stream" : "")} {context.GetTypeName(method.OutputType)} );");
+            context.WriteLine(
+                $"rpc {method.Name} ({(method.IsClientStreaming ? "stream" : "")} {context.GetTypeName(method.InputType)} ) returns ({(method.IsServerStreaming ? "stream" : "")} {context.GetTypeName(method.OutputType)} );");
         }
+
         context.UnIndent();
         context.WriteLine("}");
     }
@@ -186,6 +182,7 @@ public static class DynamicGrpcPrinter
                     context.Indent();
                 }
             }
+
             currentOneOf = oneof;
 
             // handle options
@@ -279,6 +276,7 @@ public static class DynamicGrpcPrinter
         {
             context.WriteLine($"{item.Name} = {item.Number};");
         }
+
         context.UnIndent();
         context.WriteLine("}");
     }
@@ -378,7 +376,7 @@ public static class DynamicGrpcPrinter
 
             var builder = new StringBuilder();
             if (field.IsRequired) builder.Append("required ");
-            else if (field.ContainingOneof == null && !field.IsRepeated && field.File.Syntax != Syntax.Proto3) builder.Append("optional ");
+            else if (field.ContainingOneof == null && !field.IsRepeated && field.File.IsProto3()) builder.Append("optional ");
             var options = field.GetOptions();
             if (options == null)
             {
@@ -390,7 +388,7 @@ public static class DynamicGrpcPrinter
             else
             {
                 bool hasPackedAndIsTrue = options.HasPacked && options.Packed;
-                if (field.File.Syntax != Syntax.Proto3 && field.IsPacked && !hasPackedAndIsTrue) builder.Append("packed ");
+                if (field.File.IsProto3() && field.IsPacked && !hasPackedAndIsTrue) builder.Append("packed ");
                 if (field.IsRepeated) builder.Append("repeated ");
             }
 
