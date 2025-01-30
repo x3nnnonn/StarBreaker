@@ -11,6 +11,7 @@ public static class DataCoreSandbox
         //ExtractProblematic();
         //ExtractAll();
         ExtractJson();
+        //ExtractXml();
     }
 
     private static void ExtractProblematic()
@@ -19,7 +20,7 @@ public static class DataCoreSandbox
 
         var dcb = DataForge.FromDcbPathXml(@"D:\StarCitizen\P4k\Data\Game2.dcb");
         timer.LogReset("Loaded DataForge");
-        
+
         var megaMap = dcb.GetRecordsByFileName("*megamap.pu*").Values.Single();
         var tagDatabase = dcb.GetRecordsByFileName("*TagDatabase*").Values.Single();
         var broker = dcb.GetRecordsByFileName("*missionbroker.pu*").Values.Single();
