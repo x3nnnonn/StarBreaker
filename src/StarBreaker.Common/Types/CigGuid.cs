@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 namespace StarBreaker.Common;
@@ -62,24 +63,9 @@ public readonly record struct CigGuid
         _8 = ParseHexDigit(span, 34);
 
         return;
-
-        static byte ParseHexDigit(ReadOnlySpan<char> input, int offset)
-        {
-            if (!byte.TryParse(input.Slice(offset, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var result))
-                throw new FormatException("Input string was not in a correct format.");
-
-            return result;
-        }
     }
 
     public override string ToString()
-    {
-        var str = new StringWriter(new StringBuilder(36));
-        WriteInto(str);
-        return str.ToString();
-    }
-
-    public void WriteInto(TextWriter writer)
     {
         Span<char> buffer = stackalloc char[36];
 
@@ -104,14 +90,22 @@ public readonly record struct CigGuid
         WriteHexDigit(buffer, _9, 32);
         WriteHexDigit(buffer, _8, 34);
 
-        writer.Write(buffer);
+        return buffer.ToString();
+    }
 
-        return;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static byte ParseHexDigit(ReadOnlySpan<char> input, int offset)
+    {
+        if (!byte.TryParse(input.Slice(offset, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var result))
+            throw new FormatException("Input string was not in a correct format.");
 
-        static void WriteHexDigit(Span<char> buffer, byte value, int offset)
-        {
-            buffer[offset] = _map[value >> 4];
-            buffer[offset + 1] = _map[value & 15];
-        }
+        return result;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void WriteHexDigit(Span<char> buffer, byte value, int offset)
+    {
+        buffer[offset] = _map[value >> 4];
+        buffer[offset + 1] = _map[value & 15];
     }
 }
