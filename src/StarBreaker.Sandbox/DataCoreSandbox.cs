@@ -11,7 +11,7 @@ public static class DataCoreSandbox
         //ExtractProblematic();
         //ExtractAll();
         ExtractJson();
-        //ExtractXml();
+        ExtractXml();
     }
 
     private static void ExtractProblematic()
@@ -44,11 +44,11 @@ public static class DataCoreSandbox
         var timer = new TimeLogger();
         var dcb = DataForge.FromDcbPathXml(@"D:\StarCitizen\P4k\Data\Game2.dcb");
         timer.LogReset("Loaded DataForge");
-        Directory.CreateDirectory(@"D:\StarCitizen\DataCore\Sandbox");
+        Directory.CreateDirectory(@"D:\StarCitizen\DataCoreSandbox\Xml");
 #if DEBUG
         dcb.ExtractAll(@"D:\StarCitizen\DataCore\Sandbox");
 #else
-        dcb.ExtractAllParallel(@"D:\StarCitizen\DataCore\Sandbox");
+        dcb.ExtractAllParallel(@"D:\StarCitizen\DataCoreSandbox\Xml");
 #endif
         timer.LogReset("Extracted all records.");
     }
@@ -58,11 +58,11 @@ public static class DataCoreSandbox
         var timer = new TimeLogger();
         var dcb = DataForge.FromDcbPathJson(@"D:\StarCitizen\P4k\Data\Game2.dcb");
         timer.LogReset("Loaded DataForge");
-        Directory.CreateDirectory(@"D:\StarCitizen\DataCore\SandboxJson");
+        Directory.CreateDirectory(@"D:\StarCitizen\DataCoreSandbox\Json");
 #if DEBUG
         dcb.ExtractAll(@"D:\StarCitizen\DataCore\SandboxJson");
 #else
-        dcb.ExtractAllParallel(@"D:\StarCitizen\DataCore\SandboxJson");
+        dcb.ExtractAllParallel(@"D:\StarCitizen\DataCoreSandbox\Json");
 #endif
         timer.LogReset("Extracted all records.");
     }
