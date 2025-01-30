@@ -1,9 +1,6 @@
 using System.Globalization;
-using System.Runtime.InteropServices;
-using System.Security;
 using System.Text;
 using System.Xml;
-using System.Xml.Linq;
 using StarBreaker.Common;
 
 namespace StarBreaker.DataCore;
@@ -25,16 +22,7 @@ public sealed class DataCoreBinaryXml : IDataCoreBinary<string>
             Indent = true
         });
 
-        var context = new Context(record.GetFileName(Database), writer);
-
-        writer.WriteStartElement(XmlConvert.EncodeName(record.GetName(Database)));
-        context.Writer.WriteAttributeString("RecordId", record.Id.ToString());
-
-        WriteInstance(record.StructIndex, record.InstanceIndex, context);
-
-        context.Writer.WriteEndElement();
-
-        context.Writer.Flush();
+        WriteInner(record, writer);
     }
 
     public string GetFromMainRecord(DataCoreRecord record)
@@ -48,7 +36,14 @@ public sealed class DataCoreBinaryXml : IDataCoreBinary<string>
             Indent = true
         });
 
-        var context = new Context(record.GetFileName(Database), writer);
+        WriteInner(record, writer);
+
+        return Encoding.UTF8.GetString(ms.ToArray());
+    }
+
+    private void WriteInner(DataCoreRecord record, XmlWriter writer)
+    {
+        var context = new Context(record.GetFileName(Database), writer, DataCoreBinaryWalker.WalkRecord(record, Database));
 
         writer.WriteStartElement(XmlConvert.EncodeName(record.GetName(Database)));
         writer.WriteAttributeString("RecordId", record.Id.ToString());
@@ -58,15 +53,14 @@ public sealed class DataCoreBinaryXml : IDataCoreBinary<string>
         writer.WriteEndElement();
 
         writer.Flush();
-
-        return Encoding.UTF8.GetString(ms.ToArray());
     }
 
     private void WriteInstance(int structIndex, int instanceIndex, Context context)
     {
         var reader = Database.GetReader(structIndex, instanceIndex);
 
-        context.Writer.WriteAttributeString("Pointer", $"{structIndex},{instanceIndex}");
+        if (context.Pointers.ContainsKey((structIndex, instanceIndex)))
+            context.Writer.WriteAttributeString("Pointer", context.GetPointer(structIndex, instanceIndex));
 
         WriteStruct(structIndex, ref reader, context);
     }
@@ -91,37 +85,27 @@ public sealed class DataCoreBinaryXml : IDataCoreBinary<string>
         switch (prop.DataType)
         {
             case DataType.Reference:
-                var reference = reader.Read<DataCoreReference>();
                 context.Writer.WriteStartElement(propName);
-
-                if (reference.RecordId != CigGuid.Empty && reference.InstanceIndex != -1)
-                    WriteFromReference(reference, context);
-
+                WriteFromReference(reader.Read<DataCoreReference>(), context);
                 context.Writer.WriteEndElement();
-
                 break;
             case DataType.WeakPointer:
                 var weakPointer = reader.Read<DataCorePointer>();
                 context.Writer.WriteStartElement(propName);
-
-                context.Writer.WriteAttributeString("Pointer", $"{weakPointer.StructIndex},{weakPointer.InstanceIndex}");
-
+                if (weakPointer.StructIndex != -1 && weakPointer.InstanceIndex != -1)
+                    context.Writer.WriteAttributeString("PointsTo", context.GetPointer(weakPointer.StructIndex, weakPointer.InstanceIndex));
                 context.Writer.WriteEndElement();
                 break;
             case DataType.StrongPointer:
                 var strongPointer = reader.Read<DataCorePointer>();
                 context.Writer.WriteStartElement(propName);
-
                 if (strongPointer.StructIndex != -1 && strongPointer.InstanceIndex != -1)
                     WriteInstance(strongPointer.StructIndex, strongPointer.InstanceIndex, context);
-
                 context.Writer.WriteEndElement();
                 break;
             case DataType.Class:
                 context.Writer.WriteStartElement(propName);
-
                 WriteStruct(prop.StructIndex, ref reader, context);
-
                 context.Writer.WriteEndElement();
                 break;
             case DataType.EnumChoice: context.Writer.WriteElementString(propName, reader.Read<DataCoreStringId>().ToString(Database)); break;
@@ -161,56 +145,50 @@ public sealed class DataCoreBinaryXml : IDataCoreBinary<string>
                 case DataType.Reference:
                     var reference = Database.ReferenceValues[i];
 
-                    if (reference.RecordId != CigGuid.Empty && reference.InstanceIndex != -1)
+                    if (reference.RecordId == CigGuid.Empty || reference.InstanceIndex == -1)
+                    {
+                        // we don't know the type of this array element. Write the type of the array (which might be a base class)
+                        context.Writer.WriteElementString(Database.StructDefinitions[prop.StructIndex].GetName(Database), null);
+                    }
+                    else
                     {
                         // we know the type of this array element. Write the actual type
                         var record = Database.GetRecord(reference.RecordId);
                         var actualTypeName = Database.StructDefinitions[record.StructIndex].GetName(Database);
                         context.Writer.WriteStartElement(actualTypeName);
                         WriteFromReference(Database.ReferenceValues[i], context);
+                        context.Writer.WriteEndElement();
                     }
-                    else
-                    {
-                        // we don't know the type of this array element. Write the type of the array (which might be a base class)
-                        context.Writer.WriteStartElement(Database.StructDefinitions[prop.StructIndex].GetName(Database));
-                    }
-
-                    context.Writer.WriteEndElement();
 
                     break;
                 case DataType.WeakPointer:
                     var weakPointer = Database.WeakValues[i];
-                    if (weakPointer.StructIndex != -1 && weakPointer.InstanceIndex != -1)
+                    if (weakPointer.StructIndex == -1 || weakPointer.InstanceIndex == -1)
                     {
-                        var actualTypeName = Database.StructDefinitions[weakPointer.StructIndex].GetName(Database);
-                        context.Writer.WriteStartElement(actualTypeName);
+                        // we don't know the type of this array element. Write the type of the array (which might be a base class)
+                        context.Writer.WriteElementString(Database.StructDefinitions[prop.StructIndex].GetName(Database), null);
                     }
                     else
                     {
-                        // we don't know the type of this array element. Write the type of the array (which might be a base class)
-                        context.Writer.WriteStartElement(Database.StructDefinitions[prop.StructIndex].GetName(Database));
+                        context.Writer.WriteStartElement(Database.StructDefinitions[weakPointer.StructIndex].GetName(Database));
+                        context.Writer.WriteAttributeString("PointsTo", context.GetPointer(weakPointer.StructIndex, weakPointer.InstanceIndex));
+                        context.Writer.WriteEndElement();
                     }
-
-                    context.Writer.WriteAttributeString("Pointer", $"{weakPointer.StructIndex},{weakPointer.InstanceIndex}");
-
-                    context.Writer.WriteEndElement();
 
                     break;
                 case DataType.StrongPointer:
                     var strongPointer = Database.StrongValues[i];
-                    if (strongPointer.StructIndex != -1 && strongPointer.InstanceIndex != -1)
+                    if (strongPointer.StructIndex == -1 || strongPointer.InstanceIndex == -1)
                     {
-                        var actualTypeName = Database.StructDefinitions[strongPointer.StructIndex].GetName(Database);
-                        context.Writer.WriteStartElement(actualTypeName);
-                        WriteInstance(strongPointer.StructIndex, strongPointer.InstanceIndex, context);
+                        // we don't know the type of this array element. Write the type of the array (which might be a base class)
+                        context.Writer.WriteElementString(Database.StructDefinitions[prop.StructIndex].GetName(Database), null);
                     }
                     else
                     {
-                        // we don't know the type of this array element. Write the type of the array (which might be a base class)
-                        context.Writer.WriteStartElement(Database.StructDefinitions[prop.StructIndex].GetName(Database));
+                        context.Writer.WriteStartElement(Database.StructDefinitions[strongPointer.StructIndex].GetName(Database));
+                        WriteInstance(strongPointer.StructIndex, strongPointer.InstanceIndex, context);
+                        context.Writer.WriteEndElement();
                     }
-
-                    context.Writer.WriteEndElement();
 
                     break;
                 case DataType.Class:
@@ -242,6 +220,9 @@ public sealed class DataCoreBinaryXml : IDataCoreBinary<string>
 
     private void WriteFromReference(DataCoreReference reference, Context context)
     {
+        if (reference.RecordId == CigGuid.Empty || reference.InstanceIndex == -1)
+            return;
+
         var record = Database.GetRecord(reference.RecordId);
 
         if (Database.MainRecords.Contains(reference.RecordId))
@@ -254,15 +235,19 @@ public sealed class DataCoreBinaryXml : IDataCoreBinary<string>
         WriteInstance(record.StructIndex, record.InstanceIndex, context);
     }
 
-    private sealed class Context
+    private readonly struct Context
     {
         public string Path { get; }
         public XmlWriter Writer { get; }
+        public Dictionary<(int, int), int> Pointers { get; }
 
-        public Context(string path, XmlWriter writer)
+        public string GetPointer(int structIndex, int instanceIndex) => $"ptr:{Pointers[(structIndex, instanceIndex)]}";
+
+        public Context(string path, XmlWriter writer, Dictionary<(int, int), int> pointers)
         {
             Path = path;
             Writer = writer;
+            Pointers = pointers;
         }
     }
 }
