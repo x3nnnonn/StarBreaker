@@ -1,4 +1,6 @@
 ﻿using System.IO.Enumeration;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Xml.Linq;
 using StarBreaker.Common;
 
@@ -10,26 +12,31 @@ public static class DataForge
     {
         return new DataForge<string>(new DataCoreBinaryJson(new DataCoreDatabase(File.OpenRead(path))));
     }
-    
+
     public static DataForge<string> FromDcbStreamJson(Stream dcbStream)
     {
         return new DataForge<string>(new DataCoreBinaryJson(new DataCoreDatabase(dcbStream)));
     }
-    
+
     public static DataForge<string> FromDcbPathXml(string path)
     {
         return new DataForge<string>(new DataCoreBinaryXml(new DataCoreDatabase(File.OpenRead(path))));
     }
-    
+
     public static DataForge<string> FromDcbStreamXml(Stream dcbStream)
     {
         return new DataForge<string>(new DataCoreBinaryXml(new DataCoreDatabase(dcbStream)));
+    }
+
+    public static DataForge<JsonObject> FromDcbPathJsonNode(string path)
+    {
+        return new DataForge<JsonObject>(new DataCoreBinaryJsonObject(new DataCoreDatabase(File.OpenRead(path))));
     }
 }
 
 public class DataForge<T>
 {
-    public IDataCoreBinary<T> DataCore { get;  }
+    public IDataCoreBinary<T> DataCore { get; }
 
     public DataForge(IDataCoreBinary<T> dataCore)
     {
