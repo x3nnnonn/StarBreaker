@@ -1,4 +1,7 @@
-﻿namespace StarBreaker.DataCore;
+﻿using System.Runtime.CompilerServices;
+using StarBreaker.Common;
+
+namespace StarBreaker.DataCore;
 
 public static class EnumExtensions
 {
@@ -33,5 +36,25 @@ public static class EnumExtensions
         ConversionType.ComplexArray => "ComplexArray",
         ConversionType.SimpleArray => "SimpleArray",
         _ => throw new ArgumentOutOfRangeException(nameof(conversionType), conversionType, null)
+    };
+    
+    public static int GetSize(this DataType dataType) => dataType switch
+    {
+        DataType.EnumChoice => Unsafe.SizeOf<DataCoreStringId>(),
+        DataType.Guid => Unsafe.SizeOf<CigGuid>(),
+        DataType.Locale => Unsafe.SizeOf<DataCoreStringId>(),
+        DataType.Double => sizeof(double),
+        DataType.Single => sizeof(float),
+        DataType.String => Unsafe.SizeOf<DataCoreStringId>(),
+        DataType.UInt64 => sizeof(ulong),
+        DataType.UInt32 => sizeof(uint),
+        DataType.UInt16 => sizeof(ushort),
+        DataType.Byte => sizeof(byte),
+        DataType.Int64 => sizeof(long),
+        DataType.Int32 => sizeof(int),
+        DataType.Int16 => sizeof(short),
+        DataType.SByte => sizeof(sbyte),
+        DataType.Boolean => sizeof(bool),
+        _ => throw new ArgumentOutOfRangeException(nameof(dataType), dataType, null)
     };
 }
