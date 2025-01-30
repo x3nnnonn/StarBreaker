@@ -87,7 +87,6 @@ public class DataForge<T>
         var recordsByFileName = GetRecordsByFileName(fileNameFilter);
         var total = recordsByFileName.Count;
 
-        
         foreach (var (fileName, record) in recordsByFileName)
         {
             var filePath = Path.Combine(outputFolder, fileName);
@@ -97,8 +96,8 @@ public class DataForge<T>
             DataCore.SaveToFile(record, filePath);
 
             var currentProgress = Interlocked.Increment(ref progressValue);
-            //only report progress every 250 records and when we are done
-            if (currentProgress == total || currentProgress % 250 == 0)
+            //only report progress every 1000 records and when we are done
+            if (currentProgress == total || currentProgress % 1000 == 0)
                 progress?.Report(currentProgress / (double)total);
         }
 
@@ -111,7 +110,6 @@ public class DataForge<T>
         var recordsByFileName = GetRecordsByFileName(fileNameFilter);
         var total = recordsByFileName.Count;
 
-        
         Parallel.ForEach(recordsByFileName, kvp =>
         {
             var (fileName, record) = kvp;
@@ -122,8 +120,8 @@ public class DataForge<T>
             DataCore.SaveToFile(record, filePath);
 
             var currentProgress = Interlocked.Increment(ref progressValue);
-            //only report progress every 250 records and when we are done
-            if (currentProgress == total || currentProgress % 250 == 0)
+            //only report progress every 1000 records and when we are done
+            if (currentProgress == total || currentProgress % 1000 == 0)
                 progress?.Report(currentProgress / (double)total);
         });
 
