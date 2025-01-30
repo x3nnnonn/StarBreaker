@@ -33,9 +33,9 @@ public sealed class DataCoreBinaryJsonObject : IDataCoreBinary<JsonObject>
 
         return new JsonObject
         {
-            { "RecordName_", record.GetName(Database) },
-            { "RecordId_", record.Id.ToString() },
-            { "RecordValue_", GetInstance(record.StructIndex, record.InstanceIndex, context) }
+            { "_RecordName_", record.GetName(Database) },
+            { "_RecordId_", record.Id.ToString() },
+            { "_RecordValue_", GetInstance(record.StructIndex, record.InstanceIndex, context) }
         };
     }
 
@@ -45,7 +45,7 @@ public sealed class DataCoreBinaryJsonObject : IDataCoreBinary<JsonObject>
         var jsonObject = GetStruct(structIndex, ref reader, context);
 
         if (context.Pointers.TryGetValue((structIndex, instanceIndex), out var pointerIndex))
-            jsonObject.Insert(0, "PointerId_", JsonValue.Create($"ptr:{pointerIndex}"));
+            jsonObject.Insert(0, "_PointerId_", JsonValue.Create($"ptr:{pointerIndex}"));
 
         return jsonObject;
     }
@@ -54,7 +54,7 @@ public sealed class DataCoreBinaryJsonObject : IDataCoreBinary<JsonObject>
     {
         var obj = new JsonObject();
 
-        obj.Add("Type_", Database.StructDefinitions[structIndex].GetName(Database));
+        obj.Add("_Type_", Database.StructDefinitions[structIndex].GetName(Database));
 
         foreach (var prop in Database.GetProperties(structIndex))
         {
@@ -140,7 +140,11 @@ public sealed class DataCoreBinaryJsonObject : IDataCoreBinary<JsonObject>
         if (Database.MainRecords.Contains(reference.RecordId))
             return JsonValue.Create(Path.ChangeExtension(DataCoreUtils.ComputeRelativePath(record.GetFileName(Database), context.RecordFilePath), "json"));
 
-        return GetInstance(record.StructIndex, record.InstanceIndex, context);
+        var recordNode = GetInstance(record.StructIndex, record.InstanceIndex, context);
+        
+        recordNode.Insert(0, "_RecordId_", JsonValue.Create(reference.RecordId.ToString()));
+        
+        return recordNode;
     }
 
     private JsonObject? GetFromStrongPointer(DataCorePointer strongPointer, Context context)
@@ -156,7 +160,7 @@ public sealed class DataCoreBinaryJsonObject : IDataCoreBinary<JsonObject>
         if (weakPointer.StructIndex == -1 || weakPointer.InstanceIndex == -1)
             return null;
 
-        return JsonValue.Create($"PointsTo:ptr:{context.Pointers[(weakPointer.StructIndex, weakPointer.InstanceIndex)]}");
+        return JsonValue.Create($"_PointsTo_:ptr:{context.Pointers[(weakPointer.StructIndex, weakPointer.InstanceIndex)]}");
     }
 
     private readonly struct Context

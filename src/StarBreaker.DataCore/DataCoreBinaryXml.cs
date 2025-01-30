@@ -232,6 +232,7 @@ public sealed class DataCoreBinaryXml : IDataCoreBinary<string>
             return;
         }
 
+        context.Writer.WriteAttributeString("RecordId", reference.RecordId.ToString());
         WriteInstance(record.StructIndex, record.InstanceIndex, context);
     }
 

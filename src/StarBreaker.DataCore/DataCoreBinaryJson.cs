@@ -45,9 +45,9 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
         var context = new Context(record.GetFileName(Database), writer, DataCoreBinaryWalker.WalkRecord(record, Database));
 
         context.Writer.WriteStartObject();
-        context.Writer.WriteString("RecordName_", record.GetName(Database));
-        context.Writer.WriteString("RecordId_", record.Id.ToString());
-        context.Writer.WriteStartObject("RecordValue_");
+        context.Writer.WriteString("_RecordName_", record.GetName(Database));
+        context.Writer.WriteString("_RecordId_", record.Id.ToString());
+        context.Writer.WriteStartObject("_RecordValue_");
         WriteInstance(record.StructIndex, record.InstanceIndex, context);
         context.Writer.WriteEndObject();
         context.Writer.WriteEndObject();
@@ -60,14 +60,14 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
         var reader = Database.GetReader(structIndex, instanceIndex);
 
         if (context.Pointers.TryGetValue((structIndex, instanceIndex), out var pointerIndex))
-            context.Writer.WriteString("Pointer_", $"ptr:{pointerIndex}");
+            context.Writer.WriteString("_Pointer_", $"ptr:{pointerIndex}");
 
         WriteStruct(structIndex, ref reader, context);
     }
 
     private void WriteStruct(int structIndex, ref SpanReader reader, Context context)
     {
-        context.Writer.WriteString("Type_", Database.StructDefinitions[structIndex].GetName(Database));
+        context.Writer.WriteString("_Type_", Database.StructDefinitions[structIndex].GetName(Database));
 
         foreach (var prop in Database.GetProperties(structIndex))
         {
@@ -185,6 +185,7 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
         else
             context.Writer.WriteStartObject(propName);
 
+        context.Writer.WriteString("_RecordId_", record.Id.ToString());
         WriteInstance(record.StructIndex, record.InstanceIndex, context);
         context.Writer.WriteEndObject();
     }
@@ -223,7 +224,7 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
         }
 
         var pointerIndex = context.Pointers[(weakPointer.StructIndex, weakPointer.InstanceIndex)];
-        var pointerValue = $"PointsTo:ptr:{pointerIndex}";
+        var pointerValue = $"_PointsTo_:ptr:{pointerIndex}";
 
         if (propName == null)
             context.Writer.WriteStringValue(pointerValue);
