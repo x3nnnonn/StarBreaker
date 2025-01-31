@@ -1,9 +1,10 @@
-﻿using System.IO.Compression;
+﻿using System.Diagnostics;
 using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using StarBreaker.DataCore;
 using StarBreaker.P4k;
+using ZstdSharp;
 
 namespace StarBreaker.Cli;
 
@@ -18,7 +19,7 @@ public class DiffCommand : ICommand
 
     [CommandOption("keep", 'k', Description = "Keep old files in the output directory", EnvironmentVariable = "KEEP_OLD")]
     public bool KeepOld { get; init; }
-    
+
     [CommandOption("format", 'f', Description = "Output format", EnvironmentVariable = "TEXT_FORMAT")]
     public string TextFormat { get; init; } = "xml";
 
@@ -93,8 +94,8 @@ public class DiffCommand : ICommand
         await extractDescriptor.ExecuteAsync(fakeConsole);
         await console.Output.WriteLineAsync("Descriptor set extracted.");
 
-        await ExtractDataCoreIntoZip(p4kFile, Path.Combine(OutputDirectory, "DataCore", "DataCore.zip"));
-        await ExtractExecutableIntoZip(exeFile, Path.Combine(OutputDirectory, "Binaries", "StarCitizen.zip"));
+        await ExtractDataCoreIntoZip(p4kFile, Path.Combine(OutputDirectory, "DataCore", "DataCore.dcb.zst"));
+        await ExtractExecutableIntoZip(exeFile, Path.Combine(OutputDirectory, "Binaries", "StarCitizen.exe.zst"));
         File.Copy(Path.Combine(GameFolder, "build_manifest.id"), Path.Combine(OutputDirectory, "build_manifest.json"), true);
         await console.Output.WriteLineAsync("Zipped DataCore and StarCitizen.");
 
@@ -104,34 +105,30 @@ public class DiffCommand : ICommand
     private static async Task ExtractDataCoreIntoZip(string p4kFile, string zipPath)
     {
         var p4k = new P4kFileSystem(P4kFile.FromFile(p4kFile));
-        Stream? dcbStream = null;
-        string? dcbFile = null;
+        MemoryStream? input = null;
         foreach (var file in DataCoreUtils.KnownPaths)
         {
             if (!p4k.FileExists(file)) continue;
 
-            dcbFile = file;
-            dcbStream = p4k.OpenRead(file);
+            input = new MemoryStream(p4k.ReadAllBytes(file));
             break;
         }
 
-        if (dcbStream == null || dcbFile == null)
+        if (input == null)
             throw new InvalidOperationException("DataCore not found.");
 
-        Directory.CreateDirectory(Path.GetDirectoryName(zipPath)!);
-        using var zip = new ZipArchive(File.Create(zipPath), ZipArchiveMode.Create);
-        var entry = zip.CreateEntry(Path.GetFileName(dcbFile), CompressionLevel.SmallestSize);
-        await using var entryStream = entry.Open();
-        await dcbStream.CopyToAsync(entryStream);
+        await using var output = File.OpenWrite(zipPath);
+        await using var compressionStream = new CompressionStream(output, leaveOpen: false);
+        await input.CopyToAsync(compressionStream);
     }
 
     private static async Task ExtractExecutableIntoZip(string exeFile, string zipPath)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(zipPath)!);
-        using var zip = new ZipArchive(File.Create(zipPath), ZipArchiveMode.Create);
-        var entry = zip.CreateEntry(Path.GetFileName(exeFile), CompressionLevel.SmallestSize);
-        await using var entryStream = entry.Open();
-        await using var exeStream = File.OpenRead(exeFile);
-        await exeStream.CopyToAsync(entryStream);
+        await using var input = File.OpenRead(exeFile);
+        await using var output = File.OpenWrite(zipPath);
+
+        await using var compressionStream = new CompressionStream(output, leaveOpen: false);
+        await input.CopyToAsync(compressionStream);
     }
 }
