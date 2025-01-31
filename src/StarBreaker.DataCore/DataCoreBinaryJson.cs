@@ -180,13 +180,32 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
             return;
         }
 
+        if (record.GetFileName(Database) == context.Path)
+        {
+            //if we're referencing a record in the same file, we have to write it out
+            if (propName == null)
+                context.Writer.WriteStartObject();
+            else
+                context.Writer.WriteStartObject(propName);
+
+            context.Writer.WriteString("_RecordId_", record.Id.ToString());
+            context.Writer.WriteString("_RecordName_", record.GetName(Database));
+            WriteInstance(record.StructIndex, record.InstanceIndex, context);
+            context.Writer.WriteEndObject();
+
+            return;
+        }
+
+        //if we get here, we're referencing a part of another file. mention the file and some details
         if (propName == null)
             context.Writer.WriteStartObject();
         else
             context.Writer.WriteStartObject(propName);
 
+        context.Writer.WriteString("_RecordPath_", Path.ChangeExtension(DataCoreUtils.ComputeRelativePath(record.GetFileName(Database), context.Path), "json"));
+        context.Writer.WriteString("_RecordName_", record.GetName(Database));
         context.Writer.WriteString("_RecordId_", record.Id.ToString());
-        WriteInstance(record.StructIndex, record.InstanceIndex, context);
+
         context.Writer.WriteEndObject();
     }
 

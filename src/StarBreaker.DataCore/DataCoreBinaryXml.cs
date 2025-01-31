@@ -232,8 +232,20 @@ public sealed class DataCoreBinaryXml : IDataCoreBinary<string>
             return;
         }
 
+        if (record.GetFileName(Database) == context.Path)
+        {
+            //if we're referencing a record in the same file, write it out.
+            //This should ensure that when exporting the entire datacore, each record is only written once.
+            context.Writer.WriteAttributeString("RecordId", reference.RecordId.ToString());
+            context.Writer.WriteAttributeString("RecordName", record.GetName(Database));
+            WriteInstance(record.StructIndex, record.InstanceIndex, context);
+            return;
+        }
+        
+        //if we're referencing a record that's part of another file, mention it
+        context.Writer.WriteAttributeString("RecordReference", DataCoreUtils.ComputeRelativePath(record.GetFileName(Database), context.Path));
+        context.Writer.WriteAttributeString("RecordName", record.GetName(Database));
         context.Writer.WriteAttributeString("RecordId", reference.RecordId.ToString());
-        WriteInstance(record.StructIndex, record.InstanceIndex, context);
     }
 
     private readonly struct Context
