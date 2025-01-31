@@ -140,11 +140,24 @@ public sealed class DataCoreBinaryJsonObject : IDataCoreBinary<JsonObject>
         if (Database.MainRecords.Contains(reference.RecordId))
             return JsonValue.Create(Path.ChangeExtension(DataCoreUtils.ComputeRelativePath(record.GetFileName(Database), context.RecordFilePath), "json"));
 
-        var recordNode = GetInstance(record.StructIndex, record.InstanceIndex, context);
-        
-        recordNode.Insert(0, "_RecordId_", JsonValue.Create(reference.RecordId.ToString()));
-        
-        return recordNode;
+        //if we're referencing a record in the same file, write it out
+        if (record.GetFileName(Database) == context.RecordFilePath)
+        {
+            var recordNode = GetInstance(record.StructIndex, record.InstanceIndex, context);
+
+            recordNode.Insert(0, "_RecordName_", JsonValue.Create(record.GetName(Database)));
+            recordNode.Insert(0, "_RecordId_", JsonValue.Create(reference.RecordId.ToString()));
+
+            return recordNode;
+        }
+
+        //if we're referencing a record that's part of another file, mention it
+        return new JsonObject
+        {
+            { "_RecordPath_", Path.ChangeExtension(DataCoreUtils.ComputeRelativePath(record.GetFileName(Database), context.RecordFilePath), "json") },
+            { "_RecordName_", record.GetName(Database) },
+            { "_RecordId_", reference.RecordId.ToString() }
+        };
     }
 
     private JsonObject? GetFromStrongPointer(DataCorePointer strongPointer, Context context)

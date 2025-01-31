@@ -10,7 +10,7 @@ public static class DataCoreBinaryWalker
 {
     public static Dictionary<(int, int), int> WalkRecord(DataCoreRecord record, DataCoreDatabase database)
     {
-        var context = new Context { Database = database, WeakPointers = [] };
+        var context = new Context { Database = database, WeakPointers = [], Self = record.FileNameOffset };
 
         WalkInstance(record.StructIndex, record.InstanceIndex, context);
 
@@ -70,11 +70,18 @@ public static class DataCoreBinaryWalker
         if (reference.RecordId == CigGuid.Empty || reference.InstanceIndex == -1)
             return;
 
-        var record = context.Database.GetRecord(reference.RecordId);
-
+        // a full file reference won't be walked
         if (context.Database.MainRecords.Contains(reference.RecordId))
             return;
 
+        var record = context.Database.GetRecord(reference.RecordId);
+
+        //if the subrecord we're referencing is in a different file, it won't be walked
+        if (record.FileNameOffset != context.Self)
+            return;
+
+        // we only care about walking the subrecord if it's in the same file.
+        // Otherwise, we'll just reference it here (and thus no weak pointer will be found)
         WalkInstance(record.StructIndex, record.InstanceIndex, context);
     }
 
@@ -98,6 +105,7 @@ public static class DataCoreBinaryWalker
     {
         public required DataCoreDatabase Database { get; init; }
         public required Dictionary<(int, int), int> WeakPointers { get; init; }
+        public required DataCoreStringId Self { get; init; }
 
         public void TryAddWeakPointer(int structIndex, int instanceIndex)
         {
