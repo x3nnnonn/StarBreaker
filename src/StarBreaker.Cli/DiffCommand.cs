@@ -30,10 +30,12 @@ public class DiffCommand : ICommand
             await console.Output.WriteLineAsync("Deleting old files...");
             string[] deleteFolder =
             [
-                Path.Combine(OutputDirectory, "Binaries"),
-                Path.Combine(OutputDirectory, "P4k"),
                 Path.Combine(OutputDirectory, "DataCore"),
+                Path.Combine(OutputDirectory, "P4k"),
                 Path.Combine(OutputDirectory, "Protobuf"),
+                Path.Combine(OutputDirectory, "build_manifest.json"),
+                Path.Combine(OutputDirectory, "DataCore.dcb.zst"),
+                Path.Combine(OutputDirectory, "StarCitizen.exe.zst"),
             ];
             string[] deleteFile =
             [
@@ -94,8 +96,8 @@ public class DiffCommand : ICommand
         await extractDescriptor.ExecuteAsync(fakeConsole);
         await console.Output.WriteLineAsync("Descriptor set extracted.");
 
-        await ExtractDataCoreIntoZip(p4kFile, Path.Combine(OutputDirectory, "DataCore", "DataCore.dcb.zst"));
-        await ExtractExecutableIntoZip(exeFile, Path.Combine(OutputDirectory, "Binaries", "StarCitizen.exe.zst"));
+        await ExtractDataCoreIntoZip(p4kFile, Path.Combine(OutputDirectory, "DataCore.dcb.zst"));
+        await ExtractExecutableIntoZip(exeFile, Path.Combine(OutputDirectory, "StarCitizen.exe.zst"));
         File.Copy(Path.Combine(GameFolder, "build_manifest.id"), Path.Combine(OutputDirectory, "build_manifest.json"), true);
         await console.Output.WriteLineAsync("Zipped DataCore and StarCitizen.");
 
