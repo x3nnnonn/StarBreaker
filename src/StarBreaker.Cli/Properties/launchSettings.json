@@ -90,7 +90,7 @@
             "commandLineArgs": "diff",
             "environmentVariables": {
                 "GAME_FOLDER": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\HOTFIX",
-                "OUTPUT_FOLDER": "C:\\Development\\StarCitizen\\StarCitizenDiff2",
+                "OUTPUT_FOLDER": "C:\\Development\\StarCitizen\\StarCitizenDiff",
                 "KEEP_OLD": "false",
                 "TEXT_FORMAT": "json"
             }
