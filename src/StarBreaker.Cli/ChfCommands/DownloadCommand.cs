@@ -11,7 +11,7 @@ namespace StarBreaker.Cli;
 [Command("chf-download", Description = "Downloads all characters from the website and saves them to the website characters folder.")]
 public class DownloadCommand : ICommand
 {
-    [CommandOption("OutputFolder", Description = "Download folder")]
+    [CommandOption("OutputFolder", Description = "Download folder", EnvironmentVariable = "OUTPUT_FOLDER")]
     public required string OutputFolder { get; init; }
 
     public async ValueTask ExecuteAsync(IConsole console)
