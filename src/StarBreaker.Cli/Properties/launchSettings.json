@@ -8,7 +8,10 @@
         },
         "chf-download": {
             "commandName": "Project",
-            "commandLineArgs": "chf-download \"C:\\Development\\StarCitizen\\StarBreaker\\research\\websiteCharacters\""
+            "commandLineArgs": "chf-download",
+            "environmentVariables": {
+                "OUTPUT_FOLDER": "C:\\Development\\StarCitizen\\StarBreaker\\research\\websiteCharacters"
+            }
         },
         "chf-export-all": {
             "commandName": "Project",
@@ -23,22 +26,22 @@
             "commandLineArgs": "chf-export-watch",
             "environmentVariables": {
                 "INPUT_FOLDER": "C:\\Development\\StarCitizen\\StarBreaker\\research\\moddedCharacters",
-                "OUTPUT_FOLDER": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\4.0_PREVIEW\\user\\client\\0\\CustomCharacters"
+                "OUTPUT_FOLDER": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\LIVE\\user\\client\\0\\CustomCharacters"
             }
         },
         "chf-import-all": {
             "commandName": "Project",
             "commandLineArgs": "chf-import-all",
             "environmentVariables": {
-                "INPUT_FOLDER": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\4.0_PREVIEW\\user\\client\\0\\CustomCharacters",
-                "OUTPUT_FOLDER": "C:\\Development\\StarCitizen\\StarBreaker\\research\\localCharacters"
+                "INPUT_FOLDER": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\LIVE\\user\\client\\0\\CustomCharacters",
+                "OUTPUT_FOLDER": "C:\\Development\\StarCitizen\\StarBreaker\\research\\localCharacters2"
             }
         },
         "chf-import-watch": {
             "commandName": "Project",
             "commandLineArgs": "chf-import-watch",
             "environmentVariables": {
-                "INPUT_FOLDER": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\4.0_PREVIEW\\user\\client\\0\\CustomCharacters",
+                "INPUT_FOLDER": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\LIVE\\user\\client\\0\\CustomCharacters",
                 "OUTPUT_FOLDER": "C:\\Development\\StarCitizen\\StarBreaker\\research\\localCharacters"
             }
         },
@@ -46,7 +49,7 @@
             "commandName": "Project",
             "commandLineArgs": "chf-process-all",
             "environmentVariables": {
-                "INPUT_FOLDER": "C:\\Development\\StarCitizen\\StarBreaker\\research"
+                "INPUT_FOLDER": "C:\\Development\\StarCitizen\\StarBreaker\\research\\localCharacters2"
             }
         },
         "cryxml-convert": {
@@ -61,8 +64,8 @@
             "commandName": "Project",
             "commandLineArgs": "cryxml-convert-all",
             "environmentVariables": {
-                "INPUT_FOLDER": "D:\\StarCitizen\\P4k\\Data\\Scripts",
-                "OUTPUT_FOLDER": "D:\\StarCitizen\\CryXml\\Data\\Scripts"
+                "INPUT_FOLDER": "D:\\StarCitizen\\P4k",
+                "OUTPUT_FOLDER": "D:\\StarCitizen\\Materials"
             }
         },
         "dcb-extract": {
@@ -89,7 +92,7 @@
             "commandName": "Project",
             "commandLineArgs": "diff",
             "environmentVariables": {
-                "GAME_FOLDER": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\HOTFIX",
+                "GAME_FOLDER": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\LIVE",
                 "OUTPUT_FOLDER": "C:\\Development\\StarCitizen\\StarCitizenDiff",
                 "KEEP_OLD": "false",
                 "TEXT_FORMAT": "json"
