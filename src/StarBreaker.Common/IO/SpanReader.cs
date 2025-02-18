@@ -50,7 +50,7 @@ public ref struct SpanReader
         return span;
     }
 
-    public void Expect<T>(T value) where T : unmanaged
+    public void Expect<T>(T value) where T : unmanaged, IEquatable<T>
     {
         var actual = Read<T>();
         if (!actual.Equals(value))

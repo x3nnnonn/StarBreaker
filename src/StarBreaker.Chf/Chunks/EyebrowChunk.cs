@@ -5,7 +5,7 @@ namespace StarBreaker.Chf;
 
 public sealed class EyebrowChunk
 {
-    public static readonly uint Key = ItemPortKeys.GetUIntKey("eyebrow_itemport");
+    public static readonly uint Key = 0x1787EE22;
     
     public required EyebrowType EyebrowType { get; init; }
     public required ulong ChildCount { get; init; }

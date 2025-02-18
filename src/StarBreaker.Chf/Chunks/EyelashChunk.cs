@@ -7,7 +7,7 @@ namespace StarBreaker.Chf;
 public sealed class EyelashChunk 
 {
     public static readonly CigGuid Eyelashes = new("6217c113-a448-443b-82aa-1bb108ba8e11");
-    public static readonly uint Key = ItemPortKeys.GetUIntKey("eyelashes_itemport");
+    public static readonly uint Key = 0x190B04E2;
     
     public required ulong ChildCount { get; init; }
     

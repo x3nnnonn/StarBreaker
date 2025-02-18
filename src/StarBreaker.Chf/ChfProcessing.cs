@@ -1,4 +1,6 @@
 ﻿using System.Text.Json;
+using StarBreaker.Chf.Parser;
+using StarBreaker.Common;
 
 namespace StarBreaker.Chf;
 
@@ -15,8 +17,15 @@ public static class ChfProcessing
         
         var json = Path.ChangeExtension(chf, ".json");
         var data = await File.ReadAllBytesAsync(bin);
-        var character = StarCitizenCharacter.FromBytes(data);
-        var jsonString = JsonSerializer.Serialize(character, ChfSerializerContext.Default.StarCitizenCharacter);
+        var character = ChfDataParser.FromBytes(data);
+        
+        var options = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            TypeInfoResolver = ChfSerializerContext.Default,
+            Converters = { new ColorRgbaJsonConverter() },
+        };
+        var jsonString = JsonSerializer.Serialize(character, options);
         await File.WriteAllTextAsync(json, jsonString);
     }
 }

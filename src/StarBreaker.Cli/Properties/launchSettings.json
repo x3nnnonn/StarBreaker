@@ -49,7 +49,7 @@
             "commandName": "Project",
             "commandLineArgs": "chf-process-all",
             "environmentVariables": {
-                "INPUT_FOLDER": "C:\\Development\\StarCitizen\\StarBreaker\\research\\localCharacters2"
+                "INPUT_FOLDER": "C:\\Development\\StarCitizen\\StarBreaker\\research"
             }
         },
         "cryxml-convert": {

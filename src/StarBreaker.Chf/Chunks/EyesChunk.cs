@@ -7,7 +7,7 @@ namespace StarBreaker.Chf;
 public sealed class EyesChunk
 {
     public static readonly CigGuid Eyes = new("6b4ca363-e160-4871-b709-e47467b40310");
-    public static readonly uint Key = ItemPortKeys.GetUIntKey("eyes_itemport");
+    public static readonly uint Key = 0xC5BB5550;
     
     public static EyesChunk Read(ref SpanReader reader)
     {

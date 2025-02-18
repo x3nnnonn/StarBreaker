@@ -5,16 +5,11 @@ namespace StarBreaker.Chf;
 //libs/foundry/records/entities/scitem/characters/human/appearance_modifier/hair_variant/hair_var_brown.xml
 public sealed class HairModifierChunk
 {
-    public static readonly uint Key = ItemPortKeys.GetUIntKey("material_variant");
+    public static readonly uint Key = 0xE7809D46;
     public required ulong ChildCount { get; init; }
 
     public static HairModifierChunk Read(ref SpanReader reader)
     {
-        var bruh = ItemPortKeys.GetUIntKey("material_variant");
-        var anotehrBruh = Crc32c.FromString("material_variant");
-        var anotehrBruh2 = Crc32c.FromString("Material_variant");
-        var anotehrBruh3 = Crc32c.FromString("Stubble_Itemport_Skinitemport");
-        //stubble_itemport_skinitemport
         reader.ExpectAnyKey([
             "material_variant",
             "stubble_itemport"

@@ -9,11 +9,11 @@ public sealed class FaceMaterialChunk
     //female14_t2_head_material
     public static readonly uint[] Keys =
     [
-        ItemPortKeys.GetUIntKey("shader_head"),
-        ItemPortKeys.GetUIntKey("shader_Head"),
-        ItemPortKeys.GetUIntKey("female23"),
-        ItemPortKeys.GetUIntKey("female27"),
-        ItemPortKeys.GetUIntKey("female26"),
+        0x72129E8E,
+        0xA5378A05,
+        0xA87A7C66,
+        0x6FE0EB79,
+        0x9D8B687A,
     ];
 
     public required MakeupChunk[] Children { get; init; }

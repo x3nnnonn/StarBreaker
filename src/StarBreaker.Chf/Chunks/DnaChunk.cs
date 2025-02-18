@@ -10,7 +10,7 @@ public sealed class DnaChunk
 
     public required string DnaString { get; init; }
     public required uint ChildCount { get; init; }
-    public required Dictionary<FacePart, DnaPart[]> Parts { get; init; }
+    public required Dictionary<FacePart, DnaPartChunk[]> Parts { get; init; }
 
     public static DnaChunk Read(ref SpanReader reader)
     {
@@ -33,10 +33,10 @@ public sealed class DnaChunk
         childReader.Expect<ushort>(4); //unknown
         var maxHeadId = childReader.Read<ushort>();
 
-        var perBodyPart = Enum.GetValues<FacePart>().ToDictionary(x => x, _ => new DnaPart[4]);
+        var perBodyPart = Enum.GetValues<FacePart>().ToDictionary(x => x, _ => new DnaPartChunk[4]);
         for (var i = 0; i < PartCount; i++)
         {
-            perBodyPart[(FacePart)(i % 12)][i / 12] = DnaPart.Read(ref childReader);
+            perBodyPart[(FacePart)(i % 12)][i / 12] = DnaPartChunk.Read(ref childReader);
         }
 
         foreach (var (k, v) in perBodyPart)
@@ -55,37 +55,21 @@ public sealed class DnaChunk
 }
 
 [DebuggerDisplay("{HeadId} {Percent}")]
-public sealed class DnaPart
+public sealed class DnaPartChunk
 {
     public required byte HeadId { get; init; }
     public required float Percent { get; init; }
 
-    public static DnaPart Read(ref SpanReader reader)
+    public static DnaPartChunk Read(ref SpanReader reader)
     {
         var value = reader.Read<ushort>();
         var headId = reader.Read<byte>();
         reader.Expect<byte>(0);
 
-        return new DnaPart
+        return new DnaPartChunk
         {
             Percent = value / (float)ushort.MaxValue * 100f,
             HeadId = headId
         };
     }
-}
-
-public enum FacePart
-{
-    EyebrowLeft = 0,
-    EyebrowRight = 1,
-    EyeLeft = 2,
-    EyeRight = 3,
-    Nose = 4,
-    EarLeft = 5,
-    EarRight = 6,
-    CheekLeft = 7,
-    CheekRight = 8,
-    Mouth = 9,
-    Jaw = 10,
-    Crown = 11
 }
