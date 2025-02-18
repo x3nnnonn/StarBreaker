@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using StarBreaker.Common;
 
-namespace StarBreaker.Chf.Parser;
+namespace StarBreaker.Chf;
 
 [DebuggerDisplay("{Name}")]
 public class ItemPort

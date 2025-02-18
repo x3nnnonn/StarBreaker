@@ -1,15 +1,15 @@
 ﻿using StarBreaker.Common;
 
-namespace StarBreaker.Chf.Parser;
+namespace StarBreaker.Chf;
 
-public class ChfDataParser
+public class ChfData
 {
     public required CigGuid GenderId { get; init; }
-    public required DnaChunk Dna { get; init; }
+    public required Dna Dna { get; init; }
     public required ItemPort ItemPort { get; init; }
     public required List<Material> Materials { get; init; }
     
-    public static ChfDataParser FromBytes(ReadOnlySpan<byte> data)
+    public static ChfData FromBytes(ReadOnlySpan<byte> data)
     {
         var reader = new SpanReader(data);
 
@@ -17,7 +17,7 @@ public class ChfDataParser
         reader.Expect<uint>(7);
         var gender = reader.Read<CigGuid>();
         reader.Expect(CigGuid.Empty);
-        var dna = DnaChunk.Read(ref reader);
+        var dna = Dna.Read(ref reader);
         var itemPortCount = reader.ReadUInt64();
         var itemPort = ItemPort.Read(ref reader);
         reader.Expect<uint>(5);
@@ -25,7 +25,7 @@ public class ChfDataParser
         while (reader.Remaining > 0)
             materials.Add(Material.Read(ref reader));
 
-        return new ChfDataParser
+        return new ChfData
         {
             GenderId = gender,
             Dna = dna,

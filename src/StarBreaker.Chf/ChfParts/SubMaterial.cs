@@ -1,6 +1,6 @@
 ﻿using StarBreaker.Common;
 
-namespace StarBreaker.Chf.Parser;
+namespace StarBreaker.Chf;
 
 public class SubMaterial
 {
