@@ -13,6 +13,9 @@ public sealed class ConvertAllCryXmlBCommand : ICommand
 
     [CommandOption("output", 'o', Description = "Output folder", EnvironmentVariable = "OUTPUT_FOLDER")]
     public required string? Output { get; set; }
+    
+    [CommandOption("filter", 'f', Description = "File filter", EnvironmentVariable = "FILTER")]
+    public string Filter { get; set; } = "*.xml";
 
     public ValueTask ExecuteAsync(IConsole console)
     {
@@ -34,7 +37,7 @@ public sealed class ConvertAllCryXmlBCommand : ICommand
             return default;
         }
 
-        var files = Directory.GetFiles(Input, "*.xml", SearchOption.AllDirectories);
+        var files = Directory.GetFiles(Input, Filter, SearchOption.AllDirectories);
         foreach (var file in files)
         {
             var output = Path.Combine(Output, Path.GetRelativePath(Input, file));
