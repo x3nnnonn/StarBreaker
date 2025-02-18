@@ -20,15 +20,15 @@ public static class ChfSandbox
         // await CreateCharactersFromDnaStrings(huge_fixed);
     }
 
-    private static Dictionary<FacePart, DnaPart[]> ParseDnaString(string dnaString)
+    private static Dictionary<FacePart, DnaPartChunk[]> ParseDnaString(string dnaString)
     {
         var buffer = Convert.FromHexString(dnaString);
         var childReader = new SpanReader(buffer);
-        var parts = new DnaPart[48];
+        var parts = new DnaPartChunk[48];
 
         for (var i = 0; i < parts.Length; i++)
         {
-            parts[i] = DnaPart.Read(ref childReader);
+            parts[i] = DnaPartChunk.Read(ref childReader);
         }
 
         return parts.Select((part, idx) => (part, facePart: (FacePart)(idx % 12)))

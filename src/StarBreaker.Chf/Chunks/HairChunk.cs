@@ -6,7 +6,7 @@ namespace StarBreaker.Chf;
 //libs/foundry/records/entities/scitem/characters/human/head/shared/hair/hair_13.xml
 public sealed class HairChunk
 {
-    public static readonly uint Key = ItemPortKeys.GetUIntKey("hair_itemport");
+    public static readonly uint Key = 0x13601A95;
 
     public required HairType HairType { get; init; }
     public required HairModifierChunk? Modifier { get; init; }

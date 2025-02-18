@@ -6,7 +6,7 @@ namespace StarBreaker.Chf;
 public sealed class HeadChunk
 {
     public static readonly CigGuid Head = new("1d5cfab3-bf80-4550-b4ab-39e896a7086e");
-    public static readonly uint Key = ItemPortKeys.GetUIntKey("head_itemport");
+    public static readonly uint Key = 0x47010DB9;
 
     public required ulong ChildCount { get; init; }
     public required EyesChunk? Eyes { get; init; }

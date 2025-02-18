@@ -5,7 +5,7 @@ namespace StarBreaker.Chf;
 public sealed class ScalpChunk 
 {
     public static readonly CigGuid Scalp = new("71268392-61f4-40f2-9280-92971478a719");
-    public static readonly uint Key = ItemPortKeys.GetUIntKey("universal_scalp_itemport");
+    public static readonly uint Key = 0xddfa667b;
     
     public required ulong ChildCount { get; init; }
     

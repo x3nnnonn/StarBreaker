@@ -5,7 +5,7 @@ namespace StarBreaker.Chf;
 
 public sealed class FacialHairChunk
 {
-    public static readonly uint Key = ItemPortKeys.GetUIntKey("beard_itemport");
+    public static readonly uint Key = 0x98EFBB1C;
 
     public required FacialHairType FacialHairType { get; init; }
     public required HairModifierChunk? Modifier { get; init; }

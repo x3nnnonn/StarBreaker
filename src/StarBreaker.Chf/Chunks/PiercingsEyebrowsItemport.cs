@@ -4,7 +4,7 @@ namespace StarBreaker.Chf;
 
 public sealed class PiercingsEyebrowsItemport 
 {
-    public static readonly uint Key = ItemPortKeys.GetUIntKey("piercings_eyebrows_itemport");
+    public static readonly uint Key = 0xc8fff8ae;
     
     public required CigGuid Id { get; init; }
     public required ulong ChildCount { get; init; }
