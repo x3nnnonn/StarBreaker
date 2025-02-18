@@ -72,19 +72,19 @@
             "commandName": "Project",
             "commandLineArgs": "dcb-extract",
             "environmentVariables": {
-                "INPUT_P4K": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k",
+                "INPUT_P4K": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\LIVE\\Data.p4k",
                 "INPUT_P4K_OLD": "\\\\UNRAID\\backups\\StarCitizen\\Data.p4k",
                 "OUTPUT_FOLDER": "C:\\Development\\StarCitizen\\DataCoreExport",
                 "FILTER": "*",
-                "TEXT_FORMAT": "xml",
-                "TEXT_FORMAT2": "json"
+                "TEXT_FORMAT2": "xml",
+                "TEXT_FORMAT": "json"
             }
         },
         "dcb-generate": {
             "commandName": "Project",
             "commandLineArgs": "dcb-generate",
             "environmentVariables": {
-                "INPUT_P4K": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k",
+                "INPUT_P4K": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\LIVE\\Data.p4k",
                 "OUTPUT_FOLDER": "C:\\Development\\StarCitizen\\StarBreaker\\src\\StarBreaker.DataCore.Generated\\Generated"
             }
         },
