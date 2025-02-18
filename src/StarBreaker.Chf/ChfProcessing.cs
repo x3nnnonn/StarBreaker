@@ -1,5 +1,5 @@
 ﻿using System.Text.Json;
-using StarBreaker.Chf.Parser;
+using StarBreaker.Chf;
 using StarBreaker.Common;
 
 namespace StarBreaker.Chf;
@@ -17,7 +17,7 @@ public static class ChfProcessing
         
         var json = Path.ChangeExtension(chf, ".json");
         var data = await File.ReadAllBytesAsync(bin);
-        var character = ChfDataParser.FromBytes(data);
+        var character = ChfData.FromBytes(data);
         
         var options = new JsonSerializerOptions
         {

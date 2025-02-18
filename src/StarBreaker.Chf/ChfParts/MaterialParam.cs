@@ -1,7 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using StarBreaker.Common;
 
-namespace StarBreaker.Chf.Parser;
+namespace StarBreaker.Chf;
 
 public class MaterialParam<T> where T : unmanaged
 {

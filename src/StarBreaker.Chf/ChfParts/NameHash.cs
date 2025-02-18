@@ -2,14 +2,14 @@
 using System.Diagnostics.CodeAnalysis;
 using StarBreaker.Common;
 
-namespace StarBreaker.Chf.Parser;
+namespace StarBreaker.Chf;
 
-[DebuggerDisplay("{Name}")]
+[DebuggerDisplay("{Value}")]
 public readonly record struct NameHash
 {
     private readonly uint _value;
 
-    public string Name => TryGetName(out var name) ? name : $"0x{_value:X8}";
+    public string Value => TryGetName(out var name) ? name : $"0x{_value:X8}";
 
     private NameHash(uint value)
     {

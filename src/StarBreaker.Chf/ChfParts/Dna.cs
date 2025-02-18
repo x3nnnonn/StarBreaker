@@ -1,5 +1,4 @@
-﻿using StarBreaker.Chf.Parser;
-using StarBreaker.Common;
+﻿using StarBreaker.Common;
 
 namespace StarBreaker.Chf;
 
@@ -9,7 +8,7 @@ public sealed class Dna
     private const int PartCount = 48;
 
     public required string DnaString { get; init; }
-    public required uint ChildCount { get; init; }
+    public required uint MaxHeadId { get; init; }
     public required Dictionary<FacePart, DnaPart[]> Parts { get; init; }
 
     public static Dna Read(ref SpanReader reader)
@@ -65,7 +64,7 @@ public sealed class Dna
         return new Dna
         {
             DnaString = dnaString,
-            ChildCount = maxHeadId,
+            MaxHeadId = maxHeadId,
             Parts = perBodyPart
         };
     }

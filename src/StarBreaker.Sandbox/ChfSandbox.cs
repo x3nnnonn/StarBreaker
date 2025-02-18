@@ -20,15 +20,15 @@ public static class ChfSandbox
         // await CreateCharactersFromDnaStrings(huge_fixed);
     }
 
-    private static Dictionary<FacePart, DnaPartChunk[]> ParseDnaString(string dnaString)
+    private static Dictionary<FacePart, DnaPart[]> ParseDnaString(string dnaString)
     {
         var buffer = Convert.FromHexString(dnaString);
         var childReader = new SpanReader(buffer);
-        var parts = new DnaPartChunk[48];
+        var parts = new DnaPart[48];
 
         for (var i = 0; i < parts.Length; i++)
         {
-            parts[i] = DnaPartChunk.Read(ref childReader);
+            parts[i] = DnaPart.Read(ref childReader);
         }
 
         return parts.Select((part, idx) => (part, facePart: (FacePart)(idx % 12)))
@@ -85,7 +85,7 @@ public static class ChfSandbox
     private static void ExtractWebsiteDnas()
     {
         var websiteCharacters = Directory.GetFiles(SandboxPaths.WebsiteCharacters, "*.bin", SearchOption.AllDirectories);
-        var characters2 = websiteCharacters.Select(x => (name: x, character: StarCitizenCharacter.FromBytes(File.ReadAllBytes(x)))).ToArray();
+        var characters2 = websiteCharacters.Select(x => (name: x, character: ChfData.FromBytes(File.ReadAllBytes(x)))).ToArray();
         var dnas = characters2.Select(p => $"{p.character.Dna.DnaString}, {Path.GetFileNameWithoutExtension(p.name)}").ToArray();
 
         File.WriteAllLines(Path.Combine(SandboxPaths.ResearchFolder, "dna", "website.csv"), dnas);
@@ -148,20 +148,20 @@ public static class ChfSandbox
         //This^ is very strange. Setting the value to 0xff makes the character look like the default 0x00 one.
         //anything other than ff works?
 
-        Verify(chf);
+        //Verify(chf);
 
         await chf.WriteToChfFileAsync(name);
     }
 
-    private static void Verify(ChfFile chf)
-    {
-        var reader = new SpanReader(chf.Data);
-        reader.Expect<uint>(2);
-        reader.Expect<uint>(7);
-
-        var gender = BodyTypeChunk.Read(ref reader);
-        var dna = DnaChunk.Read(ref reader);
-    }
+    // private static void Verify(ChfFile chf)
+    // {
+    //     var reader = new SpanReader(chf.Data);
+    //     reader.Expect<uint>(2);
+    //     reader.Expect<uint>(7);
+    //
+    //     var gender = BodyTypeChunk.Read(ref reader);
+    //     var dna = DnaChunk.Read(ref reader);
+    // }
 
     public static string FixWeirdDnaString(string dna)
     {

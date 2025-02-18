@@ -1,9 +1,8 @@
 ﻿using System.Text.Json.Serialization;
-using StarBreaker.Chf.Parser;
+using StarBreaker.Chf;
 
 namespace StarBreaker.Chf;
 
-[JsonSerializable(typeof(StarCitizenCharacter))]
-[JsonSerializable(typeof(ChfDataParser))]
+[JsonSerializable(typeof(ChfData))]
 [JsonSourceGenerationOptions(WriteIndented = true)]
 internal partial class ChfSerializerContext : JsonSerializerContext;
