@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 using StarBreaker.Common;
 
@@ -50,6 +51,21 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
         context.Writer.WriteStartObject("_RecordValue_");
         WriteInstance(record.StructIndex, record.InstanceIndex, context);
         context.Writer.WriteEndObject();
+        
+        if (context.PointedTo.Count > 0)
+        {
+            Debugger.Break();
+            Console.WriteLine($"Warning: {context.PointedTo.Count} pointers were not resolved");
+            context.Writer.WriteStartObject("_Pointers_");
+
+            foreach (var (structIndex, instanceIndex) in context.PointedTo)
+            {
+                context.Writer.WriteString($"ptr:{context.GetPointer(structIndex, instanceIndex)}", $"struct:{structIndex},instance:{instanceIndex}");
+            }
+
+            context.Writer.WriteEndObject();
+        }
+
         context.Writer.WriteEndObject();
 
         context.Writer.Flush();
@@ -59,7 +75,7 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
     {
         var reader = Database.GetReader(structIndex, instanceIndex);
 
-        if (context.Pointers.TryGetValue((structIndex, instanceIndex), out var pointerIndex))
+        if (context.TryGetPointer(structIndex, instanceIndex, out var pointerIndex))
             context.Writer.WriteString("_Pointer_", $"ptr:{pointerIndex}");
 
         WriteStruct(structIndex, ref reader, context);
@@ -242,7 +258,7 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
             return;
         }
 
-        var pointerIndex = context.Pointers[(weakPointer.StructIndex, weakPointer.InstanceIndex)];
+        var pointerIndex = context.GetPointer(weakPointer.StructIndex, weakPointer.InstanceIndex);
         var pointerValue = $"_PointsTo_:ptr:{pointerIndex}";
 
         if (propName == null)
@@ -253,15 +269,26 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
 
     private readonly struct Context
     {
+        private readonly Dictionary<(int, int), int> _pointers;
         public string Path { get; }
         public Utf8JsonWriter Writer { get; }
-        public Dictionary<(int, int), int> Pointers { get; }
+        public HashSet<(int, int)> PointedTo { get; }
 
         public Context(string path, Utf8JsonWriter writer, Dictionary<(int, int), int> pointers)
         {
             Path = path;
             Writer = writer;
-            Pointers = pointers;
+            _pointers = pointers;
+            PointedTo = _pointers.Keys.ToHashSet();
+        }
+
+        public int GetPointer(int structIndex, int instanceIndex) => _pointers[(structIndex, instanceIndex)];
+
+        public bool TryGetPointer(int structIndex, int instanceIndex, out int pointerIndex)
+        {
+            PointedTo.Remove((structIndex, instanceIndex));
+
+            return _pointers.TryGetValue((structIndex, instanceIndex), out pointerIndex);
         }
     }
 }
