@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using StarBreaker.Chf;
 
 namespace StarBreaker.Cli;
 
@@ -6,4 +7,5 @@ namespace StarBreaker.Cli;
 [JsonSerializable(typeof(DownloadCommand.SccRoot))]
 [JsonSerializable(typeof(DownloadCommand.SccBody))]
 [JsonSerializable(typeof(DownloadCommand.SccCharacter))]
+[JsonSerializable(typeof(ChfData))]
 internal partial class CliSerializerContext : JsonSerializerContext;
