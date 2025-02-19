@@ -2,10 +2,17 @@
 using StarBreaker.Chf;
 using StarBreaker.Common;
 
-namespace StarBreaker.Chf;
+namespace StarBreaker.Cli;
 
 public static class ChfProcessing
 {
+    private static readonly JsonSerializerOptions options = new()
+    {
+        WriteIndented = true,
+        TypeInfoResolver = CliSerializerContext.Default,
+        Converters = { new ColorRgbaJsonConverter() },
+    };
+    
     public static async Task ProcessCharacter(string chf)
     {
         if (!chf.EndsWith(".chf"))
@@ -19,12 +26,6 @@ public static class ChfProcessing
         var data = await File.ReadAllBytesAsync(bin);
         var character = ChfData.FromBytes(data);
         
-        var options = new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            TypeInfoResolver = ChfSerializerContext.Default,
-            Converters = { new ColorRgbaJsonConverter() },
-        };
         var jsonString = JsonSerializer.Serialize(character, options);
         await File.WriteAllTextAsync(json, jsonString);
     }
