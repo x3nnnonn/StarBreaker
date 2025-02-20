@@ -2,6 +2,9 @@
 
 Extraction and reverse-engineering tool for Star Citizen game files.
 
+## Download
+[Link](https://nightly.link/diogotr7/StarBreaker/workflows/build/master)
+
 ## Included parts
 
 StarBreaker includes several projects, each useful to process a certain type of info or to perform a certain task
@@ -34,8 +37,11 @@ COMMANDS
   cryxml-convert    Converts a CryXmlB file to a XML file
   cryxml-convert-all  Converts all CryXmlB files in a folder to XML files
   dcb-extract       Extracts a DataCore binary file into separate xml files
+  dcb-generate      Generates C# types for DataCore structs and enums. Allows typesafe access to DataCore records.
   dds-merge         Merges multiple DDS files into a single DDS file
   dds-merge-all     Merges all DDS files in a folder into a single DDS file
+  diff              Dumps game information into plain text files for comparison
+  p4k-dump          Dumps the contents a Game.p4k file
   p4k-extract       Extracts a Game.p4k file
   proto-extract     Extracts protobuf definitions from the Star Citizen executable.
   proto-set-extract  Extracts the protobuf descriptor set from the Star Citizen executable.
