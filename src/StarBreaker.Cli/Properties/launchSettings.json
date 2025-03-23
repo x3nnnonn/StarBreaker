@@ -92,7 +92,7 @@
             "commandName": "Project",
             "commandLineArgs": "diff",
             "environmentVariables": {
-                "GAME_FOLDER": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\LIVE",
+                "GAME_FOLDER": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU",
                 "OUTPUT_FOLDER": "C:\\Development\\StarCitizen\\StarCitizenDiff",
                 "KEEP_OLD": "false",
                 "TEXT_FORMAT": "json"
