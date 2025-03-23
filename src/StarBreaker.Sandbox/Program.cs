@@ -4,8 +4,8 @@ using StarBreaker.Sandbox;
 //Project just so I can run throwaway code without adding a project for each thing.
 
 //SocPakSandbox.Run();
-DataCoreSandbox.Run();
-//P4kSandbox.Run();
+//DataCoreSandbox.Run();
+P4kSandbox.Run();
 //Crc32CSandbox.Run();
 
 //DdsFile.MergeToFile(@"D:\StarCitizen\P4k\Data\Objects\Characters\Human\heads\shared\tattoos\sc\stormwal\tattoo_stormwal_01_decal.dds", @"D:\StarCitizen\DDS\merged_stormwal.dds");
