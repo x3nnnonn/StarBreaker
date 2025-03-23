@@ -66,9 +66,9 @@ class ProtobufModifier:
         data_without_prefix = serialized_protobuf[5:]
 
         if isinstance(http_message, mitmproxy.http.Request):
-            message = self.message_factory.GetPrototype(grpc_method.input_type)()
+             message = self.message_factory.GetPrototype(grpc_method.input_type)()
         elif isinstance(http_message, mitmproxy.http.Response):
-            message = self.message_factory.GetPrototype(grpc_method.output_type)()
+             message = self.message_factory.GetPrototype(grpc_method.output_type)()
         else:
             raise ValueError(f"Unexpected HTTP message type {http_message}")
 
@@ -89,9 +89,11 @@ class ProtobufModifier:
         try:
             # Drop the first '/' from the path and convert the rest to a fully qualified namespace that we can look up.
             method_path = path.replace("/", ".")[1:]
+            # drop any query parameters
+            method_path = method_path.split("?")[0]
             return self.descriptor_pool.FindMethodByName(method_path)
         except KeyError as e:
-            raise ValueError("Failed to resolve method name by path") from e
+            raise ValueError("Failed to resolve method name by path" + path) from e
 
 
 class GrpcOption:
