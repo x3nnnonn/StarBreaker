@@ -9,7 +9,6 @@ public static class ChfProcessing
     private static readonly JsonSerializerOptions options = new()
     {
         WriteIndented = true,
-        TypeInfoResolver = CliSerializerContext.Default,
         Converters = { new ColorRgbaJsonConverter() },
     };
     
