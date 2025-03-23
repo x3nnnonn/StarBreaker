@@ -68,9 +68,8 @@ public class DownloadCommand : ICommand
         var page = 1;
         while (true)
         {
-            var response = await httpClient.GetFromJsonAsync(
-                $"https://www.star-citizen-characters.com/api/heads?page={page++}&orderBy=latest",
-                CliSerializerContext.Default.SccRoot
+            var response = await httpClient.GetFromJsonAsync<SccRoot>(
+                $"https://www.star-citizen-characters.com/api/heads?page={page++}&orderBy=latest"
             );
             foreach (var row in response!.body!.rows!)
             {

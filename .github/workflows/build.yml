@@ -10,8 +10,11 @@ jobs:
       - name: Clone
         uses: actions/checkout@v4
 
-      - name: Publish
-        run: dotnet publish src
+      - name: Publish GUI
+        run: dotnet publish -p:PublishSingleFile=true --self-contained true -r win-x64 -c Release src/StarBreaker/StarBreaker.csproj
+
+      - name: Publish CLI
+        run: dotnet publish -p:PublishSingleFile=true --self-contained true -r win-x64 -c Release src/StarBreaker.Cli/StarBreaker.Cli.csproj
 
       - name: Upload GUI
         uses: actions/upload-artifact@v4

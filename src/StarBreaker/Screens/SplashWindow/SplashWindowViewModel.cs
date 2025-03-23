@@ -98,9 +98,8 @@ public sealed partial class SplashWindowViewModel : ViewModelBase
             {
                 if (File.Exists(Path.Combine(directoryName, Constants.BuildManifest)))
                 {
-                    manifest = JsonSerializer.Deserialize(
-                        File.ReadAllText(Path.Combine(directoryName, Constants.BuildManifest)),
-                        StarBreakerSerializerContext.Default.BuildManifest
+                    manifest = JsonSerializer.Deserialize<BuildManifest>(
+                        File.ReadAllText(Path.Combine(directoryName, Constants.BuildManifest))
                     );
                 }
             }
@@ -200,6 +199,3 @@ public class BuildManifestData
     public string? Tag { get; set; }
     public string? Version { get; set; }
 }
-
-[JsonSerializable(typeof(BuildManifest))]
-internal partial class StarBreakerSerializerContext : JsonSerializerContext;

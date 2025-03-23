@@ -191,8 +191,3 @@ public record LoginData
     
     [JsonPropertyName("star_network")] public StarNetwork StarNetwork { get; init; } = null!;
 }
-
-[JsonSourceGenerationOptions(WriteIndented = true)]
-[JsonSerializable(typeof(LoginData))]
-[JsonSerializable(typeof(StarNetwork))]
-public partial class JsonContext : JsonSerializerContext;
