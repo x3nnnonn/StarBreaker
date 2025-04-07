@@ -159,7 +159,23 @@ def write_dump(req_or_rep, path, content):
         "wb",
     ) as f:
         f.write(content)
-
+        
+def append_dump(req_or_rep, path, content):
+    #instead of making a new file per request, append to a generic file,
+    #and add the timestamp to the content
+    if not os.path.exists("dump"):
+        os.makedirs("dump")
+        
+    with open(
+        os.path.join(
+            "dump",
+            f"[{path}] stream.log",
+        ),
+        "ab",
+    ) as f:
+        f.write(
+            f"[{datetime.datetime.now().strftime('%Y%m%d.%H%M%S.%f')}] [{req_or_rep}] {content}\n".encode()
+        )
 
 class GrpcProtobufDebugWriter:
 
@@ -179,16 +195,6 @@ class GrpcProtobufDebugWriter:
         )
         path = flow.request.path.replace("/", ".")
         write_dump("REP", path, rep.encode())
-        if "ExternalEntitlementService" in flow.request.path:
-            with open(
-                os.path.join(
-                    "dump",
-                    f"[{datetime.datetime.now().strftime('%Y%m%d.%H%M%S.%f')}] [REP] {path}.bin",
-                ),
-                "wb",
-            ) as f:
-                f.write(flow.response.content)
-
 
 class StreamSaver:
     TAG = "save_streamed_data: "
@@ -230,7 +236,7 @@ class StreamSaver:
                 data,
             )
 
-            write_dump(
+            append_dump(
                 self.direction == "request" and "SOUT" or "SIN",
                 self.flow.request.path.replace("/", ".") + "." + self.direction,
                 decodedData.encode(),

@@ -92,7 +92,7 @@
             "commandName": "Project",
             "commandLineArgs": "diff",
             "environmentVariables": {
-                "GAME_FOLDER": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU",
+                "GAME_FOLDER": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\LIVE",
                 "OUTPUT_FOLDER": "C:\\Development\\StarCitizen\\StarCitizenDiff",
                 "KEEP_OLD": "false",
                 "TEXT_FORMAT": "json"
@@ -119,7 +119,7 @@
             "commandLineArgs": "p4k-extract",
             "environmentVariables": {
                 "INPUT_P4K": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k",
-                "OUTPUT_FOLDER": "D:\\StarCitizen\\P4k",
+                "OUTPUT_FOLDER": "C:\\Scratch\\StarCitizen\\P4k",
                 "FILTER": "*"
             }
         },
@@ -144,16 +144,16 @@
             "commandName": "Project",
             "commandLineArgs": "proto-extract",
             "environmentVariables": {
-                "INPUT_FILE": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Bin64\\StarCitizen.exe",
-                "OUTPUT_FOLDER": "C:\\Development\\StarCitizen\\StarCitizenProtobuf\\protos"
+                "INPUT_FILE": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\LIVE\\Bin64\\StarCitizen.exe",
+                "OUTPUT_FOLDER": "C:\\Development\\StarCitizen\\StarBreaker\\src\\StarBreaker.Grpc\\Protos"
             }
         },
         "proto-set-extract": {
             "commandName": "Project",
             "commandLineArgs": "proto-set-extract",
             "environmentVariables": {
-                "INPUT_FILE": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Bin64\\StarCitizen.exe",
-                "OUTPUT_FILE": "C:\\Development\\StarCitizen\\StarCitizenProtobuf\\descriptorSet.bin"
+                "INPUT_FILE": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\LIVE\\Bin64\\StarCitizen.exe",
+                "OUTPUT_FILE": "C:\\Development\\StarCitizen\\StarBreaker\\src\\StarBreaker.Grpc\\Protos\\set.bin"
             }
         }
     }

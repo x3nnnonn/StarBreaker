@@ -376,7 +376,7 @@ public static class DynamicGrpcPrinter
 
             var builder = new StringBuilder();
             if (field.IsRequired) builder.Append("required ");
-            else if (field.ContainingOneof == null && !field.IsRepeated && field.File.IsProto3()) builder.Append("optional ");
+            else if (field.ContainingOneof == null && !field.IsRepeated && !field.File.IsProto3()) builder.Append("optional ");
             var options = field.GetOptions();
             if (options == null)
             {
