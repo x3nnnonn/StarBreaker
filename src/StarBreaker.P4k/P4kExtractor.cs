@@ -32,6 +32,8 @@ public sealed class P4kExtractor
         var filteredEntries = (filter is null
             ? _p4KFile.Entries.ToArray()
             : _p4KFile.Entries.Where(entry => FileSystemName.MatchesSimpleExpression(filter, entry.Name))).ToArray();
+        
+        Array.Sort(filteredEntries, (a, b) => a.Offset.CompareTo(b.Offset));
 
         var numberOfEntries = filteredEntries.Length;
         var fivePercent = numberOfEntries / 20;

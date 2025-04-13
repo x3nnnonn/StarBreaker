@@ -8,42 +8,42 @@ public class ViewLocator : IDataTemplate
 {
     public static void RegisterViews()
     {
-        Register<MainWindowViewModel, MainWindow>();
-        Register<SplashWindowViewModel, SplashWindow>();
-        Register<P4kTabViewModel, P4kTabView>();
-        Register<DataCoreTabViewModel, DataCoreTabView>();
-        Register<HexPreviewViewModel, HexPreviewView>();
-        Register<TextPreviewViewModel, TextPreviewView>();
-        Register<DdsPreviewViewModel, DdsPreviewView>();
-    }
-    
-    private static readonly Dictionary<Type, Func<Control>> Registration = new();
+        var viewModelType = typeof(ViewModelBase);
+        var controlType = typeof(Control);
 
-    public static void Register<TViewModel, TView>() where TView : Control, new() where TViewModel : ViewModelBase
-    {
-        Registration.Add(typeof(TViewModel), () => new TView());
+        var viewModelTypes = AppDomain.CurrentDomain.GetAssemblies()
+            .SelectMany(a => a.GetTypes())
+            .Where(t => viewModelType.IsAssignableFrom(t) && !t.IsAbstract);
+
+        foreach (var viewModel in viewModelTypes)
+        {
+            var viewName = viewModel.FullName?.Replace("ViewModel", "View");
+            var view = viewName != null ? Type.GetType(viewName) : null;
+
+            if (view != null && controlType.IsAssignableFrom(view))
+            {
+                var instance = Activator.CreateInstance(view);
+                if (instance is not Control control)
+                    throw new InvalidOperationException($"View {viewName} does not inherit from Control.");
+
+                Registration.Add(viewModel, () => control);
+            }
+        }
     }
+
+    private static readonly Dictionary<Type, Func<Control>> Registration = new();
 
     public Control Build(object? data)
     {
         var type = data?.GetType();
         if (type == null)
-        {
             return new TextBlock { Text = "Null" };
-        }
 
         if (Registration.TryGetValue(type, out var factory))
-        {
             return factory();
-        }
-        else
-        {
-            return new TextBlock { Text = "Not Found: " + type };
-        }
+
+        return new TextBlock { Text = "Not Found: " + type };
     }
 
-    public bool Match(object? data)
-    {
-        return data is ViewModelBase;
-    }
+    public bool Match(object? data) => data is ViewModelBase;
 }
