@@ -36,11 +36,10 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
                 new HierarchicalExpanderColumn<IP4kNode>(
                     new TextColumn<IP4kNode, string>("Name", x => x.GetName(), options: new TextColumnOptions<IP4kNode>()
                     {
-                        //TODO: make the sorting do folders first, then files
-                        //CompareAscending = null,
-                        //CompareDescending = null
+                        CompareAscending = CompareNodes,
+                        CompareDescending = (a, b) => CompareNodes(b, a)
                     }),
-                    x => x.GetChildren()
+                    GetSortedChildren
                 ),
                 new TextColumn<IP4kNode, string>("Size", x => x.GetSize(), options: new TextColumnOptions<IP4kNode>()
                 {
@@ -53,7 +52,37 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
 
         Source.RowSelection!.SingleSelect = true;
         Source.RowSelection.SelectionChanged += SelectionChanged;
-        Source.Items = _p4KService.P4KFileSystem.Root.Children.Values;
+        Source.Items = GetSortedNodes(_p4KService.P4KFileSystem.Root.Children.Values);
+    }
+    
+    private static int CompareNodes(IP4kNode? a, IP4kNode? b)
+    {
+        if (a == null && b == null) return 0;
+        if (a == null) return -1;
+        if (b == null) return 1;
+
+        // Directories come before files
+        bool aIsDir = a is P4kDirectoryNode;
+        bool bIsDir = b is P4kDirectoryNode;
+
+        if (aIsDir && !bIsDir) return -1;
+        if (!aIsDir && bIsDir) return 1;
+
+        // Both are the same type, sort by name
+        return string.Compare(a.GetName(), b.GetName(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static IP4kNode[] GetSortedChildren(IP4kNode node)
+    {
+        var children = node.GetChildren();
+        return GetSortedNodes(children);
+    }
+
+    private static IP4kNode[] GetSortedNodes(ICollection<IP4kNode> nodes)
+    {
+        return nodes.OrderBy(n => n is not P4kDirectoryNode) // Directories first
+            .ThenBy(n => n.GetName(), StringComparer.OrdinalIgnoreCase)
+            .ToArray();
     }
 
     private void SelectionChanged(object? sender, TreeSelectionModelSelectionChangedEventArgs<IP4kNode> e)

@@ -5,8 +5,10 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using Sc.External.Services.CharacterCustomizer.V1;
 using Sc.External.Services.Entitygraph.V1;
+using Sc.External.Services.Identity.V1;
 using Sc.External.Services.Ledger.V1;
 using StarBreaker.Common;
+using MemoryExtensions = System.MemoryExtensions;
 
 namespace StarBreaker.Sandbox;
 /// <summary>
@@ -21,21 +23,27 @@ public static class GrpcClient
         const string testFunds = @"C:\Users\Diogo\Downloads\GetFunds.grpc";
         const string testChar = @"C:\Users\Diogo\Downloads\everything.grpc";
         const string testContainer = @"C:\Users\Diogo\Downloads\ContainerQueryStream.grpc";
+        const string characterJson = @"C:\Development\StarCitizen\StarBreaker\src\StarBreaker.GrpcClient\male.json";
 
-        var containerQuery = ContainerQueryStreamResponse.Parser.ParseFrom(GrpcUtils.GrpcToProtobuf(File.ReadAllBytes(testContainer)));
-        var ledger = GetFundsResponse.Parser.ParseFrom(GrpcUtils.GrpcToProtobuf(File.ReadAllBytes(testFunds)));
-        var enity = EntityQueryResponse.Parser.ParseFrom(GrpcUtils.GrpcToProtobuf(File.ReadAllBytes(testEntity)));
-
-        var xx = containerQuery.ToString();
+        // var containerQuery = ContainerQueryStreamResponse.Parser.ParseFrom(GrpcUtils.GrpcToProtobuf(File.ReadAllBytes(testContainer)));
+        // var ledger = GetFundsResponse.Parser.ParseFrom(GrpcUtils.GrpcToProtobuf(File.ReadAllBytes(testFunds)));
+        // var enity = EntityQueryResponse.Parser.ParseFrom(GrpcUtils.GrpcToProtobuf(File.ReadAllBytes(testEntity)));
+        //
+        // var xx = containerQuery.ToString();
         
-        return;
+        // var bytes = File.ReadAllBytes(testChar);
+        // var character = SaveCharacterCustomizationsRequest.Parser.ParseFrom(GrpcUtils.GrpcToProtobuf(bytes));
+        //
+        // var json = character.ToString();
+        // Console.WriteLine(json);
+        // return;
+        
+        var character = SaveCharacterCustomizationsRequest.Parser.ParseJson(File.ReadAllText(characterJson));
+        var bytes = character.CharacterCustomizations.CustomMaterialParams.ToArray();
+        //ReplaceAll(bytes, [0xfe, 0x33, 0x00, 0xff], [0xff,0xff,0xff,0xff]);
+        ReplaceAll(bytes, [0x51, 0x34, 0x28, 0xff], [0xff,0xff,0xff,0xff]);
 
-        var bytes = File.ReadAllBytes(testChar);
-        var character = SaveCharacterCustomizationsRequest.Parser.ParseFrom(GrpcUtils.GrpcToProtobuf(bytes));
-
-        var json = character.ToString();
-        Console.WriteLine(json);
-        return;
+        character.CharacterCustomizations.CustomMaterialParams = ByteString.CopyFrom(bytes);
         
         var scWatcher = new StarCitizenClientWatcher(@"C:\Program Files\Roberts Space Industries\StarCitizen\");
         scWatcher.Start();
@@ -54,13 +62,19 @@ public static class GrpcClient
         {
             Credentials = ChannelCredentials.Create(ChannelCredentials.SecureSsl, creds)
         });
+        var identityClient = new IdentityService.IdentityServiceClient(channel);
+        var currentPlayer = identityClient.GetCurrentPlayer(new GetCurrentPlayerRequest());
+        
+        
         var charClient = new CharacterCustomizerService.CharacterCustomizerServiceClient(channel);
 
-        ChangeDna(character);
-        ChangeEyeColor(character);
-        ChangeBodyColor(character);
+        //ChangeDna(character);
+        //ChangeEyeColor(character);
+        //ChangeBodyColor(character);
+        var authHeaders = new Metadata();
+        authHeaders.Add("Authorization", $"Bearer {currentPlayer.Jwt}");
 
-        var response = charClient.SaveCharacterCustomizations(character);
+        var response = charClient.SaveCharacterCustomizations(character, authHeaders);
 
         Console.WriteLine(response);
         return;
@@ -106,6 +120,17 @@ public static class GrpcClient
     
         req.CharacterCustomizations.CustomMaterialParams = ByteString.CopyFrom(copy);
     }
+
+    private static void ReplaceAll(Span<byte> span, ReadOnlySpan<byte> needle, ReadOnlySpan<byte> replacement)
+    {
+        var xx = Convert.ToHexString(span);
+        var idx = span.IndexOf(needle);
+        while (idx != -1)
+        {
+            replacement.CopyTo(span[idx..]);
+            idx = span.IndexOf(needle);
+        }
+    }
 }
 
 public class StarCitizenClientWatcher : IDisposable
@@ -133,7 +158,7 @@ public class StarCitizenClientWatcher : IDisposable
 
     private void OnChanged(object sender, FileSystemEventArgs e)
     {
-        var loginData = JsonSerializer.Deserialize(File.ReadAllText(e.FullPath), JsonContext.Default.LoginData);
+        var loginData = JsonSerializer.Deserialize<LoginData>(File.ReadAllText(e.FullPath));
 
         if (loginData == null)
             return;
@@ -148,7 +173,7 @@ public class StarCitizenClientWatcher : IDisposable
         {
             try
             {
-                var loginData = JsonSerializer.Deserialize(await File.ReadAllTextAsync(targetFile), JsonContext.Default.LoginData);
+                var loginData = JsonSerializer.Deserialize<LoginData>(await File.ReadAllTextAsync(targetFile));
                 if (loginData != null)
                     return loginData;
             }

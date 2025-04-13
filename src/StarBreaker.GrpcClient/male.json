@@ -1,0 +1,55 @@
+﻿{
+    "characterCustomizations": {
+        "gender": "GENDER_MALE",
+        "dnaMatrix": "lJPQ/PZnbN32NNtnAAAAAAwABAAEADoAlUwDAJVMAwA7JwUAOycFAE8xDQD//ycA//8nAFHvGQBR7xkAjA4CAHBFCgD//xkAkDIFAJAyBQArlwYAK5cGAKdBJAAAAAAAAAAAAK0QOgCtEDoAUxQJAMilDAAAAAAA2YAnANmAJwCYQSQAmEEkAD8+JwAAAAAAAAAAAAAAAAAAAAAAWXknAMYUDgAAAAAAAAAAAAAAAAAAAAAAAAAAAMhOLQAAAAAAAAAAAAAAAAAAAAAAxWMtAAAAAAAAAAAA",
+        "customizations": {
+            "params": [
+                {
+                    "portName": "body_itemport",
+                    "entityClassGuid": "dbaa8a7d-755f-4104-8b24-7b58fd1e76f6",
+                    "params": [
+                        {
+                            "portName": "head_itemport",
+                            "entityClassGuid": "1d5cfab3-bf80-4550-b4ab-39e896a7086e",
+                            "params": [
+                                {
+                                    "portName": "eyes_itemport",
+                                    "entityClassGuid": "6b4ca363-e160-4871-b709-e47467b40310",
+                                    "params": []
+                                },
+                                {
+                                    "portName": "hair_itemport",
+                                    "entityClassGuid": "e60fbfdb-5dc8-4336-b0b3-abbc9cc98901",
+                                    "params": []
+                                },
+                                {
+                                    "portName": "eyebrow_itemport",
+                                    "entityClassGuid": "c40183e4-659c-4e4e-8f96-70b33a3b9d67",
+                                    "params": []
+                                },
+                                {
+                                    "portName": "eyelashes_itemport",
+                                    "entityClassGuid": "6217c113-a448-443b-82aa-1bb108ba8e11",
+                                    "params": []
+                                },
+                                {
+                                    "portName": "beard_itemport",
+                                    "entityClassGuid": "bf085ecf-e882-41ea-9944-4a1633dbbe0e",
+                                    "params": []
+                                },
+                                {
+                                    "portName": "universal_scalp_itemport",
+                                    "entityClassGuid": "71268392-61f4-40f2-9280-92971478a719",
+                                    "params": []
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "customMaterialParams": "BhBAJHKvavatvbt53OwXfqQ064upijEDxgAAAAABjp4SchviJ3foGF0CP1jLYZO7B4A+D9JKVf49gz5kEsTPAAAAALCDWLkAAAAAw1D3nAAAAADfRAapAAAAAIepccgAAIA/9Hre7QAAgD/obi/YAACAP7om5coAAIA/Au0mBQAAAABxPokgAAAAAG0qeBUAAAAA19XjmwAAgD+kBky+AACAP7gSvYsAAIA/06GhEQAAgD/DGleSAAAAALDJ+LcAAAAArN0JggAAAADnAZKqAACAP5TSPY8AAIA/iMbMugAAgD/03J1YAACAPycRTAZqhyY/fcBn7PkrST4AFpcHU71RNCj/kB2bsri4uP8vDiPjuLi4/zbnwC64uLj/kxoIGri4uP8sCbBLuLi4/zXgU4a4uLj/kueGfbi4uP8t9D4suLi4/zQd3eG4uLj/7IOlZAgAAAAYcPV3CAAAAJjl8+kAAAAAbBaj+gAAAADyebM8CAAAAAaK4y8IAAAA8WK3MgAAAAAFkechAAAAAFcC5fcIAAAAo/G15AgAAADWH4t7AAAAACLs22gAAAAAAgTqTWJW1urPEyAORkI/XlqZCS9IW14s34wtrhUhbuVnfKsA9UhohaNCUPotGxmY3AI2v1hNQifNrht6AAAAAAKpeclzAAABlwdTvVE0KP8AACyhH6QAAAGXB1O9UTQo/wAAAAAAAAAAAAAAAAAAAAAAAF6IR6ACRTXVAAAAAAEccZ6MAAABrDQqRDcRCv8AAAAAAAAAAAAAAAAAAAAAAABHaYNsRq5VfwAAAAABQgsu0wdawfZKAAAAANkLN8PTS2g/owD6uTzffz+v8Pti5q9FPnZACAaDF/09yKeapQAAgD90tn4CAAAAAAACFAjpFYl1a/8Jycei/v7+/wAAAAAAAAAAAAAAAAAAAAAAAJNNJ5tYG+ugAAAAAAFYx4IOB1rB9kqi1J4+2Qs3wyy3lD6jAPq5AACAP6/w+2IAAAAAdkAIBnbGCz/Ip5qlVAHXPnS2fgKUgxk9AAIUCOkVwKSE/wnJx6L+/v7/AAAAAAAAAAAAAAAAAAAAAAAAvciKB+fJnooAAAAAAWOtN58HWsH2SgAAgD/ZCzfDr35bPqMA+rk8338/r/D7YgASAzp2QAgGAAAAAMinmqUAAIA+dLZ+AgAAAAAAAhQI6RUIBJz/CcnHov7+/v8AAA==",
+        "race": "RACE_UNSPECIFIED",
+        "generation": ""
+    }
+}

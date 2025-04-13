@@ -1,0 +1,50 @@
+{
+  "characterCustomizations": {
+    "gender": "GENDER_FEMALE",
+    "dnaMatrix": "lJPQ/FTr9J4ANdtnAAAAAAwABAAEABMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/JBgAAAAAAFsAGABbABgD//w4A//8OABbAAQAWwAYAFsAGAP//BgD//wYA//8IAAAACAAWwAYA6D8IAOg/CAAAAAAAAAAAAOg/CADoPwgA6D8IAAAACAAAAAgAAAAAAAAACgDoPwgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACwAAAAsAAAAAAP81EwAAAAAA",
+    "customizations": {
+      "params": [
+        {
+          "portName": "body_itemport",
+          "entityClassGuid": "dbaa8a7d-755f-4104-8b24-7b58fd1e76f6",
+          "params": [
+            {
+              "portName": "head_itemport",
+              "entityClassGuid": "1d5cfab3-bf80-4550-b4ab-39e896a7086e",
+              "params": [
+                {
+                  "portName": "eyes_itemport",
+                  "entityClassGuid": "6b4ca363-e160-4871-b709-e47467b40310",
+                  "params": []
+                },
+                {
+                  "portName": "hair_itemport",
+                  "entityClassGuid": "57eedc17-d982-485f-98bc-161df3822022",
+                  "params": []
+                },
+                {
+                  "portName": "eyebrow_itemport",
+                  "entityClassGuid": "c40183e4-659c-4e4e-8f96-70b33a3b9d67",
+                  "params": []
+                },
+                {
+                  "portName": "eyelashes_itemport",
+                  "entityClassGuid": "6217c113-a448-443b-82aa-1bb108ba8e11",
+                  "params": []
+                },
+                {
+                  "portName": "universal_scalp_itemport",
+                  "entityClassGuid": "71268392-61f4-40f2-9280-92971478a719",
+                  "params": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "customMaterialParams": "BrNHgZqKBIbhYlfGV+lxjoI064upvLGTmAAAAAABjp4SchviJ3foAAAAAFjLYZMAAAAAD9JKVQAAAABkEsTPAAAAALCDWLkAAIA/w1D3nAAAgD/fRAapAACAP4epccjNzEw/9Hre7c3MTD/obi/YzcxMP7om5coAAIA/Au0mBQAAAABxPokgAAAAAG0qeBUAAAAA19Xjm5qZmT6kBky+mpmZPrgSvYuamZk+06GhETMzMz/DGleSzcxMP7DJ+LfNzEw+rN0Jgs3MTD7nAZKqZmZmP5TSPY8AAAA/iMbMugAAAD/03J1YAACAPycRTAYAAAAAfcBn7AAAAAAAFpcHU73+MwD/kB2bsgAAAP8vDiPjAAAA/zbnwC4AAAD/kxoIGgAAAP8sCbBLAAAA/zXgU4YAAAD/kueGfQAsLP8t9D4sABUV/zQd3eEAHBz/7IOlZAgAAAAYcPV3CAAAAJjl8+kAAAAAbBaj+gAAAADyebM8CAAAAAaK4y8IAAAA8WK3MgAAAAAFkechAAAAAFcC5fcIAAAAo/G15AgAAADWH4t7AAAAACLs22gAAAAABATqTWJW1urPEyAORkI/XlqZCS9IW14s34wtrhUhbuVnfKsM6kF7LEepikM3kKVsBHGphg7vRLeLIRsaUhvP8KPZdLWRAOhKjVhiMhXwpYDPmL9TBoxYTUInKXBWwAAAAAACTG5rMQAAAZcHU73+MwD/AADbZluKAAABlwdTvf4zAP8AAAAAAAAAAAAAAAAAAAAAAABeiEegAkU11QAAAAABHHGejAAAAaw0KkT+ewD/AAAAAAAAAAAAAAAAAAAAAAAAR2mDbAwkUekAAAAAAQILFxMHWsH2SgAAAADZCzfD0iXIPaMA+rkAAAAAr/D7YgAAAAB2QAgGAAAAAMinmqVmZuY+dLZ+Ai4KWz4AAhQI6RWBN8P/CcnHov7+/v8AAAAAAAAAAAAAAAAAAAAAAACTTSebWBvroAAAAAABWMeCDgdawfZKotSePtkLN8Mst5Q+owD6uQAAgD+v8PtiAAAAAHZACAZ2xgs/yKeapVQB1z50tn4ClIMZPQACFAjpFcCkhP8Jycei/v7+/wAAAAAAAAAAAAAAAAAAAAAAAL3Iigc86FEgAAAAAAFjrTefB1rB9koAAAAA2Qs3w0pzAD6jAPq5AAAAAK/w+2IAAAAAdkAIBgAAAADIp5qlAACAP3S2fgIpk4w+AAIUCOkVgTfD/wnJx6L+/v7/AAA=",
+    "race": "RACE_UNSPECIFIED",
+    "generation": ""
+  }
+}
