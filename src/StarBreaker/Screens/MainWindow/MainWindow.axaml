@@ -12,7 +12,7 @@
                      MinWidth="400"
                      x:Class="StarBreaker.Screens.MainWindow"
                      x:DataType="vm:MainWindowViewModel"
-                     Icon="/Assets/avalonia-logo.ico"
+                     Icon="/Assets/StarBreaker.ico"
                      Title="StarBreaker">
     <ui:NavigationView
         MenuItemsSource="{Binding Pages}"
