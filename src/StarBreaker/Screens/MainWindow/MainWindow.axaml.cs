@@ -11,6 +11,6 @@ public partial class MainWindow : AppWindow
     public MainWindow()
     {
         InitializeComponent();
-        //this.EnableMicaTransparency();
+        this.EnableMicaTransparency();
     }
 }

@@ -12,6 +12,6 @@ public partial class SplashWindow : AppWindow
     public SplashWindow()
     {
         InitializeComponent();
-        //this.EnableMicaTransparency();
+        this.EnableMicaTransparency();
     }
 }
