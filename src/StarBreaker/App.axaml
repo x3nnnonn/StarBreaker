@@ -9,7 +9,7 @@
     </Application.DataTemplates>
 
     <Application.Styles>
-        <sty:FluentAvaloniaTheme UseSystemFontOnWindows="True" />
+        <sty:FluentAvaloniaTheme UseSystemFontOnWindows="True" CustomAccentColor="Indigo" />
         <StyleInclude Source="avares://Avalonia.Controls.TreeDataGrid/Themes/Fluent.axaml"/>
         <StyleInclude Source="avares://AvaloniaHex/Themes/Simple/AvaloniaHex.axaml"/>
         <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />

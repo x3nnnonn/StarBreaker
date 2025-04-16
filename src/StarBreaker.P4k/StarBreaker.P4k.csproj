@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <PackageReference Include="System.Threading.Channels" Version="9.0.1" />
-    <PackageReference Include="ZstdSharp.Port" Version="0.8.4" />
+    <PackageReference Include="System.Threading.Channels" Version="9.0.4" />
+    <PackageReference Include="ZstdSharp.Port" Version="0.8.5" />
   </ItemGroup>
 
   <ItemGroup>
