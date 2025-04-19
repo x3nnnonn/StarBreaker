@@ -8,13 +8,10 @@
              x:DataType="screens:P4kTabViewModel"
              d:DataContext="{x:Static starBreaker:DesignData.P4KTabViewModel}"
              x:Class="StarBreaker.Screens.P4kTabView">
-    <Grid
-        VerticalAlignment="Stretch"
-        HorizontalAlignment="Stretch"
-        ColumnDefinitions="*,4,*">
-        <ScrollViewer Grid.Column="0">
-            <TreeDataGrid Source="{Binding Source}" />
-        </ScrollViewer>
+    <Grid ColumnDefinitions="*,4,*"
+          VerticalAlignment="Stretch"
+          HorizontalAlignment="Stretch">
+        <TreeDataGrid Grid.Column="0" Source="{Binding Source}" />
         <GridSplitter
             Grid.Column="1"
             ResizeDirection="Columns" />
