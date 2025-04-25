@@ -1,4 +1,6 @@
-namespace StarBreaker.P4k;
+using StarBreaker.P4k;
+
+namespace StarBreaker;
 
 public class FakeP4kFile : IP4kFile
 {
