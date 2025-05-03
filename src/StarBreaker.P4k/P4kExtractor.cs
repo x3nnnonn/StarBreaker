@@ -36,7 +36,7 @@ public sealed class P4kExtractor
         Array.Sort(filteredEntries, (a, b) => a.Offset.CompareTo(b.Offset));
 
         var numberOfEntries = filteredEntries.Length;
-        var fivePercent = numberOfEntries / 20;
+        var fivePercent = Math.Max(numberOfEntries / 20, 1);
         var processedEntries = 0;
 
         progress?.Report(0);
@@ -62,7 +62,7 @@ public sealed class P4kExtractor
 
                 Directory.CreateDirectory(Path.GetDirectoryName(entryPath) ?? throw new InvalidOperationException());
                 using (var writeStream = new FileStream(entryPath, FileMode.Create, FileAccess.Write, FileShare.None,
-                           bufferSize: entry.UncompressedSize > int.MaxValue ? 81920 : (int)entry.UncompressedSize, useAsync: true))
+                           bufferSize: entry.UncompressedSize > int.MaxValue ? 81920 : (int)entry.UncompressedSize))
                 {
                     using (var entryStream = _p4KFile.OpenStream(entry))
                     {

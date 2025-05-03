@@ -56,8 +56,8 @@
             "commandName": "Project",
             "commandLineArgs": "cryxml-convert",
             "environmentVariables": {
-                "INPUT_FILE": "D:\\StarCitizen\\P4k\\Data\\Scripts\\Shooter.xml",
-                "OUTPUT_FILE": "D:\\StarCitizen\\CryXml\\Data\\Scripts\\Shooter.xml"
+                "INPUT_FILE": "C:\\Scratch\\StarCitizen\\P4k\\Data\\Scripts\\AI\\Subsumption\\Subsumption.xml",
+                "OUTPUT_FILE": "C:\\Scratch\\StarCitizen\\P4k\\Data\\Scripts\\AI\\Subsumption\\Subsumption_lol.xml"
             }
         },
         "cryxml-convert-all": {
@@ -92,7 +92,7 @@
             "commandName": "Project",
             "commandLineArgs": "diff",
             "environmentVariables": {
-                "GAME_FOLDER": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\LIVE",
+                "GAME_FOLDER": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU",
                 "OUTPUT_FOLDER": "C:\\Development\\StarCitizen\\StarCitizenDiff",
                 "KEEP_OLD": "false",
                 "TEXT_FORMAT": "json"
@@ -128,8 +128,26 @@
             "commandLineArgs": "p4k-extract",
             "environmentVariables": {
                 "INPUT_P4K": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k",
-                "OUTPUT_FOLDER": "D:\\StarCitizen\\P4kSocPak",
+                "OUTPUT_FOLDER": "C:\\Scratch\\StarCitizen\\P4kSocPak",
                 "FILTER": "*.socpak"
+            }
+        },
+        "p4k-extract-chf": {
+            "commandName": "Project",
+            "commandLineArgs": "p4k-extract",
+            "environmentVariables": {
+                "INPUT_P4K": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k",
+                "OUTPUT_FOLDER": "C:\\Scratch\\StarCitizen\\P4kChf",
+                "FILTER": "*.chf"
+            }
+        },
+        "p4k-extract-ini": {
+            "commandName": "Project",
+            "commandLineArgs": "p4k-extract",
+            "environmentVariables": {
+                "INPUT_P4K": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k",
+                "OUTPUT_FOLDER": "C:\\Scratch\\StarCitizen\\P4kini",
+                "FILTER": "*.ini"
             }
         },
         "p4k-dump": {

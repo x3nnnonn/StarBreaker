@@ -190,4 +190,19 @@ public ref struct SpanReader
 
         return MemoryMarshal.Read<T>(PeekBytes(Unsafe.SizeOf<T>()));
     }
+
+    public string ReadNullTerminatedString()
+    {
+        var start = _position;
+        while (_position < _span.Length && _span[_position] != 0)
+            _position++;
+
+        var length = _position - start;
+        if (length == 0)
+            return string.Empty;
+
+        var str = Encoding.ASCII.GetString(_span.Slice(start, length));
+        _position++;
+        return str;
+    }
 }
