@@ -32,7 +32,8 @@ public class DiffCommand : ICommand
             [
                 Path.Combine(OutputDirectory, "DataCore"),
                 Path.Combine(OutputDirectory, "P4k"),
-                Path.Combine(OutputDirectory, "Protobuf"),
+                Path.Combine(OutputDirectory, "P4kContents"),
+                Path.Combine(OutputDirectory, "Localization"),
                 Path.Combine(OutputDirectory, "build_manifest.json"),
                 Path.Combine(OutputDirectory, "DataCore.dcb.zst"),
                 Path.Combine(OutputDirectory, "StarCitizen.exe.zst"),
@@ -71,6 +72,15 @@ public class DiffCommand : ICommand
         await dumpP4k.ExecuteAsync(fakeConsole);
         await console.Output.WriteLineAsync("P4k dumped.");
 
+        var localizationDump = new ExtractP4kCommand
+        {
+            P4kFile = p4kFile,
+            OutputDirectory = Path.Combine(OutputDirectory, "P4kContents"),
+            FilterPattern = "*english\\global.ini",
+        };
+        await localizationDump.ExecuteAsync(fakeConsole);
+        await console.Output.WriteLineAsync("Localization dumped.");
+
         var dcbExtract = new DataCoreExtractCommand
         {
             P4kFile = p4kFile,
@@ -107,12 +117,12 @@ public class DiffCommand : ICommand
     private static async Task ExtractDataCoreIntoZip(string p4kFile, string zipPath)
     {
         var p4k = new P4kFileSystem(P4kFile.FromFile(p4kFile));
-        MemoryStream? input = null;
+        Stream? input = null;
         foreach (var file in DataCoreUtils.KnownPaths)
         {
             if (!p4k.FileExists(file)) continue;
 
-            input = new MemoryStream(p4k.ReadAllBytes(file));
+            input = p4k.OpenRead(file);
             break;
         }
 

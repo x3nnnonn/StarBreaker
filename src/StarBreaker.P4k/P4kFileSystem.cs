@@ -1,4 +1,5 @@
 ﻿using System.IO.Enumeration;
+using StarBreaker.Common;
 using StarBreaker.FileSystem;
 
 namespace StarBreaker.P4k;
@@ -133,7 +134,7 @@ public class P4kFileSystem : IFileSystem
             if (value is P4kDirectoryNode directory)
                 current = directory;
             else if (value is P4kFileNode file && index == partsCount - 1)
-                return new MemoryStream(P4kFile.OpenInMemory(file.ZipEntry));
+                return P4kFile.OpenStream(file.ZipEntry);
             else
                 throw new FileNotFoundException();
         }
@@ -157,7 +158,7 @@ public class P4kFileSystem : IFileSystem
             if (value is P4kDirectoryNode directory)
                 current = directory;
             else if (value is P4kFileNode file && index == partsCount - 1)
-                return P4kFile.OpenInMemory(file.ZipEntry);
+                return P4kFile.OpenStream(file.ZipEntry).ToArray();
             else
                 throw new FileNotFoundException();
         }

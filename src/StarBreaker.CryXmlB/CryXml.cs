@@ -51,6 +51,18 @@ public readonly struct CryXml
         return data.Length > magicLength && data[..magicLength].SequenceEqual(magic);
     }
 
+    public static bool IsCryXmlB(Stream stream)
+    {
+        if (stream.Length < magicLength)
+            return false;
+        
+        var before = stream.Position;
+        Span<byte> buffer = stackalloc byte[magicLength];
+        stream.ReadExactly(buffer);
+        stream.Position = before;
+        return buffer.SequenceEqual(magic);
+    }
+
     public void WriteTo(XmlWriter writer)
     {
         if (_nodes[0].ParentIndex != -1)

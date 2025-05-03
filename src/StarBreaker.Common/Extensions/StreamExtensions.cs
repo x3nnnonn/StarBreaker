@@ -110,4 +110,32 @@ public static class StreamExtensions
 
         return Encoding.ASCII.GetString(span);
     }
+
+    public static string ReadString(this Stream stream)
+    {
+        var length = checked((int)(stream.Length - stream.Position));
+
+        var rent = ArrayPool<byte>.Shared.Rent(length);
+        var buffer = rent.AsSpan(0, length);
+        
+        try
+        {
+            stream.ReadExactly(buffer);
+
+            return Encoding.ASCII.GetString(buffer);
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(rent);
+        }
+    }
+
+    public static byte[] ToArray(this Stream stream)
+    {
+        var length = checked((int)(stream.Length - stream.Position));
+        var array = new byte[length];
+        stream.ReadExactly(array);
+        stream.Dispose();
+        return array;
+    }
 }

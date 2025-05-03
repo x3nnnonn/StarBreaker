@@ -6,5 +6,4 @@ public interface IP4kFile
     ZipEntry[] Entries { get; }
     P4kDirectoryNode Root { get; }
     Stream OpenStream(ZipEntry entry);
-    byte[] OpenInMemory(ZipEntry entry);
 }
