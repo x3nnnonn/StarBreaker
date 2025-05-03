@@ -1,4 +1,6 @@
-namespace StarBreaker.P4k;
+using StarBreaker.P4k;
+
+namespace StarBreaker;
 
 public class FakeP4kFile : IP4kFile
 {
@@ -14,6 +16,4 @@ public class FakeP4kFile : IP4kFile
     }
 
     public Stream OpenStream(ZipEntry entry) => new MemoryStream(new byte[entry.UncompressedSize]);
-
-    public byte[] OpenInMemory(ZipEntry entry) => new byte[entry.UncompressedSize];
 }

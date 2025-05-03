@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -203,56 +204,44 @@ public sealed class P4kFile : IP4kFile
     // If these are required, consider using OpenInMemory instead.
     public Stream OpenStream(ZipEntry entry)
     {
-        // Represents the raw stream from the p4k file, before any decryption or decompression
         var entryStream = OpenInternal(entry);
 
         return entry switch
         {
-            { IsCrypted: true, CompressionMethod: 100 } => GetDecryptStream(entryStream, entry.CompressedSize),
-            { IsCrypted: false, CompressionMethod: 100 } => GetDecompressionStream(entryStream),
+            { IsCrypted: true, CompressionMethod: 100 } => Decompress(Decrypt(entryStream), entry.UncompressedSize),
+            { IsCrypted: false, CompressionMethod: 100 } => Decompress(entryStream, entry.UncompressedSize),
             { IsCrypted: false, CompressionMethod: 0 } when entry.CompressedSize != entry.UncompressedSize => throw new Exception("Invalid stored file"),
-            { IsCrypted: false, CompressionMethod: 0 } => entryStream,
+            { IsCrypted: false, CompressionMethod: 0 } => OpenInternal(entry),
             _ => throw new Exception("Invalid compression method")
         };
     }
 
-    private DecompressionStream GetDecryptStream(Stream entryStream, ulong compressedSize)
+    private MemoryStream Decrypt(Stream entryStream)
     {
-        using var transform = _aes.CreateDecryptor();
-        var ms = new MemoryStream((int)compressedSize);
+        var innerArray = new byte[entryStream.Length];
+        var ms = new MemoryStream(innerArray);
+
+        using (var transform = _aes.CreateDecryptor())
         using (var crypto = new CryptoStream(entryStream, transform, CryptoStreamMode.Read))
             crypto.CopyTo(ms);
 
-        // Trim NULL off end of stream
-        ms.Seek(-1, SeekOrigin.End);
-        while (ms.Position > 1 && ms.ReadByte() == 0)
-            ms.Seek(-2, SeekOrigin.Current);
-        ms.SetLength(ms.Position);
+        //trim the stream to the last non-null byte
+        var lastNonNull = innerArray.AsSpan().LastIndexOfAnyExcept((byte)0);
+        ms.SetLength(lastNonNull + 1);
+        ms.Position = 0;
 
-        ms.Seek(0, SeekOrigin.Begin);
-
-        return GetDecompressionStream(ms);
+        return ms;
     }
 
-    private static DecompressionStream GetDecompressionStream(Stream entryStream)
+    private static MemoryStream Decompress(Stream entryStream, ulong uncompressedSize)
     {
-        return new DecompressionStream(entryStream, decompressor: decompressor ??= new Decompressor());
-    }
+        var ms = new MemoryStream((int)uncompressedSize);
 
-    public byte[] OpenInMemory(ZipEntry entry)
-    {
-        if (entry.UncompressedSize > int.MaxValue)
-            throw new Exception("File too large to load into memory. Use OpenStream instead");
+        using (var decompressionStream = new DecompressionStream(entryStream, decompressor: decompressor ??= new Decompressor(), leaveOpen: false))
+            decompressionStream.CopyTo(ms);
 
-        var uncompressedSize = checked((int)entry.UncompressedSize);
-
-        var ms = new MemoryStream(uncompressedSize);
-        OpenStream(entry).CopyTo(ms);
-
-        // If the stream is larger than the uncompressed size, trim it.
-        // This can happen because of decryption padding bytes :(
         ms.SetLength(ms.Position);
-
-        return ms.ToArray();
+        ms.Position = 0;
+        return ms;
     }
 }

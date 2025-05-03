@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using Avalonia.Media.Imaging;
 using Microsoft.Extensions.Logging;
+using StarBreaker.Common;
 using StarBreaker.Dds;
 using StarBreaker.Extensions;
 using StarBreaker.P4k;
@@ -32,14 +33,14 @@ public class PreviewService : IPreviewService
     public FilePreviewViewModel GetPreview(P4kFileNode selectedEntry)
     {
         //TODO: move this to a service?
-        var buffer = _p4KService.P4KFileSystem.P4kFile.OpenInMemory(selectedEntry.ZipEntry);
+        using var entryStream = _p4KService.P4KFileSystem.P4kFile.OpenStream(selectedEntry.ZipEntry);
 
         FilePreviewViewModel preview;
 
         //check cryxml before extension since ".xml" sometimes is cxml sometimes plaintext
-        if (CryXmlB.CryXml.IsCryXmlB(buffer))
+        if (CryXmlB.CryXml.IsCryXmlB(entryStream))
         {
-            if (!CryXmlB.CryXml.TryOpen(new MemoryStream(buffer), out var c))
+            if (!CryXmlB.CryXml.TryOpen(entryStream, out var c))
             {
                 //should never happen
                 _logger.LogError("Failed to open CryXmlB");
@@ -53,7 +54,7 @@ public class PreviewService : IPreviewService
         {
             _logger.LogInformation("plaintextExtensions");
 
-            preview = new TextPreviewViewModel(Encoding.UTF8.GetString(buffer));
+            preview = new TextPreviewViewModel(entryStream.ReadString());
         }
         else if (ddsLodExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
         {
@@ -65,23 +66,25 @@ public class PreviewService : IPreviewService
             }
 
             var ms = DdsFile.MergeToStream(selectedEntry.ZipEntry.Name, _p4KService.P4KFileSystem);
-            var pngBytes = DdsFile.ConvertToPng(ms.ToArray());
-            //find all mipmaps of the dds.
+            // var pngBytes = DdsFile.ConvertToPng(ms.ToArray());
+            // //find all mipmaps of the dds.
+            //
+            //
+            // _logger.LogInformation("ddsLodExtensions");
+            // preview = new DdsPreviewViewModel(new Bitmap(pngBytes));
+            
+            preview = new HexPreviewViewModel(entryStream.ToArray());
 
-
-            _logger.LogInformation("ddsLodExtensions");
-            preview = new DdsPreviewViewModel(new Bitmap(pngBytes));
         }
         else if (bitmapExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
         {
-            var ms = new MemoryStream(buffer);
             _logger.LogInformation("bitmapExtensions");
-            preview = new DdsPreviewViewModel(new Bitmap(ms));
+            preview = new DdsPreviewViewModel(new Bitmap(entryStream));
         }
         else
         {
             _logger.LogInformation("hex");
-            preview = new HexPreviewViewModel(buffer);
+            preview = new HexPreviewViewModel(entryStream.ToArray());
         }
         //todo other types
 

@@ -10,7 +10,7 @@ public static class DdsFile
 {
     public static ReadOnlySpan<byte> Magic => "DDS "u8;
 
-    public static MemoryStream MergeToStream(string fullPath, IFileSystem? fileSystem = null)
+    public static Stream MergeToStream(string fullPath, IFileSystem? fileSystem = null)
     {
         fileSystem ??= RealFileSystem.Instance;
         if (!fullPath.EndsWith(".dds", StringComparison.OrdinalIgnoreCase) && !fullPath.EndsWith(".dds.a", StringComparison.OrdinalIgnoreCase))
@@ -21,10 +21,13 @@ public static class DdsFile
             .Where(p => char.IsDigit(p[^1]))
             .ToArray();
 
-        if (files.Length == 0)
-            return new MemoryStream(fileSystem.ReadAllBytes(fullPath));
-
         var mainFile = new BinaryReader(fileSystem.OpenRead(fullPath));
+
+        if (files.Length == 0)
+        {
+            var remaining = mainFile.BaseStream.Length - mainFile.BaseStream.Position;
+            
+        }
 
         var magic = mainFile.ReadBytes(4);
         if (!Magic.SequenceEqual(magic))
