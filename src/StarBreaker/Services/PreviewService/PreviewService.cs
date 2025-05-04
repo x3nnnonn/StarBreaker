@@ -58,25 +58,10 @@ public class PreviewService : IPreviewService
         }
         else if (ddsLodExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
         {
-            var parent = selectedEntry.Parent;
-            if (parent == null)
-            {
-                _logger.LogError("ddsLodExtensions: parent is null");
-                return new TextPreviewViewModel("ddsLodExtensions: parent is null");
-            }
-
-            try
-            {
-                var ms = DdsFile.MergeToStream(selectedEntry.ZipEntry.Name, _p4KService.P4KFileSystem);
-                var pngBytes = DdsFile.ConvertToPng(ms.ToArray());
-                _logger.LogInformation("DDS conversion successful");
-                preview = new DdsPreviewViewModel(new Bitmap(pngBytes));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to convert DDS file: {0}", selectedEntry.ZipEntry.Name);
-                preview = new TextPreviewViewModel($"Failed to convert DDS file: {ex.Message}");
-            }
+            var ms = DdsFile.MergeToStream(selectedEntry.ZipEntry.Name, _p4KService.P4KFileSystem);
+            var pngBytes = DdsFile.ConvertToPng(ms.ToArray());
+            _logger.LogInformation("ddsLodExtensions");
+            preview = new DdsPreviewViewModel(new Bitmap(pngBytes));
         }
         else if (bitmapExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
         {
