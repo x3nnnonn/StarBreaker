@@ -26,6 +26,8 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
     [ObservableProperty] private HierarchicalTreeDataGridSource<IP4kNode> _source;
     [ObservableProperty] private FilePreviewViewModel? _preview;
     [ObservableProperty] private string _searchText = string.Empty;
+    [ObservableProperty] private double _extractionProgress;
+    [ObservableProperty] private bool _isExtracting;
     
     private ICollection<IP4kNode> _allRootNodes;
 
@@ -131,19 +133,43 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             var destinationPath = destinationFolder.Path.LocalPath;
             _logger.LogInformation("Selected destination: {Path}", destinationPath);
 
+            IsExtracting = true;
+            ExtractionProgress = 0;
+            
             try
             {
+                // Create a progress object to report extraction progress
+                var progress = new Progress<double>(value => 
+                {
+                    Dispatcher.UIThread.Post(() => 
+                    {
+                        ExtractionProgress = value;
+                        _logger.LogDebug("Extraction progress: {Progress}%", value * 100);
+                    });
+                });
+                
+                // Create a P4kExtractor instance
+                var extractor = new P4kExtractor(_p4KService.P4KFileSystem.P4kFile as P4kFile);
+                
                 if (selectedNode is P4kFileNode fileNode)
                 {
                     // Extract a single file
                     _logger.LogInformation("Extracting file: {FileName}", fileNode.ZipEntry.Name);
-                    ExtractFile(fileNode, destinationPath);
+                    
+                    // Using the extractor for a single entry
+                    await Task.Run(() => 
+                    {
+                        extractor.ExtractEntry(destinationPath, fileNode.ZipEntry);
+                        Dispatcher.UIThread.Post(() => ExtractionProgress = 1.0);
+                    });
                 }
                 else if (selectedNode is P4kDirectoryNode dirNode)
                 {
-                    // Extract a directory
+                    // Extract a directory with progress reporting
                     _logger.LogInformation("Extracting directory: {DirectoryName}", dirNode.Name);
-                    ExtractDirectory(dirNode, destinationPath);
+                    
+                    // Using the new method that supports progress reporting
+                    await Task.Run(() => extractor.ExtractNode(destinationPath, dirNode, progress));
                 }
                 
                 _logger.LogInformation("Extraction completed successfully to {DestinationPath}", destinationPath);
@@ -152,122 +178,16 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             {
                 _logger.LogError(ex, "Error extracting to {DestinationPath}", destinationPath);
             }
+            finally
+            {
+                IsExtracting = false;
+                ExtractionProgress = 1.0;
+            }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Exception in ExtractSelectedNode");
-        }
-    }
-    
-    private void ExtractFile(P4kFileNode fileNode, string destinationPath)
-    {
-        var fileName = Path.GetFileName(fileNode.ZipEntry.Name);
-        var outputPath = Path.Combine(destinationPath, fileName);
-        
-        // Create directory if it doesn't exist
-        Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
-        
-        // Check if the file is a CryXML file
-        using var sourceStream = _p4KService.P4KFileSystem.OpenRead(fileNode.ZipEntry.Name);
-        
-        // Clone the stream for CryXML detection (because IsCryXmlB reads from the stream)
-        var memoryStream = new MemoryStream();
-        sourceStream.CopyTo(memoryStream);
-        memoryStream.Position = 0;
-        sourceStream.Position = 0;
-        
-        if (CryXmlB.CryXml.IsCryXmlB(memoryStream))
-        {
-            _logger.LogInformation("Converting CryXML file before extraction: {FileName}", fileName);
-            
-            // If it's a CryXML file, convert it to text
-            if (CryXmlB.CryXml.TryOpen(sourceStream, out var cryXml))
-            {
-                // Change the extension to .xml for clarity
-                if (Path.GetExtension(outputPath).Equals(".xml", StringComparison.OrdinalIgnoreCase))
-                    outputPath = Path.ChangeExtension(outputPath, ".converted.xml");
-                
-                // Write the converted XML content
-                File.WriteAllText(outputPath, cryXml.ToString());
-                return;
-            }
-            else
-            {
-                _logger.LogWarning("Failed to convert CryXML file: {FileName}", fileName);
-                // If conversion fails, fall through to normal extraction
-                sourceStream.Position = 0;
-            }
-        }
-        
-        // For non-CryXML files or if conversion failed, use direct streaming
-        using var destinationStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true);
-        sourceStream.CopyTo(destinationStream);
-    }
-    
-    private void ExtractDirectory(P4kDirectoryNode dirNode, string destinationPath)
-    {
-        // Create base directory for extraction
-        var directoryPath = Path.Combine(destinationPath, dirNode.Name);
-        Directory.CreateDirectory(directoryPath);
-        
-        // Extract all files in this directory
-        ExtractDirectoryContents(dirNode, directoryPath);
-    }
-    
-    private void ExtractDirectoryContents(P4kDirectoryNode dirNode, string destinationPath)
-    {
-        foreach (var child in dirNode.Children.Values)
-        {
-            if (child is P4kFileNode fileNode)
-            {
-                var fileName = Path.GetFileName(fileNode.ZipEntry.Name);
-                var outputPath = Path.Combine(destinationPath, fileName);
-                
-                // Check if the file is a CryXML file
-                using var sourceStream = _p4KService.P4KFileSystem.OpenRead(fileNode.ZipEntry.Name);
-                
-                // Clone the stream for CryXML detection
-                var memoryStream = new MemoryStream();
-                sourceStream.CopyTo(memoryStream);
-                memoryStream.Position = 0;
-                sourceStream.Position = 0;
-                
-                if (CryXmlB.CryXml.IsCryXmlB(memoryStream))
-                {
-                    _logger.LogInformation("Converting CryXML file before extraction: {FileName}", fileName);
-                    
-                    // If it's a CryXML file, convert it to text
-                    if (CryXmlB.CryXml.TryOpen(sourceStream, out var cryXml))
-                    {
-                        // Change the extension to .xml for clarity
-                        if (Path.GetExtension(outputPath).Equals(".xml", StringComparison.OrdinalIgnoreCase))
-                            outputPath = Path.ChangeExtension(outputPath, ".converted.xml");
-                        
-                        // Write the converted XML content
-                        File.WriteAllText(outputPath, cryXml.ToString());
-                        continue;
-                    }
-                    else
-                    {
-                        _logger.LogWarning("Failed to convert CryXML file: {FileName}", fileName);
-                        // If conversion fails, fall through to normal extraction
-                        sourceStream.Position = 0;
-                    }
-                }
-                
-                // For non-CryXML files or if conversion failed, use direct streaming
-                using var destinationStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true);
-                sourceStream.CopyTo(destinationStream);
-            }
-            else if (child is P4kDirectoryNode subDirNode)
-            {
-                // Create subdirectory
-                var subDirPath = Path.Combine(destinationPath, subDirNode.Name);
-                Directory.CreateDirectory(subDirPath);
-                
-                // Recursively extract subdirectory contents
-                ExtractDirectoryContents(subDirNode, subDirPath);
-            }
+            IsExtracting = false;
         }
     }
     
