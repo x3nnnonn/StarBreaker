@@ -35,15 +35,13 @@ public static class SocPakSandbox
         var socs = Directory.EnumerateFiles(@"D:\StarCitizen\P4kSocPak", "*.soc", SearchOption.AllDirectories);
         foreach (var soc in socs)
         {
-            if (ChunkFile.TryOpen(File.ReadAllBytes(soc), out var chunkFile))
+            if (CrChFile.TryRead(File.ReadAllBytes(soc), out var chunkFile))
             {
-                var parts = chunkFile!.GetPartsCrChf();
-
                 //create directory
                 var path = soc.Replace(".soc", ".socParts");
                 Directory.CreateDirectory(path);
                 var i = 0;
-                foreach (var part in parts)
+                foreach (var part in chunkFile.Chunks)
                 {
                     var partPath = Path.Combine(path, $"{i++}.socpart");
                     File.WriteAllBytes(partPath, part);

@@ -22,9 +22,4 @@ public class PhysicalHierarchyChunk : IChunk
         
         return new PhysicalHierarchyChunk();
     }
-
-    public void WriteXmlTo(TextWriter writer)
-    {
-        throw new NotImplementedException();
-    }
 }

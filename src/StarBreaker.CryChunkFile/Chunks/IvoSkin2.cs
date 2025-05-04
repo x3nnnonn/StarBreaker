@@ -17,7 +17,7 @@ public class IvoSkin2 : IChunk
         while (reader.Remaining > 0)
         {
             var type = (DatastreamType)reader.ReadUInt32();
-            if(type == 0)
+            if (type == 0)
                 continue;//try again smile
             
             list.Add(type switch
@@ -30,6 +30,9 @@ public class IvoSkin2 : IChunk
                 DatastreamType.IvoTangents => null,
                 DatastreamType.IvoColors2 => null,
                 DatastreamType.IvoIndices => IvoIndices.Read(ref reader, meshChunk.NumberOfIndices),
+                DatastreamType.IvoVertsUvs2 => IvoVertsUvs.Read(ref reader, meshChunk.NumberOfVertices),
+                DatastreamType.IvoQTangents => IvoQTangents.Read(ref reader, meshChunk.NumberOfVertices),
+                DatastreamType.IvoUnknown => IvoUnknown.Read(ref reader, meshChunk.NumberOfVertices),
                 _ => throw new ArgumentOutOfRangeException()
             });
         }
@@ -38,10 +41,37 @@ public class IvoSkin2 : IChunk
 
         return new IvoSkin2();
     }
+}
 
-    public void WriteXmlTo(TextWriter writer)
+public class IvoUnknown
+{
+    public static IvoUnknown? Read(ref SpanReader reader, uint numberOfVertices)
     {
-        throw new NotImplementedException();
+        var bytesPerElement = reader.ReadUInt32();
+        reader.Advance((int)(bytesPerElement * numberOfVertices));
+        return new IvoUnknown();
+    }
+}
+
+public class IvoQTangents
+{
+    public static IvoQTangents Read(ref SpanReader reader, uint numberOfVertices)
+    {
+        var bytesPerElement = reader.ReadUInt32();
+
+        var qtangents = reader.ReadSpan<Tangent>((int)numberOfVertices);
+        
+
+        return new IvoQTangents();
+    }
+    
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct Tangent
+    {
+        public Half X;
+        public Half Y;
+        public Half Z;
+        public Half W;
     }
 }
 
@@ -80,9 +110,18 @@ public class IvoVertsUvs
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct VertUv
 {
-    public Vector3 Vertex;
-    public ColorBgra color;
+    public Vector3<ushort> Vertex;
+    private ushort padding;
+    public ColorRgba color;
     public UvHalf Uv;
+}
+
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+public struct Vector3<T>
+{
+    public T X;
+    public T Y;
+    public T Z;
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -149,5 +188,7 @@ public enum DatastreamType : uint
     IvoTangents = 0xB95E9A1B,
     IvoColors2 = 0xD9EED421,
     IvoIndices = 0xEECDC168,
-    Unknown1 = 0xB3A70D5E
+    IvoVertsUvs2 = 0xB3A70D5E,
+    IvoQTangents = 0xEE057252,
+    IvoUnknown = 0x9D51C5EE,
 };

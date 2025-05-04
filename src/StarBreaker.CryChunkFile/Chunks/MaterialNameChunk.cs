@@ -24,9 +24,4 @@ public class MaterialNameChunk : IChunk
             Name = name
         };
     }
-
-    public void WriteXmlTo(TextWriter writer)
-    {
-        throw new NotImplementedException();
-    }
 }
