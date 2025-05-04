@@ -47,4 +47,25 @@ public sealed class P4kDirectoryNode : IP4kNode
             current = directoryNode;
         }
     }
+
+    // This is probably suboptimal, but when we do this we'll be doing
+    // a lot of IO anyway so it doesn't really matter
+    public IEnumerable<ZipEntry> CollectEntries()
+    {
+        foreach (var child in Children.Values)
+        {
+            switch (child)
+            {
+                case P4kDirectoryNode directoryNode:
+                    foreach (var entry in directoryNode.CollectEntries())
+                        yield return entry;
+                    break;
+                case P4kFileNode fileNode:
+                    yield return fileNode.ZipEntry;
+                    break;
+                default:
+                    throw new Exception();
+            }
+        }
+    }
 }

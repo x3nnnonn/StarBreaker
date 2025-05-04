@@ -1,4 +1,6 @@
-﻿using CliFx;
+﻿using System.Globalization;
+using System.Xml.Linq;
+using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using StarBreaker.P4k;
@@ -17,9 +19,48 @@ public class DumpP4kCommand : ICommand
     public ValueTask ExecuteAsync(IConsole console)
     {
         var p4k = P4k.P4kFile.FromFile(P4kFile);
-        var p4kExtractor = new P4kExtractor(p4k);
-        p4kExtractor.ExtractDummies(OutputDirectory);
+        
+        WriteFileForNode(OutputDirectory, p4k.Root);
 
         return default;
+    }
+    
+    private static void WriteFileForNode(string baseDir, P4kDirectoryNode directoryNode)
+    {
+        var dir = new XElement("Directory",
+            new XAttribute("Name", directoryNode.Name)
+        );
+
+        foreach (var (_, childNode) in directoryNode.Children.OrderBy(x => x.Key))
+        {
+            switch (childNode)
+            {
+                case P4kDirectoryNode childDirectoryNode:
+                    //if we're a directory, Call ourselves recursively
+                    WriteFileForNode(Path.Combine(baseDir, childDirectoryNode.Name), childDirectoryNode);
+                    break;
+                case P4kFileNode childFileNode:
+                    dir.Add(new XElement("File",
+                        new XAttribute("Name", Path.GetFileName(childFileNode.ZipEntry.Name)),
+                        new XAttribute("CRC32", $"0x{childFileNode.ZipEntry.Crc32:X8}"),
+                        //Revisit: they seem to change lastmodified a lot while the crc32 stays the same. I'll just ignore the date for now.
+                        // new XAttribute("LastModified", childFileNode.ZipEntry.LastModified.ToString("O")),
+                        new XAttribute("Size", childFileNode.ZipEntry.UncompressedSize.ToString(CultureInfo.InvariantCulture)),
+                        //new XAttribute("CompressedSize", childFileNode.ZipEntry.CompressedSize.ToString(CultureInfo.InvariantCulture)),
+                        new XAttribute("CompressionType", childFileNode.ZipEntry.CompressionMethod.ToString(CultureInfo.InvariantCulture)),
+                        new XAttribute("Encrypted", childFileNode.ZipEntry.IsCrypted.ToString(CultureInfo.InvariantCulture))
+                    ));
+                    break;
+                default:
+                    throw new InvalidOperationException("Unknown node type");
+            }
+        }
+
+        if (dir.HasElements)
+        {
+            var filePath = Path.Combine(baseDir, directoryNode.Name) + ".xml";
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+            dir.Save(filePath);
+        }
     }
 }
