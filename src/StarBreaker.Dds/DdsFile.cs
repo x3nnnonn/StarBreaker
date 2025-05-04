@@ -21,14 +21,11 @@ public static class DdsFile
             .Where(p => char.IsDigit(p[^1]))
             .ToArray();
 
-        var mainFile = new BinaryReader(fileSystem.OpenRead(fullPath));
-
+        var fs = fileSystem.OpenRead(fullPath);
         if (files.Length == 0)
-        {
-            var remaining = mainFile.BaseStream.Length - mainFile.BaseStream.Position;
-            
-        }
+            return fs;
 
+        var mainFile = new BinaryReader(fs);
         var magic = mainFile.ReadBytes(4);
         if (!Magic.SequenceEqual(magic))
             throw new ArgumentException("File is not a DDS file");

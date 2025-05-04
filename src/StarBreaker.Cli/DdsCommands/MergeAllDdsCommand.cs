@@ -12,7 +12,7 @@ public class MergeAllDdsCommand : ICommand
     [CommandOption("input", 'i', Description = "Input folder", EnvironmentVariable = "INPUT_FOLDER")]
     public required string Input { get; init; }
 
-    [CommandOption("output", 'o', Description = "Output DDS file", EnvironmentVariable = "OUTPUT_FILE")]
+    [CommandOption("output", 'o', Description = "Output DDS folder", EnvironmentVariable = "OUTPUT_FOLDER")]
     public required string Output { get; init; }
 
     public ValueTask ExecuteAsync(IConsole console)
