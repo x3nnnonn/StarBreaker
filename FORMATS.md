@@ -1,9 +1,10 @@
 # Formats
 
-This is a list of file formats used in the game. The list is exhaustive, but not every format is known. The list is sorted by the amount of files in the game using that format.
+This is a list of file formats used in the game. The list is exhaustive, but not every format is known. The list is
+sorted by the amount of files in the game using that format.
 
 | Amount | Extension       | Type                  | Format                      |
-| ------ | --------------- | --------------------- | --------------------------- |
+|--------|-----------------|-----------------------|-----------------------------|
 | 302693 | .dds            | Texture               | DXT                         |
 | 192444 | .cgf            | Model                 | #ivo                        |
 | 192181 | .cgfm           | Model                 | #ivo                        |
@@ -66,7 +67,6 @@ This is a list of file formats used in the game. The list is exhaustive, but not
 | 1      | .dcb            | DataCore binary       | DataCoreBinary              |
 | 1      | .pso            | compiled shader       | unknown                     |
 
-
 <details>
 
 <summary>File Types</summary>
@@ -89,7 +89,7 @@ Some of them require specific parsing, which I've already done.
 - dds = texture, openable by many programs
 - gfx = flash, use https://ruffle.rs/
 - swf = flash, use https://ruffle.rs/
-- ini  = plaintext, i18n
+- ini = plaintext, i18n
 - json
 - meshsetup = plain xml
 - opr = plain json, object preset
@@ -148,7 +148,8 @@ see cgf-converter, TODO.
 
 ### TODO / Unknown
 
-Investigation needed. most of these are not obvious, not common, and probably not even very interesting (except socpak of course).
+Investigation needed. most of these are not obvious, not common, and probably not even very interesting (except socpak
+of course).
 
 - cax = CAXCACHE, very uncommon
 - dat = probably just misc data, might have to read header

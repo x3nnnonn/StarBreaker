@@ -6,48 +6,78 @@ namespace StarBreaker.Wwise.Bnk;
 
 public class BnkFile
 {
+    public uint Version { get; private set; }
+    public uint Id { get; private set; }
+    public BnkSection[] DataIndex { get; private set; }
+    public byte[] RawData { get; private set; }
+    public Dictionary<BnkSectionType, byte[]> SectionData { get; } = new();
+
     public static BnkFile Open(Stream stream)
     {
+        var file = new BnkFile();
         var br = new BinaryReader(stream);
 
         while (br.BaseStream.Position < br.BaseStream.Length)
         {
             var sectionType = (BnkSectionType)br.ReadUInt32();
             var sectionSize = br.ReadUInt32();
+
             switch (sectionType)
             {
                 case BnkSectionType.BKHD:
-                    var version = br.ReadUInt32();
-                    var id = br.ReadUInt32();
-                    stream.Seek(sectionSize - 8, SeekOrigin.Current);
+                    file.Version = br.ReadUInt32();
+                    file.Id = br.ReadUInt32();
+                    if (sectionSize > 8)
+                    {
+                        br.BaseStream.Seek(sectionSize - 8, SeekOrigin.Current);
+                    }
+
                     break;
+
                 case BnkSectionType.DIDX:
                     var count = sectionSize / Unsafe.SizeOf<BnkSection>();
-                    var sections = stream.ReadArray<BnkSection>((int)count);
-
+                    file.DataIndex = stream.ReadArray<BnkSection>((int)count);
                     break;
+
                 case BnkSectionType.DATA:
+                    file.RawData = br.ReadBytes((int)sectionSize);
                     break;
-                case BnkSectionType.HIRC:
-                    break;
-                case BnkSectionType.INIT:
-                    break;
-                case BnkSectionType.STMG:
-                    break;
-                case BnkSectionType.ENVS:
-                    break;
-                case BnkSectionType.PLAT:
-                    break;
-                case BnkSectionType.STID:
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
 
-            br.BaseStream.Seek(sectionSize, SeekOrigin.Current);
+                case BnkSectionType.HIRC:
+                case BnkSectionType.INIT:
+                case BnkSectionType.STMG:
+                case BnkSectionType.ENVS:
+                case BnkSectionType.PLAT:
+                case BnkSectionType.STID:
+                    byte[] sectionBytes = br.ReadBytes((int)sectionSize);
+                    file.SectionData[sectionType] = sectionBytes;
+                    break;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(sectionType),
+                        $"Unknown section type: {sectionType:X}");
+            }
         }
 
-        return new BnkFile();
+        return file;
+    }
+
+    public void ExtractWemFiles(string outputDirectory)
+    {
+        if (!Directory.Exists(outputDirectory))
+        {
+            Directory.CreateDirectory(outputDirectory);
+        }
+
+        for (int i = 0; i < DataIndex.Length; i++)
+        {
+            var section = DataIndex[i];
+            var data = new byte[section.Size];
+            Array.Copy(RawData, section.Offset, data, 0, section.Size);
+
+            string fileName = Path.Combine(outputDirectory, $"sound_{i}.wem");
+            File.WriteAllBytes(fileName, data);
+        }
     }
 }
 
