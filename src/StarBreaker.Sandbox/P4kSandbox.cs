@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.IO.Compression;
+using System.Text.Json;
 using StarBreaker.Common;
 using StarBreaker.CryChunkFile;
 using StarBreaker.P4k;
@@ -15,7 +16,60 @@ public static class P4kSandbox
         //Verify();
         //ListByExtension();
         //CountEncrypted();
-        CountChunkTypes();
+        //CountChunkTypes();
+        AllExtensions();
+    }
+
+    private static void AllExtensions()
+    {
+        var sw = Stopwatch.StartNew();
+        var p4kFile = P4kFile.FromFile(p4k);
+
+        var allNames = p4kFile.Entries.Select(x => x.Name).ToList();
+
+        string[] removeList =
+        [
+            ".1",
+            ".2",
+            ".3",
+            ".4",
+            ".5",
+            ".6",
+            ".7",
+            ".8",
+            ".1a",
+            ".2a",
+            ".3a",
+            ".4a",
+            ".5a",
+            ".6a",
+            ".7a",
+            ".8a",
+            ".a"
+        ];
+
+        var trimmed = allNames.Select(x =>
+        {
+            //remove anything at the end that matches the removeList
+            foreach (var remove in removeList)
+            {
+                if (x.EndsWith(remove, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    x = x[..^remove.Length];
+                }
+            }
+            
+            return x;
+        }).ToList();
+        
+        
+        var exts = trimmed.Select(Path.GetExtension)
+            .GroupBy(x => x)
+            .Select(x => new { Ext = x.Key, Count = x.Count() })
+            .OrderByDescending(x => x.Count)
+            .ToList();
+        
+        File.WriteAllText(@"D:\StarCitizen\extensions.json", JsonSerializer.Serialize(exts));
     }
 
     private static void ListByExtension()
