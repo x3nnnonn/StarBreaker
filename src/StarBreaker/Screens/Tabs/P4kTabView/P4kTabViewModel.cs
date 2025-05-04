@@ -6,9 +6,11 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using StarBreaker.CryXmlB;
 using StarBreaker.Extensions;
 using StarBreaker.P4k;
 using StarBreaker.Services;
+using System.IO;
 
 namespace StarBreaker.Screens;
 
@@ -165,9 +167,41 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
         // Create directory if it doesn't exist
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
         
-        // Extract file content
-        var fileContent = _p4KService.P4KFileSystem.ReadAllBytes(fileNode.ZipEntry.Name);
-        File.WriteAllBytes(outputPath, fileContent);
+        // Check if the file is a CryXML file
+        using var sourceStream = _p4KService.P4KFileSystem.OpenRead(fileNode.ZipEntry.Name);
+        
+        // Clone the stream for CryXML detection (because IsCryXmlB reads from the stream)
+        var memoryStream = new MemoryStream();
+        sourceStream.CopyTo(memoryStream);
+        memoryStream.Position = 0;
+        sourceStream.Position = 0;
+        
+        if (CryXmlB.CryXml.IsCryXmlB(memoryStream))
+        {
+            _logger.LogInformation("Converting CryXML file before extraction: {FileName}", fileName);
+            
+            // If it's a CryXML file, convert it to text
+            if (CryXmlB.CryXml.TryOpen(sourceStream, out var cryXml))
+            {
+                // Change the extension to .xml for clarity
+                if (Path.GetExtension(outputPath).Equals(".xml", StringComparison.OrdinalIgnoreCase))
+                    outputPath = Path.ChangeExtension(outputPath, ".converted.xml");
+                
+                // Write the converted XML content
+                File.WriteAllText(outputPath, cryXml.ToString());
+                return;
+            }
+            else
+            {
+                _logger.LogWarning("Failed to convert CryXML file: {FileName}", fileName);
+                // If conversion fails, fall through to normal extraction
+                sourceStream.Position = 0;
+            }
+        }
+        
+        // For non-CryXML files or if conversion failed, use direct streaming
+        using var destinationStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true);
+        sourceStream.CopyTo(destinationStream);
     }
     
     private void ExtractDirectory(P4kDirectoryNode dirNode, string destinationPath)
@@ -189,9 +223,41 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
                 var fileName = Path.GetFileName(fileNode.ZipEntry.Name);
                 var outputPath = Path.Combine(destinationPath, fileName);
                 
-                // Extract file content
-                var fileContent = _p4KService.P4KFileSystem.ReadAllBytes(fileNode.ZipEntry.Name);
-                File.WriteAllBytes(outputPath, fileContent);
+                // Check if the file is a CryXML file
+                using var sourceStream = _p4KService.P4KFileSystem.OpenRead(fileNode.ZipEntry.Name);
+                
+                // Clone the stream for CryXML detection
+                var memoryStream = new MemoryStream();
+                sourceStream.CopyTo(memoryStream);
+                memoryStream.Position = 0;
+                sourceStream.Position = 0;
+                
+                if (CryXmlB.CryXml.IsCryXmlB(memoryStream))
+                {
+                    _logger.LogInformation("Converting CryXML file before extraction: {FileName}", fileName);
+                    
+                    // If it's a CryXML file, convert it to text
+                    if (CryXmlB.CryXml.TryOpen(sourceStream, out var cryXml))
+                    {
+                        // Change the extension to .xml for clarity
+                        if (Path.GetExtension(outputPath).Equals(".xml", StringComparison.OrdinalIgnoreCase))
+                            outputPath = Path.ChangeExtension(outputPath, ".converted.xml");
+                        
+                        // Write the converted XML content
+                        File.WriteAllText(outputPath, cryXml.ToString());
+                        continue;
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Failed to convert CryXML file: {FileName}", fileName);
+                        // If conversion fails, fall through to normal extraction
+                        sourceStream.Position = 0;
+                    }
+                }
+                
+                // For non-CryXML files or if conversion failed, use direct streaming
+                using var destinationStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true);
+                sourceStream.CopyTo(destinationStream);
             }
             else if (child is P4kDirectoryNode subDirNode)
             {
