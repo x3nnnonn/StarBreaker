@@ -7,5 +7,5 @@ public readonly record struct ChunkHeaderIvo
 {
     public readonly ChunkTypeIvo ChunkType;
     public readonly uint Version;
-    public readonly int Offset;
+    public readonly ulong Offset;
 }
