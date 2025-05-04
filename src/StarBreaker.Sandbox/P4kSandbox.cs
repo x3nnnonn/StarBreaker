@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.IO.Compression;
 using StarBreaker.Common;
+using StarBreaker.CryChunkFile;
 using StarBreaker.P4k;
 
 namespace StarBreaker.Sandbox;
@@ -13,9 +14,10 @@ public static class P4kSandbox
     {
         //Verify();
         //ListByExtension();
-        CountEncrypted();
+        //CountEncrypted();
+        CountChunkTypes();
     }
-    
+
     private static void ListByExtension()
     {
         var sw = Stopwatch.StartNew();
@@ -29,7 +31,7 @@ public static class P4kSandbox
 
         var ivo = BitConverter.ToUInt32("#ivo"u8);
         var crch = BitConverter.ToUInt32("CrCh"u8);
-        var exts = new Dictionary<string, int>();
+        var exts = new List<string>();
 
         var cnt = 0;
         Parallel.ForEach(ordered, entry =>
@@ -39,15 +41,11 @@ public static class P4kSandbox
                 using var bytes = p4kFile.OpenStream(entry);
                 var binaryreader = new BinaryReader(bytes);
                 var uint32 = binaryreader.ReadUInt32();
-                if (uint32 == ivo || uint32 == crch)
+                if (uint32 == ivo)
                 {
                     lock (exts)
                     {
-                        var ext = Path.GetExtension(entry.Name);
-                        if (!exts.TryAdd(ext, 1))
-                        {
-                            exts[ext]++;
-                        }
+                        exts.Add(entry.Name);
                     }
                 }
             }
@@ -70,27 +68,29 @@ public static class P4kSandbox
             Console.WriteLine($"Failed to open {entry.Name}");
         }
 
+        File.WriteAllLines(@"C:\Scratch\StarCitizen\ivofiles.txt", exts);
+
         Console.WriteLine($"Took {sw.ElapsedMilliseconds}ms to load {p4kFile.Entries.Length} entries");
     }
-    
+
     private static void CountEncrypted()
     {
         var sw = Stopwatch.StartNew();
         var p4kFile = P4kFile.FromFile(p4k);
-        
+
         var uncompressed = p4kFile.Entries.Count(x => x.CompressionMethod == 0);
         var compressed = p4kFile.Entries.Count(x => x.CompressionMethod == 100 && x.IsCrypted == false);
         var encrypted = p4kFile.Entries.Count(x => x.IsCrypted == true);
-        
+
         var encrypted2 = p4kFile.Entries.Where(x => x.IsCrypted).OrderBy(x => x.UncompressedSize).ToList();
-        
-        
+
+
         var total = uncompressed + compressed + encrypted;
-        
+
         Console.WriteLine($"Uncompressed: {uncompressed}, {uncompressed / (double)total * 100}%");
         Console.WriteLine($"Compressed: {compressed}, {compressed / (double)total * 100}%");
         Console.WriteLine($"Encrypted: {encrypted}, {encrypted / (double)total * 100}%");
-        
+
         Console.WriteLine($"Took {sw.ElapsedMilliseconds}ms to load {p4kFile.Entries.Length} entries");
     }
 
@@ -136,5 +136,53 @@ public static class P4kSandbox
         }
 
         Console.WriteLine($"Took {sw.ElapsedMilliseconds}ms to load {p4kFile.Entries.Length} entries");
+    }
+
+    private static void CountChunkTypes()
+    {
+        var sw = Stopwatch.StartNew();
+        var p4kFile = P4kFile.FromFile(p4k);
+
+        var files = File.ReadAllLines(@"C:\Scratch\StarCitizen\ivofiles.txt");
+
+        var chunktypes = new Dictionary<ChunkTypeIvo, int>();
+
+        var cnt = 0;
+        Parallel.ForEach(files, file =>
+        {
+            try
+            {
+                var entry = p4kFile.Entries.First(x => x.Name == file);
+                var bytes = p4kFile.OpenStream(entry);
+                if(!IvoFile.TryRead(bytes.ToArray(), out var fc))
+                    throw new Exception("Failed to read ivo file");
+
+                lock (chunktypes)
+                {
+                    foreach (var chunk in fc.Headers)
+                    {
+                        var type = chunk.ChunkType;
+                        if (!chunktypes.TryAdd(type, 1))
+                            chunktypes[type]++;
+                    }
+                }
+                
+                
+                Interlocked.Increment(ref cnt);
+                if (cnt % 10000 == 0)
+                {
+                    Console.WriteLine($"Processed {cnt} entries({(cnt / (double)files.Length) * 100}%)");
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Failed to open {file}");
+            }
+        });
+        
+        foreach (var kvp in chunktypes)
+        {
+            Console.WriteLine($"{kvp.Key}: {kvp.Value}");
+        }
     }
 }

@@ -1,5 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <ItemGroup>
-    <ProjectReference Include="..\StarBreaker.Common\StarBreaker.Common.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\StarBreaker.Common\StarBreaker.Common.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="SharpGLTF.Core" Version="1.0.3"/>
+        <PackageReference Include="SharpGLTF.Toolkit" Version="1.0.3"/>
+    </ItemGroup>
 </Project>
