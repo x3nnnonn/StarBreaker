@@ -58,23 +58,10 @@ public class PreviewService : IPreviewService
         }
         else if (ddsLodExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
         {
-            var parent = selectedEntry.Parent;
-            if (parent == null)
-            {
-                _logger.LogError("ddsLodExtensions: parent is null");
-                return new TextPreviewViewModel("ddsLodExtensions: parent is null");
-            }
-
             var ms = DdsFile.MergeToStream(selectedEntry.ZipEntry.Name, _p4KService.P4KFileSystem);
-            // var pngBytes = DdsFile.ConvertToPng(ms.ToArray());
-            // //find all mipmaps of the dds.
-            //
-            //
-            // _logger.LogInformation("ddsLodExtensions");
-            // preview = new DdsPreviewViewModel(new Bitmap(pngBytes));
-            
-            preview = new HexPreviewViewModel(entryStream.ToArray());
-
+            var pngBytes = DdsFile.ConvertToPng(ms.ToArray());
+            _logger.LogInformation("ddsLodExtensions");
+            preview = new DdsPreviewViewModel(new Bitmap(pngBytes));
         }
         else if (bitmapExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
         {
