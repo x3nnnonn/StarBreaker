@@ -7,10 +7,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Wem\" />
-    </ItemGroup>
-
-    <ItemGroup>
       <ProjectReference Include="..\StarBreaker.Common\StarBreaker.Common.csproj" />
     </ItemGroup>
 
