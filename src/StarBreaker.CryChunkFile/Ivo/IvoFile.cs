@@ -6,14 +6,14 @@ namespace StarBreaker.CryChunkFile;
 public sealed class IvoFile
 {
     private const uint IvoMagic = 0x6F766923; //"#ivo"u8
-        
+
     public ChunkHeaderIvo[] Headers { get; private set; }
     public IChunk[] Chunks { get; private set; }
 
     public static bool TryRead(Span<byte> bytes, [NotNullWhen(true)] out IvoFile? ivoFile)
     {
         var br = new SpanReader(bytes, 0);
-        
+
         ivoFile = null;
         if (br.Length < 4)
             return false;
@@ -21,7 +21,7 @@ public sealed class IvoFile
         var magic = br.Read<uint>();
         if (magic != IvoMagic)
             return false;
-        
+
         var version = br.Read<uint>();
         if (version != 0x900)
             return false;
@@ -37,22 +37,22 @@ public sealed class IvoFile
         var chunkTableOffset = reader.Read<uint>();
 
         Headers = reader.ReadSpan<ChunkHeaderIvo>((int)chunkCount).ToArray();
-        Chunks = ReadChunks(Headers,ref  reader);
+        Chunks = ReadChunks(Headers, ref reader);
     }
-    
+
     private static IChunk[] ReadChunks(ReadOnlySpan<ChunkHeaderIvo> headers, ref SpanReader reader)
     {
         var chunks = new IChunk[headers.Length];
         for (var i = 0; i < headers.Length; i++)
         {
             var header = headers[i];
-            reader.Seek(header.Offset);
+            reader.Seek((int)header.Offset);
             chunks[i] = ReadChunk(header, ref reader);
         }
 
         return chunks;
     }
-    
+
     private static IChunk ReadChunk(ChunkHeaderIvo header, ref SpanReader reader)
     {
         return header.ChunkType switch
