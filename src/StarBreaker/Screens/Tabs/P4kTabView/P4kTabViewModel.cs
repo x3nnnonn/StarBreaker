@@ -30,7 +30,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
     [ObservableProperty] private double _extractionProgress;
     [ObservableProperty] private bool _isExtracting;
     [ObservableProperty] private bool _convertDdsToPng = true;
-    
+
     private ICollection<IP4kNode> _allRootNodes;
 
     public P4kTabViewModel(IP4kService p4kService, ILogger<P4kTabViewModel> logger, IPreviewService previewService)
