@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using StarBreaker.CryXmlB;
+using StarBreaker.Dds;
 using StarBreaker.Extensions;
 using StarBreaker.P4k;
 using StarBreaker.Services;
@@ -28,6 +29,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
     [ObservableProperty] private string _searchText = string.Empty;
     [ObservableProperty] private double _extractionProgress;
     [ObservableProperty] private bool _isExtracting;
+    [ObservableProperty] private bool _convertDdsToPng = true;
     
     private ICollection<IP4kNode> _allRootNodes;
 
@@ -148,18 +150,33 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
                     });
                 });
                 
+                // Get P4kFile instance safely
+                var p4kFile = _p4KService.P4KFileSystem.P4kFile as P4kFile;
+                if (p4kFile == null)
+                {
+                    _logger.LogError("Failed to get P4kFile instance");
+                    return;
+                }
+                
                 // Create a P4kExtractor instance
-                var extractor = new P4kExtractor(_p4KService.P4KFileSystem.P4kFile as P4kFile);
+                var extractor = new P4kExtractor(p4kFile);
                 
                 if (selectedNode is P4kFileNode fileNode)
                 {
                     // Extract a single file
                     _logger.LogInformation("Extracting file: {FileName}", fileNode.ZipEntry.Name);
                     
-                    // Using the extractor for a single entry
                     await Task.Run(() => 
                     {
-                        extractor.ExtractEntry(destinationPath, fileNode.ZipEntry);
+                        if (ConvertDdsToPng && IsDdsFile(fileNode.ZipEntry.Name))
+                        {
+                            ExtractDdsAsPng(fileNode, destinationPath);
+                        }
+                        else
+                        {
+                            // Using the extractor for a non-DDS entry
+                            extractor.ExtractEntry(destinationPath, fileNode.ZipEntry);
+                        }
                         Dispatcher.UIThread.Post(() => ExtractionProgress = 1.0);
                     });
                 }
@@ -168,8 +185,19 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
                     // Extract a directory with progress reporting
                     _logger.LogInformation("Extracting directory: {DirectoryName}", dirNode.Name);
                     
-                    // Using the new method that supports progress reporting
-                    await Task.Run(() => extractor.ExtractNode(destinationPath, dirNode, progress));
+                    await Task.Run(() => 
+                    {
+                        if (ConvertDdsToPng)
+                        {
+                            // Custom extraction with DDS conversion
+                            ExtractDirectoryWithDdsConversion(dirNode, destinationPath, progress);
+                        }
+                        else
+                        {
+                            // Using the standard method without DDS conversion
+                            extractor.ExtractNode(destinationPath, dirNode, progress);
+                        }
+                    });
                 }
                 
                 _logger.LogInformation("Extraction completed successfully to {DestinationPath}", destinationPath);
@@ -189,6 +217,162 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             _logger.LogError(ex, "Exception in ExtractSelectedNode");
             IsExtracting = false;
         }
+    }
+    
+    private bool IsDdsFile(string fileName)
+    {
+        return fileName.EndsWith(".dds", StringComparison.OrdinalIgnoreCase) || 
+               (fileName.Contains(".dds.") && char.IsDigit(fileName[fileName.Length - 1]));
+    }
+    
+    private void ExtractDdsAsPng(P4kFileNode fileNode, string destinationPath)
+    {
+        try
+        {
+            _logger.LogInformation("Converting DDS to PNG: {FileName}", fileNode.ZipEntry.Name);
+            
+            // Preserve the directory structure for the PNG file
+            string relativePath = fileNode.ZipEntry.Name;
+            string relativeDirectory = Path.GetDirectoryName(relativePath)?.Replace('\\', Path.DirectorySeparatorChar) ?? string.Empty;
+            string fileName = Path.GetFileName(relativePath);
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
+            string pngFileName = fileNameWithoutExtension + ".png";
+            
+            // Create full output path maintaining directory structure
+            string outputDirectory = Path.Combine(destinationPath, relativeDirectory);
+            string outputPath = Path.Combine(outputDirectory, pngFileName);
+            
+            // Create directory structure if it doesn't exist
+            Directory.CreateDirectory(outputDirectory);
+            
+            // Process the DDS file
+            using var ms = DdsFile.MergeToStream(fileNode.ZipEntry.Name, _p4KService.P4KFileSystem);
+            
+            // Read the stream into a byte array
+            byte[] ddsBytes;
+            using (var memoryStream = new MemoryStream())
+            {
+                ms.CopyTo(memoryStream);
+                ddsBytes = memoryStream.ToArray();
+            }
+            
+            // Convert DDS to PNG
+            using var pngBytes = DdsFile.ConvertToPng(ddsBytes);
+            
+            // Save the PNG
+            using (var fs = new FileStream(outputPath, FileMode.Create))
+            {
+                pngBytes.CopyTo(fs);
+            }
+            
+            _logger.LogInformation("Successfully saved PNG: {OutputPath}", outputPath);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to convert DDS to PNG: {FileName}", fileNode.ZipEntry.Name);
+            
+            // Fallback to extracting the original DDS file
+            _logger.LogInformation("Falling back to extracting original DDS file");
+            var p4kFile = _p4KService.P4KFileSystem.P4kFile as P4kFile;
+            if (p4kFile != null)
+            {
+                var extractor = new P4kExtractor(p4kFile);
+                extractor.ExtractEntry(destinationPath, fileNode.ZipEntry);
+            }
+            else
+            {
+                _logger.LogError("Failed to get P4kFile instance for fallback extraction");
+            }
+        }
+    }
+    
+    private void ExtractDirectoryWithDdsConversion(P4kDirectoryNode dirNode, string destinationPath, IProgress<double> progress)
+    {
+        // Collect all entries to extract
+        var entries = dirNode.CollectEntries().ToList();
+        var totalEntries = entries.Count;
+        var processedEntries = 0;
+        
+        // Create the directory
+        var outputDirPath = Path.Combine(destinationPath, dirNode.Name);
+        Directory.CreateDirectory(outputDirPath);
+        
+        // Get P4kFile instance safely
+        var p4kFile = _p4KService.P4KFileSystem.P4kFile as P4kFile;
+        if (p4kFile == null)
+        {
+            _logger.LogError("Failed to get P4kFile instance");
+            return;
+        }
+        
+        // Create a single P4kExtractor instance
+        var extractor = new P4kExtractor(p4kFile);
+        
+        // Extract files with DDS conversion
+        foreach (var entry in entries)
+        {
+            try
+            {
+                if (IsDdsFile(entry.Name))
+                {
+                    // Find the file node for this entry
+                    var fileNode = FindFileNode(dirNode, entry.Name);
+                    if (fileNode != null)
+                    {
+                        // Convert and extract as PNG
+                        ExtractDdsAsPng(fileNode, outputDirPath);
+                    }
+                    else
+                    {
+                        // Fall back to regular extraction
+                        extractor.ExtractEntry(outputDirPath, entry);
+                    }
+                }
+                else
+                {
+                    // Regular extraction for non-DDS files
+                    extractor.ExtractEntry(outputDirPath, entry);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error extracting file: {FileName}", entry.Name);
+            }
+            
+            // Update progress
+            processedEntries++;
+            progress.Report(processedEntries / (double)totalEntries);
+        }
+    }
+    
+    private P4kFileNode? FindFileNode(P4kDirectoryNode dirNode, string fileName)
+    {
+        // Find the path parts
+        var pathParts = fileName.Split('\\');
+        var currentNode = dirNode;
+        
+        // Navigate the tree
+        for (int i = 0; i < pathParts.Length - 1; i++)
+        {
+            if (currentNode.Children.TryGetValue(pathParts[i], out var childNode) && 
+                childNode is P4kDirectoryNode nextDirNode)
+            {
+                currentNode = nextDirNode;
+            }
+            else
+            {
+                return null; // Directory not found
+            }
+        }
+        
+        // Get the file node
+        if (currentNode.Children.TryGetValue(pathParts[^1], out var fileNode) && 
+            fileNode is P4kFileNode p4kFileNode)
+        {
+            return p4kFileNode;
+        }
+        
+        return null; // File not found
     }
     
     private static void SearchNodes(P4kDirectoryNode currentNode, string searchText, List<IP4kNode> results)
