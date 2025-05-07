@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml;
@@ -55,7 +56,7 @@ public readonly struct CryXml
     {
         if (stream.Length < magicLength)
             return false;
-        
+
         var before = stream.Position;
         Span<byte> buffer = stackalloc byte[magicLength];
         stream.ReadExactly(buffer);
@@ -79,10 +80,27 @@ public readonly struct CryXml
         var thisAttributes = _attributes.AsSpan(node.FirstAttributeIndex, node.AttributeCount);
         foreach (var attribute in thisAttributes)
         {
-            writer.WriteAttributeString(
-                GetString(_stringData, (int)attribute.KeyStringOffset),
-                GetString(_stringData, (int)attribute.ValueStringOffset)
-            );
+            var key = GetString(_stringData, (int)attribute.KeyStringOffset);
+            var val = GetString(_stringData, (int)attribute.ValueStringOffset);
+
+            //these mess things up. unsure if we should make a better attempt at preserving them?
+            if (key.StartsWith("xmlns"))
+            {
+                Debug.WriteLine($"Skipping xmlns attribute {key}={val} for node {nodeIndex}");
+                continue;
+            }
+
+            if (key.Contains(':'))
+            {
+                var splits = key.Split(':');
+                if (splits.Length != 2)
+                    throw new Exception($"Invalid namespace format: {key}");
+                
+                writer.WriteAttributeString(splits[1], splits[0], val);
+                continue;
+            }
+            
+            writer.WriteAttributeString(key, val);
         }
 
         var thisChildren = _childIndices.AsSpan(node.FirstChildIndex, node.ChildCount);
