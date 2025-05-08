@@ -65,7 +65,7 @@
             "commandLineArgs": "cryxml-convert-all",
             "environmentVariables": {
                 "INPUT_FOLDER": "D:\\StarCitizen\\P4k",
-                "OUTPUT_FOLDER": "D:\\StarCitizen\\Materials"
+                "OUTPUT_FOLDER": "D:\\StarCitizen\\P4kXml"
             }
         },
         "dcb-extract": {
