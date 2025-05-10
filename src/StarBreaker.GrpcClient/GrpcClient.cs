@@ -1,4 +1,6 @@
-﻿using System.Text.Json;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Google.Protobuf;
 using Grpc.Core;
@@ -11,6 +13,7 @@ using StarBreaker.Common;
 using MemoryExtensions = System.MemoryExtensions;
 
 namespace StarBreaker.Sandbox;
+
 /// <summary>
 /// This is here mostly so I can stop referencing the grpc project in actually useful ones.
 ///  It takes ages to compile and I don't want to do it every time I make a change to the protos.
@@ -23,28 +26,43 @@ public static class GrpcClient
         const string testFunds = @"C:\Users\Diogo\Downloads\GetFunds.grpc";
         const string testChar = @"C:\Users\Diogo\Downloads\everything.grpc";
         const string testContainer = @"C:\Users\Diogo\Downloads\ContainerQueryStream.grpc";
-        const string characterJson = @"C:\Development\StarCitizen\StarBreaker\src\StarBreaker.GrpcClient\male.json";
+        const string characterJson = @"C:\Development\StarCitizen\StarBreaker\src\StarBreaker.GrpcClient\female.json";
 
         // var containerQuery = ContainerQueryStreamResponse.Parser.ParseFrom(GrpcUtils.GrpcToProtobuf(File.ReadAllBytes(testContainer)));
         // var ledger = GetFundsResponse.Parser.ParseFrom(GrpcUtils.GrpcToProtobuf(File.ReadAllBytes(testFunds)));
         // var enity = EntityQueryResponse.Parser.ParseFrom(GrpcUtils.GrpcToProtobuf(File.ReadAllBytes(testEntity)));
         //
         // var xx = containerQuery.ToString();
-        
+
         // var bytes = File.ReadAllBytes(testChar);
         // var character = SaveCharacterCustomizationsRequest.Parser.ParseFrom(GrpcUtils.GrpcToProtobuf(bytes));
         //
         // var json = character.ToString();
         // Console.WriteLine(json);
         // return;
-        
+        var headmat = new CigGuid("e186048a-9a81-47b3-828e-71e957c65762");
+        var headMatBytes = MemoryMarshal.Cast<CigGuid, byte>([headmat]);
+
         var character = SaveCharacterCustomizationsRequest.Parser.ParseJson(File.ReadAllText(characterJson));
         var bytes = character.CharacterCustomizations.CustomMaterialParams.ToArray();
-        //ReplaceAll(bytes, [0xfe, 0x33, 0x00, 0xff], [0xff,0xff,0xff,0xff]);
-        ReplaceAll(bytes, [0x51, 0x34, 0x28, 0xff], [0xff,0xff,0xff,0xff]);
 
-        character.CharacterCustomizations.CustomMaterialParams = ByteString.CopyFrom(bytes);
+        //var newMat = new CigGuid("ede6e28a-1f44-402b-8b8f-8eb5174f887f");
+        var newMat = new CigGuid("6593ef6e-f7e1-4369-a9fc-ba79883b5413");
+
+        var newMatBytes = MemoryMarshal.Cast<CigGuid, byte>([newMat]);
+
+
+        //female body COLOR
+        ReplaceAll(bytes, [0xfe, 0x33, 0x00, 0xff], [0xff, 0xff, 0xff, 0xff]);
+
+        //male body COLOR
+        //ReplaceAll(bytes, [0x51, 0x34, 0x28, 0xff], [0xff,0xff,0xff,0xff]);
+
         
+        ReplaceAll(bytes, headMatBytes, newMatBytes);
+        
+        character.CharacterCustomizations.CustomMaterialParams = ByteString.CopyFrom(bytes);
+
         var scWatcher = new StarCitizenClientWatcher(@"C:\Program Files\Roberts Space Industries\StarCitizen\");
         scWatcher.Start();
         var loginData = await scWatcher.WaitForLoginData();
@@ -79,7 +97,7 @@ public static class GrpcClient
         Console.WriteLine(response);
         return;
     }
-    
+
     private static void ChangeDna(SaveCharacterCustomizationsRequest req)
     {
         req.CharacterCustomizations.DnaMatrix = ByteString.CopyFrom(Convert.FromHexString(
@@ -107,26 +125,26 @@ public static class GrpcClient
         materialParams.CopyTo(copy, 0);
         var span = copy.AsSpan();
         ReadOnlySpan<byte> colorKey = BitConverter.GetBytes(id);
-    
+
         var colorIndex = span.IndexOf(colorKey);
         if (colorIndex == -1)
             return;
-    
+
         var colorLocation = colorIndex + colorKey.Length;
         span[colorLocation + 0] = r; //R
         span[colorLocation + 1] = g; //G
         span[colorLocation + 2] = b; //B
         span[colorLocation + 3] = 0xFF; //A
-    
+
         req.CharacterCustomizations.CustomMaterialParams = ByteString.CopyFrom(copy);
     }
 
     private static void ReplaceAll(Span<byte> span, ReadOnlySpan<byte> needle, ReadOnlySpan<byte> replacement)
     {
-        var xx = Convert.ToHexString(span);
         var idx = span.IndexOf(needle);
         while (idx != -1)
         {
+            Console.WriteLine($"Found needle at {idx}");
             replacement.CopyTo(span[idx..]);
             idx = span.IndexOf(needle);
         }
@@ -213,6 +231,6 @@ public record LoginData
     [JsonPropertyName("token")] public string Token { get; init; } = null!;
 
     [JsonPropertyName("auth_token")] public string AuthToken { get; init; } = null!;
-    
+
     [JsonPropertyName("star_network")] public StarNetwork StarNetwork { get; init; } = null!;
 }
