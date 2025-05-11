@@ -54,6 +54,14 @@
             <Button Command="{Binding PickP4k}" VerticalAlignment="Bottom" HorizontalAlignment="Center">
                 Pick custom file
             </Button>
+            <TextBlock
+                Margin="10"
+                FontSize="16"
+                HorizontalAlignment="Center"
+                Text="Installation Folder" />
+            <Button Command="{Binding OpenSettingsCommand}" VerticalAlignment="Bottom" HorizontalAlignment="Center">
+                Set installation folder
+            </Button>
         </StackPanel>
         <StackPanel
             Margin="50"

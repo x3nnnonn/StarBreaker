@@ -94,7 +94,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
         Source.Items = GetSortedNodes(searchResults);
     }
     
-    public async Task ExtractSelectedNode()
+    private async Task ExtractSelectedNode()
     {
         try
         {
@@ -140,7 +140,6 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             
             try
             {
-                // Create a progress object to report extraction progress
                 var progress = new Progress<double>(value => 
                 {
                     Dispatcher.UIThread.Post(() => 
@@ -150,31 +149,25 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
                     });
                 });
                 
-                // Get P4kFile instance safely
                 var p4kFile = _p4KService.P4KFileSystem.P4kFile as P4kFile;
-                if (p4kFile == null)
-                {
-                    _logger.LogError("Failed to get P4kFile instance");
-                    return;
-                }
-                
-                // Create a P4kExtractor instance
+                if (p4kFile == null) return;
                 var extractor = new P4kExtractor(p4kFile);
                 
                 if (selectedNode is P4kFileNode fileNode)
                 {
-                    // Extract a single file
-                    _logger.LogInformation("Extracting file: {FileName}", fileNode.ZipEntry.Name);
-                    
-                    await Task.Run(() => 
+                    await Task.Run(() =>
                     {
-                        if (ConvertDdsToPng && IsDdsFile(fileNode.ZipEntry.Name))
+                        // CryXML conversion
+                        if (TryConvertCryXml(fileNode, destinationPath))
+                        {
+                            // done
+                        }
+                        else if (ConvertDdsToPng && IsDdsFile(fileNode.ZipEntry.Name))
                         {
                             ExtractDdsAsPng(fileNode, destinationPath);
                         }
                         else
                         {
-                            // Using the extractor for a non-DDS entry
                             extractor.ExtractEntry(destinationPath, fileNode.ZipEntry);
                         }
                         Dispatcher.UIThread.Post(() => ExtractionProgress = 1.0);
@@ -182,24 +175,18 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
                 }
                 else if (selectedNode is P4kDirectoryNode dirNode)
                 {
-                    // Extract a directory with progress reporting
-                    _logger.LogInformation("Extracting directory: {DirectoryName}", dirNode.Name);
-                    
-                    await Task.Run(() => 
+                    await Task.Run(() =>
                     {
                         if (ConvertDdsToPng)
                         {
-                            // Custom extraction with DDS conversion
                             ExtractDirectoryWithDdsConversion(dirNode, destinationPath, progress);
                         }
                         else
                         {
-                            // Using the standard method without DDS conversion
                             extractor.ExtractNode(destinationPath, dirNode, progress);
                         }
                     });
                 }
-                
                 _logger.LogInformation("Extraction completed successfully to {DestinationPath}", destinationPath);
             }
             catch (Exception ex)
@@ -208,14 +195,23 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             }
             finally
             {
-                IsExtracting = false;
-                ExtractionProgress = 1.0;
+                Dispatcher.UIThread.Post(() =>
+                {
+                    IsExtracting = false;
+                    ExtractionProgress = 1.0; // Mark as complete before hiding progress bar
+                    _logger.LogInformation("Extraction finally block: IsExtracting set to false.");
+                });
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Exception in ExtractSelectedNode");
-            IsExtracting = false;
+            Dispatcher.UIThread.Post(() =>
+            {
+                IsExtracting = false;
+                ExtractionProgress = 0.0; // Reset progress on outer error
+                _logger.LogInformation("Outer catch block: IsExtracting set to false.");
+            });
         }
     }
     
@@ -313,25 +309,23 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
         {
             try
             {
-                if (IsDdsFile(entry.Name))
+                var fileName = entry.Name;
+                if (IsDdsFile(fileName))
                 {
-                    // Find the file node for this entry
-                    var fileNode = FindFileNode(dirNode, entry.Name);
-                    if (fileNode != null)
-                    {
-                        // Convert and extract as PNG
-                        ExtractDdsAsPng(fileNode, outputDirPath);
-                    }
-                    else
-                    {
-                        // Fall back to regular extraction
-                        extractor.ExtractEntry(outputDirPath, entry);
-                    }
+                    var fileNode = FindFileNode(dirNode, fileName);
+                    if (fileNode != null) ExtractDdsAsPng(fileNode, outputDirPath);
                 }
                 else
                 {
-                    // Regular extraction for non-DDS files
-                    extractor.ExtractEntry(outputDirPath, entry);
+                    var fileNode = FindFileNode(dirNode, fileName);
+                    if (fileNode != null && TryConvertCryXml(fileNode, outputDirPath))
+                    {
+                        // done
+                    }
+                    else
+                    {
+                        extractor.ExtractEntry(outputDirPath, entry);
+                    }
                 }
             }
             catch (Exception ex)
@@ -473,5 +467,34 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             // }
             finally { }
         });
+    }
+
+    private bool TryConvertCryXml(P4kFileNode fileNode, string destinationPath)
+    {
+        try
+        {
+            using var entryStream = _p4KService.P4KFileSystem.OpenRead(fileNode.ZipEntry.Name);
+            var ms = new MemoryStream();
+            entryStream.CopyTo(ms);
+            ms.Position = 0;
+            if (!CryXml.IsCryXmlB(ms)) return false;
+            ms.Position = 0;
+            if (!CryXml.TryOpen(ms, out var cryXml)) return false;
+            _logger.LogInformation("Converting CryXML to text: {FileName}", fileNode.ZipEntry.Name);
+            var relativePath = fileNode.ZipEntry.Name;
+            var relativeDirectory = Path.GetDirectoryName(relativePath)?.Replace('\\', Path.DirectorySeparatorChar) ?? string.Empty;
+            var outputDirectory = Path.Combine(destinationPath, relativeDirectory);
+            Directory.CreateDirectory(outputDirectory);
+            var outName = Path.GetFileName(relativePath);
+            var outPath = Path.Combine(outputDirectory, outName);
+            File.WriteAllText(outPath, cryXml.ToString());
+            _logger.LogInformation("Successfully converted CryXML to: {OutPath}", outPath);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to convert CryXML for {FileName}", fileNode.ZipEntry.Name);
+            return false;
+        }
     }
 }

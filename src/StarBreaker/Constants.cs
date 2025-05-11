@@ -8,6 +8,8 @@ public static class Constants
     public const string BuildManifest = "build_manifest.id";
     public static readonly string DefaultStarCitizenFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Roberts Space Industries", "StarCitizen");
     public static readonly string DefaultRSILauncherFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "rsilauncher");
+    private static readonly string AppDataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "StarBreaker");
+    public static readonly string SettingsFile = Path.Combine(AppDataFolder, "settings.json");
 
     public static FilePickerOpenOptions GetP4kFilter(IStorageFolder? defaultPath) => new()
     {

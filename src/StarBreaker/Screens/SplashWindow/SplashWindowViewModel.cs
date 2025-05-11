@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using StarBreaker.Services;
+using System.IO;
 
 namespace StarBreaker.Screens;
 
@@ -14,6 +15,7 @@ public sealed partial class SplashWindowViewModel : ViewModelBase
 {
     private readonly ILogger<SplashWindowViewModel> _logger;
     private readonly IP4kService _p4kService;
+    private string? _customInstallFolder;
 
     [ObservableProperty] private ObservableCollection<StarCitizenInstallationViewModel> _installations;
     [ObservableProperty] private double? _progress;
@@ -24,6 +26,8 @@ public sealed partial class SplashWindowViewModel : ViewModelBase
         _p4kService = p4kService;
         _installations = [];
         Progress = null;
+
+        LoadSettings();
         LoadDefaultP4kLocations();
     }
 
@@ -62,12 +66,69 @@ public sealed partial class SplashWindowViewModel : ViewModelBase
         await LoadP4k(file[0].Path.LocalPath);
     }
 
+    private void LoadSettings()
+    {
+        try
+        {
+            if (File.Exists(Constants.SettingsFile))
+            {
+                var json = File.ReadAllText(Constants.SettingsFile);
+                var settings = JsonSerializer.Deserialize<AppSettings>(json);
+                _customInstallFolder = settings?.CustomInstallFolder;
+                _logger.LogInformation("Loaded custom installation folder from settings: {Path}", _customInstallFolder);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to load settings");
+        }
+    }
+
+    private void SaveSettings()
+    {
+        try
+        {
+            var folder = Path.GetDirectoryName(Constants.SettingsFile)!;
+            Directory.CreateDirectory(folder);
+            var settings = new AppSettings { CustomInstallFolder = _customInstallFolder };
+            var json = JsonSerializer.Serialize(settings);
+            File.WriteAllText(Constants.SettingsFile, json);
+            _logger.LogInformation("Saved custom installation folder to settings: {Path}", _customInstallFolder);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to save settings");
+        }
+    }
+
+    private class AppSettings
+    {
+        public string? CustomInstallFolder { get; set; }
+    }
+
     public void LoadDefaultP4kLocations()
     {
-        if (!TryGetInstallDirectory(out var currentInstallDirectory))
-            currentInstallDirectory = Constants.DefaultStarCitizenFolder;
+        _logger.LogInformation("Starting LoadDefaultP4kLocations...");
 
+        if (!string.IsNullOrWhiteSpace(_customInstallFolder) && Directory.Exists(_customInstallFolder))
+        {
+            _logger.LogInformation("Using custom installation folder: {Path}", _customInstallFolder);
+            GetP4ksFromDirectory(_customInstallFolder);
+            return;
+        }
+        
+        if (!TryGetInstallDirectory(out var currentInstallDirectory))
+        {
+            _logger.LogWarning("Failed to get install directory from RSI logs. Falling back to default.");
+            currentInstallDirectory = Constants.DefaultStarCitizenFolder;
+        }
+        _logger.LogInformation("Using installation path: {InstallationPath}", currentInstallDirectory);
         GetP4ksFromDirectory(currentInstallDirectory);
+        _logger.LogInformation("Finished LoadDefaultP4kLocations. Found {Count} installations.", Installations.Count);
+        if (Installations.Count == 0)
+        {
+            _logger.LogWarning("No P4K installations were found or listed. The splash screen will be empty or show no options to load.");
+        }
     }
 
     private void GetP4ksFromDirectory(string installationPath)
@@ -169,6 +230,29 @@ public sealed partial class SplashWindowViewModel : ViewModelBase
 
         _logger.LogError("Failed to find SC install directory from launcher log");
         return false;
+    }
+
+    [RelayCommand]
+    public async Task OpenSettings()
+    {
+        _logger.LogInformation("Opening installation folder picker...");
+        var options = new FolderPickerOpenOptions
+        {
+            Title = "Select Star Citizen Installation Folder",
+            AllowMultiple = false
+        };
+        var folders = await App.StorageProvider.OpenFolderPickerAsync(options);
+        if (folders.Count != 1)
+        {
+            _logger.LogInformation("Installation folder selection canceled or invalid count: {Count}", folders.Count);
+            return;
+        }
+        var path = folders[0].Path.LocalPath;
+        _logger.LogInformation("User selected installation folder: {Path}", path);
+        _customInstallFolder = path;
+        SaveSettings();
+        Installations.Clear();
+        GetP4ksFromDirectory(path);
     }
 }
 
