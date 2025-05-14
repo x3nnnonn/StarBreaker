@@ -15,7 +15,7 @@ import mitmproxy
 from google.protobuf.descriptor_pb2 import FileDescriptorSet
 from google.protobuf.descriptor import MethodDescriptor
 from google.protobuf.descriptor_pool import DescriptorPool
-from google.protobuf.message_factory import MessageFactory
+from google.protobuf.message_factory import MessageFactory, GetMessageClass
 from google.protobuf.message import DecodeError
 from mitmproxy import ctx
 import logging
@@ -66,9 +66,9 @@ class ProtobufModifier:
         data_without_prefix = serialized_protobuf[5:]
 
         if isinstance(http_message, mitmproxy.http.Request):
-             message = self.message_factory.GetPrototype(grpc_method.input_type)()
+             message = GetMessageClass(grpc_method.input_type)
         elif isinstance(http_message, mitmproxy.http.Response):
-             message = self.message_factory.GetPrototype(grpc_method.output_type)()
+             message = GetMessageClass(grpc_method.output_type)
         else:
             raise ValueError(f"Unexpected HTTP message type {http_message}")
 
