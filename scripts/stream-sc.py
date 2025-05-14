@@ -66,16 +66,16 @@ class ProtobufModifier:
         data_without_prefix = serialized_protobuf[5:]
 
         if isinstance(http_message, mitmproxy.http.Request):
-             message = GetMessageClass(grpc_method.input_type)
+             message = GetMessageClass(grpc_method.input_type)()
         elif isinstance(http_message, mitmproxy.http.Response):
-             message = GetMessageClass(grpc_method.output_type)
+             message = GetMessageClass(grpc_method.output_type)()
         else:
             raise ValueError(f"Unexpected HTTP message type {http_message}")
 
         message.Clear()
 
         try:
-            message.MergeFromString(data_without_prefix)
+            message.ParseFromString(data_without_prefix)
         except DecodeError as e:
             raise ValueError("Unable to deserialize input") from e
 
