@@ -118,8 +118,8 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             _logger.LogWarning(ex, "Failed to load diff settings");
             
             // Fallback to defaults
-            var defaultOutputPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "StarCitizen_Diff");
-            OutputDirectory = defaultOutputPath;
+        var defaultOutputPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "StarCitizen_Diff");
+        OutputDirectory = defaultOutputPath;
             TextFormat = "xml";
             
             UpdateChannelSelection("LIVE");
@@ -479,25 +479,25 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
 
             await Task.Run(() =>
             {
-                foreach (var dir in deleteDirectories)
+            foreach (var dir in deleteDirectories)
+            {
+                if (Directory.Exists(dir))
                 {
-                    if (Directory.Exists(dir))
-                    {
-                        Directory.Delete(dir, true);
-                        AddLogMessage($"Deleted directory: {Path.GetFileName(dir)}");
-                    }
-                    progressCallback(++currentStep / (double)totalSteps);
+                    Directory.Delete(dir, true);
+                    AddLogMessage($"Deleted directory: {Path.GetFileName(dir)}");
                 }
+                    progressCallback(++currentStep / (double)totalSteps);
+            }
 
-                foreach (var file in deleteFiles)
+            foreach (var file in deleteFiles)
+            {
+                if (File.Exists(file))
                 {
-                    if (File.Exists(file))
-                    {
-                        File.Delete(file);
-                        AddLogMessage($"Deleted file: {Path.GetFileName(file)}");
-                    }
-                    progressCallback(++currentStep / (double)totalSteps);
+                    File.Delete(file);
+                    AddLogMessage($"Deleted file: {Path.GetFileName(file)}");
                 }
+                    progressCallback(++currentStep / (double)totalSteps);
+            }
             });
 
             AddLogMessage("Old files cleaned up.");
@@ -654,8 +654,8 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                         
                         // Only log every 10% to avoid flooding the log
                         if (value % 0.1 < 0.02 || value >= 1.0)
-                        {
-                            AddLogMessage($"DataCore extraction progress: {value:P0}");
+                {
+                    AddLogMessage($"DataCore extraction progress: {value:P0}");
                         }
                     }
                 });

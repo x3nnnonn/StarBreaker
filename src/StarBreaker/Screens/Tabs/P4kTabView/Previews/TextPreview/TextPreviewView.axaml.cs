@@ -72,6 +72,7 @@ public partial class TextPreviewView : UserControl
             ".xml" => "xml",
             ".json" => "json",
             ".cfg" => "ini", // Configuration files often use INI-like syntax
+            ".ini" => "ini", // INI files (including Star Citizen localization files)
             ".txt" => "plaintext",
             ".mtl" => "xml", // Material files in Star Citizen are often XML-based
             ".eco" => "xml", // Eco files are typically XML
