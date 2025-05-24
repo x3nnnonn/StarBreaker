@@ -156,9 +156,7 @@ public sealed partial class DataCoreTabViewModel : PageViewModelBase
         
         foreach (var record in records)
         {
-            bool matches = record.Name.ToLowerInvariant().Contains(searchTerm) || 
-                          record.Type.ToLowerInvariant().Contains(searchTerm) ||
-                          record.Id.ToLowerInvariant().Contains(searchTerm);
+            bool matches = record.Name.ToLowerInvariant().Contains(searchTerm);
             
             if (record.IsFolder)
             {
