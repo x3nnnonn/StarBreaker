@@ -36,6 +36,8 @@ public class PreviewService : IPreviewService
         using var entryStream = _p4KService.P4KFileSystem.P4kFile.OpenStream(selectedEntry.ZipEntry);
 
         FilePreviewViewModel preview;
+        var fileName = selectedEntry.GetName();
+        var fileExtension = Path.GetExtension(fileName).ToLowerInvariant();
 
         //check cryxml before extension since ".xml" sometimes is cxml sometimes plaintext
         if (CryXmlB.CryXml.IsCryXmlB(entryStream))
@@ -44,34 +46,57 @@ public class PreviewService : IPreviewService
             {
                 //should never happen
                 _logger.LogError("Failed to open CryXmlB");
-                return new TextPreviewViewModel("Failed to open CryXmlB");
+                return new TextPreviewViewModel("Failed to open CryXmlB", fileExtension);
             }
 
             _logger.LogInformation("cryxml");
-            preview = new TextPreviewViewModel(c.ToString());
+            preview = new TextPreviewViewModel(c.ToString(), ".xml"); // CryXML converts to XML
         }
         else if (plaintextExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
         {
             _logger.LogInformation("plaintextExtensions");
-
-            preview = new TextPreviewViewModel(entryStream.ReadString());
+            preview = new TextPreviewViewModel(entryStream.ReadString(), fileExtension);
         }
         else if (ddsLodExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
         {
-            var ms = DdsFile.MergeToStream(selectedEntry.ZipEntry.Name, _p4KService.P4KFileSystem);
-            var pngBytes = DdsFile.ConvertToPng(ms.ToArray());
-            _logger.LogInformation("ddsLodExtensions");
-            preview = new DdsPreviewViewModel(new Bitmap(pngBytes));
+            try
+            {
+                var ms = DdsFile.MergeToStream(selectedEntry.ZipEntry.Name, _p4KService.P4KFileSystem);
+                var pngBytes = DdsFile.ConvertToPng(ms.ToArray());
+                _logger.LogInformation("ddsLodExtensions");
+                preview = new DdsPreviewViewModel(new Bitmap(pngBytes));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to convert DDS file: {FileName}", selectedEntry.ZipEntry.Name);
+                preview = new TextPreviewViewModel($"Failed to preview DDS file: {ex.Message}", fileExtension);
+            }
         }
         else if (bitmapExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
         {
             _logger.LogInformation("bitmapExtensions");
-            preview = new DdsPreviewViewModel(new Bitmap(entryStream));
+            try
+            {
+                preview = new DdsPreviewViewModel(new Bitmap(entryStream));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to load bitmap: {FileName}", selectedEntry.ZipEntry.Name);
+                preview = new TextPreviewViewModel($"Failed to preview bitmap: {ex.Message}", fileExtension);
+            }
         }
         else
         {
             _logger.LogInformation("hex");
-            preview = new HexPreviewViewModel(entryStream.ToArray());
+            try
+            {
+                preview = new HexPreviewViewModel(entryStream.ToArray());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create hex preview: {FileName}", selectedEntry.ZipEntry.Name);
+                preview = new TextPreviewViewModel($"Failed to create hex preview: {ex.Message}", fileExtension);
+            }
         }
         //todo other types
 

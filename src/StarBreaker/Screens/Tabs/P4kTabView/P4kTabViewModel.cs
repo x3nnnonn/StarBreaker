@@ -15,6 +15,21 @@ using System.IO;
 
 namespace StarBreaker.Screens;
 
+// Helper class for filtered directory display during search
+public class FilteredP4kDirectoryNode : IP4kNode
+{
+    public IP4kNode Parent { get; }
+    public string Name { get; }
+    public ICollection<IP4kNode> FilteredChildren { get; }
+
+    public FilteredP4kDirectoryNode(string name, IP4kNode parent, ICollection<IP4kNode> filteredChildren)
+    {
+        Name = name;
+        Parent = parent;
+        FilteredChildren = filteredChildren;
+    }
+}
+
 public sealed partial class P4kTabViewModel : PageViewModelBase
 {
     public override string Name => "P4k";
@@ -82,6 +97,11 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
     [RelayCommand]
     public void Search()
     {
+        ApplySearch();
+    }
+    
+    private void ApplySearch()
+    {
         if (string.IsNullOrWhiteSpace(SearchText))
         {
             // Reset to show all nodes
@@ -89,9 +109,48 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             return;
         }
         
-        var searchResults = new List<IP4kNode>();
-        SearchNodes(_p4KService.P4KFileSystem.Root, SearchText.ToLowerInvariant(), searchResults);
-        Source.Items = GetSortedNodes(searchResults);
+        var searchTerm = SearchText.Trim().ToLowerInvariant();
+        
+        // Clone the hierarchy but only include matches and their parent folders
+        var filteredNodes = CloneAndFilterNodes(_allRootNodes, searchTerm);
+        
+        Source.Items = GetSortedNodes(filteredNodes);
+    }
+    
+    private List<IP4kNode> CloneAndFilterNodes(ICollection<IP4kNode> nodes, string searchTerm)
+    {
+        var result = new List<IP4kNode>();
+        
+        foreach (var node in nodes)
+        {
+            if (node is P4kFileNode fileNode)
+            {
+                // For files, check if filename matches
+                bool matches = fileNode.ZipEntry.Name.ToLowerInvariant().Contains(searchTerm);
+                
+                if (matches)
+                {
+                    result.Add(fileNode);
+                }
+            }
+            else if (node is P4kDirectoryNode dirNode)
+            {
+                // For folders, check if folder name matches or has matching children
+                bool folderMatches = dirNode.Name.ToLowerInvariant().Contains(searchTerm);
+                
+                var filteredChildren = CloneAndFilterNodes(dirNode.Children.Values, searchTerm);
+                
+                // Include this folder if it matches or has matching children
+                if (folderMatches || filteredChildren.Count > 0)
+                {
+                    // Create a filtered directory node with only matching children
+                    var filteredDirNode = new FilteredP4kDirectoryNode(dirNode.Name, dirNode.Parent, filteredChildren);
+                    result.Add(filteredDirNode);
+                }
+            }
+        }
+        
+        return result;
     }
     
     private async Task ExtractSelectedNode()
@@ -400,8 +459,8 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
         if (b == null) return 1;
 
         // Directories come before files
-        bool aIsDir = a is P4kDirectoryNode;
-        bool bIsDir = b is P4kDirectoryNode;
+        bool aIsDir = a is P4kDirectoryNode or FilteredP4kDirectoryNode;
+        bool bIsDir = b is P4kDirectoryNode or FilteredP4kDirectoryNode;
 
         if (aIsDir && !bIsDir) return -1;
         if (!aIsDir && bIsDir) return 1;
@@ -418,7 +477,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
 
     private static IP4kNode[] GetSortedNodes(ICollection<IP4kNode> nodes)
     {
-        return nodes.OrderBy(n => n is not P4kDirectoryNode) // Directories first
+        return nodes.OrderBy(n => n is not (P4kDirectoryNode or FilteredP4kDirectoryNode)) // Directories first
             .ThenBy(n => n.GetName(), StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
@@ -446,12 +505,6 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             return;
         }
 
-        if (selectedFile.ZipEntry.UncompressedSize > int.MaxValue)
-        {
-            _logger.LogWarning("File too big to preview");
-            return;
-        }
-
         //todo: for a big ass file show a loading screen or something
         Preview = null;
         Task.Run(() =>
@@ -461,10 +514,11 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
                 var p = _previewService.GetPreview(selectedFile);
                 Dispatcher.UIThread.Post(() => Preview = p);
             }
-            // catch (Exception exception)
-            // {
-            //     _logger.LogError(exception, "Failed to preview file");
-            // }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "Failed to preview file: {FileName}", selectedFile.ZipEntry.Name);
+                Dispatcher.UIThread.Post(() => Preview = new TextPreviewViewModel($"Failed to preview file: {exception.Message}"));
+            }
             finally { }
         });
     }

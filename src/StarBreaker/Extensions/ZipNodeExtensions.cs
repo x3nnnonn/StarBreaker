@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using Humanizer;
 using StarBreaker.P4k;
+using StarBreaker.Screens;
 
 namespace StarBreaker.Extensions;
 
@@ -28,16 +29,19 @@ public static class ZipNodeExtensions
         {
             P4kFileNode file => file.ZipEntry.Name.Split('\\').Last(),
             P4kDirectoryNode dir => dir.Name,
+            FilteredP4kDirectoryNode filteredDir => filteredDir.Name,
             _ => "",
         };
     }
 
     public static ICollection<IP4kNode> GetChildren(this IP4kNode x)
     {
-        if (x is not P4kDirectoryNode dir)
-            return Array.Empty<IP4kNode>();
-
-        return dir.Children.Values;
+        return x switch
+        {
+            P4kDirectoryNode dir => dir.Children.Values,
+            FilteredP4kDirectoryNode filteredDir => filteredDir.FilteredChildren,
+            _ => Array.Empty<IP4kNode>()
+        };
     }
 
     public static ulong SizeOrZero(this IP4kNode x)

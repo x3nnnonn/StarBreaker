@@ -7,14 +7,12 @@
              x:DataType="screens:TextPreviewViewModel"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="StarBreaker.Screens.TextPreviewView">
-    <ScrollViewer>
-        <!-- <AvaloniaEdit:TextEditor -->
-        <!--     IsReadOnly="True" -->
-        <!--     Text="ASDASDASD" -->
-        <!--     FontFamily="Consolas" /> -->
-        <SelectableTextBlock
-            FontFamily="Consolas"
-            Text="{Binding Path=Text}"
-            />
-    </ScrollViewer>
+    <AvaloniaEdit:TextEditor
+        Name="TextEditor"
+        IsReadOnly="True"
+        FontFamily="Consolas"
+        ShowLineNumbers="True"
+        WordWrap="False"
+        VerticalScrollBarVisibility="Auto"
+        HorizontalScrollBarVisibility="Auto" />
 </UserControl>
