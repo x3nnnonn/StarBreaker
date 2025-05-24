@@ -18,6 +18,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<SplashWindowViewModel>();
         services.AddTransient<P4kTabViewModel>();
         services.AddTransient<DataCoreTabViewModel>();
+        services.AddTransient<DiffTabViewModel>();
         services.AddSingleton<IPreviewService, PreviewService>();
 
         if (isDesignMode)

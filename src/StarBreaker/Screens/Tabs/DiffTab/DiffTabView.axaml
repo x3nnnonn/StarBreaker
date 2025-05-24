@@ -1,0 +1,203 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:screens="clr-namespace:StarBreaker.Screens"
+             xmlns:AvaloniaEdit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:DataType="screens:DiffTabViewModel"
+             x:Class="StarBreaker.Screens.DiffTabView">
+    
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" Margin="10">
+        
+        <!-- Header -->
+        <TextBlock Grid.Row="0" 
+                   Text="Star Citizen Version Diff Tool" 
+                   FontSize="20" 
+                   FontWeight="Bold" 
+                   Margin="0,0,0,20"/>
+        
+        <!-- Configuration Section -->
+        <Border Grid.Row="1" 
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
+                BorderThickness="1" 
+                CornerRadius="4" 
+                Padding="15" 
+                Margin="0,0,0,15">
+            <StackPanel Spacing="12">
+                <TextBlock Text="Configuration" FontSize="16" FontWeight="SemiBold"/>
+                
+                <!-- Game Folder Selection -->
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <TextBlock Grid.Column="0" 
+                               Text="Game Folder:" 
+                               VerticalAlignment="Center" 
+                               Width="100"
+                               Margin="0,0,10,0"/>
+                    <TextBox Grid.Column="1" 
+                             Text="{Binding GameFolder}" 
+                             Watermark="Select Star Citizen game folder"
+                             IsReadOnly="True"
+                             Margin="0,0,10,0"/>
+                    <Button Grid.Column="2" 
+                            Content="Browse..." 
+                            Command="{Binding SelectGameFolderCommand}"
+                            MinWidth="80"/>
+                </Grid>
+                
+                <!-- Channel Selection Buttons -->
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Quick Channel Selection:" FontWeight="Medium"/>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <ToggleButton Content="LIVE" 
+                                      Command="{Binding SelectLiveChannelCommand}"
+                                      IsChecked="{Binding IsLiveSelected}"
+                                      MinWidth="60"
+                                      ToolTip.Tip="Select LIVE channel folder"/>
+                        <ToggleButton Content="PTU" 
+                                      Command="{Binding SelectPtuChannelCommand}"
+                                      IsChecked="{Binding IsPtuSelected}"
+                                      MinWidth="60"
+                                      ToolTip.Tip="Select PTU channel folder"/>
+                        <ToggleButton Content="EPTU" 
+                                      Command="{Binding SelectEptuChannelCommand}"
+                                      IsChecked="{Binding IsEptuSelected}"
+                                      MinWidth="60"
+                                      ToolTip.Tip="Select EPTU channel folder"/>
+                    </StackPanel>
+                </StackPanel>
+                
+                <!-- Output Directory Selection -->
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <TextBlock Grid.Column="0" 
+                               Text="Output Folder:" 
+                               VerticalAlignment="Center" 
+                               Width="100"
+                               Margin="0,0,10,0"/>
+                    <TextBox Grid.Column="1" 
+                             Text="{Binding OutputDirectory}" 
+                             Watermark="Select output directory for diff files"
+                             Margin="0,0,10,0"/>
+                    <Button Grid.Column="2" 
+                            Content="Browse..." 
+                            Command="{Binding SelectOutputDirectoryCommand}"
+                            MinWidth="80"/>
+                </Grid>
+                
+                <!-- Options -->
+                <StackPanel Orientation="Horizontal" Spacing="20">
+                    <CheckBox Content="Keep old files" 
+                              IsChecked="{Binding KeepOldFiles}"
+                              ToolTip.Tip="Don't delete existing files in output directory"/>
+                    
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="Format:" VerticalAlignment="Center"/>
+                        <ComboBox SelectedItem="{Binding TextFormat}" MinWidth="80">
+                            <ComboBoxItem Content="xml"/>
+                            <ComboBoxItem Content="json"/>
+                        </ComboBox>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+        
+        <!-- Action Section -->
+        <Border Grid.Row="2" 
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
+                BorderThickness="1" 
+                CornerRadius="4" 
+                Padding="15" 
+                Margin="0,0,0,15">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Diff Operation" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <TextBlock Text="This will extract and dump game data for comparison with other versions."
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                </StackPanel>
+                
+                <Button Grid.Column="1" 
+                        Content="Run Diff" 
+                        Command="{Binding RunDiffCommand}" 
+                        IsEnabled="{Binding !IsRunning}"
+                        VerticalAlignment="Center"
+                        MinWidth="100"
+                        MinHeight="35"
+                        FontWeight="SemiBold"
+                        Margin="15,0,0,0"/>
+            </Grid>
+        </Border>
+        
+        <!-- Progress Section -->
+        <Border Grid.Row="3" 
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
+                BorderThickness="1" 
+                CornerRadius="4" 
+                Padding="15" 
+                Margin="0,0,0,15"
+                IsVisible="{Binding IsRunning}">
+            <StackPanel Spacing="8">
+                <TextBlock Text="Progress" FontSize="16" FontWeight="SemiBold"/>
+                <TextBlock Text="{Binding CurrentStatus}" FontWeight="Medium"/>
+                <ProgressBar Value="{Binding Progress}" 
+                             Minimum="0" 
+                             Maximum="1" 
+                             Height="8"
+                             IsIndeterminate="{Binding IsRunning}"/>
+                <TextBlock Text="{Binding Progress, StringFormat={}{0:P0}}" 
+                           HorizontalAlignment="Center"
+                           FontSize="12"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+            </StackPanel>
+        </Border>
+        
+        <!-- Log Section -->
+        <Border Grid.Row="4" 
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
+                BorderThickness="1" 
+                CornerRadius="4" 
+                Padding="15">
+            <Grid RowDefinitions="Auto,*">
+                <TextBlock Grid.Row="0" 
+                           Text="Operation Log" 
+                           FontSize="16" 
+                           FontWeight="SemiBold" 
+                           Margin="0,0,0,10"/>
+                
+                <ScrollViewer Grid.Row="1" 
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding LogMessages}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" 
+                                           FontFamily="Consolas" 
+                                           FontSize="12"
+                                           Margin="0,1"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+        
+        <!-- Info Section -->
+        <Border Grid.Row="5" 
+                Background="{DynamicResource SystemControlBackgroundAltMediumBrush}"
+                CornerRadius="4" 
+                Padding="10" 
+                Margin="0,15,0,0">
+            <TextBlock TextWrapping="Wrap" 
+                       FontSize="11"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}">
+                <Run Text="The diff tool extracts:"/>
+                <LineBreak/>
+                <Run Text="• P4K file structure and metadata • DataCore records as XML/JSON • Localization files"/>
+                <LineBreak/>
+                <Run Text="• Protobuf definitions • Compressed archives for comparison • Build manifest"/>
+                <LineBreak/>
+                <Run Text="Use this to compare different Star Citizen versions or track changes between patches."/>
+            </TextBlock>
+        </Border>
+    </Grid>
+</UserControl> 

@@ -26,3 +26,12 @@ public static class Constants
         SuggestedStartLocation = defaultPath
     };
 }
+
+public class AppSettings
+{
+    public string? CustomInstallFolder { get; set; }
+    public string? DiffGameFolder { get; set; }
+    public string? DiffOutputDirectory { get; set; }
+    public string? SelectedChannel { get; set; }
+    public string? TextFormat { get; set; }
+}

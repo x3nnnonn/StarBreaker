@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:screens="clr-namespace:StarBreaker.Screens"
+             xmlns:AvaloniaEdit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:DataType="screens:DataCoreTabViewModel"
              x:Class="StarBreaker.Screens.DataCoreTabView">
@@ -41,11 +42,15 @@
                            HorizontalAlignment="Center"
                            IsVisible="{Binding SelectedRecordContent, Converter={x:Static ObjectConverters.IsNull}}"/>
                            
-                <ScrollViewer IsVisible="{Binding SelectedRecordContent, Converter={x:Static ObjectConverters.IsNotNull}}">
-                    <TextBlock Text="{Binding SelectedRecordContent}" 
-                               TextWrapping="Wrap" 
-                               FontFamily="Consolas" />
-                </ScrollViewer>
+                <AvaloniaEdit:TextEditor
+                    Name="XmlEditor"
+                    IsVisible="{Binding SelectedRecordContent, Converter={x:Static ObjectConverters.IsNotNull}}"
+                    IsReadOnly="True"
+                    FontFamily="Consolas"
+                    ShowLineNumbers="True"
+                    WordWrap="False"
+                    VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Auto" />
             </Grid>
         </Grid>
         

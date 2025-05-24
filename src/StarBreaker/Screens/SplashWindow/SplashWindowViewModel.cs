@@ -101,11 +101,6 @@ public sealed partial class SplashWindowViewModel : ViewModelBase
         }
     }
 
-    private class AppSettings
-    {
-        public string? CustomInstallFolder { get; set; }
-    }
-
     public void LoadDefaultP4kLocations()
     {
         _logger.LogInformation("Starting LoadDefaultP4kLocations...");
