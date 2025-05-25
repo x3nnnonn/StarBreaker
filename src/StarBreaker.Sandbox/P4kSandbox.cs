@@ -9,15 +9,23 @@ namespace StarBreaker.Sandbox;
 
 public static class P4kSandbox
 {
-    private const string p4k = @"C:\Program Files\Roberts Space Industries\StarCitizen\PTU\Data.p4k";
+    private const string p4k = @"C:\Program Files\Roberts Space Industries\StarCitizen\LIVE\Data.p4k";
 
     public static void Run()
     {
+        TimeInit();
         //Verify();
         //ListByExtension();
         //CountEncrypted();
         //CountChunkTypes();
-        AllExtensions();
+        // AllExtensions();
+    }
+
+    private static void TimeInit()
+    {
+        var sw = Stopwatch.StartNew();
+        var p4kFile = P4kFile.FromFile(p4k);
+        Console.WriteLine($"Took {sw.ElapsedMilliseconds}ms to load {p4kFile.Entries.Length} entries");
     }
 
     private static void AllExtensions()

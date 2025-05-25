@@ -132,11 +132,20 @@
                 "FILTER": "*.socpak"
             }
         },
+        "p4k-extract-xml": {
+            "commandName": "Project",
+            "commandLineArgs": "p4k-extract",
+            "environmentVariables": {
+                "INPUT_P4K": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\LIVE\\Data.p4k",
+                "OUTPUT_FOLDER": "D:\\StarCitizen\\P4kXml",
+                "FILTER": "*.xml"
+            }
+        },
         "p4k-extract-chf": {
             "commandName": "Project",
             "commandLineArgs": "p4k-extract",
             "environmentVariables": {
-                "INPUT_P4K": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k",
+                "INPUT_P4K": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\LIVE\\Data.p4k",
                 "OUTPUT_FOLDER": "D:\\StarCitizen\\P4kChf",
                 "FILTER": "*.chf"
             }
