@@ -1,7 +1,7 @@
 ﻿using System.IO.Enumeration;
 using System.Text.RegularExpressions;
 
-namespace StarBreaker.P4k;
+namespace StarBreaker.P4k.Extraction;
 
 public enum DdsExtractMode
 {
