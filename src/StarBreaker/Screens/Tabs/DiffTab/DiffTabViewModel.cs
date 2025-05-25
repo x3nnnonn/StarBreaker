@@ -69,6 +69,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
     private DataCoreDatabase? _leftDataCoreDatabase;
     private DataCoreDatabase? _rightDataCoreDatabase;
     private DataCoreComparisonDirectoryNode? _dataCoreComparisonRoot;
+    private Dictionary<string, string>? _currentLocalizationData;
 
     public DiffTabViewModel(ILogger<DiffTabViewModel> logger)
     {
@@ -1009,6 +1010,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                     // Notify that CanCreateP4kReport and CanExtractNewDdsFiles have changed
                     OnPropertyChanged(nameof(CanCreateP4kReport));
                     OnPropertyChanged(nameof(CanExtractNewDdsFiles));
+                    OnPropertyChanged(nameof(CanExtractNewAudioFiles));
                     
                     var stats = P4kComparison.AnalyzeComparison(comparisonRoot);
                     ComparisonStatus = $"Comparison complete! Added: {stats.AddedFiles}, Removed: {stats.RemovedFiles}, Modified: {stats.ModifiedFiles}";
@@ -1204,6 +1206,19 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         _comparisonRoot.GetAllFiles().Any(f => f.Status == P4kComparisonStatus.Added && 
             Path.GetFileName(f.FullPath).Contains(".dds", StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>
+    /// Indicates whether new audio files can be extracted (P4K comparison has been completed and there are added audio files)
+    /// </summary>
+    public bool CanExtractNewAudioFiles => _comparisonRoot != null && _rightP4kFile != null && 
+        _comparisonRoot.GetAllFiles().Any(f => f.Status == P4kComparisonStatus.Added && 
+            IsAudioFile(f.FullPath));
+
+    private static bool IsAudioFile(string filePath)
+    {
+        var fileName = Path.GetFileName(filePath);
+        return fileName.EndsWith(".wem", StringComparison.OrdinalIgnoreCase);
+    }
+
     [RelayCommand]
     public async Task CreateReport()
     {
@@ -1270,14 +1285,37 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         var report = new StringBuilder();
         var stats = DataCoreComparison.AnalyzeComparison(_dataCoreComparisonRoot);
 
+        // Extract localization data for resolving keys
+        var leftLocalization = await ExtractLocalizationData(LeftDataCoreP4kPath);
+        var rightLocalization = await ExtractLocalizationData(RightDataCoreP4kPath);
+        
+        // Merge localization data (prefer right/newer version)
+        var mergedLocalization = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (leftLocalization != null)
+        {
+            foreach (var kvp in leftLocalization)
+                mergedLocalization[kvp.Key] = kvp.Value;
+        }
+        if (rightLocalization != null)
+        {
+            foreach (var kvp in rightLocalization)
+                mergedLocalization[kvp.Key] = kvp.Value;
+        }
+        
+        // Store for use in extraction methods
+        _currentLocalizationData = mergedLocalization;
+        
+        _logger.LogDebug("Available vehicle keys: {VehicleKeys}", 
+            string.Join(", ", mergedLocalization.Keys.Where(k => k.StartsWith("vehicle_")).Take(10)));
+
         // Header
         var leftVersion = ExtractVersionFromPath(LeftDataCoreP4kPath);
         var rightVersion = ExtractVersionFromPath(RightDataCoreP4kPath);
         
-        report.AppendLine($"# DataCore Comparison Report: {leftVersion} → {rightVersion}");
+        report.AppendLine($"# Post (Datamine) | New {rightVersion} datamines");
+        report.AppendLine();
+        report.AppendLine($"**Version:** {leftVersion} → {rightVersion}");
         report.AppendLine($"**Generated:** {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-        report.AppendLine($"**Left P4K:** {Path.GetFileName(LeftDataCoreP4kPath)} (v{leftVersion})");
-        report.AppendLine($"**Right P4K:** {Path.GetFileName(RightDataCoreP4kPath)} (v{rightVersion})");
         report.AppendLine();
 
         // Summary
@@ -1288,14 +1326,858 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         report.AppendLine($"- **Modified:** {stats.ModifiedFiles}");
         report.AppendLine($"- **Unchanged:** {stats.UnchangedFiles}");
         report.AppendLine();
+        
+        // === DISCORD BREAK === (Copy sections below separately for Discord's 4000 char limit)
+        report.AppendLine("---");
+        report.AppendLine();
 
+        // New Ships Section
+        GenerateNewShipsSection(report);
+        
+        report.AppendLine("---");
+        report.AppendLine();
+        
+        // New Weapons Section
+        GenerateNewWeaponsSection(report);
+        
+        report.AppendLine("---");
+        report.AppendLine();
+        
+        // New Components Section
+        GenerateNewComponentsSection(report);
+        
+        report.AppendLine("---");
+        report.AppendLine();
+        
+        // New Paints Section
+        GenerateNewPaintsSection(report);
+        
+        report.AppendLine("---");
+        report.AppendLine();
+        
         // Changed Files Section
         GenerateChangedFilesSection(report);
+        
+        report.AppendLine("---");
+        report.AppendLine();
         
         // Localization Changes Section
         await GenerateLocalizationChangesSection(report);
 
         return report.ToString();
+    }
+
+    private void GenerateNewShipsSection(StringBuilder report)
+    {
+        if (_dataCoreComparisonRoot == null || _rightDataCoreDatabase == null) return;
+
+        var allFiles = _dataCoreComparisonRoot.GetAllFiles().ToArray();
+        
+        // Find added files in the spaceships directory
+        var newShips = allFiles
+            .Where(f => f.Status == DataCoreComparisonStatus.Added)
+            .Where(f => f.FullPath.StartsWith("libs/foundry/records/entities/spaceships", StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+
+        if (newShips.Length > 0)
+        {
+            var breakHelper = new DiscordBreakHelper(report);
+            breakHelper.AppendLine("## New Ships Added");
+            breakHelper.AppendLine();
+            
+            foreach (var ship in newShips.OrderBy(s => s.FullPath))
+            {
+                var shipInfo = ExtractShipInfo(ship, _rightDataCoreDatabase);
+                if (shipInfo != null)
+                {
+                    breakHelper.AppendLine($"- **{shipInfo.DisplayName}**");
+                    if (!string.IsNullOrEmpty(shipInfo.Description))
+                    {
+                        breakHelper.AppendLine($"  - {shipInfo.Description}");
+                    }
+                    if (!string.IsNullOrEmpty(shipInfo.Manufacturer))
+                    {
+                        breakHelper.AppendLine($"  - Manufacturer: {shipInfo.Manufacturer}");
+                    }
+                }
+                else
+                {
+                    var shipName = Path.GetFileNameWithoutExtension(ship.FullPath);
+                    var displayName = CleanDisplayName(shipName);
+                    breakHelper.AppendLine($"- **{displayName}**");
+                }
+            }
+            breakHelper.AppendLine();
+        }
+    }
+
+    private void GenerateNewWeaponsSection(StringBuilder report)
+    {
+        if (_dataCoreComparisonRoot == null || _rightDataCoreDatabase == null) return;
+
+        var allFiles = _dataCoreComparisonRoot.GetAllFiles().ToArray();
+        
+        // Find added files in the weapons and related directories
+        var weaponDirectories = new[]
+        {
+            "libs/foundry/records/entities/scitem/ships/weapons",
+            "libs/foundry/records/entities/scitem/ships/missile_racks",
+            "libs/foundry/records/entities/scitem/ships/weapon_mounts",
+            "libs/foundry/records/entities/scitem/ships/turret"
+        };
+        
+        var newWeapons = allFiles
+            .Where(f => f.Status == DataCoreComparisonStatus.Added)
+            .Where(f => weaponDirectories.Any(dir => f.FullPath.StartsWith(dir, StringComparison.OrdinalIgnoreCase)))
+            .ToArray();
+
+        if (newWeapons.Length > 0)
+        {
+            var breakHelper = new DiscordBreakHelper(report);
+            breakHelper.AppendLine("## New Weapons & Turrets Added");
+            breakHelper.AppendLine();
+            
+            // Group weapons by type
+            var weapons = newWeapons.Where(w => w.FullPath.StartsWith("libs/foundry/records/entities/scitem/ships/weapons", StringComparison.OrdinalIgnoreCase) && !w.FullPath.Contains("/parts/"));
+            var weaponParts = newWeapons.Where(w => w.FullPath.StartsWith("libs/foundry/records/entities/scitem/ships/weapons", StringComparison.OrdinalIgnoreCase) && w.FullPath.Contains("/parts/"));
+            var missileRacks = newWeapons.Where(w => w.FullPath.StartsWith("libs/foundry/records/entities/scitem/ships/missile_racks", StringComparison.OrdinalIgnoreCase));
+            var weaponMounts = newWeapons.Where(w => w.FullPath.StartsWith("libs/foundry/records/entities/scitem/ships/weapon_mounts", StringComparison.OrdinalIgnoreCase));
+            var turrets = newWeapons.Where(w => w.FullPath.StartsWith("libs/foundry/records/entities/scitem/ships/turret", StringComparison.OrdinalIgnoreCase));
+            
+            if (weapons.Any())
+            {
+                breakHelper.AppendLine("### Ship Weapons");
+                foreach (var weapon in weapons.OrderBy(w => w.FullPath))
+                {
+                    var weaponInfo = ExtractWeaponInfo(weapon, _rightDataCoreDatabase);
+                    if (weaponInfo != null)
+                    {
+                        var sizeStr = weaponInfo.Size > 0 ? $"S{weaponInfo.Size} " : "";
+                        breakHelper.AppendLine($"- **{sizeStr}{weaponInfo.DisplayName}**");
+                        if (!string.IsNullOrEmpty(weaponInfo.Description))
+                        {
+                            breakHelper.AppendLine($"  - {weaponInfo.Description}");
+                        }
+                    }
+                    else
+                    {
+                        var weaponName = Path.GetFileNameWithoutExtension(weapon.FullPath);
+                        var displayName = CleanDisplayName(weaponName);
+                        breakHelper.AppendLine($"- **{displayName}**");
+                    }
+                }
+                breakHelper.AppendLine();
+            }
+            
+            if (missileRacks.Any())
+            {
+                breakHelper.AppendLine("### Missile Racks");
+                foreach (var missileRack in missileRacks.OrderBy(m => m.FullPath))
+                {
+                    var rackInfo = ExtractWeaponInfo(missileRack, _rightDataCoreDatabase);
+                    if (rackInfo != null)
+                    {
+                        var sizeStr = rackInfo.Size > 0 ? $"S{rackInfo.Size} " : "";
+                        breakHelper.AppendLine($"- **{sizeStr}{rackInfo.DisplayName}**");
+                        if (!string.IsNullOrEmpty(rackInfo.Description))
+                        {
+                            breakHelper.AppendLine($"  - {rackInfo.Description}");
+                        }
+                    }
+                    else
+                    {
+                        var rackName = Path.GetFileNameWithoutExtension(missileRack.FullPath);
+                        var displayName = CleanDisplayName(rackName);
+                        breakHelper.AppendLine($"- **{displayName}**");
+                    }
+                }
+                breakHelper.AppendLine();
+            }
+            
+            if (turrets.Any())
+            {
+                breakHelper.AppendLine("### Turrets");
+                foreach (var turret in turrets.OrderBy(t => t.FullPath))
+                {
+                    var turretInfo = ExtractWeaponInfo(turret, _rightDataCoreDatabase);
+                    if (turretInfo != null)
+                    {
+                        var sizeStr = turretInfo.Size > 0 ? $"S{turretInfo.Size} " : "";
+                        breakHelper.AppendLine($"- **{sizeStr}{turretInfo.DisplayName}**");
+                        if (!string.IsNullOrEmpty(turretInfo.Description))
+                        {
+                            breakHelper.AppendLine($"  - {turretInfo.Description}");
+                        }
+                    }
+                    else
+                    {
+                        var turretName = Path.GetFileNameWithoutExtension(turret.FullPath);
+                        var displayName = CleanDisplayName(turretName);
+                        breakHelper.AppendLine($"- **{displayName}**");
+                    }
+                }
+                breakHelper.AppendLine();
+            }
+            
+            if (weaponMounts.Any())
+            {
+                breakHelper.AppendLine("### Weapon Mounts");
+                foreach (var mount in weaponMounts.OrderBy(w => w.FullPath))
+                {
+                    var mountInfo = ExtractWeaponInfo(mount, _rightDataCoreDatabase);
+                    if (mountInfo != null)
+                    {
+                        var sizeStr = mountInfo.Size > 0 ? $"S{mountInfo.Size} " : "";
+                        breakHelper.AppendLine($"- **{sizeStr}{mountInfo.DisplayName}**");
+                        if (!string.IsNullOrEmpty(mountInfo.Description))
+                        {
+                            breakHelper.AppendLine($"  - {mountInfo.Description}");
+                        }
+                    }
+                    else
+                    {
+                        var mountName = Path.GetFileNameWithoutExtension(mount.FullPath);
+                        var displayName = CleanDisplayName(mountName);
+                        breakHelper.AppendLine($"- **{displayName}**");
+                    }
+                }
+                breakHelper.AppendLine();
+            }
+            
+            if (weaponParts.Any())
+            {
+                breakHelper.AppendLine("### Weapon Parts");
+                foreach (var part in weaponParts.OrderBy(w => w.FullPath))
+                {
+                    var partName = Path.GetFileNameWithoutExtension(part.FullPath);
+                    var displayName = CleanDisplayName(partName);
+                    breakHelper.AppendLine($"- **{displayName}**");
+                }
+                breakHelper.AppendLine();
+            }
+        }
+    }
+
+    private void GenerateNewComponentsSection(StringBuilder report)
+    {
+        if (_dataCoreComparisonRoot == null) return;
+
+        var allFiles = _dataCoreComparisonRoot.GetAllFiles().ToArray();
+        
+        // Find added files in component directories
+        var componentDirectories = new[]
+        {
+            "libs/foundry/records/entities/scitem/ships/armor",
+            "libs/foundry/records/entities/scitem/ships/lifesupport", 
+            "libs/foundry/records/entities/scitem/ships/shields",
+            "libs/foundry/records/entities/scitem/ships/coolers",
+            "libs/foundry/records/entities/scitem/ships/powerplants",
+            "libs/foundry/records/entities/scitem/ships/quantumdrive",
+            "libs/foundry/records/entities/scitem/ships/jumpmodule",
+            "libs/foundry/records/entities/scitem/ships/thrusters"
+        };
+        
+        var newComponents = allFiles
+            .Where(f => f.Status == DataCoreComparisonStatus.Added)
+            .Where(f => componentDirectories.Any(dir => f.FullPath.StartsWith(dir, StringComparison.OrdinalIgnoreCase)))
+            .ToArray();
+
+        if (newComponents.Length > 0)
+        {
+            report.AppendLine("## New Components Added");
+            report.AppendLine();
+            
+            var componentGroups = new[]
+            {
+                ("Armor", "armor"),
+                ("Life Support", "lifesupport"),
+                ("Shields", "shields"), 
+                ("Coolers", "coolers"),
+                ("Power Plants", "powerplants"),
+                ("Quantum Drives", "quantumdrive"),
+                ("Jump Modules", "jumpmodule"),
+                ("Thrusters", "thrusters")
+            };
+            
+            foreach (var (groupName, pathSegment) in componentGroups)
+            {
+                var componentsInGroup = newComponents.Where(c => c.FullPath.Contains($"/{pathSegment}/", StringComparison.OrdinalIgnoreCase)).ToArray();
+                if (componentsInGroup.Any())
+                {
+                    report.AppendLine($"### {groupName}");
+                    foreach (var component in componentsInGroup.OrderBy(c => c.FullPath))
+                    {
+                        var componentName = Path.GetFileNameWithoutExtension(component.FullPath);
+                        var displayName = CleanDisplayName(componentName);
+                        var shortPath = GetShortPath(component.FullPath);
+                        
+                        report.AppendLine($"- **{displayName}** (`{shortPath}`)");
+                    }
+                    report.AppendLine();
+                }
+            }
+        }
+    }
+
+    private void GenerateNewPaintsSection(StringBuilder report)
+    {
+        if (_dataCoreComparisonRoot == null) return;
+
+        var allFiles = _dataCoreComparisonRoot.GetAllFiles().ToArray();
+        
+                 // Find added files in the paints directory
+         var paintDirectories = new[]
+         {
+             "libs/foundry/records/entities/scitem/ships/paints"
+         };
+        
+        var newPaints = allFiles
+            .Where(f => f.Status == DataCoreComparisonStatus.Added)
+            .Where(f => paintDirectories.Any(dir => f.FullPath.StartsWith(dir, StringComparison.OrdinalIgnoreCase)))
+            .ToArray();
+
+        if (newPaints.Length > 0)
+        {
+            report.AppendLine("## New Paints Added");
+            report.AppendLine();
+            
+            foreach (var paint in newPaints.OrderBy(p => p.FullPath))
+            {
+                var paintName = Path.GetFileNameWithoutExtension(paint.FullPath);
+                // Clean up the paint name for better readability
+                var displayName = paintName.Replace("_", " ").Replace(".xml", "");
+                
+                report.AppendLine($"- **{displayName}**");
+                report.AppendLine($"  - File: `{paint.FullPath}`");
+            }
+            report.AppendLine();
+        }
+    }
+
+    private string CleanDisplayName(string name)
+    {
+        return name.Replace("_", " ").Replace(".xml", "");
+    }
+    
+    private string GetShortPath(string fullPath)
+    {
+        // Extract just the meaningful part of the path
+        if (fullPath.StartsWith("libs/foundry/records/entities/", StringComparison.OrdinalIgnoreCase))
+        {
+            return fullPath.Substring("libs/foundry/records/entities/".Length);
+        }
+        if (fullPath.StartsWith("libs/foundry/records/", StringComparison.OrdinalIgnoreCase))
+        {
+            return fullPath.Substring("libs/foundry/records/".Length);
+        }
+        return fullPath;
+    }
+
+    private class ItemInfo
+    {
+        public string DisplayName { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Manufacturer { get; set; } = "";
+        public int Size { get; set; } = 0;
+    }
+
+    private ItemInfo? ExtractShipInfo(DataCoreComparisonFileNode fileNode, DataCoreDatabase database)
+    {
+        try
+        {
+            if (fileNode.RightRecord == null) return null;
+
+            var record = fileNode.RightRecord.Value;
+            var xmlContent = GenerateDataCoreRecordPreview(record, database);
+            
+            // Parse the XML content to extract ship info
+            var info = new ItemInfo();
+            
+            // For ships, try to find localization keys based on filename patterns
+            var fileName = Path.GetFileNameWithoutExtension(fileNode.Name);
+            
+            _logger.LogDebug("Processing ship file: {FileName}", fileName);
+            
+            // Try common vehicle name patterns
+            var namePatterns = new[]
+            {
+                $"vehicle_Name{fileName}",
+                $"vehicle_Name{fileName.ToUpperInvariant()}",
+                $"vehicle_Name{fileName.Replace("_", "")}",
+                // Try extracting manufacturer and ship name from filename (e.g., aegs_idris_m)
+                GenerateVehicleNameKey(fileName)
+            };
+            
+            _logger.LogDebug("Generated name patterns for {FileName}: {Patterns}", fileName, string.Join(", ", namePatterns.Where(p => !string.IsNullOrEmpty(p))));
+            
+            foreach (var pattern in namePatterns)
+            {
+                if (!string.IsNullOrEmpty(pattern) && _currentLocalizationData?.ContainsKey(pattern) == true)
+                {
+                    info.DisplayName = _currentLocalizationData[pattern];
+                    _logger.LogDebug("Found ship name for {FileName}: {Pattern} -> {DisplayName}", fileName, pattern, info.DisplayName);
+                    break;
+                }
+                else if (!string.IsNullOrEmpty(pattern))
+                {
+                    _logger.LogDebug("Ship name pattern not found for {FileName}: {Pattern}", fileName, pattern);
+                }
+            }
+            
+            // If no name found from localization, try extracting from XML or use filename
+            if (string.IsNullOrEmpty(info.DisplayName))
+            {
+                info.DisplayName = ExtractDisplayName(xmlContent, fileNode.Name);
+                
+                // If we still got a placeholder or unhelpful name, create a nice name from filename
+                if (string.IsNullOrEmpty(info.DisplayName) || 
+                    info.DisplayName == "<= PLACEHOLDER =>" || 
+                    info.DisplayName == "0" || 
+                    info.DisplayName == "NULL" ||
+                    info.DisplayName.StartsWith("@"))
+                {
+                    info.DisplayName = CreateShipNameFromFilename(fileName);
+                }
+            }
+            
+            // Try to find description using similar patterns
+            var descPatterns = new[]
+            {
+                $"vehicle_Desc{fileName}",
+                $"vehicle_Desc{fileName.ToUpperInvariant()}",
+                $"vehicle_Desc{fileName.Replace("_", "")}",
+                GenerateVehicleDescKey(fileName)
+            };
+            
+            foreach (var pattern in descPatterns)
+            {
+                if (!string.IsNullOrEmpty(pattern) && _currentLocalizationData?.ContainsKey(pattern) == true)
+                {
+                    info.Description = _currentLocalizationData[pattern];
+                    break;
+                }
+            }
+            
+            // If no description found from localization, try extracting from XML
+            if (string.IsNullOrEmpty(info.Description))
+            {
+                info.Description = ExtractDescription(xmlContent);
+            }
+            
+            info.Manufacturer = ExtractManufacturer(xmlContent);
+            
+            return info;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Failed to extract ship info for {FileName}", fileNode.Name);
+            return null;
+        }
+    }
+
+    private ItemInfo? ExtractWeaponInfo(DataCoreComparisonFileNode fileNode, DataCoreDatabase database)
+    {
+        try
+        {
+            if (fileNode.RightRecord == null) return null;
+
+            var record = fileNode.RightRecord.Value;
+            var xmlContent = GenerateDataCoreRecordPreview(record, database);
+            
+            // Parse the XML content to extract weapon info
+            var info = new ItemInfo();
+            
+            // For weapons, try to find localization keys based on filename patterns
+            var fileName = Path.GetFileNameWithoutExtension(fileNode.Name);
+            
+            // Try common item name patterns for weapons/turrets/etc
+            var namePatterns = new[]
+            {
+                $"item_Name{fileName}",
+                $"item_Name{fileName.ToUpperInvariant()}",
+                $"item_Name{fileName.Replace("_", "")}",
+                GenerateItemNameKey(fileName),
+                // Also try without the item_ prefix in case it's stored differently
+                fileName,
+                fileName.ToUpperInvariant(),
+                fileName.Replace("_", "")
+            };
+            
+            foreach (var pattern in namePatterns)
+            {
+                if (!string.IsNullOrEmpty(pattern) && _currentLocalizationData?.ContainsKey(pattern) == true)
+                {
+                    info.DisplayName = _currentLocalizationData[pattern];
+                    break;
+                }
+            }
+            
+            // If no name found from localization, try extracting from XML or use filename
+            if (string.IsNullOrEmpty(info.DisplayName))
+            {
+                info.DisplayName = ExtractDisplayName(xmlContent, fileNode.Name);
+            }
+            
+            // Try to find description using similar patterns
+            var descPatterns = new[]
+            {
+                $"item_Desc{fileName}",
+                $"item_Desc{fileName.ToUpperInvariant()}",
+                $"item_Desc{fileName.Replace("_", "")}",
+                GenerateItemDescKey(fileName)
+            };
+            
+            foreach (var pattern in descPatterns)
+            {
+                if (!string.IsNullOrEmpty(pattern) && _currentLocalizationData?.ContainsKey(pattern) == true)
+                {
+                    info.Description = _currentLocalizationData[pattern];
+                    break;
+                }
+            }
+            
+            // If no description found from localization, try extracting from XML
+            if (string.IsNullOrEmpty(info.Description))
+            {
+                info.Description = ExtractDescription(xmlContent);
+            }
+            
+            info.Manufacturer = ExtractManufacturer(xmlContent);
+            info.Size = ExtractSize(xmlContent);
+            
+            return info;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Failed to extract weapon info for {FileName}", fileNode.Name);
+            return null;
+        }
+    }
+
+    private string ExtractDisplayName(string xmlContent, string fallbackName)
+    {
+        // Try to extract display name from XML
+        var patterns = new[]
+        {
+            @"<Name>\s*([^<]+)\s*</Name>",
+            @"<DisplayName>\s*([^<]+)\s*</DisplayName>",
+            @"<ClassName>\s*([^<]+)\s*</ClassName>"
+        };
+
+        foreach (var pattern in patterns)
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(xmlContent, pattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (match.Success)
+            {
+                var name = match.Groups[1].Value.Trim();
+                if (!string.IsNullOrEmpty(name) && name != "0" && name != "NULL")
+                {
+                    return ResolveLocalizationKey(name);
+                }
+            }
+        }
+
+        // Fallback to cleaned filename
+        return CleanDisplayName(Path.GetFileNameWithoutExtension(fallbackName));
+    }
+
+    private string ExtractDescription(string xmlContent)
+    {
+        var patterns = new[]
+        {
+            @"<Description>\s*([^<]+)\s*</Description>",
+            @"<desc>\s*([^<]+)\s*</desc>",
+            @"<Desc>\s*([^<]+)\s*</Desc>"
+        };
+
+        foreach (var pattern in patterns)
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(xmlContent, pattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (match.Success)
+            {
+                var desc = match.Groups[1].Value.Trim();
+                if (!string.IsNullOrEmpty(desc) && desc != "0" && desc != "NULL")
+                {
+                    return ResolveLocalizationKey(desc);
+                }
+            }
+        }
+
+        return "";
+    }
+
+    private string ExtractManufacturer(string xmlContent)
+    {
+        var patterns = new[]
+        {
+            @"<Manufacturer>\s*([^<]+)\s*</Manufacturer>",
+            @"<manufacturer>\s*([^<]+)\s*</manufacturer>"
+        };
+
+        foreach (var pattern in patterns)
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(xmlContent, pattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (match.Success)
+            {
+                var manufacturer = match.Groups[1].Value.Trim();
+                if (!string.IsNullOrEmpty(manufacturer) && manufacturer != "0" && manufacturer != "NULL")
+                {
+                    return ResolveLocalizationKey(manufacturer);
+                }
+            }
+        }
+
+        return "";
+    }
+
+    private int ExtractSize(string xmlContent)
+    {
+        var patterns = new[]
+        {
+            @"<Size>\s*(\d+)\s*</Size>",
+            @"<size>\s*(\d+)\s*</size>",
+            @"<WeaponSize>\s*(\d+)\s*</WeaponSize>",
+            @"<HardpointSize>\s*(\d+)\s*</HardpointSize>"
+        };
+
+        foreach (var pattern in patterns)
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(xmlContent, pattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (match.Success && int.TryParse(match.Groups[1].Value, out var size))
+            {
+                return size;
+            }
+        }
+
+        return 0;
+    }
+
+    private string ResolveLocalizationKey(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return "";
+        
+        // If it's a localization key (starts with @), try to resolve it
+        if (text.StartsWith("@") && _currentLocalizationData != null)
+        {
+            var key = text.Substring(1); // Remove the @ prefix
+            if (_currentLocalizationData.TryGetValue(key, out var localizedText))
+            {
+                return CleanDisplayName(localizedText);
+            }
+            
+            // If not found, return the original text but cleaned
+            return CleanDisplayName(text);
+        }
+        
+        // If it's not a localization key, return as-is but cleaned
+        return CleanDisplayName(text);
+    }
+
+    private string? GenerateVehicleNameKey(string fileName)
+    {
+        // Convert filename like "aegs_idris_m", "aegs_idris_p_fw_25", or "aegs_idris_k_test" to "vehicle_NameAEGS_Idris_M"
+        if (string.IsNullOrEmpty(fileName)) return null;
+        
+        var parts = fileName.Split('_');
+        if (parts.Length >= 3) // Expect at least manufacturer_ship_variant
+        {
+            // Extract manufacturer (AEGS), ship (Idris), and variant (M/P/K)
+            var manufacturer = parts[0].ToUpperInvariant(); // AEGS
+            var shipName = char.ToUpperInvariant(parts[1][0]) + parts[1].Substring(1).ToLowerInvariant(); // Idris
+            
+            // For variant, look through all remaining parts to find the main variant letter
+            var variant = "";
+            for (int i = 2; i < parts.Length; i++)
+            {
+                var part = parts[i].ToLowerInvariant();
+                // Look for single letter variants (m, p, k) 
+                if (part.Length == 1 && (part == "m" || part == "p" || part == "k"))
+                {
+                    variant = part.ToUpperInvariant();
+                    break;
+                }
+                // Also check if part starts with variant letter
+                else if (part.StartsWith("m") || part.StartsWith("p") || part.StartsWith("k"))
+                {
+                    var firstChar = part[0];
+                    if (firstChar == 'm' || firstChar == 'p' || firstChar == 'k')
+                    {
+                        variant = firstChar.ToString().ToUpperInvariant();
+                        break;
+                    }
+                }
+            }
+            
+            if (!string.IsNullOrEmpty(variant))
+            {
+                return $"vehicle_Name{manufacturer}_{shipName}_{variant}";
+            }
+            else
+            {
+                return $"vehicle_Name{manufacturer}_{shipName}";
+            }
+        }
+        
+        return null;
+    }
+
+    private string? GenerateVehicleDescKey(string fileName)
+    {
+        // Convert filename like "aegs_idris_m", "aegs_idris_p_fw_25", or "aegs_idris_k_test" to "vehicle_DescAEGS_Idris_M"
+        if (string.IsNullOrEmpty(fileName)) return null;
+        
+        var parts = fileName.Split('_');
+        if (parts.Length >= 3) // Expect at least manufacturer_ship_variant
+        {
+            // Extract manufacturer (AEGS), ship (Idris), and variant (M/P/K)
+            var manufacturer = parts[0].ToUpperInvariant(); // AEGS
+            var shipName = char.ToUpperInvariant(parts[1][0]) + parts[1].Substring(1).ToLowerInvariant(); // Idris
+            
+            // For variant, look through all remaining parts to find the main variant letter
+            var variant = "";
+            for (int i = 2; i < parts.Length; i++)
+            {
+                var part = parts[i].ToLowerInvariant();
+                // Look for single letter variants (m, p, k) 
+                if (part.Length == 1 && (part == "m" || part == "p" || part == "k"))
+                {
+                    variant = part.ToUpperInvariant();
+                    break;
+                }
+                // Also check if part starts with variant letter
+                else if (part.StartsWith("m") || part.StartsWith("p") || part.StartsWith("k"))
+                {
+                    var firstChar = part[0];
+                    if (firstChar == 'm' || firstChar == 'p' || firstChar == 'k')
+                    {
+                        variant = firstChar.ToString().ToUpperInvariant();
+                        break;
+                    }
+                }
+            }
+            
+            if (!string.IsNullOrEmpty(variant))
+            {
+                return $"vehicle_Desc{manufacturer}_{shipName}_{variant}";
+            }
+            else
+            {
+                return $"vehicle_Desc{manufacturer}_{shipName}";
+            }
+        }
+        
+        return null;
+    }
+
+    private string? GenerateItemNameKey(string fileName)
+    {
+        // Convert filename like "hrst_laserbeam_s10_bespoke" to "item_NameHRST_LaserBeam_S10_Bespoke"
+        if (string.IsNullOrEmpty(fileName)) return null;
+        
+        var parts = fileName.Split('_');
+        if (parts.Length >= 2)
+        {
+            // Capitalize each part, with special handling for size indicators
+            var capitalizedParts = parts.Select(p => 
+            {
+                if (p.StartsWith("s") && p.Length > 1 && char.IsDigit(p[1]))
+                {
+                    return "S" + p.Substring(1); // Convert s10 to S10
+                }
+                return char.ToUpperInvariant(p[0]) + p.Substring(1).ToLowerInvariant();
+            }).ToArray();
+            return $"item_Name{string.Join("_", capitalizedParts)}";
+        }
+        
+        return null;
+    }
+
+    private string? GenerateItemDescKey(string fileName)
+    {
+        // Convert filename like "hrst_laserbeam_s10_bespoke" to "item_DescHRST_LaserBeam_S10_Bespoke"
+        if (string.IsNullOrEmpty(fileName)) return null;
+        
+        var parts = fileName.Split('_');
+        if (parts.Length >= 2)
+        {
+            // Capitalize each part, with special handling for size indicators
+            var capitalizedParts = parts.Select(p => 
+            {
+                if (p.StartsWith("s") && p.Length > 1 && char.IsDigit(p[1]))
+                {
+                    return "S" + p.Substring(1); // Convert s10 to S10
+                }
+                return char.ToUpperInvariant(p[0]) + p.Substring(1).ToLowerInvariant();
+            }).ToArray();
+            return $"item_Desc{string.Join("_", capitalizedParts)}";
+        }
+        
+        return null;
+    }
+
+    private string CreateShipNameFromFilename(string fileName)
+    {
+        // Convert filenames like "aegs_idris_k_test" to "Aegis Idris-K"
+        if (string.IsNullOrEmpty(fileName)) return "Unknown Ship";
+        
+        var parts = fileName.Split('_');
+        if (parts.Length >= 3)
+        {
+            // Extract manufacturer, ship name, and variant
+            var manufacturer = parts[0].ToLowerInvariant() switch
+            {
+                "aegs" => "Aegis",
+                "anvl" => "Anvil",
+                "argo" => "Argo",
+                "banu" => "Banu",
+                "cnou" => "Consolidated Outland",
+                "crus" => "Crusader",
+                "drke" => "Drake",
+                "espr" => "Esperia",
+                "grin" => "Greycat",
+                "krig" => "Kruger",
+                "misc" => "MISC",
+                "orig" => "Origin",
+                "rsi" => "RSI",
+                "vncl" => "Vanduul",
+                _ => char.ToUpperInvariant(parts[0][0]) + parts[0].Substring(1).ToLowerInvariant()
+            };
+            
+            var shipName = char.ToUpperInvariant(parts[1][0]) + parts[1].Substring(1).ToLowerInvariant();
+            
+            // Find variant (M, P, K, etc.)
+            var variant = "";
+            for (int i = 2; i < parts.Length; i++)
+            {
+                var part = parts[i].ToLowerInvariant();
+                if (part.Length == 1 && (part == "m" || part == "p" || part == "k" || part == "c"))
+                {
+                    variant = "-" + part.ToUpperInvariant();
+                    break;
+                }
+                else if (part.StartsWith("m") || part.StartsWith("p") || part.StartsWith("k") || part.StartsWith("c"))
+                {
+                    var firstChar = part[0];
+                    if (firstChar == 'm' || firstChar == 'p' || firstChar == 'k' || firstChar == 'c')
+                    {
+                        variant = "-" + firstChar.ToString().ToUpperInvariant();
+                        break;
+                    }
+                }
+            }
+            
+            return $"{manufacturer} {shipName}{variant}";
+        }
+        else if (parts.Length == 2)
+        {
+            // Simple manufacturer_ship format
+            var manufacturer = char.ToUpperInvariant(parts[0][0]) + parts[0].Substring(1).ToLowerInvariant();
+            var shipName = char.ToUpperInvariant(parts[1][0]) + parts[1].Substring(1).ToLowerInvariant();
+            return $"{manufacturer} {shipName}";
+        }
+        
+        // Fallback to cleaned filename
+        return CleanDisplayName(fileName);
     }
 
     private void GenerateChangedFilesSection(StringBuilder report)
@@ -1308,39 +2190,42 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         var addedFiles = allFiles.Where(f => f.Status == DataCoreComparisonStatus.Added).ToArray();
         if (addedFiles.Length > 0)
         {
-            report.AppendLine("## Added Files");
+            var breakHelper = new DiscordBreakHelper(report);
+            breakHelper.AppendLine("## Added Files");
             var consolidatedFiles = ConsolidateRelatedFiles(addedFiles.Select(f => f.FullPath));
             foreach (var file in consolidatedFiles.OrderBy(f => f))
             {
-                report.AppendLine($"- `{file}`");
+                breakHelper.AppendLine($"- `{file}`");
             }
-            report.AppendLine();
+            breakHelper.AppendLine();
         }
 
         // Removed Files
         var removedFiles = allFiles.Where(f => f.Status == DataCoreComparisonStatus.Removed).ToArray();
         if (removedFiles.Length > 0)
         {
-            report.AppendLine("## Removed Files");
+            var breakHelper = new DiscordBreakHelper(report);
+            breakHelper.AppendLine("## Removed Files");
             var consolidatedFiles = ConsolidateRelatedFiles(removedFiles.Select(f => f.FullPath));
             foreach (var file in consolidatedFiles.OrderBy(f => f))
             {
-                report.AppendLine($"- `{file}`");
+                breakHelper.AppendLine($"- `{file}`");
             }
-            report.AppendLine();
+            breakHelper.AppendLine();
         }
 
         // Modified Files
         var modifiedFiles = allFiles.Where(f => f.Status == DataCoreComparisonStatus.Modified).ToArray();
         if (modifiedFiles.Length > 0)
         {
-            report.AppendLine("## Modified Files");
+            var breakHelper = new DiscordBreakHelper(report);
+            breakHelper.AppendLine("## Modified Files");
             var consolidatedFiles = ConsolidateRelatedFiles(modifiedFiles.Select(f => f.FullPath));
             foreach (var file in consolidatedFiles.OrderBy(f => f))
             {
-                report.AppendLine($"- `{file}`");
+                breakHelper.AppendLine($"- `{file}`");
             }
-            report.AppendLine();
+            breakHelper.AppendLine();
         }
     }
 
@@ -1540,9 +2425,16 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         report.AppendLine($"- **Modified:** {stats.ModifiedFiles}");
         report.AppendLine($"- **Unchanged:** {stats.UnchangedFiles}");
         report.AppendLine();
+        
+        // === DISCORD BREAK === (Copy sections below separately for Discord's 4000 char limit)
+        report.AppendLine("---");
+        report.AppendLine();
 
         // Changed Files Section
         GenerateP4kChangedFilesSection(report);
+        
+        report.AppendLine("---");
+        report.AppendLine();
         
         // Localization Changes Section (extract from both P4K files)
         await GenerateP4kLocalizationChangesSection(report);
@@ -1556,43 +2448,250 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
 
         var allFiles = _comparisonRoot.GetAllFiles().ToArray();
         
-        // Added Files
+        // Added Files with better categorization
         var addedFiles = allFiles.Where(f => f.Status == P4kComparisonStatus.Added).ToArray();
         if (addedFiles.Length > 0)
         {
-            report.AppendLine("## Added Files");
-            var consolidatedFiles = ConsolidateRelatedFiles(addedFiles.Select(f => f.FullPath));
-            foreach (var file in consolidatedFiles.OrderBy(f => f))
-            {
-                report.AppendLine($"- `{file}`");
-            }
-            report.AppendLine();
+            GenerateP4kAssetSummary(report, "Added", addedFiles);
         }
 
         // Removed Files
         var removedFiles = allFiles.Where(f => f.Status == P4kComparisonStatus.Removed).ToArray();
         if (removedFiles.Length > 0)
         {
-            report.AppendLine("## Removed Files");
-            var consolidatedFiles = ConsolidateRelatedFiles(removedFiles.Select(f => f.FullPath));
-            foreach (var file in consolidatedFiles.OrderBy(f => f))
-            {
-                report.AppendLine($"- `{file}`");
-            }
-            report.AppendLine();
+            GenerateP4kAssetSummary(report, "Removed", removedFiles);
         }
 
         // Modified Files
         var modifiedFiles = allFiles.Where(f => f.Status == P4kComparisonStatus.Modified).ToArray();
         if (modifiedFiles.Length > 0)
         {
-            report.AppendLine("## Modified Files");
-            var consolidatedFiles = ConsolidateRelatedFiles(modifiedFiles.Select(f => f.FullPath));
-            foreach (var file in consolidatedFiles.OrderBy(f => f))
+            GenerateP4kAssetSummary(report, "Modified", modifiedFiles);
+        }
+    }
+
+    private void GenerateP4kAssetSummary(StringBuilder report, string changeType, P4kComparisonFileNode[] files)
+    {
+        report.AppendLine($"## {changeType} Assets");
+        report.AppendLine();
+        
+        // Filter out numbered backup files (.dds.1, .dds.2, etc.)
+        var filteredFiles = files.Where(f => !IsNumberedBackupFile(f.FullPath)).ToArray();
+        
+        // Categorize files by type - order matters for exclusions
+        var audioFiles = filteredFiles.Where(f => f.FullPath.EndsWith(".wem", StringComparison.OrdinalIgnoreCase)).ToArray();
+        
+        var animations = filteredFiles.Where(f => 
+            f.FullPath.Contains("Animations\\", StringComparison.OrdinalIgnoreCase) || 
+            f.FullPath.Contains("Animations/", StringComparison.OrdinalIgnoreCase) ||
+            f.FullPath.EndsWith(".caf", StringComparison.OrdinalIgnoreCase) ||
+            f.FullPath.EndsWith(".dba", StringComparison.OrdinalIgnoreCase) ||
+            f.FullPath.EndsWith(".adb", StringComparison.OrdinalIgnoreCase) ||
+            f.FullPath.EndsWith(".i_caf", StringComparison.OrdinalIgnoreCase) ||
+            f.FullPath.EndsWith(".chrparams", StringComparison.OrdinalIgnoreCase)).ToArray();
+            
+        // UI files should be categorized before textures to catch UI .dds files
+        var uiFiles = filteredFiles.Where(f => !animations.Contains(f) && (
+            f.FullPath.StartsWith("UI\\", StringComparison.OrdinalIgnoreCase) ||
+            f.FullPath.StartsWith("UI/", StringComparison.OrdinalIgnoreCase) ||
+            f.FullPath.Contains("\\UI\\", StringComparison.OrdinalIgnoreCase) ||
+            f.FullPath.Contains("/UI/", StringComparison.OrdinalIgnoreCase) ||
+            f.FullPath.EndsWith(".svg", StringComparison.OrdinalIgnoreCase))).ToArray();
+            
+        var models = filteredFiles.Where(f => !animations.Contains(f) && !uiFiles.Contains(f) && (
+            f.FullPath.EndsWith(".cga", StringComparison.OrdinalIgnoreCase) ||
+            f.FullPath.EndsWith(".cgam", StringComparison.OrdinalIgnoreCase) ||
+            f.FullPath.EndsWith(".cgf", StringComparison.OrdinalIgnoreCase) ||
+            f.FullPath.EndsWith(".cgfm", StringComparison.OrdinalIgnoreCase) ||
+            f.FullPath.EndsWith(".meshsetup", StringComparison.OrdinalIgnoreCase))).ToArray();
+            
+        var textures = filteredFiles.Where(f => !animations.Contains(f) && !uiFiles.Contains(f) && !models.Contains(f) && (
+            f.FullPath.EndsWith(".dds", StringComparison.OrdinalIgnoreCase) ||
+            f.FullPath.EndsWith(".mtl", StringComparison.OrdinalIgnoreCase))).ToArray();
+            
+        var gameAudio = filteredFiles.Where(f => !animations.Contains(f) && !uiFiles.Contains(f) && !models.Contains(f) && !textures.Contains(f) && (
+            f.FullPath.Contains("GameAudio", StringComparison.OrdinalIgnoreCase) ||
+            f.FullPath.EndsWith(".bnk", StringComparison.OrdinalIgnoreCase) ||
+            (f.FullPath.EndsWith(".xml", StringComparison.OrdinalIgnoreCase) && 
+             (f.FullPath.Contains("GameAudio", StringComparison.OrdinalIgnoreCase) || 
+              f.FullPath.Contains("Particles", StringComparison.OrdinalIgnoreCase))))).ToArray();
+              
+        var particles = filteredFiles.Where(f => !animations.Contains(f) && !uiFiles.Contains(f) && !models.Contains(f) && !textures.Contains(f) && !gameAudio.Contains(f) &&
+            f.FullPath.Contains("Particles", StringComparison.OrdinalIgnoreCase)).ToArray();
+            
+        var misc = filteredFiles.Except(audioFiles).Except(animations).Except(uiFiles).Except(models).Except(textures)
+                       .Except(gameAudio).Except(particles).ToArray();
+
+        var breakHelper = new DiscordBreakHelper(report);
+
+        // Audio Files Summary
+        if (audioFiles.Length > 0)
+        {
+            breakHelper.AppendLine($"### Audio Files ({audioFiles.Length} files)");
+            breakHelper.AppendLine($"- {audioFiles.Length} WEM audio files added (compressed game audio)");
+            breakHelper.AppendLine();
+        }
+
+        // Game Audio Configuration
+        if (gameAudio.Length > 0)
+        {
+            breakHelper.AppendLine($"### Game Audio Configuration");
+            var consolidatedAudio = ConsolidateRelatedFiles(gameAudio.Select(f => f.FullPath));
+            foreach (var file in consolidatedAudio.OrderBy(f => f))
             {
-                report.AppendLine($"- `{file}`");
+                breakHelper.AppendLine($"- `{GetP4kShortPath(file)}`");
             }
-            report.AppendLine();
+            breakHelper.AppendLine();
+        }
+
+        // Animations
+        if (animations.Length > 0)
+        {
+            breakHelper.AppendLine($"### Animations");
+            var consolidatedAnimations = ConsolidateRelatedFiles(animations.Select(f => f.FullPath));
+            foreach (var file in consolidatedAnimations.OrderBy(f => f))
+            {
+                breakHelper.AppendLine($"- `{GetP4kShortPath(file)}`");
+            }
+            breakHelper.AppendLine();
+        }
+
+        // 3D Models & Meshes
+        if (models.Length > 0)
+        {
+            breakHelper.AppendLine($"### 3D Models & Meshes");
+            var consolidatedModels = ConsolidateRelatedFiles(models.Select(f => f.FullPath));
+            foreach (var file in consolidatedModels.OrderBy(f => f))
+            {
+                breakHelper.AppendLine($"- `{GetP4kShortPath(file)}`");
+            }
+            breakHelper.AppendLine();
+        }
+
+        // Textures & Materials
+        if (textures.Length > 0)
+        {
+            breakHelper.AppendLine($"### Textures & Materials");
+            var consolidatedTextures = ConsolidateRelatedFiles(textures.Select(f => f.FullPath));
+            foreach (var file in consolidatedTextures.OrderBy(f => f))
+            {
+                breakHelper.AppendLine($"- `{GetP4kShortPath(file)}`");
+            }
+            breakHelper.AppendLine();
+        }
+
+        // UI Assets
+        if (uiFiles.Length > 0)
+        {
+            breakHelper.AppendLine($"### UI Assets");
+            var consolidatedUI = ConsolidateRelatedFiles(uiFiles.Select(f => f.FullPath));
+            foreach (var file in consolidatedUI.OrderBy(f => f))
+            {
+                breakHelper.AppendLine($"- `{GetP4kShortPath(file)}`");
+            }
+            breakHelper.AppendLine();
+        }
+
+        // Particle Effects
+        if (particles.Length > 0)
+        {
+            breakHelper.AppendLine($"### Particle Effects");
+            var consolidatedParticles = ConsolidateRelatedFiles(particles.Select(f => f.FullPath));
+            foreach (var file in consolidatedParticles.OrderBy(f => f))
+            {
+                breakHelper.AppendLine($"- `{GetP4kShortPath(file)}`");
+            }
+            breakHelper.AppendLine();
+        }
+
+        // Other Files
+        if (misc.Length > 0)
+        {
+            breakHelper.AppendLine($"### Other Files");
+            var consolidatedMisc = ConsolidateRelatedFiles(misc.Select(f => f.FullPath));
+            foreach (var file in consolidatedMisc.OrderBy(f => f))
+            {
+                breakHelper.AppendLine($"- `{GetP4kShortPath(file)}`");
+            }
+            breakHelper.AppendLine();
+        }
+    }
+
+    private string GetP4kShortPath(string fullPath)
+    {
+        // Remove Data\ prefix for P4K files to make paths shorter
+        if (fullPath.StartsWith("Data\\", StringComparison.OrdinalIgnoreCase))
+        {
+            return fullPath.Substring(5);
+        }
+        if (fullPath.StartsWith("Data/", StringComparison.OrdinalIgnoreCase))
+        {
+            return fullPath.Substring(5);
+        }
+        return fullPath;
+    }
+
+    private static bool IsNumberedBackupFile(string filePath)
+    {
+        // Check if file ends with a pattern like .dds.1, .dds.2, .mtl.3, etc.
+        var fileName = Path.GetFileName(filePath);
+        var parts = fileName.Split('.');
+        
+        // Need at least 3 parts: name.extension.number
+        if (parts.Length < 3) return false;
+        
+        // Last part should be a number
+        if (!int.TryParse(parts[^1], out _)) return false;
+        
+        // Second to last part should be a known file extension
+        var extension = parts[^2].ToLowerInvariant();
+        var knownExtensions = new[] { "dds", "mtl", "cga", "cgam", "cgf", "cgfm", "meshsetup", "xml", "txt" };
+        
+        return knownExtensions.Contains(extension);
+    }
+
+    private class DiscordBreakHelper
+    {
+        private readonly StringBuilder _report;
+        private const int MaxLength = 3800; // Leave some buffer before 4000
+        private int _currentSectionLength;
+
+        public DiscordBreakHelper(StringBuilder report)
+        {
+            _report = report;
+            _currentSectionLength = 0;
+        }
+
+        public void AppendLine(string line = "")
+        {
+            var lineLength = line.Length + Environment.NewLine.Length;
+            
+            if (_currentSectionLength + lineLength > MaxLength && _currentSectionLength > 0)
+            {
+                _report.AppendLine();
+                _report.AppendLine("---");
+                _report.AppendLine();
+                _currentSectionLength = 0;
+            }
+            
+            _report.AppendLine(line);
+            _currentSectionLength += lineLength;
+        }
+
+        public void ResetSection()
+        {
+            _currentSectionLength = 0;
+        }
+
+        public void ForceBreak()
+        {
+            if (_currentSectionLength > 0)
+            {
+                _report.AppendLine();
+                _report.AppendLine("---");
+                _report.AppendLine();
+                _currentSectionLength = 0;
+            }
         }
     }
 
@@ -1749,8 +2848,8 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
 
                     if (filesToExtract.Length == 0)
                     {
-                        Dispatcher.UIThread.Post(() =>
-                        {
+        Dispatcher.UIThread.Post(() =>
+        {
                             ComparisonStatus = "No new DDS files found to extract.";
                             _logger.LogInformation("No new DDS files found to extract");
                         });
@@ -1834,22 +2933,158 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         }
     }
 
+    [RelayCommand]
+    public async Task ExtractNewAudioFiles()
+    {
+        if (!CanExtractNewAudioFiles)
+        {
+            _logger.LogWarning("Cannot extract new audio files - no comparison data or added audio files available");
+            return;
+        }
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(P4kOutputDirectory))
+            {
+                _logger.LogWarning("P4K output directory not configured");
+                ComparisonStatus = "Please configure P4K output directory first";
+                return;
+            }
+
+            var outputFolder = Path.Combine(P4kOutputDirectory, "Audio_Files");
+            Directory.CreateDirectory(outputFolder);
+
+            IsComparing = true;
+                                ComparisonStatus = "Extracting new WEM audio files...";
+
+            await Task.Run(() =>
+            {
+                try
+                {
+                    // Get all added audio files
+                    var addedAudioFiles = _comparisonRoot!.GetAllFiles()
+                        .Where(f => f.Status == P4kComparisonStatus.Added)
+                        .Where(f => IsAudioFile(f.FullPath))
+                        .Where(f => f.RightEntry != null)
+                        .ToArray();
+
+                    if (addedAudioFiles.Length == 0)
+                    {
+                        Dispatcher.UIThread.Post(() =>
+                        {
+                            ComparisonStatus = "No new WEM audio files found to extract.";
+                            _logger.LogInformation("No new WEM audio files found to extract");
+                        });
+                        return;
+                    }
+
+                    var p4kFileSystem = new P4kFileSystem(_rightP4kFile!);
+                    var extractedCount = 0;
+                    var failedCount = 0;
+
+                    for (int i = 0; i < addedAudioFiles.Length; i++)
+                    {
+                        var file = addedAudioFiles[i];
+                        
+                        Dispatcher.UIThread.Post(() => 
+                            ComparisonStatus = $"Extracting WEM files... {i + 1}/{addedAudioFiles.Length}");
+
+                        try
+                        {
+                            // Extract the audio file directly to the output folder (no directory structure)
+                            var fileName = Path.GetFileName(file.FullPath);
+                            var outputPath = Path.Combine(outputFolder, fileName);
+                            
+                            // Handle potential filename conflicts by adding a counter
+                            var counter = 1;
+                            var nameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
+                            var extension = Path.GetExtension(fileName);
+                            
+                            while (File.Exists(outputPath))
+                            {
+                                var nameWithCounter = $"{nameWithoutExt}_{counter}{extension}";
+                                outputPath = Path.Combine(outputFolder, nameWithCounter);
+                                counter++;
+                            }
+
+                            // Extract the audio file directly
+                            using var entryStream = _rightP4kFile!.OpenStream(file.RightEntry!);
+                            using var outputFileStream = File.Create(outputPath);
+                            entryStream.CopyTo(outputFileStream);
+                            
+                            extractedCount++;
+                            _logger.LogDebug("Extracted WEM file: {SourcePath} -> {OutputPath}", file.FullPath, outputPath);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to extract WEM file: {FileName}", file.FullPath);
+                            failedCount++;
+                        }
+                    }
+
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        ComparisonStatus = $"WEM audio extraction complete! Extracted: {extractedCount}, Failed: {failedCount}";
+                        _logger.LogInformation("WEM audio extraction completed - Extracted: {Extracted}, Failed: {Failed}, Output folder: {OutputFolder}", 
+                            extractedCount, failedCount, outputFolder);
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to extract new WEM audio files");
+                    Dispatcher.UIThread.Post(() => ComparisonStatus = $"WEM audio extraction failed: {ex.Message}");
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error extracting new WEM audio files");
+            ComparisonStatus = $"Error extracting WEM audio files: {ex.Message}";
+        }
+        finally
+        {
+            IsComparing = false;
+        }
+    }
+
     private static string ExtractVersionFromPath(string filePath)
     {
         if (string.IsNullOrWhiteSpace(filePath))
             return "Unknown";
 
         var fileName = Path.GetFileNameWithoutExtension(filePath);
+        var directory = Path.GetDirectoryName(filePath);
         
-        // Try to extract version patterns like "4.1.1", "3.23.2a", etc.
-        var versionPatterns = new[]
+        // Try to extract version from parent directory (like "3.23.1-LIVE" or "4.0.0-PTU")
+        if (!string.IsNullOrWhiteSpace(directory))
+        {
+            var parentDir = Path.GetFileName(directory);
+            var versionPatterns = new[]
+            {
+                @"(\d+\.\d+\.\d+[a-z]?)-?(LIVE|PTU|EPTU)?",  // Matches 4.1.1-LIVE, 3.23.2a-PTU
+                @"(\d+\.\d+)-?(LIVE|PTU|EPTU)?",             // Matches 4.1-LIVE, 3.23-PTU
+            };
+            
+            foreach (var pattern in versionPatterns)
+            {
+                var match = System.Text.RegularExpressions.Regex.Match(parentDir, pattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                if (match.Success)
+                {
+                    var version = match.Groups[1].Value;
+                    var channel = match.Groups[2].Value;
+                    return string.IsNullOrEmpty(channel) ? version : $"{version}-{channel}";
+                }
+            }
+        }
+        
+        // Try to extract version patterns from filename like "4.1.1", "3.23.2a", etc.
+        var fileVersionPatterns = new[]
         {
             @"(\d+\.\d+\.\d+[a-z]?)",  // Matches 4.1.1, 3.23.2a
             @"(\d+\.\d+)",             // Matches 4.1, 3.23
-            @"(\d+)",                  // Matches just numbers as fallback
         };
 
-        foreach (var pattern in versionPatterns)
+        foreach (var pattern in fileVersionPatterns)
         {
             var match = System.Text.RegularExpressions.Regex.Match(fileName, pattern);
             if (match.Success)
@@ -1876,8 +3111,8 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             }
         }
 
-        // Final fallback - use first 10 characters of filename
-        return fileName.Length > 10 ? fileName.Substring(0, 10) : fileName;
+        // Final fallback - use first 10 characters of filename or "Unknown"
+        return fileName.Length > 10 ? fileName.Substring(0, 10) : (string.IsNullOrWhiteSpace(fileName) ? "Unknown" : fileName);
     }
 
     private static IEnumerable<string> ConsolidateRelatedFiles(IEnumerable<string> filePaths)

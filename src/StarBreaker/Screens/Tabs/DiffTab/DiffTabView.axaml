@@ -328,7 +328,7 @@
                 Padding="15" 
                 Margin="0,0,0,15"
                 IsVisible="{Binding IsP4kComparisonMode}">
-            <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto">
                 <StackPanel Grid.Column="0">
                     <TextBlock Text="P4K Comparison" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
                     <TextBlock Text="This will compare the two selected P4K files and show added, removed, and modified files."
@@ -367,6 +367,17 @@
                         FontWeight="SemiBold"
                         Margin="10,0,0,0"
                         ToolTip.Tip="Extract all new DDS files and convert them to PNG"/>
+                
+                <Button Grid.Column="4" 
+                        Content="🎵 Extract New WEM" 
+                        Command="{Binding ExtractNewAudioFilesCommand}" 
+                        IsEnabled="{Binding CanExtractNewAudioFiles}"
+                        VerticalAlignment="Center"
+                        MinWidth="150"
+                        MinHeight="35"
+                        FontWeight="SemiBold"
+                        Margin="10,0,0,0"
+                        ToolTip.Tip="Extract all new WEM audio files"/>
             </Grid>
         </Border>
         
