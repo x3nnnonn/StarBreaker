@@ -9,16 +9,14 @@
 
 import datetime
 import os
-from pathlib import Path
 import typing
 import mitmproxy
+from mitmproxy import contentviews
 from google.protobuf.descriptor_pb2 import FileDescriptorSet
 from google.protobuf.descriptor import MethodDescriptor
 from google.protobuf.descriptor_pool import DescriptorPool
 from google.protobuf.message_factory import MessageFactory, GetMessageClass
 from google.protobuf.message import DecodeError
-from mitmproxy import ctx
-import logging
 from google.protobuf.json_format import MessageToJson
 
 
@@ -46,10 +44,10 @@ class ProtobufModifier:
             self.message_factory = MessageFactory(self.descriptor_pool)
 
     def deserialize(
-        self,
-        http_message: mitmproxy.http.Message,
-        path: str,
-        serialized_protobuf: bytes,
+            self,
+            http_message: mitmproxy.http.Message,
+            path: str,
+            serialized_protobuf: bytes,
     ) -> str:
         """
         Takes a protobuf byte array and returns a deserialized string in text format.
@@ -66,9 +64,9 @@ class ProtobufModifier:
         data_without_prefix = serialized_protobuf[5:]
 
         if isinstance(http_message, mitmproxy.http.Request):
-             message = GetMessageClass(grpc_method.input_type)()
+            message = GetMessageClass(grpc_method.input_type)()
         elif isinstance(http_message, mitmproxy.http.Response):
-             message = GetMessageClass(grpc_method.output_type)()
+            message = GetMessageClass(grpc_method.output_type)()
         else:
             raise ValueError(f"Unexpected HTTP message type {http_message}")
 
@@ -96,6 +94,9 @@ class ProtobufModifier:
             raise ValueError("Failed to resolve method name by path" + path) from e
 
 
+protobuf_modifier = ProtobufModifier()
+
+
 class GrpcOption:
 
     def __init__(self, protobuf_modifier: ProtobufModifier) -> None:
@@ -111,9 +112,9 @@ class GrpcOption:
 
     def configure(self, updates):
         if (
-            "descriptor" in updates
-            and mitmproxy.ctx.options.__contains__("descriptor")
-            and mitmproxy.ctx.options.descriptor is not None
+                "descriptor" in updates
+                and mitmproxy.ctx.options.__contains__("descriptor")
+                and mitmproxy.ctx.options.descriptor is not None
         ):
             self.protobuf_modifier.set_descriptor(mitmproxy.ctx.options.descriptor)
 
@@ -128,13 +129,13 @@ class GrpcProtobufContentView(mitmproxy.contentviews.base.View):
         self.protobuf_modifier = protobuf_modifier
 
     def __call__(
-        self,
-        data: bytes,
-        *,
-        content_type: typing.Optional[str] = None,
-        flow: typing.Optional[mitmproxy.flow.Flow] = None,
-        http_message: typing.Optional[mitmproxy.http.Message] = None,
-        **unknown_metadata,
+            self,
+            data: bytes,
+            *,
+            content_type: typing.Optional[str] = None,
+            flow: typing.Optional[mitmproxy.flow.Flow] = None,
+            http_message: typing.Optional[mitmproxy.http.Message] = None,
+            **unknown_metadata,
     ):
         deserialized = self.protobuf_modifier.deserialize(
             http_message, flow.request.path, data
@@ -142,42 +143,25 @@ class GrpcProtobufContentView(mitmproxy.contentviews.base.View):
         return self.name, mitmproxy.contentviews.base.format_text(deserialized)
 
     def render_priority(
-        self, data: bytes, *, content_type: typing.Optional[str] = None, **metadata
+            self, data: bytes, *, content_type: typing.Optional[str] = None, **metadata
     ) -> float:
         return float(content_type in self.supported_content_types)
 
 
-def write_dump(req_or_rep, path, content):
-    if not os.path.exists("dump"):
-        os.makedirs("dump")
-
-    with open(
-        os.path.join(
-            "dump",
-            f"[{datetime.datetime.now().strftime('%Y%m%d.%H%M%S.%f')}] [{req_or_rep}] {path}.json",
-        ),
-        "wb",
-    ) as f:
-        f.write(content)
-        
-def append_dump(req_or_rep, path, content):
-    #instead of making a new file per request, append to a generic file,
-    #and add the timestamp to the content
-    if not os.path.exists("dump"):
-        os.makedirs("dump")
-        
-    with open(
-        os.path.join(
-            "dump",
-            f"[{path}] stream.log",
-        ),
-        "ab",
-    ) as f:
-        f.write(
-            f"[{datetime.datetime.now().strftime('%Y%m%d.%H%M%S.%f')}] [{req_or_rep}] {content}\n".encode()
-        )
-
 class GrpcProtobufDebugWriter:
+
+    def _write_dump(self, req_or_rep, path, content):
+        if not os.path.exists("dump"):
+            os.makedirs("dump")
+
+        with open(
+                os.path.join(
+                    "dump",
+                    f"[{datetime.datetime.now().strftime('%Y%m%d.%H%M%S.%f')}] [{req_or_rep}] {path}.json",
+                ),
+                "wb",
+        ) as f:
+            f.write(content)
 
     def __init__(self, protobuf_modifier: ProtobufModifier) -> None:
         self.protobuf_modifier = protobuf_modifier
@@ -187,14 +171,15 @@ class GrpcProtobufDebugWriter:
             flow.request, flow.request.path, flow.request.content
         )
         path = flow.request.path.replace("/", ".")
-        write_dump("REQ", path, req.encode())
+        self._write_dump("REQ", path, req.encode())
 
     def response(self, flow: mitmproxy.http.HTTPFlow):
         rep = self.protobuf_modifier.deserialize(
             flow.response, flow.request.path, flow.response.content
         )
         path = flow.request.path.replace("/", ".")
-        write_dump("REP", path, rep.encode())
+        self._write_dump("REP", path, rep.encode())
+
 
 class StreamSaver:
     TAG = "save_streamed_data: "
@@ -211,6 +196,23 @@ class StreamSaver:
             self.fh = None
         # Make sure we have no circular references
         self.flow = None
+
+    def _append_dump(self, req_or_rep, path, content):
+        # instead of making a new file per request, append to a generic file,
+        # and add the timestamp to the content
+        if not os.path.exists("dump"):
+            os.makedirs("dump")
+
+        with open(
+                os.path.join(
+                    "dump",
+                    f"[{path}] stream.log",
+                ),
+                "ab",
+        ) as f:
+            f.write(
+                f"[{datetime.datetime.now().strftime('%Y%m%d.%H%M%S.%f')}] [{req_or_rep}] {content}\n".encode()
+            )
 
     def __call__(self, data):
         # End of stream?
@@ -236,7 +238,7 @@ class StreamSaver:
                 data,
             )
 
-            append_dump(
+            self._append_dump(
                 self.direction == "request" and "SOUT" or "SIN",
                 self.flow.request.path.replace("/", ".") + "." + self.direction,
                 decodedData.encode(),
@@ -264,47 +266,36 @@ class StreamSaver:
         return data
 
 
-protobuf_modifier = ProtobufModifier()
-contentView = GrpcProtobufContentView(protobuf_modifier)
+# we need this for star citizen to not break when we mitm the traffic
+class StarCitizenStreamSettings:
+    def requestheaders(self, flow: mitmproxy.http.HTTPFlow):
+        target_type = protobuf_modifier.find_method_by_path(flow.request.path)
+        if target_type is not None:
+            flow.request.stream = target_type.client_streaming
+        else:
+            flow.request.stream = False
 
+        if isinstance(flow.request.stream, StreamSaver):
+            flow.request.stream.done()
+        if flow.request.stream:
+            flow.request.stream = StreamSaver(flow, "request")
 
-def load(loader):
-    mitmproxy.contentviews.add(contentView)
+    def responseheaders(self, flow: mitmproxy.http.HTTPFlow):
+        target_type = protobuf_modifier.find_method_by_path(flow.request.path)
+        if target_type is not None:
+            flow.response.stream = target_type.server_streaming
+        else:
+            flow.response.stream = False
 
-
-def done():
-    mitmproxy.contentviews.remove(contentView)
-
-
-def requestheaders(flow: mitmproxy.http.HTTPFlow):
-    target_type = protobuf_modifier.find_method_by_path(flow.request.path)
-    if target_type is not None:
-        flow.request.stream = target_type.client_streaming
-    else:
-        flow.request.stream = False
-
-    if isinstance(flow.request.stream, StreamSaver):
-        flow.request.stream.done()
-    if flow.request.stream:
-        flow.request.stream = StreamSaver(flow, "request")
-
-
-def responseheaders(flow: mitmproxy.http.HTTPFlow):
-    target_type = protobuf_modifier.find_method_by_path(flow.request.path)
-    if target_type is not None:
-        flow.response.stream = target_type.server_streaming
-    else:
-        flow.response.stream = False
-
-    if isinstance(flow.response.stream, StreamSaver):
-        flow.response.stream.done()
-    if flow.response.stream:
-        flow.response.stream = StreamSaver(flow, "response")
+        if isinstance(flow.response.stream, StreamSaver):
+            flow.response.stream.done()
+        if flow.response.stream:
+            flow.response.stream = StreamSaver(flow, "response")
 
 
 def response(flow: mitmproxy.http.HTTPFlow):
-    if isinstance(flow.response.stream, StreamSaver):
-        flow.response.stream.done()
+        if isinstance(flow.response.stream, StreamSaver):
+            flow.response.stream.done()
 
 
 def error(flow):
@@ -314,4 +305,9 @@ def error(flow):
         flow.response.stream.done()
 
 
-addons = [GrpcOption(protobuf_modifier), GrpcProtobufDebugWriter(protobuf_modifier)]
+addons = [
+    GrpcOption(protobuf_modifier),
+    GrpcProtobufDebugWriter(protobuf_modifier),
+    StarCitizenStreamSettings(),
+]
+contentviews.add(GrpcProtobufContentView(protobuf_modifier))
