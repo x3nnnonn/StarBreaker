@@ -2,16 +2,16 @@
 
 namespace StarBreaker.P4k;
 
-[DebuggerDisplay("{ZipEntry.Name}")]
+[DebuggerDisplay("{P4KEntry.Name}")]
 public sealed class P4kFileNode : IP4kNode
 {
     public IP4kNode Parent { get; }
 
-    public ZipEntry ZipEntry { get; }
+    public P4kEntry P4KEntry { get; }
 
-    public P4kFileNode(ZipEntry zipEntry, IP4kNode parent)
+    public P4kFileNode(P4kEntry p4KEntry, IP4kNode parent)
     {
-        ZipEntry = zipEntry;
+        P4KEntry = p4KEntry;
         Parent = parent;
     }
 }

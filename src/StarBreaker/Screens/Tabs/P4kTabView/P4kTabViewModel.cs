@@ -108,7 +108,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             return;
         }
 
-        if (selectedFile.ZipEntry.UncompressedSize > int.MaxValue)
+        if (selectedFile.P4KEntry.UncompressedSize > int.MaxValue)
         {
             _logger.LogWarning("File too big to preview");
             return;

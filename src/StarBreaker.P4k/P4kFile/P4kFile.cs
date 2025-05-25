@@ -15,10 +15,10 @@ public sealed class P4kFile : IP4kFile
     private readonly Aes _aes;
 
     public string P4KPath { get; }
-    public ZipEntry[] Entries { get; }
+    public P4kEntry[] Entries { get; }
     public P4kDirectoryNode Root { get; }
 
-    private P4kFile(string path, ZipEntry[] entries, P4kDirectoryNode root)
+    private P4kFile(string path, P4kEntry[] entries, P4kDirectoryNode root)
     {
         P4KPath = path;
         Root = root;
@@ -67,10 +67,10 @@ public sealed class P4kFile : IP4kFile
         var reportInterval = (int)Math.Max(eocd64.TotalEntries / 50, 1);
         reader.BaseStream.Seek((long)eocd64.CentralDirectoryOffset, SeekOrigin.Begin);
 
-        var entries = new ZipEntry[eocd64.TotalEntries];
+        var entries = new P4kEntry[eocd64.TotalEntries];
 
         //use a channel so we can read entries and build the file system in parallel
-        var channel = Channel.CreateUnbounded<ZipEntry>();
+        var channel = Channel.CreateUnbounded<P4kEntry>();
 
         var channelInsertTask = Task.Run(async () =>
         {
@@ -104,7 +104,7 @@ public sealed class P4kFile : IP4kFile
         return new P4kFile(filePath, entries, fileSystem);
     }
 
-    private static ZipEntry ReadEntry(BinaryReader reader)
+    private static P4kEntry ReadEntry(BinaryReader reader)
     {
         var header = reader.BaseStream.Read<CentralDirectoryFileHeader>();
         var length = header.FileNameLength + header.ExtraFieldLength + header.FileCommentLength;
@@ -162,7 +162,7 @@ public sealed class P4kFile : IP4kFile
             if (header.FileCommentLength != 0)
                 throw new Exception("File comment not supported");
 
-            return new ZipEntry(
+            return new P4kEntry(
                 fileName,
                 compressedSize,
                 uncompressedSize,
@@ -180,7 +180,7 @@ public sealed class P4kFile : IP4kFile
     }
 
     // Represents the raw stream from the p4k file, before any decryption or decompression
-    private StreamSegment OpenInternal(ZipEntry entry)
+    private StreamSegment OpenInternal(P4kEntry entry)
     {
         var p4kStream = new FileStream(P4KPath, FileMode.Open, FileAccess.Read, FileShare.Read);
 
@@ -202,7 +202,7 @@ public sealed class P4kFile : IP4kFile
 
     // Remarks: Streams returned by this method might not support seeking or length.
     // If these are required, consider using OpenInMemory instead.
-    public Stream OpenStream(ZipEntry entry)
+    public Stream OpenStream(P4kEntry entry)
     {
         var entryStream = OpenInternal(entry);
 

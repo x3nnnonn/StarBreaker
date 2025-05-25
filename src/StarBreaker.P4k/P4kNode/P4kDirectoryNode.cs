@@ -19,10 +19,10 @@ public sealed class P4kDirectoryNode : IP4kNode
         Children = [];
     }
 
-    public void Insert(ZipEntry zipEntry)
+    public void Insert(P4kEntry p4KEntry)
     {
         var current = this;
-        var name = zipEntry.Name.AsSpan();
+        var name = p4KEntry.Name.AsSpan();
 
         foreach (var range in name.Split('\\'))
         {
@@ -32,7 +32,7 @@ public sealed class P4kDirectoryNode : IP4kNode
             if (range.End.Value == name.Length)
             {
                 // If this is the last part, we're at the file
-                value = new P4kFileNode(zipEntry, current);
+                value = new P4kFileNode(p4KEntry, current);
                 return;
             }
 
@@ -50,7 +50,7 @@ public sealed class P4kDirectoryNode : IP4kNode
 
     // This is probably suboptimal, but when we do this we'll be doing
     // a lot of IO anyway so it doesn't really matter
-    public IEnumerable<ZipEntry> CollectEntries()
+    public IEnumerable<P4kEntry> CollectEntries()
     {
         foreach (var child in Children.Values)
         {
@@ -61,7 +61,7 @@ public sealed class P4kDirectoryNode : IP4kNode
                         yield return entry;
                     break;
                 case P4kFileNode fileNode:
-                    yield return fileNode.ZipEntry;
+                    yield return fileNode.P4KEntry;
                     break;
                 default:
                     throw new Exception();

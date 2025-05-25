@@ -33,7 +33,7 @@ public class PreviewService : IPreviewService
     public FilePreviewViewModel GetPreview(P4kFileNode selectedEntry)
     {
         //TODO: move this to a service?
-        using var entryStream = _p4KService.P4KFileSystem.P4kFile.OpenStream(selectedEntry.ZipEntry);
+        using var entryStream = _p4KService.P4KFileSystem.P4kFile.OpenStream(selectedEntry.P4KEntry);
 
         FilePreviewViewModel preview;
 
@@ -58,7 +58,7 @@ public class PreviewService : IPreviewService
         }
         else if (ddsLodExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
         {
-            var ms = DdsFile.MergeToStream(selectedEntry.ZipEntry.Name, _p4KService.P4KFileSystem);
+            var ms = DdsFile.MergeToStream(selectedEntry.P4KEntry.Name, _p4KService.P4KFileSystem);
             var pngBytes = DdsFile.ConvertToPng(ms.ToArray());
             _logger.LogInformation("ddsLodExtensions");
             preview = new DdsPreviewViewModel(new Bitmap(pngBytes));
