@@ -1,4 +1,4 @@
-﻿namespace StarBreaker.P4k;
+﻿namespace StarBreaker.P4k.Extraction;
 
 public sealed class GenericFileProcessor : IFileProcessor
 {
