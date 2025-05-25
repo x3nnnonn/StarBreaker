@@ -44,7 +44,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarBreaker.DataCore.Genera
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarBreaker.DataCore.TypeGenerator", "StarBreaker.DataCore.TypeGenerator\StarBreaker.DataCore.TypeGenerator.csproj", "{40FF4AF0-EC2B-47C4-B884-763D84DFAA35}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarBreaker.P4k.Processing", "StarBreaker.P4k.Processing\StarBreaker.P4k.Processing.csproj", "{55BC5433-402B-42CA-91CA-16687AA7946A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarBreaker.P4k.Extraction", "StarBreaker.P4k.Extraction\StarBreaker.P4k.Extraction.csproj", "{55BC5433-402B-42CA-91CA-16687AA7946A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarBreaker.Wwise", "StarBreaker.Wwise\StarBreaker.Wwise.csproj", "{AE59E152-60A0-49FC-9A12-8B5CE3A84136}"
 EndProject
