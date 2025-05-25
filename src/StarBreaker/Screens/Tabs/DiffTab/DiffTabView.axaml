@@ -3,47 +3,68 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:screens="clr-namespace:StarBreaker.Screens"
+             xmlns:p4k="clr-namespace:StarBreaker.P4k;assembly=StarBreaker.P4k"
              xmlns:AvaloniaEdit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
+             xmlns:converters="clr-namespace:Avalonia.Data.Converters;assembly=Avalonia.Base"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:DataType="screens:DiffTabViewModel"
              x:Class="StarBreaker.Screens.DiffTabView">
     
-    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" Margin="10">
-        
-        <!-- Header -->
-        <TextBlock Grid.Row="0" 
-                   Text="Star Citizen Version Diff Tool" 
-                   FontSize="20" 
-                   FontWeight="Bold" 
-                   Margin="0,0,0,20"/>
-        
-        <!-- Configuration Section -->
-        <Border Grid.Row="1" 
-                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
-                BorderThickness="1" 
-                CornerRadius="4" 
-                Padding="15" 
-                Margin="0,0,0,15">
-            <StackPanel Spacing="12">
-                <TextBlock Text="Configuration" FontSize="16" FontWeight="SemiBold"/>
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" ColumnDefinitions="*,Auto,400" Margin="10">
                 
-                <!-- Game Folder Selection -->
-                <Grid ColumnDefinitions="Auto,*,Auto">
-                    <TextBlock Grid.Column="0" 
-                               Text="Game Folder:" 
-                               VerticalAlignment="Center" 
-                               Width="100"
-                               Margin="0,0,10,0"/>
-                    <TextBox Grid.Column="1" 
-                             Text="{Binding GameFolder}" 
-                             Watermark="Select Star Citizen game folder"
-                             IsReadOnly="True"
-                             Margin="0,0,10,0"/>
-                    <Button Grid.Column="2" 
-                            Content="Browse..." 
-                            Command="{Binding SelectGameFolderCommand}"
-                            MinWidth="80"/>
-                </Grid>
+                <!-- Header -->
+        <Grid Grid.Row="0" Grid.ColumnSpan="3" ColumnDefinitions="*,Auto" Margin="0,0,0,20">
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="Star Citizen Version Diff Tool" 
+                           FontSize="20" 
+                           FontWeight="Bold"
+                           IsVisible="{Binding !IsP4kComparisonMode}"/>
+                <TextBlock Text="P4K Comparison Tool" 
+                           FontSize="20" 
+                           FontWeight="Bold" 
+                           IsVisible="{Binding IsP4kComparisonMode}"/>
+            </StackPanel>
+            
+            <Button Grid.Column="1"
+                    Command="{Binding ToggleP4kComparisonModeCommand}"
+                    VerticalAlignment="Center"
+                    MinWidth="150">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Switch to P4K Comparison" IsVisible="{Binding !IsP4kComparisonMode}"/>
+                    <TextBlock Text="Switch to Diff Tool" IsVisible="{Binding IsP4kComparisonMode}"/>
+                </StackPanel>
+            </Button>
+        </Grid>
+        
+        <!-- Configuration Section - Diff Tool Mode -->
+                <Border Grid.Row="1" 
+                Grid.ColumnSpan="3"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
+                        BorderThickness="1" 
+                        CornerRadius="4" 
+                        Padding="15" 
+                Margin="0,0,0,15"
+                IsVisible="{Binding !IsP4kComparisonMode}">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Configuration" FontSize="16" FontWeight="SemiBold"/>
+                        
+                        <!-- Game Folder Selection -->
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <TextBlock Grid.Column="0" 
+                                       Text="Game Folder:" 
+                                       VerticalAlignment="Center" 
+                                       Width="100"
+                                       Margin="0,0,10,0"/>
+                            <TextBox Grid.Column="1" 
+                                     Text="{Binding GameFolder}" 
+                                     Watermark="Select Star Citizen game folder"
+                                     IsReadOnly="True"
+                                     Margin="0,0,10,0"/>
+                            <Button Grid.Column="2" 
+                                    Content="Browse..." 
+                                    Command="{Binding SelectGameFolderCommand}"
+                                    MinWidth="80"/>
+                        </Grid>
                 
                 <!-- Channel Selection Buttons -->
                 <StackPanel Spacing="8">
@@ -66,60 +87,141 @@
                                       ToolTip.Tip="Select EPTU channel folder"/>
                     </StackPanel>
                 </StackPanel>
-                
-                <!-- Output Directory Selection -->
-                <Grid ColumnDefinitions="Auto,*,Auto">
-                    <TextBlock Grid.Column="0" 
-                               Text="Output Folder:" 
-                               VerticalAlignment="Center" 
-                               Width="100"
-                               Margin="0,0,10,0"/>
-                    <TextBox Grid.Column="1" 
-                             Text="{Binding OutputDirectory}" 
-                             Watermark="Select output directory for diff files"
-                             Margin="0,0,10,0"/>
-                    <Button Grid.Column="2" 
-                            Content="Browse..." 
-                            Command="{Binding SelectOutputDirectoryCommand}"
-                            MinWidth="80"/>
-                </Grid>
-                
-                <!-- Options -->
-                <StackPanel Orientation="Horizontal" Spacing="20">
-                    <CheckBox Content="Keep old files" 
-                              IsChecked="{Binding KeepOldFiles}"
-                              ToolTip.Tip="Don't delete existing files in output directory"/>
-                    
-                    <StackPanel Orientation="Horizontal" Spacing="5">
-                        <TextBlock Text="Format:" VerticalAlignment="Center"/>
-                        <ComboBox SelectedItem="{Binding TextFormat}" MinWidth="80">
-                            <ComboBoxItem Content="xml"/>
-                            <ComboBoxItem Content="json"/>
-                        </ComboBox>
+                        
+                        <!-- Output Directory Selection -->
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <TextBlock Grid.Column="0" 
+                                       Text="Output Folder:" 
+                                       VerticalAlignment="Center" 
+                                       Width="100"
+                                       Margin="0,0,10,0"/>
+                            <TextBox Grid.Column="1" 
+                                     Text="{Binding OutputDirectory}" 
+                                     Watermark="Select output directory for diff files"
+                                     Margin="0,0,10,0"/>
+                            <Button Grid.Column="2" 
+                                    Content="Browse..." 
+                                    Command="{Binding SelectOutputDirectoryCommand}"
+                                    MinWidth="80"/>
+                        </Grid>
+                        
+                        <!-- Options -->
+                        <StackPanel Orientation="Horizontal" Spacing="20">
+                            <CheckBox Content="Keep old files" 
+                                      IsChecked="{Binding KeepOldFiles}"
+                                      ToolTip.Tip="Don't delete existing files in output directory"/>
+                            
+                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                <TextBlock Text="Format:" VerticalAlignment="Center"/>
+                                <ComboBox SelectedItem="{Binding TextFormat}" MinWidth="80">
+                                    <ComboBoxItem Content="xml"/>
+                                    <ComboBoxItem Content="json"/>
+                                </ComboBox>
+                            </StackPanel>
+                        </StackPanel>
                     </StackPanel>
-                </StackPanel>
-            </StackPanel>
-        </Border>
-        
-        <!-- Action Section -->
-        <Border Grid.Row="2" 
+                </Border>
+                
+        <!-- P4K Comparison Configuration Section -->
+        <Border Grid.Row="1" 
+                Grid.ColumnSpan="3"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
                 BorderThickness="1" 
                 CornerRadius="4" 
                 Padding="15" 
-                Margin="0,0,0,15">
+                Margin="0,0,0,15"
+                IsVisible="{Binding IsP4kComparisonMode}">
+            <StackPanel Spacing="12">
+                <TextBlock Text="P4K File Selection" FontSize="16" FontWeight="SemiBold"/>
+                
+                <!-- Left P4K Selection -->
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <TextBlock Grid.Column="0" 
+                               Text="Left P4K:" 
+                               VerticalAlignment="Center" 
+                               Width="100"
+                               Margin="0,0,10,0"/>
+                    <TextBox Grid.Column="1" 
+                             Text="{Binding LeftP4kPath}" 
+                             Watermark="Select first P4K file for comparison"
+                             IsReadOnly="True"
+                             Margin="0,0,10,0"/>
+                    <Button Grid.Column="2" 
+                            Content="Browse..." 
+                            Command="{Binding SelectLeftP4kCommand}"
+                            MinWidth="80"/>
+                </Grid>
+                
+                <!-- Right P4K Selection -->
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <TextBlock Grid.Column="0" 
+                               Text="Right P4K:" 
+                               VerticalAlignment="Center" 
+                               Width="100"
+                               Margin="0,0,10,0"/>
+                    <TextBox Grid.Column="1" 
+                             Text="{Binding RightP4kPath}" 
+                             Watermark="Select second P4K file for comparison"
+                             IsReadOnly="True"
+                             Margin="0,0,10,0"/>
+                    <Button Grid.Column="2" 
+                            Content="Browse..." 
+                            Command="{Binding SelectRightP4kCommand}"
+                            MinWidth="80"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+        
+        <!-- Action Section - Diff Tool Mode -->
+                <Border Grid.Row="2" 
+                Grid.ColumnSpan="3"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
+                        BorderThickness="1" 
+                        CornerRadius="4" 
+                        Padding="15" 
+                Margin="0,0,0,15"
+                IsVisible="{Binding !IsP4kComparisonMode}">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Diff Operation" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <TextBlock Text="This will extract and dump game data for comparison with other versions."
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        </StackPanel>
+                        
+                        <Button Grid.Column="1" 
+                                Content="Run Diff" 
+                                Command="{Binding RunDiffCommand}" 
+                                IsEnabled="{Binding !IsRunning}"
+                                VerticalAlignment="Center"
+                                MinWidth="100"
+                                MinHeight="35"
+                                FontWeight="SemiBold"
+                                Margin="15,0,0,0"/>
+                    </Grid>
+                </Border>
+                
+        <!-- Action Section - P4K Comparison Mode -->
+        <Border Grid.Row="2" 
+                Grid.ColumnSpan="3"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
+                BorderThickness="1" 
+                CornerRadius="4" 
+                Padding="15" 
+                Margin="0,0,0,15"
+                IsVisible="{Binding IsP4kComparisonMode}">
             <Grid ColumnDefinitions="*,Auto">
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="Diff Operation" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                    <TextBlock Text="This will extract and dump game data for comparison with other versions."
+                    <TextBlock Text="P4K Comparison" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <TextBlock Text="This will compare the two selected P4K files and show added, removed, and modified files."
                                TextWrapping="Wrap"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                 </StackPanel>
                 
                 <Button Grid.Column="1" 
-                        Content="Run Diff" 
-                        Command="{Binding RunDiffCommand}" 
-                        IsEnabled="{Binding !IsRunning}"
+                        Content="Compare P4Ks" 
+                        Command="{Binding CompareP4ksCommand}" 
+                        IsEnabled="{Binding !IsComparing}"
                         VerticalAlignment="Center"
                         MinWidth="100"
                         MinHeight="35"
@@ -128,76 +230,261 @@
             </Grid>
         </Border>
         
-        <!-- Progress Section -->
+        <!-- Progress Section - Diff Tool Mode -->
+                <Border Grid.Row="3" 
+                Grid.ColumnSpan="3"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
+                        BorderThickness="1" 
+                        CornerRadius="4" 
+                        Padding="15" 
+                        Margin="0,0,0,15"
+                        IsVisible="{Binding IsRunning}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Progress" FontSize="16" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding CurrentStatus}" FontWeight="Medium"/>
+                        <ProgressBar Value="{Binding Progress}" 
+                                     Minimum="0" 
+                                     Maximum="1" 
+                                     Height="8"
+                                     IsIndeterminate="{Binding IsRunning}"/>
+                        <TextBlock Text="{Binding Progress, StringFormat={}{0:P0}}" 
+                                   HorizontalAlignment="Center"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    </StackPanel>
+                </Border>
+                
+        <!-- Progress Section - P4K Comparison Mode -->
         <Border Grid.Row="3" 
+                Grid.ColumnSpan="3"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
                 BorderThickness="1" 
                 CornerRadius="4" 
                 Padding="15" 
                 Margin="0,0,0,15"
-                IsVisible="{Binding IsRunning}">
+                IsVisible="{Binding IsComparing}">
             <StackPanel Spacing="8">
-                <TextBlock Text="Progress" FontSize="16" FontWeight="SemiBold"/>
-                <TextBlock Text="{Binding CurrentStatus}" FontWeight="Medium"/>
-                <ProgressBar Value="{Binding Progress}" 
-                             Minimum="0" 
-                             Maximum="1" 
-                             Height="8"
-                             IsIndeterminate="{Binding IsRunning}"/>
-                <TextBlock Text="{Binding Progress, StringFormat={}{0:P0}}" 
-                           HorizontalAlignment="Center"
-                           FontSize="12"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                <TextBlock Text="Comparison Progress" FontSize="16" FontWeight="SemiBold"/>
+                <TextBlock Text="{Binding ComparisonStatus}" FontWeight="Medium"/>
+                <ProgressBar IsIndeterminate="{Binding IsComparing}" Height="8"/>
             </StackPanel>
         </Border>
         
-        <!-- Log Section -->
+        <!-- Log Section - Diff Tool Mode -->
+                <Border Grid.Row="4" 
+                Grid.ColumnSpan="3"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
+                        BorderThickness="1" 
+                        CornerRadius="4" 
+                Padding="15"
+                IsVisible="{Binding !IsP4kComparisonMode}">
+                    <Grid RowDefinitions="Auto,*">
+                        <TextBlock Grid.Row="0" 
+                                   Text="Operation Log" 
+                                   FontSize="16" 
+                                   FontWeight="SemiBold" 
+                                   Margin="0,0,0,10"/>
+                        
+                        <ScrollViewer Grid.Row="1" 
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding LogMessages}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}" 
+                                                   FontFamily="Consolas" 
+                                                   FontSize="12"
+                                                   Margin="0,1"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+                
+        <!-- Comparison Results Section - P4K Comparison Mode -->
         <Border Grid.Row="4" 
+                Grid.Column="0"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
                 BorderThickness="1" 
                 CornerRadius="4" 
-                Padding="15">
-            <Grid RowDefinitions="Auto,*">
+                Padding="15"
+                IsVisible="{Binding IsP4kComparisonMode}">
+            <Grid RowDefinitions="Auto,Auto,*">
                 <TextBlock Grid.Row="0" 
-                           Text="Operation Log" 
+                           Text="Comparison Results" 
                            FontSize="16" 
                            FontWeight="SemiBold" 
                            Margin="0,0,0,10"/>
                 
-                <ScrollViewer Grid.Row="1" 
-                              VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding LogMessages}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding}" 
-                                           FontFamily="Consolas" 
-                                           FontSize="12"
-                                           Margin="0,1"/>
+                <!-- Legend and Filter Controls -->
+                <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Border Width="12" Height="12" CornerRadius="2">
+                                <Border.Background>
+                                    <SolidColorBrush Color="#2800FF00" />
+                                </Border.Background>
+                            </Border>
+                            <TextBlock Text="[+] Added" FontSize="11" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Border Width="12" Height="12" CornerRadius="2">
+                                <Border.Background>
+                                    <SolidColorBrush Color="#28FF0000" />
+                                </Border.Background>
+                            </Border>
+                            <TextBlock Text="[-] Removed" FontSize="11" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Border Width="12" Height="12" CornerRadius="2">
+                                <Border.Background>
+                                    <SolidColorBrush Color="#280096FF" />
+                                </Border.Background>
+                            </Border>
+                            <TextBlock Text="[~] Modified" FontSize="11" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="5" IsVisible="{Binding !ShowOnlyChangedFiles}">
+                            <Border Background="Transparent" BorderBrush="Gray" BorderThickness="1" Width="12" Height="12" CornerRadius="2"/>
+                            <TextBlock Text="Unchanged" FontSize="11" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </StackPanel>
+                    
+                    <ToggleButton Grid.Column="1" 
+                                  Content="📁 Changed Only" 
+                                  IsChecked="{Binding ShowOnlyChangedFiles}"
+                                  Command="{Binding ToggleShowOnlyChangedFilesCommand}"
+                                  ToolTip.Tip="Toggle to show only changed files or all files"
+                                  FontSize="11"
+                                  Padding="8,4"/>
+                </Grid>
+                
+                <ScrollViewer Grid.Row="2">
+                    <TreeDataGrid Source="{Binding ComparisonSource}">
+                        <TreeDataGrid.Resources>
+                            <DataTemplate x:Key="NameCellTemplate" DataType="p4k:IP4kComparisonNode">
+                                <Border Background="{Binding Status, Converter={x:Static screens:P4kComparisonStatusToColorConverter.Instance}}" 
+                                        Padding="4,2">
+                                    <TextBlock Text="{Binding ., Converter={x:Static screens:P4kComparisonNameConverter.Instance}}" 
+                                               VerticalAlignment="Center"/>
+                                </Border>
                             </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                            
+                            <DataTemplate x:Key="StatusCellTemplate" DataType="p4k:IP4kComparisonNode">
+                                <Border Background="{Binding Status, Converter={x:Static screens:P4kComparisonStatusToColorConverter.Instance}}" 
+                                        Padding="4,2">
+                                    <TextBlock Text="{Binding Status, Converter={x:Static screens:P4kComparisonStatusToTextConverter.Instance}}" 
+                                               FontSize="11" 
+                                               FontWeight="Medium"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                </Border>
+                            </DataTemplate>
+                            
+                            <DataTemplate x:Key="SizeCellTemplate" DataType="p4k:IP4kComparisonNode">
+                                <Border Background="{Binding Status, Converter={x:Static screens:P4kComparisonStatusToColorConverter.Instance}}" 
+                                        Padding="4,2">
+                                    <TextBlock Text="{Binding ., Converter={x:Static screens:P4kComparisonSizeConverter.Instance}}" 
+                                               HorizontalAlignment="Right"
+                                               VerticalAlignment="Center"/>
+                                </Border>
+                            </DataTemplate>
+                            
+                            <DataTemplate x:Key="DateCellTemplate" DataType="p4k:IP4kComparisonNode">
+                                <Border Background="{Binding Status, Converter={x:Static screens:P4kComparisonStatusToColorConverter.Instance}}" 
+                                        Padding="4,2">
+                                    <TextBlock Text="{Binding ., Converter={x:Static screens:P4kComparisonDateConverter.Instance}}" 
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                </Border>
+                            </DataTemplate>
+                        </TreeDataGrid.Resources>
+                    </TreeDataGrid>
                 </ScrollViewer>
             </Grid>
         </Border>
         
-        <!-- Info Section -->
-        <Border Grid.Row="5" 
-                Background="{DynamicResource SystemControlBackgroundAltMediumBrush}"
+        <!-- Grid Splitter for P4K Comparison Mode -->
+        <GridSplitter Grid.Row="4"
+                      Grid.Column="1"
+                      ResizeDirection="Columns"
+                      IsVisible="{Binding IsP4kComparisonMode}"/>
+        
+        <!-- File Preview Section - P4K Comparison Mode -->
+        <Border Grid.Row="4" 
+                Grid.Column="2"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
+                BorderThickness="1" 
                 CornerRadius="4" 
+                Padding="15"
+                IsVisible="{Binding IsP4kComparisonMode}">
+            <Grid RowDefinitions="Auto,*">
+                <TextBlock Grid.Row="0" 
+                           Text="File Preview" 
+                           FontSize="16" 
+                           FontWeight="SemiBold" 
+                           Margin="0,0,0,10"/>
+                
+                <ProgressBar Grid.Row="1"
+                             IsVisible="{Binding Preview, Converter={x:Static converters:ObjectConverters.IsNull}}"
+                             IsIndeterminate="True" 
+                             VerticalAlignment="Center"
+                             HorizontalAlignment="Center"
+                             Width="200"/>
+                             
+                <ContentControl Grid.Row="1"
+                                IsVisible="{Binding Preview, Converter={x:Static converters:ObjectConverters.IsNotNull}}"
+                                Content="{Binding Preview}" />
+                                
+                <TextBlock Grid.Row="1"
+                           Text="Select a file to see its preview"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           IsVisible="{Binding ShowNoSelectionMessage}"/>
+            </Grid>
+        </Border>
+        
+        <!-- Info Section - Diff Tool Mode -->
+                <Border Grid.Row="5" 
+                Grid.ColumnSpan="3"
+                        Background="{DynamicResource SystemControlBackgroundAltMediumBrush}"
+                        CornerRadius="4" 
+                        Padding="10" 
+                Margin="0,15,0,0"
+                IsVisible="{Binding !IsP4kComparisonMode}">
+                    <TextBlock TextWrapping="Wrap" 
+                               FontSize="11"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}">
+                        <Run Text="The diff tool extracts:"/>
+                        <LineBreak/>
+                        <Run Text="• P4K file structure and metadata • DataCore records as XML/JSON • Localization files"/>
+                        <LineBreak/>
+                        <Run Text="• Protobuf definitions • Compressed archives for comparison • Build manifest"/>
+                        <LineBreak/>
+                        <Run Text="Use this to compare different Star Citizen versions or track changes between patches."/>
+                    </TextBlock>
+                </Border>
+        
+        <!-- Info Section - P4K Comparison Mode -->
+        <Border Grid.Row="5" 
+                Grid.ColumnSpan="3"
+                Background="{DynamicResource SystemControlBackgroundAltMediumBrush}"
+                        CornerRadius="4" 
                 Padding="10" 
-                Margin="0,15,0,0">
+                Margin="0,15,0,0"
+                IsVisible="{Binding IsP4kComparisonMode}">
             <TextBlock TextWrapping="Wrap" 
                        FontSize="11"
                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}">
-                <Run Text="The diff tool extracts:"/>
+                <Run Text="P4K Comparison Tool compares two P4K files and shows:"/>
                 <LineBreak/>
-                <Run Text="• P4K file structure and metadata • DataCore records as XML/JSON • Localization files"/>
+                <Run Text="• Added files (exist in right P4K but not left) • Removed files (exist in left P4K but not right)"/>
                 <LineBreak/>
-                <Run Text="• Protobuf definitions • Compressed archives for comparison • Build manifest"/>
+                <Run Text="• Modified files (different content/size between P4Ks) • Size differences and file statistics"/>
                 <LineBreak/>
-                <Run Text="Use this to compare different Star Citizen versions or track changes between patches."/>
+                <Run Text="Use this to see exactly what changed between different P4K versions or game builds."/>
             </TextBlock>
-        </Border>
+                </Border>
     </Grid>
 </UserControl> 

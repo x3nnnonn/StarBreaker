@@ -8,7 +8,7 @@
              x:DataType="screens:DiffPreviewViewModel"
              x:Class="StarBreaker.Screens.DiffPreviewView">
     
-    <Grid RowDefinitions="Auto,*">
+    <Grid RowDefinitions="Auto,Auto,*">
         <!-- Header with labels -->
         <Grid Grid.Row="0" ColumnDefinitions="*,4,*" Margin="5">
             <Border Grid.Column="0" 
@@ -32,42 +32,59 @@
             </Border>
         </Grid>
         
-        <!-- Side-by-side editors -->
-        <Grid Grid.Row="1" ColumnDefinitions="*,4,*">
-            <!-- Old version editor -->
-            <Border Grid.Column="0" 
-                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
-                    BorderThickness="1" 
-                    CornerRadius="4">
-                <AvaloniaEdit:TextEditor
-                    Name="OldEditor"
-                    IsReadOnly="True"
-                    FontFamily="Consolas"
-                    ShowLineNumbers="True"
-                    WordWrap="False"
-                    VerticalScrollBarVisibility="Auto"
-                    HorizontalScrollBarVisibility="Auto"
-                    Background="{DynamicResource SystemControlBackgroundAltHighBrush}" />
-            </Border>
-            
-            <!-- Splitter -->
-            <GridSplitter Grid.Column="1" ResizeDirection="Columns" />
-            
-            <!-- New version editor -->
-            <Border Grid.Column="2" 
-                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
-                    BorderThickness="1" 
-                    CornerRadius="4">
-                <AvaloniaEdit:TextEditor
-                    Name="NewEditor"
-                    IsReadOnly="True"
-                    FontFamily="Consolas"
-                    ShowLineNumbers="True"
-                    WordWrap="False"
-                    VerticalScrollBarVisibility="Auto"
-                    HorizontalScrollBarVisibility="Auto"
-                    Background="{DynamicResource SystemControlBackgroundAltHighBrush}" />
-            </Border>
-        </Grid>
+        <!-- Navigation toolbar -->
+        <Border Grid.Row="1" 
+                Background="{DynamicResource SystemControlBackgroundAltLowBrush}" 
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                BorderThickness="0,1" 
+                Padding="8,4">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Command="{Binding FirstChangeCommand}" 
+                        Content="⏮" 
+                        ToolTip.Tip="Go to first hunk (Home)"
+                        Width="32" Height="24"/>
+                <Button Command="{Binding PreviousChangeCommand}" 
+                        Content="⏪" 
+                        ToolTip.Tip="Previous hunk (F7)"
+                        Width="32" Height="24"/>
+                <Button Command="{Binding NextChangeCommand}" 
+                        Content="⏩" 
+                        ToolTip.Tip="Next hunk (F8)"
+                        Width="32" Height="24"/>
+                <TextBlock Text="{Binding ChangeInfo}" 
+                           VerticalAlignment="Center" 
+                           Margin="8,0"/>
+                <Rectangle Fill="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
+                           Width="1" Height="16" VerticalAlignment="Center"/>
+                <ToggleButton IsChecked="{Binding ShowFullFile}" 
+                              Command="{Binding ToggleFullFileCommand}"
+                              Content="Full File" 
+                              ToolTip.Tip="Toggle between unified diff and full file view"
+                              Height="24" Margin="8,0,0,0"/>
+                <Rectangle Fill="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
+                           Width="1" Height="16" VerticalAlignment="Center"/>
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <Rectangle Fill="#7800C800" Width="16" Height="16" ToolTip.Tip="Added lines"/>
+                    <TextBlock Text="Added" FontSize="10" VerticalAlignment="Center"/>
+                    <Rectangle Fill="#78C80000" Width="16" Height="16" ToolTip.Tip="Removed lines"/>
+                    <TextBlock Text="Removed" FontSize="10" VerticalAlignment="Center"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+        
+        <!-- Unified diff view -->
+        <Border Grid.Row="2" 
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
+                BorderThickness="1" 
+                CornerRadius="4">
+            <ScrollViewer Name="DiffScrollViewer" 
+                          HorizontalScrollBarVisibility="Auto" 
+                          VerticalScrollBarVisibility="Auto">
+                <StackPanel Name="DiffContent" 
+                            Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+                    <!-- Diff content will be populated in code-behind -->
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
     </Grid>
 </UserControl> 

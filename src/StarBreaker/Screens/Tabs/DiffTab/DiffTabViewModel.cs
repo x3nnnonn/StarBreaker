@@ -16,6 +16,11 @@ using Avalonia.Controls.Models.TreeDataGrid;
 using Avalonia.Controls.Selection;
 using StarBreaker.Extensions;
 using StarBreaker.Services;
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
+using StarBreaker.Common;
+using StarBreaker.Dds;
+using Avalonia.Media.Imaging;
 
 namespace StarBreaker.Screens;
 
@@ -38,11 +43,294 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
     [ObservableProperty] private bool _isLiveSelected = true;
     [ObservableProperty] private bool _isPtuSelected = false;
     [ObservableProperty] private bool _isEptuSelected = false;
+    
+    // P4K Comparison mode properties
+    [ObservableProperty] private bool _isP4kComparisonMode = false;
+    [ObservableProperty] private string _leftP4kPath = string.Empty;
+    [ObservableProperty] private string _rightP4kPath = string.Empty;
+    [ObservableProperty] private HierarchicalTreeDataGridSource<IP4kComparisonNode>? _comparisonSource;
+    [ObservableProperty] private bool _isComparing = false;
+    [ObservableProperty] private string _comparisonStatus = "Ready";
+    [ObservableProperty] private FilePreviewViewModel? _preview;
+    [ObservableProperty] private bool _showNoSelectionMessage = true;
+    [ObservableProperty] private bool _showOnlyChangedFiles = true;
+    
+    // P4K files for preview
+    private P4kFile? _leftP4kFile;
+    private P4kFile? _rightP4kFile;
+    private P4kComparisonDirectoryNode? _comparisonRoot;
 
     public DiffTabViewModel(ILogger<DiffTabViewModel> logger)
     {
         _logger = logger;
         LoadSettings();
+        InitializeComparisonTreeDataGrid();
+    }
+
+    private void InitializeComparisonTreeDataGrid()
+    {
+        ComparisonSource = new HierarchicalTreeDataGridSource<IP4kComparisonNode>(Array.Empty<IP4kComparisonNode>())
+        {
+            Columns =
+            {
+                new HierarchicalExpanderColumn<IP4kComparisonNode>(
+                    new TemplateColumn<IP4kComparisonNode>("Name", "NameCellTemplate", null, new GridLength(1, GridUnitType.Star)),
+                    node => GetComparisonChildren(node)
+                ),
+                new TemplateColumn<IP4kComparisonNode>("Status", "StatusCellTemplate", null, new GridLength(100)),
+                new TemplateColumn<IP4kComparisonNode>("Size", "SizeCellTemplate", null, new GridLength(150)),
+                new TemplateColumn<IP4kComparisonNode>("Date", "DateCellTemplate", null, new GridLength(150)),
+            },
+        };
+
+        ComparisonSource.RowSelection!.SingleSelect = true;
+        ComparisonSource.RowSelection!.SelectionChanged += OnComparisonSelectionChanged;
+    }
+    
+    private IP4kComparisonNode[] GetComparisonChildren(IP4kComparisonNode node)
+    {
+        var children = node.GetFilteredComparisonChildren(ShowOnlyChangedFiles);
+        return children.OrderBy(n => n is not P4kComparisonDirectoryNode) // Directories first
+            .ThenBy(n => n.GetComparisonName(), StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    private void OnComparisonSelectionChanged(object? sender, TreeSelectionModelSelectionChangedEventArgs<IP4kComparisonNode> e)
+    {
+        if (e.SelectedItems.Count != 1)
+        {
+            Preview = null;
+            ShowNoSelectionMessage = true;
+            return;
+        }
+
+        var selectedNode = e.SelectedItems[0];
+        if (selectedNode is not P4kComparisonFileNode fileNode)
+        {
+            // Directory selected, clear preview
+            Preview = null;
+            ShowNoSelectionMessage = true;
+            return;
+        }
+
+        // Load preview for the selected file
+        ShowNoSelectionMessage = false;
+        Preview = null; // Show loading indicator
+        
+        Task.Run(() =>
+        {
+            try
+            {
+                var preview = GetFilePreview(fileNode);
+                Dispatcher.UIThread.Post(() => Preview = preview);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to preview file: {FileName}", fileNode.Name);
+                Dispatcher.UIThread.Post(() => Preview = new TextPreviewViewModel($"Failed to preview file: {ex.Message}"));
+            }
+                 });
+    }
+
+    private FilePreviewViewModel GetFilePreview(P4kComparisonFileNode fileNode)
+    {
+        var fileName = fileNode.Name;
+        var fileExtension = Path.GetExtension(fileName).ToLowerInvariant();
+        
+        // Use similar logic to the existing PreviewService
+        var plaintextExtensions = new[] { ".cfg", ".xml", ".txt", ".json", "eco", ".ini" };
+        var ddsLodExtensions = new[] { ".dds" };
+        var bitmapExtensions = new[] { ".bmp", ".jpg", ".jpeg", ".png" };
+
+        // For modified text files, show a diff view
+        if (fileNode.Status == P4kComparisonStatus.Modified && 
+            (plaintextExtensions.Any(p => fileName.EndsWith(p, StringComparison.InvariantCultureIgnoreCase)) ||
+             IsCryXmlFile(fileNode)))
+        {
+            return CreateDiffPreview(fileNode, fileExtension);
+        }
+
+        // For non-modified files or non-text files, use the standard preview logic
+        // Determine which P4K to read from based on the file status
+        P4kFile? sourceP4k = fileNode.Status switch
+        {
+            P4kComparisonStatus.Added => _rightP4kFile,     // File only exists in right P4K
+            P4kComparisonStatus.Removed => _leftP4kFile,   // File only exists in left P4K
+            P4kComparisonStatus.Modified => _rightP4kFile, // Show the newer version for non-text files
+            P4kComparisonStatus.Unchanged => _leftP4kFile, // Either P4K is fine
+            _ => _leftP4kFile
+        };
+
+        if (sourceP4k == null)
+        {
+            return new TextPreviewViewModel("P4K file not available for preview");
+        }
+
+        var zipEntry = fileNode.Status switch
+        {
+            P4kComparisonStatus.Added => fileNode.RightEntry,
+            P4kComparisonStatus.Removed => fileNode.LeftEntry,
+            P4kComparisonStatus.Modified => fileNode.RightEntry,
+            P4kComparisonStatus.Unchanged => fileNode.LeftEntry ?? fileNode.RightEntry,
+            _ => fileNode.LeftEntry ?? fileNode.RightEntry
+        };
+
+        if (zipEntry == null)
+        {
+            return new TextPreviewViewModel("File entry not available for preview");
+        }
+
+        using var entryStream = sourceP4k.OpenStream(zipEntry);
+
+        // Check CryXML before extension since ".xml" sometimes is cxml sometimes plaintext
+        if (StarBreaker.CryXmlB.CryXml.IsCryXmlB(entryStream))
+        {
+            if (!StarBreaker.CryXmlB.CryXml.TryOpen(entryStream, out var c))
+            {
+                return new TextPreviewViewModel("Failed to open CryXmlB", fileExtension);
+            }
+            return new TextPreviewViewModel(c.ToString(), ".xml"); // CryXML converts to XML
+        }
+        else if (plaintextExtensions.Any(p => fileName.EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
+        {
+            return new TextPreviewViewModel(entryStream.ReadString(), fileExtension);
+        }
+        else if (ddsLodExtensions.Any(p => fileName.EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
+        {
+            try
+            {
+                var p4kFileSystem = new P4kFileSystem(sourceP4k);
+                var ms = DdsFile.MergeToStream(zipEntry.Name, p4kFileSystem);
+                var pngBytes = DdsFile.ConvertToPng(ms.ToArray());
+                return new DdsPreviewViewModel(new Bitmap(pngBytes));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to convert DDS file: {FileName}", zipEntry.Name);
+                return new TextPreviewViewModel($"Failed to preview DDS file: {ex.Message}", fileExtension);
+            }
+        }
+        else if (bitmapExtensions.Any(p => fileName.EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
+        {
+            try
+            {
+                return new DdsPreviewViewModel(new Bitmap(entryStream));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to load bitmap: {FileName}", zipEntry.Name);
+                return new TextPreviewViewModel($"Failed to preview bitmap: {ex.Message}", fileExtension);
+            }
+        }
+        else
+        {
+            try
+            {
+                return new HexPreviewViewModel(entryStream.ToArray());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create hex preview: {FileName}", zipEntry.Name);
+                return new TextPreviewViewModel($"Failed to create hex preview: {ex.Message}", fileExtension);
+            }
+        }
+    }
+
+    private bool IsCryXmlFile(P4kComparisonFileNode fileNode)
+    {
+        // Check if either version is a CryXML file
+        if (fileNode.LeftEntry != null && _leftP4kFile != null)
+        {
+            using var leftStream = _leftP4kFile.OpenStream(fileNode.LeftEntry);
+            if (StarBreaker.CryXmlB.CryXml.IsCryXmlB(leftStream))
+                return true;
+        }
+
+        if (fileNode.RightEntry != null && _rightP4kFile != null)
+        {
+            using var rightStream = _rightP4kFile.OpenStream(fileNode.RightEntry);
+            if (StarBreaker.CryXmlB.CryXml.IsCryXmlB(rightStream))
+                return true;
+        }
+
+        return false;
+    }
+
+    private FilePreviewViewModel CreateDiffPreview(P4kComparisonFileNode fileNode, string fileExtension)
+    {
+        if (_leftP4kFile == null || _rightP4kFile == null || 
+            fileNode.LeftEntry == null || fileNode.RightEntry == null)
+        {
+            return new TextPreviewViewModel("Unable to create diff - missing file data");
+        }
+
+        try
+        {
+            // Get old content (left P4K)
+            string oldContent;
+            using (var leftStream = _leftP4kFile.OpenStream(fileNode.LeftEntry))
+            {
+                if (StarBreaker.CryXmlB.CryXml.IsCryXmlB(leftStream))
+                {
+                    if (StarBreaker.CryXmlB.CryXml.TryOpen(leftStream, out var cryXml))
+                    {
+                        oldContent = cryXml.ToString();
+                    }
+                    else
+                    {
+                        oldContent = "Failed to parse CryXML";
+                    }
+                }
+                else
+                {
+                    oldContent = leftStream.ReadString();
+                }
+            }
+
+            // Get new content (right P4K)
+            string newContent;
+            using (var rightStream = _rightP4kFile.OpenStream(fileNode.RightEntry))
+            {
+                if (StarBreaker.CryXmlB.CryXml.IsCryXmlB(rightStream))
+                {
+                    if (StarBreaker.CryXmlB.CryXml.TryOpen(rightStream, out var cryXml))
+                    {
+                        newContent = cryXml.ToString();
+                    }
+                    else
+                    {
+                        newContent = "Failed to parse CryXML";
+                    }
+                }
+                else
+                {
+                    newContent = rightStream.ReadString();
+                }
+            }
+
+            // Check file sizes to provide user feedback for large files
+            var oldLineCount = oldContent.Split('\n').Length;
+            var newLineCount = newContent.Split('\n').Length;
+            
+            if (oldLineCount > 20000 || newLineCount > 20000)
+            {
+                _logger.LogInformation("Large file diff detected - Old: {OldLines} lines, New: {NewLines} lines. Using simplified diff algorithm.", oldLineCount, newLineCount);
+            }
+
+            // Create labels based on P4K file names
+            var oldLabel = $"Left: {Path.GetFileName(LeftP4kPath)}";
+            var newLabel = $"Right: {Path.GetFileName(RightP4kPath)}";
+
+            // Use .xml extension for CryXML files for better syntax highlighting
+            var displayExtension = IsCryXmlFile(fileNode) ? ".xml" : fileExtension;
+
+            return new DiffPreviewViewModel(oldContent, newContent, oldLabel, newLabel, displayExtension);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create diff preview for file: {FileName}", fileNode.Name);
+            return new TextPreviewViewModel($"Failed to create diff preview: {ex.Message}");
+        }
     }
 
     private void LoadSettings()
@@ -271,6 +559,145 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
     public void SelectEptuChannel()
     {
         UpdateChannelSelection("EPTU");
+    }
+    
+    [RelayCommand]
+    public void ToggleP4kComparisonMode()
+    {
+        _logger.LogInformation("ToggleP4kComparisonMode command executed. Current mode: {Current}", IsP4kComparisonMode);
+        IsP4kComparisonMode = !IsP4kComparisonMode;
+        _logger.LogInformation("Switched to {Mode} mode. New value: {Value}", IsP4kComparisonMode ? "P4K Comparison" : "Diff Tool", IsP4kComparisonMode);
+    }
+
+    [RelayCommand]
+    public void ToggleShowOnlyChangedFiles()
+    {
+        ShowOnlyChangedFiles = !ShowOnlyChangedFiles;
+        RefreshComparisonTree();
+        _logger.LogInformation("Show only changed files: {ShowOnlyChanged}", ShowOnlyChangedFiles);
+    }
+
+    private void RefreshComparisonTree()
+    {
+        if (_comparisonRoot == null || ComparisonSource == null) return;
+
+        var filteredItems = _comparisonRoot.GetFilteredComparisonChildren(ShowOnlyChangedFiles);
+        ComparisonSource.Items = filteredItems.OrderBy(n => n is not P4kComparisonDirectoryNode)
+            .ThenBy(n => n.GetComparisonName(), StringComparer.OrdinalIgnoreCase).ToArray();
+    }
+    
+    [RelayCommand]
+    public async Task SelectLeftP4k()
+    {
+        var topLevel = TopLevel.GetTopLevel(Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop 
+            ? desktop.MainWindow : null);
+
+            if (topLevel == null) return;
+
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+            Title = "Select Left P4K File",
+                AllowMultiple = false,
+                FileTypeFilter = new[]
+                {
+                    new FilePickerFileType("P4K Files") { Patterns = new[] { "*.p4k" } },
+                new FilePickerFileType("All Files") { Patterns = new[] { "*" } }
+                }
+        });
+
+            if (files.Count > 0)
+            {
+            LeftP4kPath = files[0].Path.LocalPath;
+            _logger.LogInformation("Selected left P4K: {Path}", LeftP4kPath);
+        }
+    }
+
+    [RelayCommand]
+    public async Task SelectRightP4k()
+    {
+        var topLevel = TopLevel.GetTopLevel(Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop 
+            ? desktop.MainWindow : null);
+
+            if (topLevel == null) return;
+
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+            Title = "Select Right P4K File",
+                AllowMultiple = false,
+                FileTypeFilter = new[]
+                {
+                    new FilePickerFileType("P4K Files") { Patterns = new[] { "*.p4k" } },
+                new FilePickerFileType("All Files") { Patterns = new[] { "*" } }
+                }
+        });
+
+            if (files.Count > 0)
+            {
+            RightP4kPath = files[0].Path.LocalPath;
+            _logger.LogInformation("Selected right P4K: {Path}", RightP4kPath);
+        }
+    }
+
+    [RelayCommand]
+    public async Task CompareP4ks()
+    {
+        if (string.IsNullOrWhiteSpace(LeftP4kPath) || string.IsNullOrWhiteSpace(RightP4kPath))
+        {
+            _logger.LogWarning("Both P4K files must be selected for comparison");
+            return;
+        }
+
+        if (!File.Exists(LeftP4kPath) || !File.Exists(RightP4kPath))
+        {
+            _logger.LogError("One or both P4K files do not exist");
+            return;
+        }
+
+        IsComparing = true;
+        ComparisonStatus = "Loading P4K files...";
+        
+        try
+        {
+            await Task.Run(() =>
+            {
+                Dispatcher.UIThread.Post(() => ComparisonStatus = "Loading left P4K...");
+                var leftP4k = P4kFile.FromFile(LeftP4kPath);
+                
+                Dispatcher.UIThread.Post(() => ComparisonStatus = "Loading right P4K...");
+                var rightP4k = P4kFile.FromFile(RightP4kPath);
+                
+                Dispatcher.UIThread.Post(() => ComparisonStatus = "Comparing P4K files...");
+                var progress = new Progress<double>(p => 
+                    Dispatcher.UIThread.Post(() => ComparisonStatus = $"Comparing P4K files... {p:P0}"));
+                
+                var comparisonRoot = P4kComparison.Compare(leftP4k, rightP4k, progress);
+                
+                Dispatcher.UIThread.Post(() =>
+                {
+                    // Store P4K files and comparison root for preview and filtering
+                    _leftP4kFile = leftP4k;
+                    _rightP4kFile = rightP4k;
+                    _comparisonRoot = comparisonRoot;
+                    
+                    RefreshComparisonTree();
+                    
+                    var stats = P4kComparison.AnalyzeComparison(comparisonRoot);
+                    ComparisonStatus = $"Comparison complete! Added: {stats.AddedFiles}, Removed: {stats.RemovedFiles}, Modified: {stats.ModifiedFiles}";
+                    
+                    _logger.LogInformation("P4K comparison completed - Total: {Total}, Added: {Added}, Removed: {Removed}, Modified: {Modified}, Unchanged: {Unchanged}",
+                        stats.TotalFiles, stats.AddedFiles, stats.RemovedFiles, stats.ModifiedFiles, stats.UnchangedFiles);
+                });
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to compare P4K files");
+            ComparisonStatus = $"Comparison failed: {ex.Message}";
+        }
+        finally
+        {
+            IsComparing = false;
+        }
     }
 
     [RelayCommand]
