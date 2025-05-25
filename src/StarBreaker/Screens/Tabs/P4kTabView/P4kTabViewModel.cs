@@ -3,14 +3,17 @@ using Avalonia.Controls.Models.TreeDataGrid;
 using Avalonia.Controls.Selection;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using StarBreaker.Common;
 using StarBreaker.CryXmlB;
 using StarBreaker.Dds;
 using StarBreaker.Extensions;
 using StarBreaker.P4k;
 using StarBreaker.Services;
+using StarBreaker.SocPak;
 using System.IO;
 
 namespace StarBreaker.Screens;
@@ -57,7 +60,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
         InitializeTreeDataGrid();
         
         _allRootNodes = _p4KService.P4KFileSystem.Root.Children.Values;
-        Source.Items = GetSortedNodes(_allRootNodes);
+        Source.Items = ProcessAndSortNodes(_allRootNodes);
         
         // Initialize commands explicitly
         ExtractSelectedNodeCommand = new RelayCommand(async () => await ExtractSelectedNode());
@@ -105,7 +108,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
         if (string.IsNullOrWhiteSpace(SearchText))
         {
             // Reset to show all nodes
-            Source.Items = GetSortedNodes(_allRootNodes);
+            Source.Items = ProcessAndSortNodes(_allRootNodes);
             return;
         }
         
@@ -459,8 +462,8 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
         if (b == null) return 1;
 
         // Directories come before files
-        bool aIsDir = a is P4kDirectoryNode or FilteredP4kDirectoryNode;
-        bool bIsDir = b is P4kDirectoryNode or FilteredP4kDirectoryNode;
+        bool aIsDir = a is P4kDirectoryNode or FilteredP4kDirectoryNode or SocPakDirectoryAdapter;
+        bool bIsDir = b is P4kDirectoryNode or FilteredP4kDirectoryNode or SocPakDirectoryAdapter;
 
         if (aIsDir && !bIsDir) return -1;
         if (!aIsDir && bIsDir) return 1;
@@ -469,15 +472,58 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
         return string.Compare(a.GetName(), b.GetName(), StringComparison.OrdinalIgnoreCase);
     }
 
-    private static IP4kNode[] GetSortedChildren(IP4kNode node)
+    private IP4kNode[] GetSortedChildren(IP4kNode node)
     {
         var children = node.GetChildren();
-        return GetSortedNodes(children);
+        
+        // Process children to replace SOCPAK files with container nodes
+        var processedChildren = new List<IP4kNode>();
+        
+        foreach (var child in children)
+        {
+            if (child.IsSocPakFile())
+            {
+                var socPakContainer = new SocPakContainerNode((P4kFileNode)child, GetP4kFileStreamProvider());
+                processedChildren.Add(socPakContainer);
+            }
+            else
+            {
+                processedChildren.Add(child);
+            }
+        }
+        
+        return GetSortedNodes(processedChildren);
+    }
+    
+    private Func<P4kFileNode, Stream> GetP4kFileStreamProvider()
+    {
+        return (fileNode) => _p4KService.P4KFileSystem.OpenRead(fileNode.ZipEntry.Name);
+    }
+    
+    private IP4kNode[] ProcessAndSortNodes(ICollection<IP4kNode> nodes)
+    {
+        // Process nodes to replace SOCPAK files with container nodes
+        var processedNodes = new List<IP4kNode>();
+        
+        foreach (var node in nodes)
+        {
+            if (node.IsSocPakFile())
+            {
+                var socPakContainer = new SocPakContainerNode((P4kFileNode)node, GetP4kFileStreamProvider());
+                processedNodes.Add(socPakContainer);
+            }
+            else
+            {
+                processedNodes.Add(node);
+            }
+        }
+        
+        return GetSortedNodes(processedNodes);
     }
 
     private static IP4kNode[] GetSortedNodes(ICollection<IP4kNode> nodes)
     {
-        return nodes.OrderBy(n => n is not (P4kDirectoryNode or FilteredP4kDirectoryNode)) // Directories first
+        return nodes.OrderBy(n => n is not (P4kDirectoryNode or FilteredP4kDirectoryNode or SocPakDirectoryAdapter)) // Directories first
             .ThenBy(n => n.GetName(), StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
@@ -499,28 +545,183 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             return;
         }
 
-        if (selectedEntry is not P4kFileNode selectedFile)
+        // Handle both P4K files and SOCPAK files
+        if (selectedEntry is P4kFileNode selectedP4kFile)
         {
-            //we clicked on a folder, do nothing to the preview.
-            return;
-        }
-
         //todo: for a big ass file show a loading screen or something
         Preview = null;
         Task.Run(() =>
         {
             try
             {
-                var p = _previewService.GetPreview(selectedFile);
+                    var p = _previewService.GetPreview(selectedP4kFile);
                 Dispatcher.UIThread.Post(() => Preview = p);
             }
             catch (Exception exception)
             {
-                _logger.LogError(exception, "Failed to preview file: {FileName}", selectedFile.ZipEntry.Name);
+                    _logger.LogError(exception, "Failed to preview file: {FileName}", selectedP4kFile.ZipEntry.Name);
                 Dispatcher.UIThread.Post(() => Preview = new TextPreviewViewModel($"Failed to preview file: {exception.Message}"));
             }
             finally { }
         });
+        }
+        else if (selectedEntry is SocPakFileAdapter selectedSocPakFile)
+        {
+            Preview = null;
+            Task.Run(() =>
+            {
+                try
+                {
+                    var p = GetSocPakFilePreview(selectedSocPakFile);
+                    Dispatcher.UIThread.Post(() => Preview = p);
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogError(exception, "Failed to preview SOCPAK file: {FileName}", selectedSocPakFile.SocPakNode.Name);
+                    Dispatcher.UIThread.Post(() => Preview = new TextPreviewViewModel($"Failed to preview SOCPAK file: {exception.Message}"));
+                }
+                finally { }
+            });
+        }
+        else
+        {
+            //we clicked on a folder or other non-file node, do nothing to the preview.
+            return;
+        }
+    }
+
+    private FilePreviewViewModel GetSocPakFilePreview(SocPakFileAdapter socPakFileAdapter)
+    {
+        var socPakFile = socPakFileAdapter.SocPakNode;
+        var fileName = socPakFile.Name;
+        var fileExtension = Path.GetExtension(fileName).ToLowerInvariant();
+        
+        // Get the SOCPAK container to access the SocPakFile
+        var container = FindSocPakContainer(socPakFileAdapter);
+        if (container?.SocPakFile == null)
+        {
+            return new TextPreviewViewModel("SOCPAK file not loaded or not available for preview");
+        }
+        
+        try
+        {
+            _logger.LogDebug("Attempting to open SOCPAK file: {FilePath}", socPakFile.FullPath);
+            
+            // Try using the file system approach first
+            try
+            {
+                var socPakFileSystem = new SocPakFileSystem(container.SocPakFile);
+                using var entryStream = socPakFileSystem.OpenRead(socPakFile.FullPath);
+                return ProcessSocPakFileStream(entryStream, fileName, fileExtension);
+            }
+            catch (Exception fsEx)
+            {
+                _logger.LogDebug("FileSystem approach failed: {Error}, trying direct ZipEntry access", fsEx.Message);
+                
+                // Fallback to direct ZipEntry access
+                using var entryStream = container.SocPakFile.OpenStream(socPakFile.ZipEntry);
+                return ProcessSocPakFileStream(entryStream, fileName, fileExtension);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to open file from SOCPAK: {FileName}", fileName);
+            return new TextPreviewViewModel($"Failed to open file from SOCPAK: {ex.Message}");
+        }
+    }
+    
+    private FilePreviewViewModel ProcessSocPakFileStream(Stream entryStream, string fileName, string fileExtension)
+    {
+        try
+        {
+            // First, read the entire stream into a MemoryStream to avoid issues with compressed ZIP streams
+            // that don't support Length/Position operations
+            using var memoryStream = new MemoryStream();
+            entryStream.CopyTo(memoryStream);
+            memoryStream.Position = 0;
+            
+            // Use similar logic to the existing PreviewService
+            var plaintextExtensions = new[] { ".cfg", ".xml", ".txt", ".json", "eco", ".ini" };
+            var ddsLodExtensions = new[] { ".dds" };
+            var bitmapExtensions = new[] { ".bmp", ".jpg", ".jpeg", ".png" };
+            
+            // Check CryXML first
+            if (StarBreaker.CryXmlB.CryXml.IsCryXmlB(memoryStream))
+            {
+                memoryStream.Position = 0;
+                if (!StarBreaker.CryXmlB.CryXml.TryOpen(memoryStream, out var cryXml))
+                {
+                    return new TextPreviewViewModel("Failed to open CryXmlB", fileExtension);
+                }
+                return new TextPreviewViewModel(cryXml.ToString(), ".xml");
+            }
+            else if (plaintextExtensions.Any(p => fileName.EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
+            {
+                memoryStream.Position = 0;
+                return new TextPreviewViewModel(memoryStream.ReadString(), fileExtension);
+            }
+            else if (ddsLodExtensions.Any(p => fileName.EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
+            {
+                try
+                {
+                    // For DDS files in SOCPAK, try to load them directly
+                    var ddsBytes = memoryStream.ToArray();
+                    using var pngStream = DdsFile.ConvertToPng(ddsBytes);
+                    return new DdsPreviewViewModel(new Bitmap(pngStream));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to convert DDS file from SOCPAK: {FileName}", fileName);
+                    return new TextPreviewViewModel($"Failed to preview DDS file: {ex.Message}", fileExtension);
+                }
+            }
+            else if (bitmapExtensions.Any(p => fileName.EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
+            {
+                try
+                {
+                    memoryStream.Position = 0;
+                    return new DdsPreviewViewModel(new Bitmap(memoryStream));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to load bitmap from SOCPAK: {FileName}", fileName);
+                    return new TextPreviewViewModel($"Failed to preview bitmap: {ex.Message}", fileExtension);
+                }
+            }
+            else
+            {
+                try
+                {
+                    return new HexPreviewViewModel(memoryStream.ToArray());
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to create hex preview from SOCPAK: {FileName}", fileName);
+                    return new TextPreviewViewModel($"Failed to create hex preview: {ex.Message}", fileExtension);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to process SOCPAK file stream: {FileName}", fileName);
+            return new TextPreviewViewModel($"Failed to process SOCPAK file stream: {ex.Message}");
+        }
+    }
+    
+    private SocPakContainerNode? FindSocPakContainer(SocPakFileAdapter socPakFileAdapter)
+    {
+        // Walk up the parent hierarchy to find the SOCPAK container
+        var current = socPakFileAdapter.Parent;
+        while (current != null)
+        {
+            if (current is SocPakContainerNode container)
+                return container;
+            if (current is SocPakDirectoryAdapter adapter)
+                current = adapter.Parent;
+            else
+                break;
+        }
+        return null;
     }
 
     private bool TryConvertCryXml(P4kFileNode fileNode, string destinationPath)
