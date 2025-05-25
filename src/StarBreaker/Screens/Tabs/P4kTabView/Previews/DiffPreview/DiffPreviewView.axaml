@@ -35,7 +35,7 @@
         <!-- Navigation toolbar -->
         <Border Grid.Row="1" 
                 Background="{DynamicResource SystemControlBackgroundAltLowBrush}" 
-                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
                 BorderThickness="0,1" 
                 Padding="8,4">
             <StackPanel Orientation="Horizontal" Spacing="8">
@@ -70,21 +70,21 @@
                     <TextBlock Text="Removed" FontSize="10" VerticalAlignment="Center"/>
                 </StackPanel>
             </StackPanel>
-        </Border>
-        
+            </Border>
+            
         <!-- Unified diff view -->
         <Border Grid.Row="2" 
-                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
-                BorderThickness="1" 
-                CornerRadius="4">
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
+                    BorderThickness="1" 
+                    CornerRadius="4">
             <ScrollViewer Name="DiffScrollViewer" 
-                          HorizontalScrollBarVisibility="Auto" 
+                    HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto">
                 <StackPanel Name="DiffContent" 
                             Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
                     <!-- Diff content will be populated in code-behind -->
                 </StackPanel>
             </ScrollViewer>
-        </Border>
+            </Border>
     </Grid>
 </UserControl> 

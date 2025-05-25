@@ -34,4 +34,5 @@ public class AppSettings
     public string? DiffOutputDirectory { get; set; }
     public string? SelectedChannel { get; set; }
     public string? TextFormat { get; set; }
+    public string? P4kOutputDirectory { get; set; }
 }

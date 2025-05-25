@@ -44,11 +44,16 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
     [ObservableProperty] private bool _isPtuSelected = false;
     [ObservableProperty] private bool _isEptuSelected = false;
     
-    // P4K Comparison mode properties
+    // Comparison mode properties
     [ObservableProperty] private bool _isP4kComparisonMode = false;
+    [ObservableProperty] private bool _isDataCoreComparisonMode = false;
     [ObservableProperty] private string _leftP4kPath = string.Empty;
     [ObservableProperty] private string _rightP4kPath = string.Empty;
+    [ObservableProperty] private string _leftDataCoreP4kPath = string.Empty;
+    [ObservableProperty] private string _rightDataCoreP4kPath = string.Empty;
+    [ObservableProperty] private string _p4kOutputDirectory = string.Empty;
     [ObservableProperty] private HierarchicalTreeDataGridSource<IP4kComparisonNode>? _comparisonSource;
+    [ObservableProperty] private HierarchicalTreeDataGridSource<IDataCoreComparisonNode>? _dataCoreComparisonSource;
     [ObservableProperty] private bool _isComparing = false;
     [ObservableProperty] private string _comparisonStatus = "Ready";
     [ObservableProperty] private FilePreviewViewModel? _preview;
@@ -59,12 +64,18 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
     private P4kFile? _leftP4kFile;
     private P4kFile? _rightP4kFile;
     private P4kComparisonDirectoryNode? _comparisonRoot;
+    
+    // DataCore databases for preview
+    private DataCoreDatabase? _leftDataCoreDatabase;
+    private DataCoreDatabase? _rightDataCoreDatabase;
+    private DataCoreComparisonDirectoryNode? _dataCoreComparisonRoot;
 
     public DiffTabViewModel(ILogger<DiffTabViewModel> logger)
     {
         _logger = logger;
         LoadSettings();
         InitializeComparisonTreeDataGrid();
+        InitializeDataCoreComparisonTreeDataGrid();
     }
 
     private void InitializeComparisonTreeDataGrid()
@@ -87,10 +98,38 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         ComparisonSource.RowSelection!.SelectionChanged += OnComparisonSelectionChanged;
     }
     
+    private void InitializeDataCoreComparisonTreeDataGrid()
+    {
+        DataCoreComparisonSource = new HierarchicalTreeDataGridSource<IDataCoreComparisonNode>(Array.Empty<IDataCoreComparisonNode>())
+        {
+            Columns =
+            {
+                new HierarchicalExpanderColumn<IDataCoreComparisonNode>(
+                    new TemplateColumn<IDataCoreComparisonNode>("Name", "DataCoreNameCellTemplate", null, new GridLength(1, GridUnitType.Star)),
+                    node => GetDataCoreComparisonChildren(node)
+                ),
+                new TemplateColumn<IDataCoreComparisonNode>("Status", "DataCoreStatusCellTemplate", null, new GridLength(100)),
+                new TemplateColumn<IDataCoreComparisonNode>("Size", "DataCoreSizeCellTemplate", null, new GridLength(150)),
+                new TemplateColumn<IDataCoreComparisonNode>("Type", "DataCoreTypeCellTemplate", null, new GridLength(150)),
+            },
+        };
+
+        DataCoreComparisonSource.RowSelection!.SingleSelect = true;
+        DataCoreComparisonSource.RowSelection!.SelectionChanged += OnDataCoreComparisonSelectionChanged;
+    }
+    
     private IP4kComparisonNode[] GetComparisonChildren(IP4kComparisonNode node)
     {
         var children = node.GetFilteredComparisonChildren(ShowOnlyChangedFiles);
         return children.OrderBy(n => n is not P4kComparisonDirectoryNode) // Directories first
+            .ThenBy(n => n.GetComparisonName(), StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+    
+    private IDataCoreComparisonNode[] GetDataCoreComparisonChildren(IDataCoreComparisonNode node)
+    {
+        var children = node.GetFilteredComparisonChildren(ShowOnlyChangedFiles);
+        return children.OrderBy(n => n is not DataCoreComparisonDirectoryNode) // Directories first
             .ThenBy(n => n.GetComparisonName(), StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
@@ -130,6 +169,43 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                 Dispatcher.UIThread.Post(() => Preview = new TextPreviewViewModel($"Failed to preview file: {ex.Message}"));
             }
                  });
+    }
+    
+    private void OnDataCoreComparisonSelectionChanged(object? sender, TreeSelectionModelSelectionChangedEventArgs<IDataCoreComparisonNode> e)
+    {
+        if (e.SelectedItems.Count != 1)
+        {
+            Preview = null;
+            ShowNoSelectionMessage = true;
+            return;
+        }
+
+        var selectedNode = e.SelectedItems[0];
+        if (selectedNode is not DataCoreComparisonFileNode fileNode)
+        {
+            // Directory selected, clear preview
+            Preview = null;
+            ShowNoSelectionMessage = true;
+            return;
+        }
+
+        // Load preview for the selected DataCore file
+        ShowNoSelectionMessage = false;
+        Preview = null; // Show loading indicator
+        
+        Task.Run(() =>
+        {
+            try
+            {
+                var preview = GetDataCoreFilePreview(fileNode);
+                Dispatcher.UIThread.Post(() => Preview = preview);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to preview DataCore file: {FileName}", fileNode.Name);
+                Dispatcher.UIThread.Post(() => Preview = new TextPreviewViewModel($"Failed to preview DataCore file: {ex.Message}"));
+            }
+        });
     }
 
     private FilePreviewViewModel GetFilePreview(P4kComparisonFileNode fileNode)
@@ -332,6 +408,203 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             return new TextPreviewViewModel($"Failed to create diff preview: {ex.Message}");
         }
     }
+    
+    private FilePreviewViewModel GetDataCoreFilePreview(DataCoreComparisonFileNode fileNode)
+    {
+        var fileName = fileNode.Name;
+        
+        // For modified DataCore files, show a diff view
+        if (fileNode.Status == DataCoreComparisonStatus.Modified && 
+            fileNode.LeftRecord != null && fileNode.RightRecord != null &&
+            fileNode.LeftDatabase != null && fileNode.RightDatabase != null)
+        {
+            return CreateDataCoreDiffPreview(fileNode);
+        }
+
+        // For non-modified files, show the content from appropriate database
+        DataCoreDatabase? sourceDatabase = fileNode.Status switch
+        {
+            DataCoreComparisonStatus.Added => fileNode.RightDatabase,     // File only exists in right DataCore
+            DataCoreComparisonStatus.Removed => fileNode.LeftDatabase,   // File only exists in left DataCore
+            DataCoreComparisonStatus.Modified => fileNode.RightDatabase, // Show the newer version for non-diff files
+            DataCoreComparisonStatus.Unchanged => fileNode.LeftDatabase, // Either database is fine
+            _ => fileNode.LeftDatabase
+        };
+
+        var sourceRecord = fileNode.Status switch
+        {
+            DataCoreComparisonStatus.Added => fileNode.RightRecord,
+            DataCoreComparisonStatus.Removed => fileNode.LeftRecord,
+            DataCoreComparisonStatus.Modified => fileNode.RightRecord,
+            DataCoreComparisonStatus.Unchanged => fileNode.LeftRecord ?? fileNode.RightRecord,
+            _ => fileNode.LeftRecord ?? fileNode.RightRecord
+        };
+
+        if (sourceDatabase == null || sourceRecord == null)
+        {
+            return new TextPreviewViewModel("DataCore file not available for preview");
+        }
+
+        try
+        {
+            // Create a simple preview showing record information
+            var content = GenerateDataCoreRecordPreview(sourceRecord.Value, sourceDatabase);
+            var extension = TextFormat == "json" ? ".json" : ".xml";
+            
+            return new TextPreviewViewModel(content, extension);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create DataCore preview for file: {FileName}", fileName);
+            return new TextPreviewViewModel($"Failed to create DataCore preview: {ex.Message}");
+        }
+    }
+    
+    private string GenerateDataCoreRecordPreview(DataCoreRecord record, DataCoreDatabase database)
+    {
+        try
+        {
+            var fileName = record.GetFileName(database);
+            var recordName = record.GetName(database);
+            var structTypeName = database.StructDefinitions[record.StructIndex].GetName(database);
+            
+            // Check if this is a main record that can be extracted
+            if (!database.MainRecords.Contains(record.Id))
+            {
+                _logger.LogDebug("Record {RecordId} is not a main record, showing basic info only", record.Id);
+                return GenerateBasicRecordInfo(record, database, fileName, recordName, structTypeName);
+            }
+            
+            // Create a DataForge instance to extract this specific record
+            string recordContent;
+            if (TextFormat == "json")
+            {
+                var dataForgeJson = new DataForge<string>(new DataCoreBinaryJson(database));
+                recordContent = dataForgeJson.GetFromRecord(record);
+            }
+            else
+            {
+                var dataForgeXml = new DataForge<string>(new DataCoreBinaryXml(database));
+                recordContent = dataForgeXml.GetFromRecord(record);
+            }
+            
+            if (string.IsNullOrWhiteSpace(recordContent))
+            {
+                // Fallback to basic info if extraction fails
+                return GenerateBasicRecordInfo(record, database, fileName, recordName, structTypeName);
+            }
+            
+            return recordContent;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to extract DataCore record content for {RecordId}", record.Id);
+            
+            // Fallback to basic info on error
+            var fileName = record.GetFileName(database);
+            var recordName = record.GetName(database);
+            var structTypeName = database.StructDefinitions[record.StructIndex].GetName(database);
+            return GenerateBasicRecordInfo(record, database, fileName, recordName, structTypeName);
+        }
+    }
+    
+    private string GenerateBasicRecordInfo(DataCoreRecord record, DataCoreDatabase database, string fileName, string recordName, string structTypeName)
+    {
+        var sb = new StringBuilder();
+        
+        if (TextFormat == "json")
+        {
+            sb.AppendLine("{");
+            sb.AppendLine($"  \"recordId\": \"{record.Id}\",");
+            sb.AppendLine($"  \"recordName\": \"{recordName}\",");
+            sb.AppendLine($"  \"fileName\": \"{fileName}\",");
+            sb.AppendLine($"  \"structType\": \"{structTypeName}\",");
+            sb.AppendLine($"  \"structSize\": {record.StructSize}");
+            sb.AppendLine("}");
+        }
+        else
+        {
+            sb.AppendLine($"<DataCoreRecord>");
+            sb.AppendLine($"  <RecordId>{record.Id}</RecordId>");
+            sb.AppendLine($"  <RecordName>{recordName}</RecordName>");
+            sb.AppendLine($"  <FileName>{fileName}</FileName>");
+            sb.AppendLine($"  <StructType>{structTypeName}</StructType>");
+            sb.AppendLine($"  <StructSize>{record.StructSize}</StructSize>");
+            sb.AppendLine($"</DataCoreRecord>");
+        }
+        
+        return sb.ToString();
+    }
+
+    private FilePreviewViewModel CreateDataCoreDiffPreview(DataCoreComparisonFileNode fileNode)
+    {
+        if (fileNode.LeftDatabase == null || fileNode.RightDatabase == null || 
+            fileNode.LeftRecord == null || fileNode.RightRecord == null)
+        {
+            return new TextPreviewViewModel("Unable to create diff - missing DataCore data");
+        }
+
+        try
+        {
+            // Check if both records are main records that can be extracted
+            var leftIsMainRecord = fileNode.LeftDatabase.MainRecords.Contains(fileNode.LeftRecord.Value.Id);
+            var rightIsMainRecord = fileNode.RightDatabase.MainRecords.Contains(fileNode.RightRecord.Value.Id);
+            
+            string oldContent, newContent;
+            
+            // Extract full XML/JSON content for both records if they're main records
+            if (leftIsMainRecord && rightIsMainRecord)
+            {
+                if (TextFormat == "json")
+                {
+                    var leftDataForge = new DataForge<string>(new DataCoreBinaryJson(fileNode.LeftDatabase));
+                    var rightDataForge = new DataForge<string>(new DataCoreBinaryJson(fileNode.RightDatabase));
+                    
+                    oldContent = leftDataForge.GetFromRecord(fileNode.LeftRecord.Value);
+                    newContent = rightDataForge.GetFromRecord(fileNode.RightRecord.Value);
+                }
+                else
+                {
+                    var leftDataForge = new DataForge<string>(new DataCoreBinaryXml(fileNode.LeftDatabase));
+                    var rightDataForge = new DataForge<string>(new DataCoreBinaryXml(fileNode.RightDatabase));
+                    
+                    oldContent = leftDataForge.GetFromRecord(fileNode.LeftRecord.Value);
+                    newContent = rightDataForge.GetFromRecord(fileNode.RightRecord.Value);
+                }
+            }
+            else
+            {
+                // One or both records are not main records, use basic info generation
+                _logger.LogDebug("One or both records are not main records (Left: {LeftIsMain}, Right: {RightIsMain}), using basic info", leftIsMainRecord, rightIsMainRecord);
+                oldContent = GenerateDataCoreRecordPreview(fileNode.LeftRecord.Value, fileNode.LeftDatabase);
+                newContent = GenerateDataCoreRecordPreview(fileNode.RightRecord.Value, fileNode.RightDatabase);
+            }
+            
+            // Fallback to basic preview if extraction fails
+            if (string.IsNullOrWhiteSpace(oldContent))
+            {
+                oldContent = GenerateDataCoreRecordPreview(fileNode.LeftRecord.Value, fileNode.LeftDatabase);
+            }
+            
+            if (string.IsNullOrWhiteSpace(newContent))
+            {
+                newContent = GenerateDataCoreRecordPreview(fileNode.RightRecord.Value, fileNode.RightDatabase);
+            }
+
+            // Create labels for the diff
+            var oldLabel = $"Left P4K";
+            var newLabel = $"Right P4K";
+
+            var displayExtension = TextFormat == "json" ? ".json" : ".xml";
+
+            return new DiffPreviewViewModel(oldContent, newContent, oldLabel, newLabel, displayExtension);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create DataCore diff preview for file: {FileName}", fileNode.Name);
+            return new TextPreviewViewModel($"Failed to create DataCore diff preview: {ex.Message}");
+        }
+    }
 
     private void LoadSettings()
     {
@@ -369,6 +642,17 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                     TextFormat = "xml"; // default
                 }
 
+                // Load P4K output directory
+                if (!string.IsNullOrWhiteSpace(settings?.P4kOutputDirectory))
+                {
+                    P4kOutputDirectory = settings.P4kOutputDirectory;
+                }
+                else
+                {
+                    var defaultP4kOutputPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "StarCitizen_P4K_Output");
+                    P4kOutputDirectory = defaultP4kOutputPath;
+                }
+
                 // Now determine and set the selected channel based on saved setting or current GameFolder
                 string channelToSelect = "LIVE"; // default
                 
@@ -398,6 +682,9 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                 OutputDirectory = defaultOutputPath;
                 TextFormat = "xml";
                 
+                var defaultP4kOutputPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "StarCitizen_P4K_Output");
+                P4kOutputDirectory = defaultP4kOutputPath;
+                
                 UpdateChannelSelection("LIVE");
             }
         }
@@ -406,9 +693,12 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             _logger.LogWarning(ex, "Failed to load diff settings");
             
             // Fallback to defaults
-        var defaultOutputPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "StarCitizen_Diff");
-        OutputDirectory = defaultOutputPath;
+            var defaultOutputPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "StarCitizen_Diff");
+            OutputDirectory = defaultOutputPath;
             TextFormat = "xml";
+            
+            var defaultP4kOutputPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "StarCitizen_P4K_Output");
+            P4kOutputDirectory = defaultP4kOutputPath;
             
             UpdateChannelSelection("LIVE");
         }
@@ -434,6 +724,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             settings.DiffGameFolder = GameFolder;
             settings.DiffOutputDirectory = OutputDirectory;
             settings.TextFormat = TextFormat;
+            settings.P4kOutputDirectory = P4kOutputDirectory;
             
             var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(Constants.SettingsFile, json);
@@ -463,6 +754,14 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
     partial void OnTextFormatChanged(string value)
     {
         SaveSettings();
+    }
+
+    partial void OnP4kOutputDirectoryChanged(string value)
+    {
+        SaveSettings();
+        OnPropertyChanged(nameof(CanCreateReport));
+        OnPropertyChanged(nameof(CanCreateP4kReport));
+        OnPropertyChanged(nameof(CanExtractNewDdsFiles));
     }
 
     private string GetBaseInstallationPath()
@@ -566,7 +865,23 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
     {
         _logger.LogInformation("ToggleP4kComparisonMode command executed. Current mode: {Current}", IsP4kComparisonMode);
         IsP4kComparisonMode = !IsP4kComparisonMode;
+        if (IsP4kComparisonMode)
+        {
+            IsDataCoreComparisonMode = false; // Ensure only one comparison mode is active
+        }
         _logger.LogInformation("Switched to {Mode} mode. New value: {Value}", IsP4kComparisonMode ? "P4K Comparison" : "Diff Tool", IsP4kComparisonMode);
+    }
+    
+    [RelayCommand]
+    public void ToggleDataCoreComparisonMode()
+    {
+        _logger.LogInformation("ToggleDataCoreComparisonMode command executed. Current mode: {Current}", IsDataCoreComparisonMode);
+        IsDataCoreComparisonMode = !IsDataCoreComparisonMode;
+        if (IsDataCoreComparisonMode)
+        {
+            IsP4kComparisonMode = false; // Ensure only one comparison mode is active
+        }
+        _logger.LogInformation("Switched to {Mode} mode. New value: {Value}", IsDataCoreComparisonMode ? "DataCore Comparison" : "Diff Tool", IsDataCoreComparisonMode);
     }
 
     [RelayCommand]
@@ -574,6 +889,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
     {
         ShowOnlyChangedFiles = !ShowOnlyChangedFiles;
         RefreshComparisonTree();
+        RefreshDataCoreComparisonTree();
         _logger.LogInformation("Show only changed files: {ShowOnlyChanged}", ShowOnlyChangedFiles);
     }
 
@@ -583,6 +899,15 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
 
         var filteredItems = _comparisonRoot.GetFilteredComparisonChildren(ShowOnlyChangedFiles);
         ComparisonSource.Items = filteredItems.OrderBy(n => n is not P4kComparisonDirectoryNode)
+            .ThenBy(n => n.GetComparisonName(), StringComparer.OrdinalIgnoreCase).ToArray();
+    }
+    
+    private void RefreshDataCoreComparisonTree()
+    {
+        if (_dataCoreComparisonRoot == null || DataCoreComparisonSource == null) return;
+
+        var filteredItems = _dataCoreComparisonRoot.GetFilteredComparisonChildren(ShowOnlyChangedFiles);
+        DataCoreComparisonSource.Items = filteredItems.OrderBy(n => n is not DataCoreComparisonDirectoryNode)
             .ThenBy(n => n.GetComparisonName(), StringComparer.OrdinalIgnoreCase).ToArray();
     }
     
@@ -681,6 +1006,10 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                     
                     RefreshComparisonTree();
                     
+                    // Notify that CanCreateP4kReport and CanExtractNewDdsFiles have changed
+                    OnPropertyChanged(nameof(CanCreateP4kReport));
+                    OnPropertyChanged(nameof(CanExtractNewDdsFiles));
+                    
                     var stats = P4kComparison.AnalyzeComparison(comparisonRoot);
                     ComparisonStatus = $"Comparison complete! Added: {stats.AddedFiles}, Removed: {stats.RemovedFiles}, Modified: {stats.ModifiedFiles}";
                     
@@ -698,6 +1027,967 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         {
             IsComparing = false;
         }
+    }
+
+    [RelayCommand]
+    public async Task SelectLeftDataCoreP4k()
+    {
+        var topLevel = TopLevel.GetTopLevel(Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop 
+            ? desktop.MainWindow : null);
+
+            if (topLevel == null) return;
+
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+            Title = "Select Left P4K File (for DataCore)",
+                AllowMultiple = false,
+                FileTypeFilter = new[]
+                {
+                    new FilePickerFileType("P4K Files") { Patterns = new[] { "*.p4k" } },
+                new FilePickerFileType("All Files") { Patterns = new[] { "*" } }
+                }
+        });
+
+            if (files.Count > 0)
+            {
+            LeftDataCoreP4kPath = files[0].Path.LocalPath;
+            _logger.LogInformation("Selected left P4K for DataCore comparison: {Path}", LeftDataCoreP4kPath);
+        }
+    }
+
+    [RelayCommand]
+    public async Task SelectRightDataCoreP4k()
+    {
+        var topLevel = TopLevel.GetTopLevel(Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop 
+            ? desktop.MainWindow : null);
+
+        if (topLevel == null) return;
+
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Select Right P4K File (for DataCore)",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("P4K Files") { Patterns = new[] { "*.p4k" } },
+                new FilePickerFileType("All Files") { Patterns = new[] { "*" } }
+            }
+        });
+
+        if (files.Count > 0)
+        {
+            RightDataCoreP4kPath = files[0].Path.LocalPath;
+            _logger.LogInformation("Selected right P4K for DataCore comparison: {Path}", RightDataCoreP4kPath);
+        }
+    }
+
+    [RelayCommand]
+    public async Task CompareDataCores()
+    {
+        if (string.IsNullOrWhiteSpace(LeftDataCoreP4kPath) || string.IsNullOrWhiteSpace(RightDataCoreP4kPath))
+        {
+            _logger.LogWarning("Both P4K files must be selected for DataCore comparison");
+            return;
+        }
+
+        if (!File.Exists(LeftDataCoreP4kPath) || !File.Exists(RightDataCoreP4kPath))
+        {
+            _logger.LogError("One or both P4K files do not exist");
+            return;
+        }
+
+        IsComparing = true;
+        ComparisonStatus = "Loading P4K files...";
+        
+        try
+        {
+            await Task.Run(() =>
+            {
+                // Load left DataCore from P4K
+                Dispatcher.UIThread.Post(() => ComparisonStatus = "Loading left P4K and extracting DataCore...");
+                var leftDataCore = LoadDataCoreFromP4k(LeftDataCoreP4kPath);
+                if (leftDataCore == null)
+                {
+                    throw new InvalidOperationException($"DataCore not found in left P4K: {LeftDataCoreP4kPath}");
+                }
+                
+                // Load right DataCore from P4K
+                Dispatcher.UIThread.Post(() => ComparisonStatus = "Loading right P4K and extracting DataCore...");
+                var rightDataCore = LoadDataCoreFromP4k(RightDataCoreP4kPath);
+                if (rightDataCore == null)
+                {
+                    throw new InvalidOperationException($"DataCore not found in right P4K: {RightDataCoreP4kPath}");
+                }
+                
+                Dispatcher.UIThread.Post(() => ComparisonStatus = "Comparing DataCore files...");
+                var progress = new Progress<double>(p => 
+                    Dispatcher.UIThread.Post(() => ComparisonStatus = $"Comparing DataCore files... {p:P0}"));
+                
+                var comparisonRoot = DataCoreComparison.Compare(leftDataCore, rightDataCore, progress);
+        
+        Dispatcher.UIThread.Post(() =>
+        {
+                    // Store DataCore databases and comparison root for preview and filtering
+                    _leftDataCoreDatabase = leftDataCore;
+                    _rightDataCoreDatabase = rightDataCore;
+                    _dataCoreComparisonRoot = comparisonRoot;
+                    
+                    RefreshDataCoreComparisonTree();
+                    
+                    // Notify that CanCreateReport has changed
+                    OnPropertyChanged(nameof(CanCreateReport));
+                    
+                    var stats = DataCoreComparison.AnalyzeComparison(comparisonRoot);
+                    ComparisonStatus = $"Comparison complete! Added: {stats.AddedFiles}, Removed: {stats.RemovedFiles}, Modified: {stats.ModifiedFiles}";
+                    
+                    _logger.LogInformation("DataCore comparison completed - Total: {Total}, Added: {Added}, Removed: {Removed}, Modified: {Modified}, Unchanged: {Unchanged}",
+                        stats.TotalFiles, stats.AddedFiles, stats.RemovedFiles, stats.ModifiedFiles, stats.UnchangedFiles);
+                });
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to compare DataCore files");
+            ComparisonStatus = $"Comparison failed: {ex.Message}";
+        }
+        finally
+        {
+            IsComparing = false;
+        }
+    }
+
+    private DataCoreDatabase? LoadDataCoreFromP4k(string p4kPath)
+    {
+        try
+        {
+            var p4kFileSystem = new P4kFileSystem(P4kFile.FromFile(p4kPath));
+            
+            // Try to find DataCore file in known paths
+            Stream? dcbStream = null;
+            foreach (var file in DataCoreUtils.KnownPaths)
+            {
+                if (!p4kFileSystem.FileExists(file)) continue;
+                dcbStream = p4kFileSystem.OpenRead(file);
+                _logger.LogInformation("Found DataCore at path: {Path} in P4K: {P4kPath}", file, p4kPath);
+                break;
+            }
+
+            if (dcbStream == null)
+            {
+                _logger.LogError("DataCore not found in any known paths in P4K: {P4kPath}", p4kPath);
+                return null;
+            }
+
+            return new DataCoreDatabase(dcbStream);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load DataCore from P4K: {P4kPath}", p4kPath);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Indicates whether a DataCore report can be created (DataCore comparison has been completed and output directory is configured)
+    /// </summary>
+    public bool CanCreateReport => _dataCoreComparisonRoot != null && _leftDataCoreDatabase != null && _rightDataCoreDatabase != null && !string.IsNullOrWhiteSpace(P4kOutputDirectory);
+
+    /// <summary>
+    /// Indicates whether a P4K report can be created (P4K comparison has been completed)
+    /// </summary>
+    public bool CanCreateP4kReport => _comparisonRoot != null && _leftP4kFile != null && _rightP4kFile != null;
+
+    /// <summary>
+    /// Indicates whether new DDS files can be extracted (P4K comparison has been completed and there are added DDS files)
+    /// </summary>
+    public bool CanExtractNewDdsFiles => _comparisonRoot != null && _rightP4kFile != null && 
+        _comparisonRoot.GetAllFiles().Any(f => f.Status == P4kComparisonStatus.Added && 
+            Path.GetFileName(f.FullPath).Contains(".dds", StringComparison.OrdinalIgnoreCase));
+
+    [RelayCommand]
+    public async Task CreateReport()
+    {
+        if (!CanCreateReport)
+        {
+            _logger.LogWarning("Cannot create report - no comparison data available");
+            return;
+        }
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(P4kOutputDirectory))
+            {
+                _logger.LogWarning("P4K output directory not configured");
+                ComparisonStatus = "Please configure output directory first";
+                return;
+            }
+
+            Directory.CreateDirectory(P4kOutputDirectory);
+            
+            var reportFileName = "DataCore_Comparison.md";
+            var reportPath = Path.Combine(P4kOutputDirectory, reportFileName);
+
+            IsComparing = true;
+            ComparisonStatus = "Generating report...";
+
+            await Task.Run(async () =>
+            {
+                try
+                {
+                    var report = await GenerateComparisonReport();
+                    
+                    await File.WriteAllTextAsync(reportPath, report, Encoding.UTF8);
+                    
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        ComparisonStatus = $"DataCore report saved successfully to {reportFileName}";
+                        _logger.LogInformation("DataCore comparison report saved to: {FilePath}", reportPath);
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to generate or save report");
+                    Dispatcher.UIThread.Post(() => ComparisonStatus = $"Failed to save report: {ex.Message}");
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating report");
+            ComparisonStatus = $"Error creating report: {ex.Message}";
+        }
+        finally
+        {
+            IsComparing = false;
+        }
+    }
+
+    private async Task<string> GenerateComparisonReport()
+    {
+        if (_dataCoreComparisonRoot == null || _leftDataCoreDatabase == null || _rightDataCoreDatabase == null)
+            throw new InvalidOperationException("No comparison data available");
+
+        var report = new StringBuilder();
+        var stats = DataCoreComparison.AnalyzeComparison(_dataCoreComparisonRoot);
+
+        // Header
+        var leftVersion = ExtractVersionFromPath(LeftDataCoreP4kPath);
+        var rightVersion = ExtractVersionFromPath(RightDataCoreP4kPath);
+        
+        report.AppendLine($"# DataCore Comparison Report: {leftVersion} → {rightVersion}");
+        report.AppendLine($"**Generated:** {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+        report.AppendLine($"**Left P4K:** {Path.GetFileName(LeftDataCoreP4kPath)} (v{leftVersion})");
+        report.AppendLine($"**Right P4K:** {Path.GetFileName(RightDataCoreP4kPath)} (v{rightVersion})");
+        report.AppendLine();
+
+        // Summary
+        report.AppendLine("## Summary");
+        report.AppendLine($"- **Total Files:** {stats.TotalFiles}");
+        report.AppendLine($"- **Added:** {stats.AddedFiles}");
+        report.AppendLine($"- **Removed:** {stats.RemovedFiles}");
+        report.AppendLine($"- **Modified:** {stats.ModifiedFiles}");
+        report.AppendLine($"- **Unchanged:** {stats.UnchangedFiles}");
+        report.AppendLine();
+
+        // Changed Files Section
+        GenerateChangedFilesSection(report);
+        
+        // Localization Changes Section
+        await GenerateLocalizationChangesSection(report);
+
+        return report.ToString();
+    }
+
+    private void GenerateChangedFilesSection(StringBuilder report)
+    {
+        if (_dataCoreComparisonRoot == null) return;
+
+        var allFiles = _dataCoreComparisonRoot.GetAllFiles().ToArray();
+        
+        // Added Files
+        var addedFiles = allFiles.Where(f => f.Status == DataCoreComparisonStatus.Added).ToArray();
+        if (addedFiles.Length > 0)
+        {
+            report.AppendLine("## Added Files");
+            var consolidatedFiles = ConsolidateRelatedFiles(addedFiles.Select(f => f.FullPath));
+            foreach (var file in consolidatedFiles.OrderBy(f => f))
+            {
+                report.AppendLine($"- `{file}`");
+            }
+            report.AppendLine();
+        }
+
+        // Removed Files
+        var removedFiles = allFiles.Where(f => f.Status == DataCoreComparisonStatus.Removed).ToArray();
+        if (removedFiles.Length > 0)
+        {
+            report.AppendLine("## Removed Files");
+            var consolidatedFiles = ConsolidateRelatedFiles(removedFiles.Select(f => f.FullPath));
+            foreach (var file in consolidatedFiles.OrderBy(f => f))
+            {
+                report.AppendLine($"- `{file}`");
+            }
+            report.AppendLine();
+        }
+
+        // Modified Files
+        var modifiedFiles = allFiles.Where(f => f.Status == DataCoreComparisonStatus.Modified).ToArray();
+        if (modifiedFiles.Length > 0)
+        {
+            report.AppendLine("## Modified Files");
+            var consolidatedFiles = ConsolidateRelatedFiles(modifiedFiles.Select(f => f.FullPath));
+            foreach (var file in consolidatedFiles.OrderBy(f => f))
+            {
+                report.AppendLine($"- `{file}`");
+            }
+            report.AppendLine();
+        }
+    }
+
+    private async Task GenerateLocalizationChangesSection(StringBuilder report)
+    {
+        if (_leftDataCoreDatabase == null || _rightDataCoreDatabase == null) return;
+
+        try
+        {
+            // Extract localization data from both P4K files
+            var leftLocalization = await ExtractLocalizationData(LeftDataCoreP4kPath);
+            var rightLocalization = await ExtractLocalizationData(RightDataCoreP4kPath);
+
+            if (leftLocalization != null && rightLocalization != null)
+            {
+                var addedStrings = rightLocalization.Where(kvp => !leftLocalization.ContainsKey(kvp.Key)).ToArray();
+                var changedStrings = rightLocalization.Where(kvp => leftLocalization.ContainsKey(kvp.Key) && leftLocalization[kvp.Key] != kvp.Value).ToArray();
+                var removedStrings = leftLocalization.Where(kvp => !rightLocalization.ContainsKey(kvp.Key)).ToArray();
+
+                // Added Localization Strings
+                if (addedStrings.Length > 0)
+                {
+                    report.AppendLine("## Added Localization Strings");
+                    foreach (var kvp in addedStrings.OrderBy(x => x.Key))
+                    {
+                        report.AppendLine($"- **{kvp.Key}:** `{kvp.Value}`");
+                    }
+                    report.AppendLine();
+                }
+
+                // Modified Localization Strings
+                if (changedStrings.Length > 0)
+                {
+                    report.AppendLine("## Modified Localization Strings");
+                    foreach (var kvp in changedStrings.OrderBy(x => x.Key))
+                    {
+                        report.AppendLine($"- **{kvp.Key}:**");
+                        report.AppendLine($"  - **Old:** `{leftLocalization[kvp.Key]}`");
+                        report.AppendLine($"  - **New:** `{kvp.Value}`");
+                    }
+                    report.AppendLine();
+                }
+
+                // Removed Localization Strings
+                if (removedStrings.Length > 0)
+                {
+                    report.AppendLine("## Removed Localization Strings");
+                    foreach (var kvp in removedStrings.OrderBy(x => x.Key))
+                    {
+                        report.AppendLine($"- **{kvp.Key}:** `{kvp.Value}`");
+                    }
+                    report.AppendLine();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to extract localization data for report");
+            report.AppendLine("## Localization Changes");
+            report.AppendLine("*Unable to extract localization data*");
+            report.AppendLine();
+        }
+    }
+
+    private async Task<Dictionary<string, string>?> ExtractLocalizationData(string p4kPath)
+    {
+        try
+        {
+            var p4kFileSystem = new P4kFileSystem(P4kFile.FromFile(p4kPath));
+            
+            // Look for localization files
+            string[] localizationPaths = {
+                "Data/Localization/english/global.ini",
+                "Data\\Localization\\english\\global.ini"
+            };
+
+            foreach (var path in localizationPaths)
+            {
+                if (p4kFileSystem.FileExists(path))
+                {
+                    using var stream = p4kFileSystem.OpenRead(path);
+                    using var reader = new StreamReader(stream, Encoding.UTF8);
+                    var content = await reader.ReadToEndAsync();
+                    
+                    var localizationData = new Dictionary<string, string>();
+                    var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                    
+                    foreach (var line in lines)
+                    {
+                        var trimmedLine = line.Trim();
+                        if (trimmedLine.StartsWith(";") || trimmedLine.StartsWith("#") || string.IsNullOrWhiteSpace(trimmedLine))
+                            continue; // Skip comments and empty lines
+                        
+                        var equalIndex = trimmedLine.IndexOf('=');
+                        if (equalIndex > 0)
+                        {
+                            var key = trimmedLine.Substring(0, equalIndex).Trim();
+                            var value = trimmedLine.Substring(equalIndex + 1).Trim();
+                            localizationData[key] = value;
+                        }
+                    }
+                    
+                    return localizationData;
+                }
+            }
+            
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to extract localization data from P4K: {P4kPath}", p4kPath);
+            return null;
+        }
+    }
+
+    [RelayCommand]
+    public async Task CreateP4kReport()
+    {
+        if (!CanCreateP4kReport)
+        {
+            _logger.LogWarning("Cannot create P4K report - no comparison data available");
+            return;
+        }
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(P4kOutputDirectory))
+            {
+                _logger.LogWarning("P4K output directory not configured");
+                ComparisonStatus = "Please configure P4K output directory first";
+                return;
+            }
+
+            Directory.CreateDirectory(P4kOutputDirectory);
+            
+            var reportFileName = "P4K_Comparison.md";
+            var reportPath = Path.Combine(P4kOutputDirectory, reportFileName);
+
+            IsComparing = true;
+            ComparisonStatus = "Generating P4K report...";
+
+            await Task.Run(async () =>
+            {
+                try
+                {
+                    var report = await GenerateP4kComparisonReport();
+                    
+                    await File.WriteAllTextAsync(reportPath, report, Encoding.UTF8);
+                    
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        ComparisonStatus = $"P4K report saved successfully to {reportFileName}";
+                        _logger.LogInformation("P4K comparison report saved to: {FilePath}", reportPath);
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to generate or save P4K report");
+                    Dispatcher.UIThread.Post(() => ComparisonStatus = $"Failed to save P4K report: {ex.Message}");
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating P4K report");
+            ComparisonStatus = $"Error creating P4K report: {ex.Message}";
+        }
+        finally
+        {
+            IsComparing = false;
+        }
+    }
+
+    private async Task<string> GenerateP4kComparisonReport()
+    {
+        if (_comparisonRoot == null || _leftP4kFile == null || _rightP4kFile == null)
+            throw new InvalidOperationException("No P4K comparison data available");
+
+        var report = new StringBuilder();
+        var stats = P4kComparison.AnalyzeComparison(_comparisonRoot);
+
+        // Header
+        var leftVersion = ExtractVersionFromPath(LeftP4kPath);
+        var rightVersion = ExtractVersionFromPath(RightP4kPath);
+        
+        report.AppendLine($"# P4K Comparison Report: {leftVersion} → {rightVersion}");
+        report.AppendLine($"**Generated:** {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+        report.AppendLine($"**Left P4K:** {Path.GetFileName(LeftP4kPath)} (v{leftVersion})");
+        report.AppendLine($"**Right P4K:** {Path.GetFileName(RightP4kPath)} (v{rightVersion})");
+        report.AppendLine();
+
+        // Summary
+        report.AppendLine("## Summary");
+        report.AppendLine($"- **Total Files:** {stats.TotalFiles}");
+        report.AppendLine($"- **Added:** {stats.AddedFiles}");
+        report.AppendLine($"- **Removed:** {stats.RemovedFiles}");
+        report.AppendLine($"- **Modified:** {stats.ModifiedFiles}");
+        report.AppendLine($"- **Unchanged:** {stats.UnchangedFiles}");
+        report.AppendLine();
+
+        // Changed Files Section
+        GenerateP4kChangedFilesSection(report);
+        
+        // Localization Changes Section (extract from both P4K files)
+        await GenerateP4kLocalizationChangesSection(report);
+
+        return report.ToString();
+    }
+
+    private void GenerateP4kChangedFilesSection(StringBuilder report)
+    {
+        if (_comparisonRoot == null) return;
+
+        var allFiles = _comparisonRoot.GetAllFiles().ToArray();
+        
+        // Added Files
+        var addedFiles = allFiles.Where(f => f.Status == P4kComparisonStatus.Added).ToArray();
+        if (addedFiles.Length > 0)
+        {
+            report.AppendLine("## Added Files");
+            var consolidatedFiles = ConsolidateRelatedFiles(addedFiles.Select(f => f.FullPath));
+            foreach (var file in consolidatedFiles.OrderBy(f => f))
+            {
+                report.AppendLine($"- `{file}`");
+            }
+            report.AppendLine();
+        }
+
+        // Removed Files
+        var removedFiles = allFiles.Where(f => f.Status == P4kComparisonStatus.Removed).ToArray();
+        if (removedFiles.Length > 0)
+        {
+            report.AppendLine("## Removed Files");
+            var consolidatedFiles = ConsolidateRelatedFiles(removedFiles.Select(f => f.FullPath));
+            foreach (var file in consolidatedFiles.OrderBy(f => f))
+            {
+                report.AppendLine($"- `{file}`");
+            }
+            report.AppendLine();
+        }
+
+        // Modified Files
+        var modifiedFiles = allFiles.Where(f => f.Status == P4kComparisonStatus.Modified).ToArray();
+        if (modifiedFiles.Length > 0)
+        {
+            report.AppendLine("## Modified Files");
+            var consolidatedFiles = ConsolidateRelatedFiles(modifiedFiles.Select(f => f.FullPath));
+            foreach (var file in consolidatedFiles.OrderBy(f => f))
+            {
+                report.AppendLine($"- `{file}`");
+            }
+            report.AppendLine();
+        }
+    }
+
+    private async Task GenerateP4kLocalizationChangesSection(StringBuilder report)
+    {
+        if (_leftP4kFile == null || _rightP4kFile == null) return;
+
+        try
+        {
+            // Extract localization data from both P4K files
+            var leftLocalization = await ExtractP4kLocalizationData(_leftP4kFile);
+            var rightLocalization = await ExtractP4kLocalizationData(_rightP4kFile);
+
+            if (leftLocalization != null && rightLocalization != null)
+            {
+                var addedStrings = rightLocalization.Where(kvp => !leftLocalization.ContainsKey(kvp.Key)).ToArray();
+                var changedStrings = rightLocalization.Where(kvp => leftLocalization.ContainsKey(kvp.Key) && leftLocalization[kvp.Key] != kvp.Value).ToArray();
+                var removedStrings = leftLocalization.Where(kvp => !rightLocalization.ContainsKey(kvp.Key)).ToArray();
+
+                // Added Localization Strings
+                if (addedStrings.Length > 0)
+                {
+                    report.AppendLine("## Added Localization Strings");
+                    foreach (var kvp in addedStrings.OrderBy(x => x.Key))
+                    {
+                        report.AppendLine($"- **{kvp.Key}:** `{kvp.Value}`");
+                    }
+                    report.AppendLine();
+                }
+
+                // Modified Localization Strings
+                if (changedStrings.Length > 0)
+                {
+                    report.AppendLine("## Modified Localization Strings");
+                    foreach (var kvp in changedStrings.OrderBy(x => x.Key))
+                    {
+                        report.AppendLine($"- **{kvp.Key}:**");
+                        report.AppendLine($"  - **Old:** `{leftLocalization[kvp.Key]}`");
+                        report.AppendLine($"  - **New:** `{kvp.Value}`");
+                    }
+                    report.AppendLine();
+                }
+
+                // Removed Localization Strings
+                if (removedStrings.Length > 0)
+                {
+                    report.AppendLine("## Removed Localization Strings");
+                    foreach (var kvp in removedStrings.OrderBy(x => x.Key))
+                    {
+                        report.AppendLine($"- **{kvp.Key}:** `{kvp.Value}`");
+                    }
+                    report.AppendLine();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to extract localization data for P4K report");
+            report.AppendLine("## Localization Changes");
+            report.AppendLine("*Unable to extract localization data*");
+            report.AppendLine();
+        }
+    }
+
+    private async Task<Dictionary<string, string>?> ExtractP4kLocalizationData(P4kFile p4kFile)
+    {
+        try
+        {
+            var p4kFileSystem = new P4kFileSystem(p4kFile);
+            
+            // Look for localization files
+            string[] localizationPaths = {
+                "Data/Localization/english/global.ini",
+                "Data\\Localization\\english\\global.ini"
+            };
+
+            foreach (var path in localizationPaths)
+            {
+                if (p4kFileSystem.FileExists(path))
+                {
+                    using var stream = p4kFileSystem.OpenRead(path);
+                    using var reader = new StreamReader(stream, Encoding.UTF8);
+                    var content = await reader.ReadToEndAsync();
+                    
+                    var localizationData = new Dictionary<string, string>();
+                    var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                    
+                    foreach (var line in lines)
+                    {
+                        var trimmedLine = line.Trim();
+                        if (trimmedLine.StartsWith(";") || trimmedLine.StartsWith("#") || string.IsNullOrWhiteSpace(trimmedLine))
+                            continue; // Skip comments and empty lines
+                        
+                        var equalIndex = trimmedLine.IndexOf('=');
+                        if (equalIndex > 0)
+                        {
+                            var key = trimmedLine.Substring(0, equalIndex).Trim();
+                            var value = trimmedLine.Substring(equalIndex + 1).Trim();
+                            localizationData[key] = value;
+                        }
+                    }
+                    
+                    return localizationData;
+                }
+            }
+            
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to extract localization data from P4K file");
+            return null;
+        }
+    }
+
+    [RelayCommand]
+    public async Task ExtractNewDdsFiles()
+    {
+        if (!CanExtractNewDdsFiles)
+        {
+            _logger.LogWarning("Cannot extract new DDS files - no comparison data or added DDS files available");
+            return;
+        }
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(P4kOutputDirectory))
+            {
+                _logger.LogWarning("P4K output directory not configured");
+                ComparisonStatus = "Please configure P4K output directory first";
+                return;
+            }
+
+            var outputFolder = Path.Combine(P4kOutputDirectory, "DDS_Files");
+            Directory.CreateDirectory(outputFolder);
+
+            IsComparing = true;
+            ComparisonStatus = "Extracting new DDS files...";
+
+            await Task.Run(() =>
+            {
+                try
+                {
+                    // Get all added DDS files
+                    var addedDdsFiles = _comparisonRoot!.GetAllFiles()
+                        .Where(f => f.Status == P4kComparisonStatus.Added)
+                        .Where(f => Path.GetFileName(f.FullPath).Contains(".dds", StringComparison.OrdinalIgnoreCase))
+                        .Where(f => f.RightEntry != null)
+                        .ToArray();
+
+                    // Consolidate related DDS files to avoid extracting duplicates
+                    var consolidatedFiles = ConsolidateRelatedFiles(addedDdsFiles.Select(f => f.FullPath)).ToArray();
+                    var filesToExtract = addedDdsFiles.Where(f => consolidatedFiles.Contains(f.FullPath)).ToArray();
+
+                    if (filesToExtract.Length == 0)
+                    {
+                        Dispatcher.UIThread.Post(() =>
+                        {
+                            ComparisonStatus = "No new DDS files found to extract.";
+                            _logger.LogInformation("No new DDS files found to extract");
+                        });
+                        return;
+                    }
+
+                    var p4kFileSystem = new P4kFileSystem(_rightP4kFile!);
+                    var extractedCount = 0;
+                    var failedCount = 0;
+
+                    for (int i = 0; i < filesToExtract.Length; i++)
+                    {
+                        var file = filesToExtract[i];
+                        var progress = (double)i / filesToExtract.Length;
+                        
+                        Dispatcher.UIThread.Post(() => 
+                            ComparisonStatus = $"Extracting DDS files... {i + 1}/{filesToExtract.Length}");
+
+                        try
+                        {
+                            // Extract just the filename without directory structure
+                            var originalFileName = Path.GetFileName(file.FullPath);
+                            var fileNameWithoutExt = Path.GetFileNameWithoutExtension(originalFileName);
+                            
+                            // Remove .dds from the filename if it's there
+                            if (fileNameWithoutExt.EndsWith(".dds", StringComparison.OrdinalIgnoreCase))
+                            {
+                                fileNameWithoutExt = fileNameWithoutExt.Substring(0, fileNameWithoutExt.Length - 4);
+                            }
+                            
+                            // Handle potential filename conflicts by adding a counter
+                            var basePngName = fileNameWithoutExt + ".png";
+                            var pngOutputPath = Path.Combine(outputFolder, basePngName);
+                            var counter = 1;
+                            
+                            while (File.Exists(pngOutputPath))
+                            {
+                                var nameWithCounter = $"{fileNameWithoutExt}_{counter}.png";
+                                pngOutputPath = Path.Combine(outputFolder, nameWithCounter);
+                                counter++;
+                            }
+
+                            // Extract and convert DDS to PNG
+                            var ms = DdsFile.MergeToStream(file.RightEntry!.Name, p4kFileSystem);
+                            using var pngStream = DdsFile.ConvertToPng(ms.ToArray());
+                            
+                            File.WriteAllBytes(pngOutputPath, pngStream.ToArray());
+                            extractedCount++;
+                            
+                            _logger.LogDebug("Extracted DDS file: {SourcePath} -> {OutputPath}", file.FullPath, pngOutputPath);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to extract DDS file: {FileName}", file.FullPath);
+                            failedCount++;
+                        }
+                    }
+
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        ComparisonStatus = $"DDS extraction complete! Extracted: {extractedCount}, Failed: {failedCount}";
+                        _logger.LogInformation("DDS extraction completed - Extracted: {Extracted}, Failed: {Failed}, Output folder: {OutputFolder}", 
+                            extractedCount, failedCount, outputFolder);
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to extract new DDS files");
+                    Dispatcher.UIThread.Post(() => ComparisonStatus = $"DDS extraction failed: {ex.Message}");
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error extracting new DDS files");
+            ComparisonStatus = $"Error extracting DDS files: {ex.Message}";
+        }
+        finally
+        {
+            IsComparing = false;
+        }
+    }
+
+    private static string ExtractVersionFromPath(string filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+            return "Unknown";
+
+        var fileName = Path.GetFileNameWithoutExtension(filePath);
+        
+        // Try to extract version patterns like "4.1.1", "3.23.2a", etc.
+        var versionPatterns = new[]
+        {
+            @"(\d+\.\d+\.\d+[a-z]?)",  // Matches 4.1.1, 3.23.2a
+            @"(\d+\.\d+)",             // Matches 4.1, 3.23
+            @"(\d+)",                  // Matches just numbers as fallback
+        };
+
+        foreach (var pattern in versionPatterns)
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(fileName, pattern);
+            if (match.Success)
+            {
+                return match.Groups[1].Value;
+            }
+        }
+
+        // If no version pattern found, try to extract meaningful parts from filename
+        // Remove common prefixes/suffixes
+        var cleanName = fileName
+            .Replace("StarCitizen", "", StringComparison.OrdinalIgnoreCase)
+            .Replace("Data", "", StringComparison.OrdinalIgnoreCase)
+            .Replace(".p4k", "", StringComparison.OrdinalIgnoreCase)
+            .Trim('_', '-', ' ');
+
+        // If we have something meaningful left, use first part
+        if (!string.IsNullOrWhiteSpace(cleanName))
+        {
+            var parts = cleanName.Split(new[] { '_', '-', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length > 0)
+            {
+                return parts[0];
+            }
+        }
+
+        // Final fallback - use first 10 characters of filename
+        return fileName.Length > 10 ? fileName.Substring(0, 10) : fileName;
+    }
+
+    private static IEnumerable<string> ConsolidateRelatedFiles(IEnumerable<string> filePaths)
+    {
+        var groups = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        
+        foreach (var filePath in filePaths)
+        {
+            var baseKey = GetBaseFileKey(filePath);
+            if (!groups.ContainsKey(baseKey))
+            {
+                groups[baseKey] = new List<string>();
+            }
+            groups[baseKey].Add(filePath);
+        }
+        
+        foreach (var group in groups.Values)
+        {
+            // Sort to ensure we get the base file first
+            var sortedFiles = group.OrderBy(f => f, StringComparer.OrdinalIgnoreCase).ToList();
+            yield return GetRepresentativeFile(sortedFiles);
+        }
+    }
+    
+    private static string GetBaseFileKey(string filePath)
+    {
+        var fileName = Path.GetFileName(filePath);
+        var directory = Path.GetDirectoryName(filePath) ?? "";
+        var extension = Path.GetExtension(fileName);
+        var nameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
+        
+        // Check if this is a DDS file or DDS variant (.dds, .dds.1, .dds.2, etc.)
+        var ddsIndex = fileName.LastIndexOf(".dds", StringComparison.OrdinalIgnoreCase);
+        if (ddsIndex >= 0)
+        {
+            // Check if this is a DDS variant (has something after .dds)
+            var afterDds = fileName.Substring(ddsIndex + 4); // Everything after ".dds"
+            if (string.IsNullOrEmpty(afterDds) || (afterDds.StartsWith(".") && afterDds.Length > 1 && afterDds.Substring(1).All(char.IsDigit)))
+            {
+                // This is either a base .dds file or a .dds.N variant
+                var baseName = fileName.Substring(0, ddsIndex + 4); // Include .dds
+                return Path.Combine(directory, baseName);
+            }
+        }
+        
+        // Handle model files with LOD suffixes (_lod1, _lod2, etc.)
+        var modelExtensions = new[] { ".cga", ".cgam", ".chr", ".skin" };
+        if (modelExtensions.Any(ext => extension.Equals(ext, StringComparison.OrdinalIgnoreCase)))
+        {
+            // Check for _lod[N] pattern
+            var lodPattern = System.Text.RegularExpressions.Regex.Match(nameWithoutExtension, @"^(.+)_lod\d+$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (lodPattern.Success)
+            {
+                var baseName = lodPattern.Groups[1].Value;
+                return Path.Combine(directory, baseName + extension);
+            }
+        }
+        
+        // Default: return the file as-is for grouping
+        return filePath;
+    }
+    
+    private static string GetRepresentativeFile(List<string> relatedFiles)
+    {
+        if (relatedFiles.Count == 1)
+        {
+            return relatedFiles[0];
+        }
+        
+        // For DDS files, prefer the base .dds file (without numeric suffix)
+        var ddsFiles = relatedFiles.Where(f => f.Contains(".dds", StringComparison.OrdinalIgnoreCase)).ToArray();
+        if (ddsFiles.Length > 0)
+        {
+            // Look for the base .dds file (without .1, .2, etc.)
+            var ddsBase = ddsFiles.FirstOrDefault(f => 
+            {
+                var fileName = Path.GetFileName(f);
+                var ddsIndex = fileName.LastIndexOf(".dds", StringComparison.OrdinalIgnoreCase);
+                if (ddsIndex >= 0)
+                {
+                    var afterDds = fileName.Substring(ddsIndex + 4);
+                    return string.IsNullOrEmpty(afterDds); // Only base .dds file has nothing after .dds
+                }
+                return false;
+            });
+            
+            if (ddsBase != null)
+            {
+                return ddsBase;
+            }
+            
+            // If no base .dds found, return the first DDS file
+            return ddsFiles[0];
+        }
+        
+        // For model files, prefer the base file (without _lod suffix)
+        var modelExtensions = new[] { ".cga", ".cgam", ".chr", ".skin" };
+        foreach (var ext in modelExtensions)
+        {
+            var modelBase = relatedFiles.FirstOrDefault(f => 
+                f.EndsWith(ext, StringComparison.OrdinalIgnoreCase) && 
+                !System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileNameWithoutExtension(f), @"_lod\d+$", System.Text.RegularExpressions.RegexOptions.IgnoreCase));
+            if (modelBase != null)
+            {
+                return modelBase;
+            }
+        }
+        
+        // Fallback: return the first file
+        return relatedFiles[0];
     }
 
     [RelayCommand]
@@ -768,6 +2058,34 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         {
             _logger.LogError(ex, "Error selecting output directory");
             AddLogMessage($"Error selecting output directory: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    public async Task SelectP4kOutputDirectory()
+    {
+        try
+        {
+            var appLifetime = Avalonia.Application.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+            var topLevel = appLifetime?.MainWindow;
+            if (topLevel == null) return;
+
+            var folderPickerOptions = new FolderPickerOpenOptions
+            {
+                Title = "Select P4K output directory for reports and DDS files",
+                AllowMultiple = false
+            };
+
+            var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(folderPickerOptions);
+            if (folders.Count > 0)
+            {
+                P4kOutputDirectory = folders[0].Path.LocalPath;
+                _logger.LogInformation("P4K output directory selected: {P4kOutputDirectory}", P4kOutputDirectory);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error selecting P4K output directory");
         }
     }
 
