@@ -42,7 +42,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
     private readonly IP4kService _p4KService;
     private readonly IPreviewService _previewService;
 
-    [ObservableProperty] private HierarchicalTreeDataGridSource<IP4kNode> _source;
+    [ObservableProperty] private HierarchicalTreeDataGridSource<IP4kNode> _source = null!;
     [ObservableProperty] private FilePreviewViewModel? _preview;
     [ObservableProperty] private string _searchText = string.Empty;
     [ObservableProperty] private double _extractionProgress;
