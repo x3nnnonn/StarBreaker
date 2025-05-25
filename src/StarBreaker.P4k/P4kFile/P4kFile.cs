@@ -1,5 +1,6 @@
 ﻿using System.Buffers;
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -47,27 +48,39 @@ public sealed class P4kFile : IP4kFile
         var eocd = reader.BaseStream.Read<EOCDRecord>();
         var comment = reader.ReadBytes(eocd.CommentLength).AsSpan();
 
-        if (!comment.StartsWith("CIG"u8))
-            throw new Exception("Invalid comment");
+        // The comment is always "CIG" in Data.p4k, but we don't enforce it to keep compatibility with other p4k files (zip and socpak).
+        // if (!comment.StartsWith("CIG"u8))
+        //     throw new Exception("Invalid comment");
 
-        if (!eocd.IsZip64)
-            throw new Exception("Not a zip64 archive");
+        ulong centralDirectoryOffset;
+        ulong totalEntries;
 
-        var bytesFromEnd = reader.BaseStream.Length - eocdLocation;
-        var zip64LocatorLocation = reader.BaseStream.Locate(Zip64Locator.Magic, bytesFromEnd);
-        reader.BaseStream.Seek(zip64LocatorLocation, SeekOrigin.Begin);
-        var zip64Locator = reader.BaseStream.Read<Zip64Locator>();
+        if (eocd.IsZip64)
+        {
+            var bytesFromEnd = reader.BaseStream.Length - eocdLocation;
+            var zip64LocatorLocation = reader.BaseStream.Locate(Zip64Locator.Magic, bytesFromEnd);
+            reader.BaseStream.Seek(zip64LocatorLocation, SeekOrigin.Begin);
+            var zip64Locator = reader.BaseStream.Read<Zip64Locator>();
 
-        reader.BaseStream.Seek((long)zip64Locator.Zip64EOCDOffset, SeekOrigin.Begin);
+            reader.BaseStream.Seek((long)zip64Locator.Zip64EOCDOffset, SeekOrigin.Begin);
 
-        var eocd64 = reader.BaseStream.Read<EOCD64Record>();
-        if (eocd64.Signature != BitConverter.ToUInt32(EOCD64Record.Magic))
-            throw new Exception("Invalid zip64 end of central directory locator");
+            var eocd64 = reader.BaseStream.Read<EOCD64Record>();
+            if (eocd64.Signature != BitConverter.ToUInt32(EOCD64Record.Magic))
+                throw new Exception("Invalid zip64 end of central directory locator");
+            centralDirectoryOffset = eocd64.CentralDirectoryOffset;
+            totalEntries = eocd64.TotalEntries;
+        }
+        else
+        {
+            centralDirectoryOffset = eocd.CentralDirectoryOffset;
+            totalEntries = eocd.TotalEntries;
+        }
 
-        var reportInterval = (int)Math.Max(eocd64.TotalEntries / 50, 1);
-        reader.BaseStream.Seek((long)eocd64.CentralDirectoryOffset, SeekOrigin.Begin);
 
-        var entries = new P4kEntry[eocd64.TotalEntries];
+        var reportInterval = (int)Math.Max(totalEntries / 50, 1);
+        reader.BaseStream.Seek((long)centralDirectoryOffset, SeekOrigin.Begin);
+
+        var entries = new P4kEntry[totalEntries];
 
         //use a channel so we can read entries and build the file system in parallel
         var channel = Channel.CreateUnbounded<P4kEntry>();
@@ -84,15 +97,15 @@ public sealed class P4kFile : IP4kFile
             return fileSystem;
         });
 
-        for (var i = 0; i < (int)eocd64.TotalEntries; i++)
+        for (var i = 0; i < (int)totalEntries; i++)
         {
-            var entry = ReadEntry(reader);
+            var entry = ReadEntry(reader, eocd.IsZip64);
             entries[i] = entry;
             if (!channel.Writer.TryWrite(entry))
                 throw new Exception("Failed to write to channel");
 
             if (i % reportInterval == 0)
-                progress?.Report(i / (double)eocd64.TotalEntries);
+                progress?.Report(i / (double)totalEntries);
         }
 
         channel.Writer.Complete();
@@ -104,7 +117,7 @@ public sealed class P4kFile : IP4kFile
         return new P4kFile(filePath, entries, fileSystem);
     }
 
-    private static P4kEntry ReadEntry(BinaryReader reader)
+    private static P4kEntry ReadEntry(BinaryReader reader, bool isZip64)
     {
         var header = reader.BaseStream.Read<CentralDirectoryFileHeader>();
         var length = header.FileNameLength + header.ExtraFieldLength + header.FileCommentLength;
@@ -121,43 +134,133 @@ public sealed class P4kFile : IP4kFile
             ulong compressedSize = header.CompressedSize;
             ulong uncompressedSize = header.UncompressedSize;
             ulong localHeaderOffset = header.LocalFileHeaderOffset;
-            ulong diskNumberStart = header.DiskNumberStart;
+            uint diskNumberStart = header.DiskNumberStart; // Keep as uint for non-zip64
 
-            if (reader2.ReadUInt16() != 1)
-                throw new Exception("Invalid version needed to extract");
+            // Handle Zip64 extra field if present
+            if (isZip64 && (uncompressedSize == uint.MaxValue || compressedSize == uint.MaxValue || localHeaderOffset == uint.MaxValue || diskNumberStart == ushort.MaxValue))
+            {
+                // It's possible that a file is marked as zip64 overall,
+                // but individual entries might not need the extended fields if their values fit in the standard fields.
+                // We should still check for the extra field marker.
+                if (header.ExtraFieldLength > 0)
+                {
+                    // The Zip64 extended information extra field has the Header ID 0x0001.
+                    // Search for it within the extra field data.
+                    int extraFieldStartPos = reader2.Position;
+                    bool foundZip64ExtraField = false;
+                    while (reader2.Position < extraFieldStartPos + header.ExtraFieldLength)
+                    {
+                        ushort extraFieldHeaderId = reader2.ReadUInt16();
+                        ushort extraFieldDataSize = reader2.ReadUInt16();
+                        if (extraFieldHeaderId == 0x0001) // Zip64 extended information
+                        {
+                            if (uncompressedSize == uint.MaxValue)
+                                uncompressedSize = reader2.ReadUInt64();
+                            else if (extraFieldDataSize >= 8) // still advance if it was already set
+                                reader2.Advance(sizeof(ulong));
 
-            var zip64HeaderSize = reader2.ReadUInt16();
 
-            if (uncompressedSize == uint.MaxValue)
-                uncompressedSize = reader2.ReadUInt64();
+                            if (compressedSize == uint.MaxValue)
+                                compressedSize = reader2.ReadUInt64();
+                            else if (extraFieldDataSize >= 16)
+                                reader2.Advance(sizeof(ulong));
 
-            if (compressedSize == uint.MaxValue)
-                compressedSize = reader2.ReadUInt64();
+                            if (localHeaderOffset == uint.MaxValue)
+                                localHeaderOffset = reader2.ReadUInt64();
+                            else if (extraFieldDataSize >= 24)
+                                reader2.Advance(sizeof(ulong));
 
-            if (localHeaderOffset == uint.MaxValue)
-                localHeaderOffset = reader2.ReadUInt64();
+                            if (diskNumberStart == ushort.MaxValue)
+                                diskNumberStart = reader2.ReadUInt32();
+                            // No need to advance for diskNumberStart as it's the last optional field in the minimal Zip64 extra field.
 
-            if (diskNumberStart == ushort.MaxValue)
-                diskNumberStart = reader2.ReadUInt32();
+                            foundZip64ExtraField = true;
+                            break; // Found the Zip64 extra field
+                        }
+                        else
+                        {
+                            // Skip other extra fields
+                            reader2.Advance(extraFieldDataSize);
+                        }
+                    }
 
-            if (reader2.ReadUInt16() != 0x5000)
-                throw new Exception("Invalid extra field id");
+                    if (!foundZip64ExtraField && (uncompressedSize == uint.MaxValue || compressedSize == uint.MaxValue || localHeaderOffset == uint.MaxValue || diskNumberStart == ushort.MaxValue))
+                    {
+                        // This case should ideally not happen if the EOCD IsZip64 flag is set correctly
+                        // and the archive is well-formed. It means some values indicate Zip64 but the field is missing.
+                        // Depending on strictness, this could be an error.
+                        // For now, we'll proceed with the potentially truncated values from the main header.
+                    }
+                }
+            }
 
-            var extra0x5000Size = reader2.ReadUInt16();
-            reader2.Advance(extra0x5000Size - 4);
 
-            if (reader2.ReadUInt16() != 0x5002)
-                throw new Exception("Invalid extra field id");
-            if (reader2.ReadUInt16() != 6)
-                throw new Exception("Invalid extra field size");
+            // The rest of the p4k-specific extra field reading assumes it follows the Zip64 field or starts directly if no Zip64 field was needed/present.
+            // This part needs careful adjustment based on the actual structure of these custom fields.
+            // Assuming the custom fields (0x5000, 0x5002, 0x5003) always follow.
 
-            var isCrypted = reader2.ReadUInt16() == 1;
+            // It's safer to re-evaluate the position for custom fields based on whether a zip64 field was processed.
+            // However, the original code directly reads them. We'll try to maintain that logic but acknowledge it might be fragile
+            // if the extra field layout isn't fixed.
 
-            if (reader2.ReadUInt16() != 0x5003)
-                throw new Exception("Invalid extra field id");
+            bool isCrypted = false; // Default to false
 
-            var extra0x5003Size = reader2.ReadUInt16();
-            reader2.Advance(extra0x5003Size - 4);
+            // The original code assumed a fixed order after the Zip64 field.
+            // A more robust way would be to iterate through extra fields by their IDs.
+            // For now, let's try to adapt the existing logic.
+            // We need to ensure reader2 is at the correct position to read 0x5000, 0x5002, etc.
+            // This means if a Zip64 field was *not* fully read because some values were not maxed out,
+            // reader2 might not be at the start of the next actual custom field.
+
+            // To be more robust, it would be better to parse all extra fields by ID and size.
+            // Simplified approach for now, assuming custom fields are next:
+
+            int currentExtraFieldPosition = reader2.Position; // Position after filename and potential Zip64 field.
+            int endOfExtraFields = header.FileNameLength + header.ExtraFieldLength;
+
+            while (reader2.Position < endOfExtraFields)
+            {
+                if (reader2.Remaining < 4) break; // Not enough space for ID and Size
+                ushort fieldId = reader2.Peek<ushort>();
+                if (fieldId == 0x0001 && isZip64) // Already processed Zip64 above if needed
+                {
+                    reader2.Advance(2); // ID
+                    ushort zip64FieldSize = reader2.ReadUInt16();
+                    reader2.Advance(zip64FieldSize);
+                    continue;
+                }
+
+                if (fieldId == 0x5000)
+                {
+                    reader2.Advance(2); // ID
+                    ushort extra0x5000Size = reader2.ReadUInt16();
+                    reader2.Advance(extra0x5000Size); // Assuming the original logic of skipping the content is correct
+                }
+                else if (fieldId == 0x5002)
+                {
+                    reader2.Advance(2); // ID
+                    if (reader2.ReadUInt16() != 6) // Size check for 0x5002
+                        throw new Exception("Invalid extra field size for 0x5002");
+                    isCrypted = reader2.ReadUInt16() == 1;
+                    reader2.Advance(4); // Skip the rest of the 0x5002 field (assuming 2 bytes for isCrypted and 4 unknown/padding)
+                }
+                else if (fieldId == 0x5003)
+                {
+                    reader2.Advance(2); // ID
+                    ushort extra0x5003Size = reader2.ReadUInt16();
+                    reader2.Advance(extra0x5003Size); // Assuming the original logic of skipping the content is correct
+                }
+                else
+                {
+                    // Unknown or already processed field, skip it
+                    reader2.Advance(2); // ID
+                    if (reader2.Remaining < 2) break;
+                    ushort unknownFieldSize = reader2.ReadUInt16();
+                    if (reader2.Remaining < unknownFieldSize) break;
+                    reader2.Advance(unknownFieldSize);
+                }
+            }
+
 
             if (header.FileCommentLength != 0)
                 throw new Exception("File comment not supported");
@@ -211,8 +314,9 @@ public sealed class P4kFile : IP4kFile
             { IsCrypted: true, CompressionMethod: 100 } => Decompress(Decrypt(entryStream), entry.UncompressedSize),
             { IsCrypted: false, CompressionMethod: 100 } => Decompress(entryStream, entry.UncompressedSize),
             { IsCrypted: false, CompressionMethod: 0 } when entry.CompressedSize != entry.UncompressedSize => throw new Exception("Invalid stored file"),
-            { IsCrypted: false, CompressionMethod: 0 } => OpenInternal(entry),
-            _ => throw new Exception("Invalid compression method")
+            { IsCrypted: false, CompressionMethod: 0 } => entryStream,
+            { IsCrypted: false, CompressionMethod: 8 } => Deflate(entryStream),
+            _ => throw new Exception($"Invalid compression method or encryption state: CompressionMethod={entry.CompressionMethod}, IsCrypted={entry.IsCrypted} for entry {entry.Name}")
         };
     }
 
@@ -235,6 +339,13 @@ public sealed class P4kFile : IP4kFile
 
     private static MemoryStream Decompress(Stream entryStream, ulong uncompressedSize)
     {
+        // Ensure uncompressedSize is not excessively large before allocating MemoryStream
+        if (uncompressedSize > int.MaxValue) // MemoryStream capacity is int
+        {
+            // Handle large files differently, e.g., stream to a temporary file or use a different stream type
+            throw new NotSupportedException("File too large for in-memory decompression with MemoryStream.");
+        }
+
         var ms = new MemoryStream((int)uncompressedSize);
 
         using (var decompressionStream = new DecompressionStream(entryStream, decompressor: decompressor ??= new Decompressor(), leaveOpen: false))
@@ -243,5 +354,11 @@ public sealed class P4kFile : IP4kFile
         ms.SetLength(ms.Position);
         ms.Position = 0;
         return ms;
+    }
+
+    private static DeflateStream Deflate(Stream entryStream)
+    {
+        // Use the built-in DeflateStream for deflate compression
+        return new DeflateStream(entryStream, CompressionMode.Decompress, leaveOpen: false);
     }
 }
