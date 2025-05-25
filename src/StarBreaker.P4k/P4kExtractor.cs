@@ -3,11 +3,18 @@ using System.Text.RegularExpressions;
 
 namespace StarBreaker.P4k;
 
+public enum DdsExtractMode
+{
+    None,
+    Combine,
+    ConvertToPng,
+}
+
 public class P4kExtractOptions
 {
-    public required bool ProcessCryXml { get; init; }
-    public required bool ProcessSocpaks { get; init; }
-    public required bool ProcessDdsTextures { get; init; }
+    public required bool ConvertCryXml { get; init; }
+    public required bool ExtractSocPak { get; init; }
+    public required DdsExtractMode ConvertDds { get; init; }
 
     //TODO: models (cgf)
     //TODO: sounds (wwise)
@@ -113,11 +120,10 @@ public sealed class P4kExtractor
 
     public void ExtractEntry(string outputDir, ZipEntry entry)
     {
-        //TODO: fix path separator on non-windows systems
         if (entry.UncompressedSize == 0)
             return;
 
-        var entryPath = Path.Combine(outputDir, entry.Name);
+        var entryPath = Path.Combine(outputDir, entry.RelativeOutputPath);
         //if (File.Exists(entryPath))
         //    return;
 
