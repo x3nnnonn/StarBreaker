@@ -6,7 +6,7 @@ using ZstdSharp;
 namespace StarBreaker.P4k;
 
 [DebuggerDisplay("{Name}")]
-public sealed class ZipEntry
+public sealed class P4kEntry
 {
     private readonly uint _dosDateTime;
 
@@ -19,7 +19,7 @@ public sealed class ZipEntry
     public DateTime LastModified => FromDosDateTime(_dosDateTime);
     public uint Crc32 { get; }
 
-    public ZipEntry(
+    public P4kEntry(
         string name,
         ulong compressedSize,
         ulong uncompressedSize,

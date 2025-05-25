@@ -11,7 +11,7 @@ public static class ZipNodeExtensions
         if (x is not P4kFileNode file)
             return "";
 
-        return ((long?)file.ZipEntry?.UncompressedSize)?.Bytes().ToString() ?? "";
+        return ((long?)file.P4KEntry?.UncompressedSize)?.Bytes().ToString() ?? "";
     }
 
     public static string GetDate(this IP4kNode x)
@@ -19,14 +19,14 @@ public static class ZipNodeExtensions
         if (x is not P4kFileNode file)
             return "";
 
-        return file.ZipEntry?.LastModified.ToString("s", CultureInfo.InvariantCulture) ?? "";
+        return file.P4KEntry?.LastModified.ToString("s", CultureInfo.InvariantCulture) ?? "";
     }
 
     public static string GetName(this IP4kNode x)
     {
         return x switch
         {
-            P4kFileNode file => file.ZipEntry.Name.Split('\\').Last(),
+            P4kFileNode file => file.P4KEntry.Name.Split('\\').Last(),
             P4kDirectoryNode dir => dir.Name,
             _ => "",
         };
@@ -45,6 +45,6 @@ public static class ZipNodeExtensions
         if (x is not P4kFileNode file)
             return 0;
 
-        return file.ZipEntry?.UncompressedSize ?? 0;
+        return file.P4KEntry?.UncompressedSize ?? 0;
     }
 }

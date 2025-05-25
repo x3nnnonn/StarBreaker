@@ -61,7 +61,7 @@ public sealed class P4kExtractor
         ExtractEntriesParallel(outputDir, entries, progress);
     }
 
-    public void ExtractEntriesSequential(string outputDir, ICollection<ZipEntry> entries, IProgress<double>? progress = null)
+    public void ExtractEntriesSequential(string outputDir, ICollection<P4kEntry> entries, IProgress<double>? progress = null)
     {
         var numberOfEntries = entries.Count;
         var fivePercent = Math.Max(numberOfEntries / 20, 1);
@@ -83,7 +83,7 @@ public sealed class P4kExtractor
         progress?.Report(1);
     }
 
-    public void ExtractEntriesParallel(string outputDir, ICollection<ZipEntry> entries, IProgress<double>? progress = null)
+    public void ExtractEntriesParallel(string outputDir, ICollection<P4kEntry> entries, IProgress<double>? progress = null)
     {
         var numberOfEntries = entries.Count;
         var fivePercent = Math.Max(numberOfEntries / 20, 1);
@@ -118,7 +118,7 @@ public sealed class P4kExtractor
         progress?.Report(1);
     }
 
-    public void ExtractEntry(string outputDir, ZipEntry entry)
+    public void ExtractEntry(string outputDir, P4kEntry entry)
     {
         if (entry.UncompressedSize == 0)
             return;
