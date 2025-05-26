@@ -1234,15 +1234,15 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             {
                 _logger.LogWarning("P4K output directory not configured");
                 ComparisonStatus = "Please configure output directory first";
-            return;
-        }
+                return;
+            }
 
             Directory.CreateDirectory(P4kOutputDirectory);
             
             var reportFileName = "DataCore_Comparison.md";
             var reportPath = Path.Combine(P4kOutputDirectory, reportFileName);
 
-        IsComparing = true;
+            IsComparing = true;
             ComparisonStatus = "Generating report...";
 
             await Task.Run(async () =>
@@ -1258,9 +1258,9 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                         ComparisonStatus = $"DataCore report saved successfully to {reportFileName}";
                         _logger.LogInformation("DataCore comparison report saved to: {FilePath}", reportPath);
                     });
-        }
-        catch (Exception ex)
-        {
+                }
+                catch (Exception ex)
+                {
                     _logger.LogError(ex, "Failed to generate or save report");
                     Dispatcher.UIThread.Post(() => ComparisonStatus = $"Failed to save report: {ex.Message}");
                 }
