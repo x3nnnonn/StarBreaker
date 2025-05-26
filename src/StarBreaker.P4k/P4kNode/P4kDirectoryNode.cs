@@ -47,6 +47,37 @@ public sealed class P4kDirectoryNode : IP4kNode
             current = directoryNode;
         }
     }
+    
+    /// <summary>
+    /// Transforms SOCPAK files into expandable SOCPAK nodes recursively.
+    /// Should be called after the tree is fully built.
+    /// </summary>
+    public void TransformSocPakFiles(IP4kFile parentP4kFile)
+    {
+        var keysToUpdate = new List<string>();
+        var nodesToReplace = new List<(string key, IP4kNode newNode)>();
+        
+        foreach (var (key, child) in Children)
+        {
+            if (child is P4kDirectoryNode childDir)
+            {
+                // Recursively transform children
+                childDir.TransformSocPakFiles(parentP4kFile);
+            }
+            else if (child is P4kFileNode fileNode && P4kSocPakFileNode.IsSocPakFile(fileNode.P4KEntry.Name))
+            {
+                // Replace SOCPAK file with expandable SOCPAK node
+                var socPakNode = new P4kSocPakFileNode(fileNode.P4KEntry, this, parentP4kFile);
+                nodesToReplace.Add((key, socPakNode));
+            }
+        }
+        
+        // Apply replacements
+        foreach (var (key, newNode) in nodesToReplace)
+        {
+            Children[key] = newNode;
+        }
+    }
 
     // This is probably suboptimal, but when we do this we'll be doing
     // a lot of IO anyway so it doesn't really matter
@@ -62,6 +93,9 @@ public sealed class P4kDirectoryNode : IP4kNode
                     break;
                 case P4kFileNode fileNode:
                     yield return fileNode.P4KEntry;
+                    break;
+                case P4kSocPakFileNode socPakNode:
+                    yield return socPakNode.P4KEntry;
                     break;
                 default:
                     throw new Exception();

@@ -3119,9 +3119,9 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         else if (parts.Length == 2)
         {
             return $"{parts[0]}.{parts[1]}";
-        }
-        else
-        {
+            }
+            else
+            {
             return parts[0];
         }
     }

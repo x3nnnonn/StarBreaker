@@ -113,8 +113,14 @@ public sealed class P4kFile : IP4kFile
         channelInsertTask.Wait();
         var fileSystem = channelInsertTask.Result;
 
+        // Create P4kFile instance first
+        var p4kFile = new P4kFile(filePath, entries, fileSystem);
+        
+        // Transform SOCPAK files into expandable nodes
+        fileSystem.TransformSocPakFiles(p4kFile);
+
         progress?.Report(1);
-        return new P4kFile(filePath, entries, fileSystem);
+        return p4kFile;
     }
 
     private static P4kEntry ReadEntry(BinaryReader reader, bool isZip64)

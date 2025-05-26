@@ -134,6 +134,41 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
                     result.Add(fileNode);
                 }
             }
+            else if (node is P4kSocPakFileNode socPakNode)
+            {
+                // For SOCPAK files, only check if SOCPAK name matches (don't search children to avoid blocking I/O)
+                bool socPakMatches = socPakNode.Name.ToLowerInvariant().Contains(searchTerm) ||
+                                   socPakNode.P4KEntry.Name.ToLowerInvariant().Contains(searchTerm);
+                
+                // Include this SOCPAK if it matches
+                if (socPakMatches)
+                {
+                    result.Add(socPakNode);
+                }
+            }
+            else if (node is P4kSocPakDirectoryNode socPakDirNode)
+            {
+                // For SOCPAK directories, check if directory name matches or has matching children
+                bool dirMatches = socPakDirNode.Name.ToLowerInvariant().Contains(searchTerm);
+                
+                var filteredChildren = CloneAndFilterNodes(socPakDirNode.Children.Values, searchTerm);
+                
+                // Include this directory if it matches or has matching children
+                if (dirMatches || filteredChildren.Count > 0)
+                {
+                    result.Add(socPakDirNode);
+                }
+            }
+            else if (node is P4kSocPakChildFileNode socPakChildNode)
+            {
+                // For files inside SOCPAK, check if filename matches
+                bool matches = socPakChildNode.P4KEntry.Name.ToLowerInvariant().Contains(searchTerm);
+                
+                if (matches)
+                {
+                    result.Add(socPakChildNode);
+                }
+            }
             else if (node is P4kDirectoryNode dirNode)
             {
                 // For folders, check if folder name matches or has matching children
@@ -440,6 +475,15 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
                     results.Add(fileNode);
                 }
             }
+            else if (child is P4kSocPakFileNode socPakNode)
+            {
+                // Check if SOCPAK itself matches (don't search children to avoid blocking I/O)
+                if (socPakNode.Name.ToLowerInvariant().Contains(searchText) ||
+                    socPakNode.P4KEntry.Name.ToLowerInvariant().Contains(searchText))
+                {
+                    results.Add(socPakNode);
+                }
+            }
             else if (child is P4kDirectoryNode dirNode)
             {
                 if (dirNode.Name.ToLowerInvariant().Contains(searchText))
@@ -453,15 +497,17 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
         }
     }
     
+
+    
     private static int CompareNodes(IP4kNode? a, IP4kNode? b)
     {
         if (a == null && b == null) return 0;
         if (a == null) return -1;
         if (b == null) return 1;
 
-        // Directories come before files
-        bool aIsDir = a is P4kDirectoryNode or FilteredP4kDirectoryNode;
-        bool bIsDir = b is P4kDirectoryNode or FilteredP4kDirectoryNode;
+        // Directories and SOCPAK files (which act as expandable containers) come before regular files
+        bool aIsDir = a is P4kDirectoryNode or FilteredP4kDirectoryNode or P4kSocPakFileNode or P4kSocPakDirectoryNode;
+        bool bIsDir = b is P4kDirectoryNode or FilteredP4kDirectoryNode or P4kSocPakFileNode or P4kSocPakDirectoryNode;
 
         if (aIsDir && !bIsDir) return -1;
         if (!aIsDir && bIsDir) return 1;
@@ -478,7 +524,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
 
     private static IP4kNode[] GetSortedNodes(ICollection<IP4kNode> nodes)
     {
-        return nodes.OrderBy(n => n is not (P4kDirectoryNode or FilteredP4kDirectoryNode)) // Directories first
+        return nodes.OrderBy(n => n is not (P4kDirectoryNode or FilteredP4kDirectoryNode or P4kSocPakFileNode or P4kSocPakDirectoryNode)) // Directories and SOCPAK containers first
             .ThenBy(n => n.GetName(), StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
@@ -500,12 +546,9 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             return;
         }
 
-        if (selectedEntry is not P4kFileNode selectedFile)
+        // Handle different node types for preview
+        if (selectedEntry is P4kFileNode selectedFile)
         {
-            //we clicked on a folder, do nothing to the preview.
-            return;
-        }
-
         //todo: for a big ass file show a loading screen or something
         Preview = null;
         Task.Run(() =>
@@ -517,11 +560,36 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             }
             catch (Exception exception)
             {
-                _logger.LogError(exception, "Failed to preview file: {FileName}", selectedFile.P4KEntry.Name);
+                    _logger.LogError(exception, "Failed to preview file: {FileName}", selectedFile.P4KEntry.Name);
                 Dispatcher.UIThread.Post(() => Preview = new TextPreviewViewModel($"Failed to preview file: {exception.Message}"));
             }
             finally { }
         });
+        }
+        else if (selectedEntry is P4kSocPakChildFileNode socPakChildFile)
+        {
+            //todo: for a big ass file show a loading screen or something
+            Preview = null;
+            Task.Run(() =>
+            {
+                try
+                {
+                    var p = _previewService.GetSocPakFilePreview(socPakChildFile);
+                    Dispatcher.UIThread.Post(() => Preview = p);
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogError(exception, "Failed to preview SOCPAK file: {FileName}", socPakChildFile.P4KEntry.Name);
+                    Dispatcher.UIThread.Post(() => Preview = new TextPreviewViewModel($"Failed to preview SOCPAK file: {exception.Message}"));
+                }
+                finally { }
+            });
+        }
+        else
+        {
+            //we clicked on a folder or SOCPAK container, do nothing to the preview.
+            return;
+        }
     }
 
     private bool TryConvertCryXml(P4kFileNode fileNode, string destinationPath)
