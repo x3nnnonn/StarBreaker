@@ -10,6 +10,7 @@ using StarBreaker.CryXmlB;
 using StarBreaker.Dds;
 using StarBreaker.Extensions;
 using StarBreaker.P4k;
+using StarBreaker.P4k.Extraction;
 using StarBreaker.Services;
 using System.IO;
 
@@ -126,7 +127,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             if (node is P4kFileNode fileNode)
             {
                 // For files, check if filename matches
-                bool matches = fileNode.ZipEntry.Name.ToLowerInvariant().Contains(searchTerm);
+                bool matches = fileNode.P4KEntry.Name.ToLowerInvariant().Contains(searchTerm);
                 
                 if (matches)
                 {
@@ -221,13 +222,13 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
                         {
                             // done
                         }
-                        else if (ConvertDdsToPng && IsDdsFile(fileNode.ZipEntry.Name))
+                        else if (ConvertDdsToPng && IsDdsFile(fileNode.P4KEntry.Name))
                         {
                             ExtractDdsAsPng(fileNode, destinationPath);
                         }
                         else
                         {
-                            extractor.ExtractEntry(destinationPath, fileNode.ZipEntry);
+                            extractor.ExtractEntry(destinationPath, fileNode.P4KEntry);
                         }
                         Dispatcher.UIThread.Post(() => ExtractionProgress = 1.0);
                     });
@@ -284,10 +285,10 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
     {
         try
         {
-            _logger.LogInformation("Converting DDS to PNG: {FileName}", fileNode.ZipEntry.Name);
+            _logger.LogInformation("Converting DDS to PNG: {FileName}", fileNode.P4KEntry.Name);
             
             // Preserve the directory structure for the PNG file
-            string relativePath = fileNode.ZipEntry.Name;
+            string relativePath = fileNode.P4KEntry.Name;
             string relativeDirectory = Path.GetDirectoryName(relativePath)?.Replace('\\', Path.DirectorySeparatorChar) ?? string.Empty;
             string fileName = Path.GetFileName(relativePath);
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
@@ -301,7 +302,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             Directory.CreateDirectory(outputDirectory);
             
             // Process the DDS file
-            using var ms = DdsFile.MergeToStream(fileNode.ZipEntry.Name, _p4KService.P4KFileSystem);
+            using var ms = DdsFile.MergeToStream(fileNode.P4KEntry.Name, _p4KService.P4KFileSystem);
             
             // Read the stream into a byte array
             byte[] ddsBytes;
@@ -324,7 +325,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to convert DDS to PNG: {FileName}", fileNode.ZipEntry.Name);
+            _logger.LogError(ex, "Failed to convert DDS to PNG: {FileName}", fileNode.P4KEntry.Name);
             
             // Fallback to extracting the original DDS file
             _logger.LogInformation("Falling back to extracting original DDS file");
@@ -332,7 +333,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             if (p4kFile != null)
             {
                 var extractor = new P4kExtractor(p4kFile);
-                extractor.ExtractEntry(destinationPath, fileNode.ZipEntry);
+                extractor.ExtractEntry(destinationPath, fileNode.P4KEntry);
             }
             else
             {
@@ -434,7 +435,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
         {
             if (child is P4kFileNode fileNode)
             {
-                if (fileNode.ZipEntry.Name.ToLowerInvariant().Contains(searchText))
+                if (fileNode.P4KEntry.Name.ToLowerInvariant().Contains(searchText))
                 {
                     results.Add(fileNode);
                 }
@@ -516,7 +517,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             }
             catch (Exception exception)
             {
-                _logger.LogError(exception, "Failed to preview file: {FileName}", selectedFile.ZipEntry.Name);
+                _logger.LogError(exception, "Failed to preview file: {FileName}", selectedFile.P4KEntry.Name);
                 Dispatcher.UIThread.Post(() => Preview = new TextPreviewViewModel($"Failed to preview file: {exception.Message}"));
             }
             finally { }
@@ -527,15 +528,15 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
     {
         try
         {
-            using var entryStream = _p4KService.P4KFileSystem.OpenRead(fileNode.ZipEntry.Name);
+            using var entryStream = _p4KService.P4KFileSystem.OpenRead(fileNode.P4KEntry.Name);
             var ms = new MemoryStream();
             entryStream.CopyTo(ms);
             ms.Position = 0;
             if (!CryXml.IsCryXmlB(ms)) return false;
             ms.Position = 0;
             if (!CryXml.TryOpen(ms, out var cryXml)) return false;
-            _logger.LogInformation("Converting CryXML to text: {FileName}", fileNode.ZipEntry.Name);
-            var relativePath = fileNode.ZipEntry.Name;
+            _logger.LogInformation("Converting CryXML to text: {FileName}", fileNode.P4KEntry.Name);
+            var relativePath = fileNode.P4KEntry.Name;
             var relativeDirectory = Path.GetDirectoryName(relativePath)?.Replace('\\', Path.DirectorySeparatorChar) ?? string.Empty;
             var outputDirectory = Path.Combine(destinationPath, relativeDirectory);
             Directory.CreateDirectory(outputDirectory);
@@ -547,7 +548,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to convert CryXML for {FileName}", fileNode.ZipEntry.Name);
+            _logger.LogError(ex, "Failed to convert CryXML for {FileName}", fileNode.P4KEntry.Name);
             return false;
         }
     }

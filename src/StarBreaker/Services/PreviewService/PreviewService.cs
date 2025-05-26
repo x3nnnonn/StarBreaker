@@ -33,7 +33,7 @@ public class PreviewService : IPreviewService
     public FilePreviewViewModel GetPreview(P4kFileNode selectedEntry)
     {
         //TODO: move this to a service?
-        using var entryStream = _p4KService.P4KFileSystem.P4kFile.OpenStream(selectedEntry.ZipEntry);
+        using var entryStream = _p4KService.P4KFileSystem.P4kFile.OpenStream(selectedEntry.P4KEntry);
 
         FilePreviewViewModel preview;
         var fileName = selectedEntry.GetName();
@@ -61,14 +61,14 @@ public class PreviewService : IPreviewService
         {
             try
             {
-                var ms = DdsFile.MergeToStream(selectedEntry.ZipEntry.Name, _p4KService.P4KFileSystem);
+                var ms = DdsFile.MergeToStream(selectedEntry.P4KEntry.Name, _p4KService.P4KFileSystem);
                 var pngBytes = DdsFile.ConvertToPng(ms.ToArray());
                 _logger.LogInformation("ddsLodExtensions");
                 preview = new DdsPreviewViewModel(new Bitmap(pngBytes));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to convert DDS file: {FileName}", selectedEntry.ZipEntry.Name);
+                _logger.LogError(ex, "Failed to convert DDS file: {FileName}", selectedEntry.P4KEntry.Name);
                 preview = new TextPreviewViewModel($"Failed to preview DDS file: {ex.Message}", fileExtension);
             }
         }
@@ -81,7 +81,7 @@ public class PreviewService : IPreviewService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to load bitmap: {FileName}", selectedEntry.ZipEntry.Name);
+                _logger.LogError(ex, "Failed to load bitmap: {FileName}", selectedEntry.P4KEntry.Name);
                 preview = new TextPreviewViewModel($"Failed to preview bitmap: {ex.Message}", fileExtension);
             }
         }
@@ -94,7 +94,7 @@ public class PreviewService : IPreviewService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to create hex preview: {FileName}", selectedEntry.ZipEntry.Name);
+                _logger.LogError(ex, "Failed to create hex preview: {FileName}", selectedEntry.P4KEntry.Name);
                 preview = new TextPreviewViewModel($"Failed to create hex preview: {ex.Message}", fileExtension);
             }
         }

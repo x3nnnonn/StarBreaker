@@ -11,10 +11,10 @@ public sealed class P4kComparisonFileNode : IP4kComparisonNode
     public P4kComparisonStatus Status { get; }
     
     // File information from left P4K (null if file doesn't exist in left)
-    public ZipEntry? LeftEntry { get; }
+    public P4kEntry? LeftEntry { get; }
     
     // File information from right P4K (null if file doesn't exist in right)
-    public ZipEntry? RightEntry { get; }
+    public P4kEntry? RightEntry { get; }
     
     // Size difference (right - left, 0 if unchanged or only in one P4K)
     public long SizeDifference => 
@@ -24,8 +24,8 @@ public sealed class P4kComparisonFileNode : IP4kComparisonNode
         string name, 
         string fullPath, 
         P4kComparisonStatus status,
-        ZipEntry? leftEntry,
-        ZipEntry? rightEntry,
+        P4kEntry? leftEntry,
+        P4kEntry? rightEntry,
         IP4kComparisonNode? parent)
     {
         Name = name;

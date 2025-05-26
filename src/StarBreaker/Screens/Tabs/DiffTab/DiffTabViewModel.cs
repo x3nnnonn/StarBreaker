@@ -1234,8 +1234,8 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             {
                 _logger.LogWarning("P4K output directory not configured");
                 ComparisonStatus = "Please configure output directory first";
-                return;
-            }
+            return;
+        }
 
             Directory.CreateDirectory(P4kOutputDirectory);
             
@@ -2356,15 +2356,15 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             {
                 _logger.LogWarning("P4K output directory not configured");
                 ComparisonStatus = "Please configure P4K output directory first";
-                return;
-            }
+            return;
+        }
 
             Directory.CreateDirectory(P4kOutputDirectory);
             
             var reportFileName = "P4K_Comparison.md";
             var reportPath = Path.Combine(P4kOutputDirectory, reportFileName);
 
-            IsComparing = true;
+        IsComparing = true;
             ComparisonStatus = "Generating P4K report...";
 
             await Task.Run(async () =>
@@ -2380,9 +2380,9 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                         ComparisonStatus = $"P4K report saved successfully to {reportFileName}";
                         _logger.LogInformation("P4K comparison report saved to: {FilePath}", reportPath);
                     });
-                }
-                catch (Exception ex)
-                {
+        }
+        catch (Exception ex)
+        {
                     _logger.LogError(ex, "Failed to generate or save P4K report");
                     Dispatcher.UIThread.Post(() => ComparisonStatus = $"Failed to save P4K report: {ex.Message}");
                 }
@@ -2970,8 +2970,8 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
 
                     if (addedAudioFiles.Length == 0)
                     {
-                        Dispatcher.UIThread.Post(() =>
-                        {
+        Dispatcher.UIThread.Post(() =>
+        {
                             ComparisonStatus = "No new WEM audio files found to extract.";
                             _logger.LogInformation("No new WEM audio files found to extract");
                         });
@@ -3752,11 +3752,11 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                     break;
                 case P4kFileNode childFileNode:
                     dir.Add(new System.Xml.Linq.XElement("File",
-                        new System.Xml.Linq.XAttribute("Name", Path.GetFileName(childFileNode.ZipEntry.Name)),
-                        new System.Xml.Linq.XAttribute("CRC32", $"0x{childFileNode.ZipEntry.Crc32:X8}"),
-                        new System.Xml.Linq.XAttribute("Size", childFileNode.ZipEntry.UncompressedSize.ToString()),
-                        new System.Xml.Linq.XAttribute("CompressionType", childFileNode.ZipEntry.CompressionMethod.ToString()),
-                        new System.Xml.Linq.XAttribute("Encrypted", childFileNode.ZipEntry.IsCrypted.ToString())
+                        new System.Xml.Linq.XAttribute("Name", Path.GetFileName(childFileNode.P4KEntry.Name)),
+                        new System.Xml.Linq.XAttribute("CRC32", $"0x{childFileNode.P4KEntry.Crc32:X8}"),
+                        new System.Xml.Linq.XAttribute("Size", childFileNode.P4KEntry.UncompressedSize.ToString()),
+                        new System.Xml.Linq.XAttribute("CompressionType", childFileNode.P4KEntry.CompressionMethod.ToString()),
+                        new System.Xml.Linq.XAttribute("Encrypted", childFileNode.P4KEntry.IsCrypted.ToString())
                     ));
                     break;
             }

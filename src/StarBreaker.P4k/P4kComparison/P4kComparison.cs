@@ -42,9 +42,9 @@ public static class P4kComparison
         return root;
     }
     
-    private static Dictionary<string, ZipEntry> BuildFileIndex(IP4kFile p4kFile)
+    private static Dictionary<string, P4kEntry> BuildFileIndex(IP4kFile p4kFile)
     {
-        var fileIndex = new Dictionary<string, ZipEntry>();
+        var fileIndex = new Dictionary<string, P4kEntry>();
         
         foreach (var entry in p4kFile.Entries)
         {
@@ -54,7 +54,7 @@ public static class P4kComparison
         return fileIndex;
     }
     
-    private static P4kComparisonStatus DetermineStatus(ZipEntry? leftEntry, ZipEntry? rightEntry)
+    private static P4kComparisonStatus DetermineStatus(P4kEntry? leftEntry, P4kEntry? rightEntry)
     {
         if (leftEntry == null && rightEntry != null)
             return P4kComparisonStatus.Added;
@@ -77,8 +77,8 @@ public static class P4kComparison
         P4kComparisonDirectoryNode root, 
         string filePath, 
         P4kComparisonStatus status,
-        ZipEntry? leftEntry,
-        ZipEntry? rightEntry)
+        P4kEntry? leftEntry,
+        P4kEntry? rightEntry)
     {
         var pathParts = filePath.Split('\\');
         var current = root;
