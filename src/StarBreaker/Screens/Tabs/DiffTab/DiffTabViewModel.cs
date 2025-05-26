@@ -1239,7 +1239,9 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
 
             Directory.CreateDirectory(P4kOutputDirectory);
             
-            var reportFileName = "DataCore_Comparison.md";
+            var leftVersion = SanitizeForFilename(ExtractVersionFromManifest(LeftDataCoreP4kPath));
+            var rightVersion = SanitizeForFilename(ExtractVersionFromManifest(RightDataCoreP4kPath));
+            var reportFileName = $"DataCore_Comparison_{leftVersion}_to_{rightVersion}.md";
             var reportPath = Path.Combine(P4kOutputDirectory, reportFileName);
 
             IsComparing = true;
@@ -1309,8 +1311,8 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             string.Join(", ", mergedLocalization.Keys.Where(k => k.StartsWith("vehicle_")).Take(10)));
 
         // Header
-        var leftVersion = ExtractVersionFromPath(LeftDataCoreP4kPath);
-        var rightVersion = ExtractVersionFromPath(RightDataCoreP4kPath);
+        var leftVersion = ExtractVersionFromManifest(LeftDataCoreP4kPath);
+        var rightVersion = ExtractVersionFromManifest(RightDataCoreP4kPath);
         
         report.AppendLine($"# Post (Datamine) | New {rightVersion} datamines");
         report.AppendLine();
@@ -2361,7 +2363,9 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
 
             Directory.CreateDirectory(P4kOutputDirectory);
             
-            var reportFileName = "P4K_Comparison.md";
+            var leftVersion = SanitizeForFilename(ExtractVersionFromManifest(LeftP4kPath));
+            var rightVersion = SanitizeForFilename(ExtractVersionFromManifest(RightP4kPath));
+            var reportFileName = $"P4K_Comparison_{leftVersion}_to_{rightVersion}.md";
             var reportPath = Path.Combine(P4kOutputDirectory, reportFileName);
 
         IsComparing = true;
@@ -2408,8 +2412,8 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         var stats = P4kComparison.AnalyzeComparison(_comparisonRoot);
 
         // Header
-        var leftVersion = ExtractVersionFromPath(LeftP4kPath);
-        var rightVersion = ExtractVersionFromPath(RightP4kPath);
+        var leftVersion = ExtractVersionFromManifest(LeftP4kPath);
+        var rightVersion = ExtractVersionFromManifest(RightP4kPath);
         
         report.AppendLine($"# P4K Comparison Report: {leftVersion} → {rightVersion}");
         report.AppendLine($"**Generated:** {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
@@ -3045,6 +3049,101 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         {
             IsComparing = false;
         }
+    }
+
+    private static string ExtractVersionFromManifest(string p4kPath)
+    {
+        if (string.IsNullOrWhiteSpace(p4kPath))
+            return "Unknown";
+
+        try
+        {
+            var directory = Path.GetDirectoryName(p4kPath);
+            if (string.IsNullOrWhiteSpace(directory))
+                return ExtractVersionFromPath(p4kPath);
+
+            var manifestPath = Path.Combine(directory, "build_manifest.id");
+            if (!File.Exists(manifestPath))
+                return ExtractVersionFromPath(p4kPath);
+
+            var manifestJson = File.ReadAllText(manifestPath);
+            var manifest = JsonSerializer.Deserialize<BuildManifest>(manifestJson);
+            
+            if (manifest?.Data != null)
+            {
+                var version = manifest.Data.Version;
+                var changeNum = manifest.Data.RequestedP4ChangeNum;
+                var branch = manifest.Data.Branch;
+
+                // Clean version to only include major.minor.patch (remove build number)
+                var cleanVersion = CleanVersionNumber(version);
+
+                // Build version string in requested format: Version-ChangeNum
+                if (!string.IsNullOrWhiteSpace(cleanVersion) && !string.IsNullOrWhiteSpace(changeNum))
+                {
+                    return $"{cleanVersion}-{changeNum}";
+                }
+                else if (!string.IsNullOrWhiteSpace(branch) && !string.IsNullOrWhiteSpace(changeNum))
+                {
+                    return $"{branch}-{changeNum}";
+                }
+                else if (!string.IsNullOrWhiteSpace(cleanVersion))
+                {
+                    return cleanVersion;
+                }
+                else if (!string.IsNullOrWhiteSpace(changeNum))
+                {
+                    return changeNum;
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // Fall back to path-based extraction if manifest reading fails
+        }
+
+        return ExtractVersionFromPath(p4kPath);
+    }
+
+    private static string CleanVersionNumber(string? version)
+    {
+        if (string.IsNullOrWhiteSpace(version))
+            return "";
+        
+        // Split version by dots and take only first 3 parts (major.minor.patch)
+        var parts = version.Split('.');
+        if (parts.Length >= 3)
+        {
+            return $"{parts[0]}.{parts[1]}.{parts[2]}";
+        }
+        else if (parts.Length == 2)
+        {
+            return $"{parts[0]}.{parts[1]}";
+        }
+        else
+        {
+            return parts[0];
+        }
+    }
+
+    private static string SanitizeForFilename(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+            return "Unknown";
+
+        // Replace invalid filename characters with underscores
+        var invalidChars = Path.GetInvalidFileNameChars();
+        var sanitized = input;
+        
+        foreach (var invalidChar in invalidChars)
+        {
+            sanitized = sanitized.Replace(invalidChar, '_');
+        }
+        
+        // Replace spaces with underscores, but keep dots for version numbers
+        sanitized = sanitized.Replace(' ', '_');
+        
+        return sanitized;
     }
 
     private static string ExtractVersionFromPath(string filePath)
