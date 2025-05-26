@@ -9,15 +9,23 @@ namespace StarBreaker.Sandbox;
 
 public static class P4kSandbox
 {
-    private const string p4k = @"C:\Program Files\Roberts Space Industries\StarCitizen\PTU\Data.p4k";
+    private const string p4k = @"C:\Program Files\Roberts Space Industries\StarCitizen\LIVE\Data.p4k";
 
     public static void Run()
     {
+        TimeInit();
         //Verify();
         //ListByExtension();
         //CountEncrypted();
         //CountChunkTypes();
-        AllExtensions();
+        // AllExtensions();
+    }
+
+    private static void TimeInit()
+    {
+        var sw = Stopwatch.StartNew();
+        var p4kFile = P4kFile.FromFile(p4k);
+        Console.WriteLine($"Took {sw.ElapsedMilliseconds}ms to load {p4kFile.Entries.Length} entries");
     }
 
     private static void AllExtensions()
@@ -81,7 +89,7 @@ public static class P4kSandbox
             .Where(x => x.UncompressedSize > 0)
             .OrderBy(x => x.Offset);
 
-        var failed = new List<ZipEntry>();
+        var failed = new List<P4kEntry>();
 
         var ivo = BitConverter.ToUInt32("#ivo"u8);
         var crch = BitConverter.ToUInt32("CrCh"u8);
@@ -155,7 +163,7 @@ public static class P4kSandbox
 
         var ordered = p4kFile.Entries.OrderBy(x => x.Offset);
 
-        var failed = new List<ZipEntry>();
+        var failed = new List<P4kEntry>();
 
         var cnt = 0;
         Parallel.ForEach(ordered, entry =>

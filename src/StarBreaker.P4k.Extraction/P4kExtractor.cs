@@ -1,13 +1,20 @@
 ﻿using System.IO.Enumeration;
 using System.Text.RegularExpressions;
 
-namespace StarBreaker.P4k;
+namespace StarBreaker.P4k.Extraction;
+
+public enum DdsExtractMode
+{
+    None,
+    Combine,
+    ConvertToPng,
+}
 
 public class P4kExtractOptions
 {
-    public required bool ProcessCryXml { get; init; }
-    public required bool ProcessSocpaks { get; init; }
-    public required bool ProcessDdsTextures { get; init; }
+    public required bool ConvertCryXml { get; init; }
+    public required bool ExtractSocPak { get; init; }
+    public required DdsExtractMode ConvertDds { get; init; }
 
     //TODO: models (cgf)
     //TODO: sounds (wwise)
@@ -24,7 +31,7 @@ public sealed class P4kExtractor
         _p4KFile = p4KFile;
     }
 
-    public void ExtractFiltered(string outputDir, string? filter = null, IProgress<double>? progress = null)
+    public void ExtractFiltered(string outputDir, string? filter = null, IProgress<double>? progress = null, bool forceSequential = false)
     {
         //TODO: if the filter is for *.dds, make sure to include *.dds.N too. Maybe do the pre processing before we filter?
         var filteredEntries = (filter is null
@@ -33,10 +40,13 @@ public sealed class P4kExtractor
 
         Array.Sort(filteredEntries, (a, b) => a.Offset.CompareTo(b.Offset));
 
-        ExtractEntriesParallel(outputDir, filteredEntries, progress);
+        if (forceSequential)
+            ExtractEntriesSequential(outputDir, filteredEntries, progress);
+        else
+            ExtractEntriesParallel(outputDir, filteredEntries, progress);
     }
 
-    public void ExtractRegex(string outputDir, string? regex = null, IProgress<double>? progress = null)
+    public void ExtractRegex(string outputDir, string? regex = null, IProgress<double>? progress = null, bool forceSequential = false)
     {
         var filteredEntries = (regex is null
             ? _p4KFile.Entries.ToArray()
@@ -44,7 +54,10 @@ public sealed class P4kExtractor
 
         Array.Sort(filteredEntries, (a, b) => a.Offset.CompareTo(b.Offset));
 
-        ExtractEntriesParallel(outputDir, filteredEntries, progress);
+        if (forceSequential)
+            ExtractEntriesSequential(outputDir, filteredEntries, progress);
+        else
+            ExtractEntriesParallel(outputDir, filteredEntries, progress);
     }
 
     public void ExtractNode(string outputDir, P4kDirectoryNode directoryNode, IProgress<double>? progress = null)
@@ -54,7 +67,7 @@ public sealed class P4kExtractor
         ExtractEntriesParallel(outputDir, entries, progress);
     }
 
-    public void ExtractEntriesSequential(string outputDir, ICollection<ZipEntry> entries, IProgress<double>? progress = null)
+    public void ExtractEntriesSequential(string outputDir, ICollection<P4kEntry> entries, IProgress<double>? progress = null)
     {
         var numberOfEntries = entries.Count;
         var fivePercent = Math.Max(numberOfEntries / 20, 1);
@@ -76,7 +89,7 @@ public sealed class P4kExtractor
         progress?.Report(1);
     }
 
-    public void ExtractEntriesParallel(string outputDir, ICollection<ZipEntry> entries, IProgress<double>? progress = null)
+    public void ExtractEntriesParallel(string outputDir, ICollection<P4kEntry> entries, IProgress<double>? progress = null)
     {
         var numberOfEntries = entries.Count;
         var fivePercent = Math.Max(numberOfEntries / 20, 1);
@@ -111,13 +124,12 @@ public sealed class P4kExtractor
         progress?.Report(1);
     }
 
-    public void ExtractEntry(string outputDir, ZipEntry entry)
+    public void ExtractEntry(string outputDir, P4kEntry entry)
     {
-        //TODO: fix path separator on non-windows systems
         if (entry.UncompressedSize == 0)
             return;
 
-        var entryPath = Path.Combine(outputDir, entry.Name);
+        var entryPath = Path.Combine(outputDir, entry.RelativeOutputPath);
         //if (File.Exists(entryPath))
         //    return;
 

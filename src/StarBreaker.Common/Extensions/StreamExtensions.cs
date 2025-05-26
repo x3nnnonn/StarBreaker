@@ -67,6 +67,15 @@ public static class StreamExtensions
     {
         const int chunkSize = 4096;
 
+        if (stream.Length < chunkSize + magic.Length)
+        {
+            //brute force
+            stream.Seek(0, SeekOrigin.Begin);
+            var array = new byte[stream.Length];
+            stream.ReadExactly(array);
+            return array.AsSpan().LastIndexOf(magic);
+        }
+        
         var rent = ArrayPool<byte>.Shared.Rent(chunkSize);
         var search = rent.AsSpan();
         stream.Seek(-bytesFromEnd, SeekOrigin.End);

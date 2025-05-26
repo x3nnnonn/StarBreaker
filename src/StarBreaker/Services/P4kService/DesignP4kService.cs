@@ -27,7 +27,7 @@ public class DesignP4kService : IP4kService
         progress.Report(1);
     }
 
-    private static ZipEntry[] GetFakeEntries() =>
+    private static P4kEntry[] GetFakeEntries() =>
     [
         new(@"Data\entry1", 69, 69, 0, false, 123, 0xffff, 0xdeadbeef),
         new(@"Data\entry2", 69, 69, 0, false, 123, 0xffff, 0xdeadbeef),

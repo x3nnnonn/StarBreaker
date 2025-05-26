@@ -62,7 +62,7 @@ public class P4kFileSystem : IFileSystem
 
         foreach (var child in current.Children.Values.OfType<P4kFileNode>())
         {
-            yield return child.ZipEntry.Name;
+            yield return child.P4KEntry.Name;
         }
     }
 
@@ -88,10 +88,10 @@ public class P4kFileSystem : IFileSystem
 
         foreach (var child in current.Children.Values.OfType<P4kFileNode>())
         {
-            if (!FileSystemName.MatchesSimpleExpression(searchPattern, child.ZipEntry.Name.Split('\\').Last()))
+            if (!FileSystemName.MatchesSimpleExpression(searchPattern, child.P4KEntry.Name.Split('\\').Last()))
                 continue;
 
-            yield return child.ZipEntry.Name;
+            yield return child.P4KEntry.Name;
 
         }
     }
@@ -134,7 +134,7 @@ public class P4kFileSystem : IFileSystem
             if (value is P4kDirectoryNode directory)
                 current = directory;
             else if (value is P4kFileNode file && index == partsCount - 1)
-                return P4kFile.OpenStream(file.ZipEntry);
+                return P4kFile.OpenStream(file.P4KEntry);
             else
                 throw new FileNotFoundException();
         }
@@ -158,7 +158,7 @@ public class P4kFileSystem : IFileSystem
             if (value is P4kDirectoryNode directory)
                 current = directory;
             else if (value is P4kFileNode file && index == partsCount - 1)
-                return P4kFile.OpenStream(file.ZipEntry).ToArray();
+                return P4kFile.OpenStream(file.P4KEntry).ToArray();
             else
                 throw new FileNotFoundException();
         }

@@ -1,11 +1,12 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using StarBreaker.Common;
 using ZstdSharp;
 
 namespace StarBreaker.P4k;
 
 [DebuggerDisplay("{Name}")]
-public sealed class ZipEntry
+public sealed class P4kEntry
 {
     private readonly uint _dosDateTime;
 
@@ -18,7 +19,7 @@ public sealed class ZipEntry
     public DateTime LastModified => FromDosDateTime(_dosDateTime);
     public uint Crc32 { get; }
 
-    public ZipEntry(
+    public P4kEntry(
         string name,
         ulong compressedSize,
         ulong uncompressedSize,
@@ -50,5 +51,18 @@ public sealed class ZipEntry
         var second = (int)((dateTime & 0x001F) * 2);
 
         return new DateTime(year, month, day, hour, minute, second, 0);
+    }
+
+    public string RelativeOutputPath
+    {
+        get
+        {
+            //replace windows path separators with platform ones
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                // On Windows, we can keep the forward slashes as they are
+                return Name;
+
+            return Name.Replace('\\', Path.DirectorySeparatorChar);
+        }
     }
 }
