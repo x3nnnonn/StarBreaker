@@ -28,6 +28,10 @@ public static class DataCoreComparison
         var leftFileMap = leftFileGroups.ToDictionary(g => g.Key, g => g.ToList());
         var rightFileMap = rightFileGroups.ToDictionary(g => g.Key, g => g.ToList());
         
+        // Create DataForge instances for XML extraction
+        var leftDataForge = new DataForge<string>(new DataCoreBinaryXml(leftDataCore));
+        var rightDataForge = new DataForge<string>(new DataCoreBinaryXml(rightDataCore));
+        
         // Get all unique file paths from both DataCores
         var allFilePaths = leftFileMap.Keys.Union(rightFileMap.Keys).ToList();
         var totalPaths = allFilePaths.Count;
@@ -55,8 +59,8 @@ public static class DataCoreComparison
             var leftRecordList = leftFileMap.GetValueOrDefault(filePath, new List<KeyValuePair<string, DataCoreRecord>>());
             var rightRecordList = rightFileMap.GetValueOrDefault(filePath, new List<KeyValuePair<string, DataCoreRecord>>());
             
-            // Compare records for this file path
-            var status = DetermineFileStatus(leftRecordList, rightRecordList, leftDataCore, rightDataCore);
+            // Compare records for this file path using actual XML content
+            var status = DetermineFileStatus(leftRecordList, rightRecordList, leftDataCore, rightDataCore, leftDataForge, rightDataForge);
             
             // For the tree node, use the primary record from each side (if any)
             var leftRecord = leftRecordList.FirstOrDefault().Value;
@@ -110,7 +114,9 @@ public static class DataCoreComparison
         List<KeyValuePair<string, DataCoreRecord>> leftRecords,
         List<KeyValuePair<string, DataCoreRecord>> rightRecords,
         DataCoreDatabase leftDatabase,
-        DataCoreDatabase rightDatabase)
+        DataCoreDatabase rightDatabase,
+        DataForge<string> leftDataForge,
+        DataForge<string> rightDataForge)
     {
         // var debugFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "datacore_comparison_debug.txt");
         
@@ -130,98 +136,90 @@ public static class DataCoreComparison
             
         if (leftRecords.Any() && rightRecords.Any())
         {
-            // Compare record counts first
+            // Compare exact record count first - quick check
             if (leftRecords.Count != rightRecords.Count)
             {
-                // var filename = leftRecords.First().Value.GetFileName(leftDatabase);
-                // File.AppendAllText(debugFilePath, $"File MODIFIED (count diff): {filename} - Left: {leftRecords.Count}, Right: {rightRecords.Count}\n");
                 return DataCoreComparisonStatus.Modified;
             }
-                
-            // Create sets of record IDs for comparison
-            var leftRecordIds = leftRecords.Select(r => r.Value.Id).ToHashSet();
-            var rightRecordIds = rightRecords.Select(r => r.Value.Id).ToHashSet();
             
-            // If the sets of record IDs are different, file is modified
-            if (!leftRecordIds.SetEquals(rightRecordIds))
-            {
-                // var filename = leftRecords.First().Value.GetFileName(leftDatabase);
-                // File.AppendAllText(debugFilePath, $"File MODIFIED (record IDs diff): {filename}\n");
-                return DataCoreComparisonStatus.Modified;
-            }
-                
-            // Compare each matching record pair
+            // Extract and compare actual XML content for each record
+            var leftXmlContents = new List<string>();
+            var rightXmlContents = new List<string>();
+            
+            // Extract XML content from left records
             foreach (var leftRecord in leftRecords)
             {
-                var matchingRight = rightRecords.FirstOrDefault(r => r.Value.Id == leftRecord.Value.Id);
-                if (!matchingRight.Equals(default(KeyValuePair<string, DataCoreRecord>)))
+                try
                 {
-                    var recordStatus = DetermineRecordStatus(leftRecord.Value, matchingRight.Value, leftDatabase, rightDatabase);
-                    if (recordStatus == DataCoreComparisonStatus.Modified)
+                    if (leftDatabase.MainRecords.Contains(leftRecord.Value.Id))
                     {
-                        // var filename = leftRecord.Value.GetFileName(leftDatabase);
-                        // File.AppendAllText(debugFilePath, $"File MODIFIED (record content): {filename}\n");
-                        return DataCoreComparisonStatus.Modified;
+                        var xmlContent = leftDataForge.GetFromRecord(leftRecord.Value);
+                        leftXmlContents.Add(xmlContent ?? "");
+                    }
+                    else
+                    {
+                        // For non-main records, use basic info
+                        leftXmlContents.Add(GenerateBasicRecordInfo(leftRecord.Value, leftDatabase));
                     }
                 }
+                catch
+                {
+                    // Fallback to basic info on error
+                    leftXmlContents.Add(GenerateBasicRecordInfo(leftRecord.Value, leftDatabase));
+                }
+            }
+            
+            // Extract XML content from right records
+            foreach (var rightRecord in rightRecords)
+            {
+                try
+                {
+                    if (rightDatabase.MainRecords.Contains(rightRecord.Value.Id))
+                    {
+                        var xmlContent = rightDataForge.GetFromRecord(rightRecord.Value);
+                        rightXmlContents.Add(xmlContent ?? "");
+                    }
+                    else
+                    {
+                        // For non-main records, use basic info
+                        rightXmlContents.Add(GenerateBasicRecordInfo(rightRecord.Value, rightDatabase));
+                    }
+                }
+                catch
+                {
+                    // Fallback to basic info on error
+                    rightXmlContents.Add(GenerateBasicRecordInfo(rightRecord.Value, rightDatabase));
+                }
+            }
+            
+            // Sort both lists to ensure consistent comparison
+            leftXmlContents.Sort();
+            rightXmlContents.Sort();
+            
+            // Compare the XML content
+            if (!leftXmlContents.SequenceEqual(rightXmlContents))
+            {
+                return DataCoreComparisonStatus.Modified;
             }
         }
         
+        // If record count and XML content match, consider unchanged
         return DataCoreComparisonStatus.Unchanged;
     }
     
-    private static DataCoreComparisonStatus DetermineRecordStatus(
-        DataCoreRecord leftRecord, 
-        DataCoreRecord rightRecord,
-        DataCoreDatabase leftDatabase,
-        DataCoreDatabase rightDatabase)
+    private static string GenerateBasicRecordInfo(DataCoreRecord record, DataCoreDatabase database)
     {
-        // Compare by struct type
-        if (leftRecord.StructIndex != rightRecord.StructIndex)
-            return DataCoreComparisonStatus.Modified;
-            
-        // Compare by struct size
-        if (leftRecord.StructSize != rightRecord.StructSize)
-            return DataCoreComparisonStatus.Modified;
-            
-        // Try semantic comparison using extracted content for main records
-        // var debugFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "datacore_comparison_debug.txt");
+        var fileName = record.GetFileName(database);
+        var recordName = record.GetName(database);
+        var structTypeName = database.StructDefinitions[record.StructIndex].GetName(database);
         
-        // Only do deep comparison for main records (since we can extract them)
-        if (leftDatabase.MainRecords.Contains(leftRecord.Id) && rightDatabase.MainRecords.Contains(rightRecord.Id))
-        {
-            try
-            {
-                var leftXml = new DataCoreBinaryXml(leftDatabase);
-                var rightXml = new DataCoreBinaryXml(rightDatabase);
-                
-                var leftContent = leftXml.GetFromMainRecord(leftRecord);
-                var rightContent = rightXml.GetFromMainRecord(rightRecord);
-                
-                if (leftContent != rightContent)
-                {
-                    // File.AppendAllText(debugFilePath, $"File MODIFIED (content diff): {leftRecord.GetFileName(leftDatabase)}\n");
-                    return DataCoreComparisonStatus.Modified;
-                }
-            }
-            catch (Exception)
-            {
-                // Fall back to basic comparison if extraction fails
-                // File.AppendAllText(debugFilePath, $"File comparison fallback: {leftRecord.GetFileName(leftDatabase)} - {ex.Message}\n");
-            }
-        }
-        
-        // For non-main records, compare basic properties
-        var leftName = leftRecord.GetName(leftDatabase);
-        var rightName = rightRecord.GetName(rightDatabase);
-        
-        if (leftName != rightName)
-        {
-            // File.AppendAllText(debugFilePath, $"File MODIFIED (name diff): {leftRecord.GetFileName(leftDatabase)} - Left: '{leftName}', Right: '{rightName}'\n");
-            return DataCoreComparisonStatus.Modified;
-        }
-        
-        return DataCoreComparisonStatus.Unchanged;
+        return $"<DataCoreRecord>" +
+               $"<RecordId>{record.Id}</RecordId>" +
+               $"<RecordName>{recordName}</RecordName>" +
+               $"<FileName>{fileName}</FileName>" +
+               $"<StructType>{structTypeName}</StructType>" +
+               $"<StructSize>{record.StructSize}</StructSize>" +
+               $"</DataCoreRecord>";
     }
     
     private static void AddRecordToComparisonTree(
