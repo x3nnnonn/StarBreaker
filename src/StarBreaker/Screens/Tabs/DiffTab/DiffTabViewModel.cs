@@ -2858,6 +2858,16 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             var outputFolder = Path.Combine(P4kOutputDirectory, "DDS_Files");
             Directory.CreateDirectory(outputFolder);
 
+            // Clear existing files to ensure a clean extraction of only current comparison files
+            foreach (var file in Directory.GetFiles(outputFolder))
+            {
+                var ext = Path.GetExtension(file).ToLowerInvariant();
+                if (ext == ".png")
+                {
+                    File.Delete(file);
+                }
+            }
+
             IsComparing = true;
             ComparisonStatus = "Extracting new and modified DDS files...";
 
@@ -2872,11 +2882,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                         .Where(f => f.RightEntry != null)
                         .ToArray();
 
-                    // Consolidate related DDS files to avoid extracting duplicates
-                    var consolidatedFiles = ConsolidateRelatedFiles(ddsFiles.Select(f => f.FullPath)).ToArray();
-                    var filesToExtract = ddsFiles.Where(f => consolidatedFiles.Contains(f.FullPath)).ToArray();
-
-                    if (filesToExtract.Length == 0)
+                    if (ddsFiles.Length == 0)
                     {
                         Dispatcher.UIThread.Post(() =>
                         {
@@ -2890,13 +2896,12 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                     var extractedCount = 0;
                     var failedCount = 0;
 
-                    for (int i = 0; i < filesToExtract.Length; i++)
+                    for (int i = 0; i < ddsFiles.Length; i++)
                     {
-                        var file = filesToExtract[i];
-                        var progress = (double)i / filesToExtract.Length;
+                        var file = ddsFiles[i];
                         
                         Dispatcher.UIThread.Post(() => 
-                            ComparisonStatus = $"Extracting DDS files... {i + 1}/{filesToExtract.Length}");
+                            ComparisonStatus = $"Extracting DDS files... {i + 1}/{ddsFiles.Length}");
 
                         try
                         {
@@ -2981,6 +2986,16 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             var outputFolder = Path.Combine(P4kOutputDirectory, "WEM_Audio_Files");
             Directory.CreateDirectory(outputFolder);
 
+            // Clear existing files to ensure a clean extraction of only current comparison files
+            foreach (var file in Directory.GetFiles(outputFolder))
+            {
+                var ext = Path.GetExtension(file).ToLowerInvariant();
+                if (ext == ".wem" || ext == ".ogg" || ext == ".mp3")
+                {
+                    File.Delete(file);
+                }
+            }
+
             IsComparing = true;
             ComparisonStatus = "Extracting new WEM audio files...";
 
@@ -2997,8 +3012,8 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
 
                     if (addedWemFiles.Length == 0)
                     {
-                        Dispatcher.UIThread.Post(() =>
-                        {
+        Dispatcher.UIThread.Post(() =>
+        {
                             ComparisonStatus = "No new WEM audio files found to extract.";
                             _logger.LogInformation("No new WEM audio files found to extract");
                         });
@@ -3021,18 +3036,8 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                             // Extract just the filename without directory structure
                             var originalFileName = Path.GetFileName(file.FullPath);
                             
-                            // Handle potential filename conflicts by adding a counter
+                            // Create output path (overwrite existing files)
                             var outputPath = Path.Combine(outputFolder, originalFileName);
-                            var counter = 1;
-                            var fileNameWithoutExt = Path.GetFileNameWithoutExtension(originalFileName);
-                            var extension = Path.GetExtension(originalFileName);
-                            
-                            while (File.Exists(outputPath))
-                            {
-                                var nameWithCounter = $"{fileNameWithoutExt}_{counter}{extension}";
-                                outputPath = Path.Combine(outputFolder, nameWithCounter);
-                                counter++;
-                            }
 
                             // Extract WEM file
                             using var entryStream = _rightP4kFile!.OpenStream(file.RightEntry!);
