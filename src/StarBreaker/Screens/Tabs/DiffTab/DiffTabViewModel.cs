@@ -71,6 +71,10 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
     private DataCoreComparisonDirectoryNode? _dataCoreComparisonRoot;
     private Dictionary<string, string>? _currentLocalizationData;
 
+    // Selected items tracking
+    [ObservableProperty] private IList<IP4kComparisonNode> _selectedP4kFiles = new List<IP4kComparisonNode>();
+    [ObservableProperty] private IList<IDataCoreComparisonNode> _selectedDataCoreFiles = new List<IDataCoreComparisonNode>();
+
     public DiffTabViewModel(ILogger<DiffTabViewModel> logger)
     {
         _logger = logger;
@@ -95,7 +99,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             },
         };
 
-        ComparisonSource.RowSelection!.SingleSelect = true;
+        ComparisonSource.RowSelection!.SingleSelect = false; // Enable multi-selection
         ComparisonSource.RowSelection!.SelectionChanged += OnComparisonSelectionChanged;
     }
     
@@ -115,7 +119,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             },
         };
 
-        DataCoreComparisonSource.RowSelection!.SingleSelect = true;
+        DataCoreComparisonSource.RowSelection!.SingleSelect = false; // Enable multi-selection
         DataCoreComparisonSource.RowSelection!.SelectionChanged += OnDataCoreComparisonSelectionChanged;
     }
     
@@ -137,6 +141,11 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
 
     private void OnComparisonSelectionChanged(object? sender, TreeSelectionModelSelectionChangedEventArgs<IP4kComparisonNode> e)
     {
+        // Update selected files list
+        SelectedP4kFiles = e.SelectedItems.Where(item => item != null).ToList()!;
+        OnPropertyChanged(nameof(CanExtractSelectedP4kFiles));
+
+        // For preview, only show preview for single selection
         if (e.SelectedItems.Count != 1)
         {
             Preview = null;
@@ -174,6 +183,11 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
     
     private void OnDataCoreComparisonSelectionChanged(object? sender, TreeSelectionModelSelectionChangedEventArgs<IDataCoreComparisonNode> e)
     {
+        // Update selected files list
+        SelectedDataCoreFiles = e.SelectedItems.Where(item => item != null).ToList()!;
+        OnPropertyChanged(nameof(CanExtractSelectedDataCoreFiles));
+
+        // For preview, only show preview for single selection
         if (e.SelectedItems.Count != 1)
         {
             Preview = null;
@@ -1203,7 +1217,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
     /// Indicates whether new DDS files can be extracted (P4K comparison has been completed and there are added DDS files)
     /// </summary>
     public bool CanExtractNewDdsFiles => _comparisonRoot != null && _rightP4kFile != null && 
-        _comparisonRoot.GetAllFiles().Any(f => f.Status == P4kComparisonStatus.Added && 
+        _comparisonRoot.GetAllFiles().Any(f => (f.Status == P4kComparisonStatus.Added || f.Status == P4kComparisonStatus.Modified) && 
             Path.GetFileName(f.FullPath).Contains(".dds", StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
@@ -1212,6 +1226,18 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
     public bool CanExtractNewAudioFiles => _comparisonRoot != null && _rightP4kFile != null && 
         _comparisonRoot.GetAllFiles().Any(f => f.Status == P4kComparisonStatus.Added && 
             IsAudioFile(f.FullPath));
+
+    /// <summary>
+    /// Indicates whether selected P4K files can be extracted (files are selected)
+    /// </summary>
+    public bool CanExtractSelectedP4kFiles => SelectedP4kFiles.Any(f => f is P4kComparisonFileNode) && 
+        !string.IsNullOrWhiteSpace(P4kOutputDirectory);
+
+    /// <summary>
+    /// Indicates whether selected DataCore files can be extracted (files are selected)
+    /// </summary>
+    public bool CanExtractSelectedDataCoreFiles => SelectedDataCoreFiles.Any(f => f is DataCoreComparisonFileNode) && 
+        !string.IsNullOrWhiteSpace(P4kOutputDirectory);
 
     private static bool IsAudioFile(string filePath)
     {
@@ -2833,29 +2859,29 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             Directory.CreateDirectory(outputFolder);
 
             IsComparing = true;
-            ComparisonStatus = "Extracting new DDS files...";
+            ComparisonStatus = "Extracting new and modified DDS files...";
 
             await Task.Run(() =>
             {
                 try
                 {
-                    // Get all added DDS files
-                    var addedDdsFiles = _comparisonRoot!.GetAllFiles()
-                        .Where(f => f.Status == P4kComparisonStatus.Added)
+                    // Get all added and modified DDS files
+                    var ddsFiles = _comparisonRoot!.GetAllFiles()
+                        .Where(f => f.Status == P4kComparisonStatus.Added || f.Status == P4kComparisonStatus.Modified)
                         .Where(f => Path.GetFileName(f.FullPath).Contains(".dds", StringComparison.OrdinalIgnoreCase))
                         .Where(f => f.RightEntry != null)
                         .ToArray();
 
                     // Consolidate related DDS files to avoid extracting duplicates
-                    var consolidatedFiles = ConsolidateRelatedFiles(addedDdsFiles.Select(f => f.FullPath)).ToArray();
-                    var filesToExtract = addedDdsFiles.Where(f => consolidatedFiles.Contains(f.FullPath)).ToArray();
+                    var consolidatedFiles = ConsolidateRelatedFiles(ddsFiles.Select(f => f.FullPath)).ToArray();
+                    var filesToExtract = ddsFiles.Where(f => consolidatedFiles.Contains(f.FullPath)).ToArray();
 
                     if (filesToExtract.Length == 0)
                     {
-        Dispatcher.UIThread.Post(() =>
-        {
-                            ComparisonStatus = "No new DDS files found to extract.";
-                            _logger.LogInformation("No new DDS files found to extract");
+                        Dispatcher.UIThread.Post(() =>
+                        {
+                            ComparisonStatus = "No new or modified DDS files found to extract.";
+                            _logger.LogInformation("No new or modified DDS files found to extract");
                         });
                         return;
                     }
@@ -2884,17 +2910,14 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                                 fileNameWithoutExt = fileNameWithoutExt.Substring(0, fileNameWithoutExt.Length - 4);
                             }
                             
-                            // Handle potential filename conflicts by adding a counter
-                            var basePngName = fileNameWithoutExt + ".png";
-                            var pngOutputPath = Path.Combine(outputFolder, basePngName);
-                            var counter = 1;
-                            
-                            while (File.Exists(pngOutputPath))
+                            // Add "_modified" suffix for modified files
+                            if (file.Status == P4kComparisonStatus.Modified)
                             {
-                                var nameWithCounter = $"{fileNameWithoutExt}_{counter}.png";
-                                pngOutputPath = Path.Combine(outputFolder, nameWithCounter);
-                                counter++;
+                                fileNameWithoutExt += "_modified";
                             }
+                            
+                            // Create output path (overwrite existing files)
+                            var pngOutputPath = Path.Combine(outputFolder, fileNameWithoutExt + ".png");
 
                             // Extract and convert DDS to PNG
                             var ms = DdsFile.MergeToStream(file.RightEntry!.Name, p4kFileSystem);
@@ -2921,14 +2944,14 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to extract new DDS files");
+                    _logger.LogError(ex, "Failed to extract new and modified DDS files");
                     Dispatcher.UIThread.Post(() => ComparisonStatus = $"DDS extraction failed: {ex.Message}");
                 }
             });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error extracting new DDS files");
+            _logger.LogError(ex, "Error extracting new and modified DDS files");
             ComparisonStatus = $"Error extracting DDS files: {ex.Message}";
         }
         finally
@@ -2955,27 +2978,27 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                 return;
             }
 
-            var outputFolder = Path.Combine(P4kOutputDirectory, "Audio_Files");
+            var outputFolder = Path.Combine(P4kOutputDirectory, "WEM_Audio_Files");
             Directory.CreateDirectory(outputFolder);
 
             IsComparing = true;
-                                ComparisonStatus = "Extracting new WEM audio files...";
+            ComparisonStatus = "Extracting new WEM audio files...";
 
             await Task.Run(() =>
             {
                 try
                 {
-                    // Get all added audio files
-                    var addedAudioFiles = _comparisonRoot!.GetAllFiles()
+                    // Get all added WEM files
+                    var addedWemFiles = _comparisonRoot!.GetAllFiles()
                         .Where(f => f.Status == P4kComparisonStatus.Added)
                         .Where(f => IsAudioFile(f.FullPath))
                         .Where(f => f.RightEntry != null)
                         .ToArray();
 
-                    if (addedAudioFiles.Length == 0)
+                    if (addedWemFiles.Length == 0)
                     {
-        Dispatcher.UIThread.Post(() =>
-        {
+                        Dispatcher.UIThread.Post(() =>
+                        {
                             ComparisonStatus = "No new WEM audio files found to extract.";
                             _logger.LogInformation("No new WEM audio files found to extract");
                         });
@@ -2986,37 +3009,38 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                     var extractedCount = 0;
                     var failedCount = 0;
 
-                    for (int i = 0; i < addedAudioFiles.Length; i++)
+                    for (int i = 0; i < addedWemFiles.Length; i++)
                     {
-                        var file = addedAudioFiles[i];
+                        var file = addedWemFiles[i];
                         
                         Dispatcher.UIThread.Post(() => 
-                            ComparisonStatus = $"Extracting WEM files... {i + 1}/{addedAudioFiles.Length}");
+                            ComparisonStatus = $"Extracting WEM files... {i + 1}/{addedWemFiles.Length}");
 
                         try
                         {
-                            // Extract the audio file directly to the output folder (no directory structure)
-                            var fileName = Path.GetFileName(file.FullPath);
-                            var outputPath = Path.Combine(outputFolder, fileName);
+                            // Extract just the filename without directory structure
+                            var originalFileName = Path.GetFileName(file.FullPath);
                             
                             // Handle potential filename conflicts by adding a counter
+                            var outputPath = Path.Combine(outputFolder, originalFileName);
                             var counter = 1;
-                            var nameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
-                            var extension = Path.GetExtension(fileName);
+                            var fileNameWithoutExt = Path.GetFileNameWithoutExtension(originalFileName);
+                            var extension = Path.GetExtension(originalFileName);
                             
                             while (File.Exists(outputPath))
                             {
-                                var nameWithCounter = $"{nameWithoutExt}_{counter}{extension}";
+                                var nameWithCounter = $"{fileNameWithoutExt}_{counter}{extension}";
                                 outputPath = Path.Combine(outputFolder, nameWithCounter);
                                 counter++;
                             }
 
-                            // Extract the audio file directly
+                            // Extract WEM file
                             using var entryStream = _rightP4kFile!.OpenStream(file.RightEntry!);
-                            using var outputFileStream = File.Create(outputPath);
-                            entryStream.CopyTo(outputFileStream);
+                            using var outputStream = File.Create(outputPath);
+                            entryStream.CopyTo(outputStream);
                             
                             extractedCount++;
+                            
                             _logger.LogDebug("Extracted WEM file: {SourcePath} -> {OutputPath}", file.FullPath, outputPath);
                         }
                         catch (Exception ex)
@@ -3028,22 +3052,242 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
 
                     Dispatcher.UIThread.Post(() =>
                     {
-                        ComparisonStatus = $"WEM audio extraction complete! Extracted: {extractedCount}, Failed: {failedCount}";
-                        _logger.LogInformation("WEM audio extraction completed - Extracted: {Extracted}, Failed: {Failed}, Output folder: {OutputFolder}", 
+                        ComparisonStatus = $"WEM extraction complete! Extracted: {extractedCount}, Failed: {failedCount}";
+                        _logger.LogInformation("WEM extraction completed - Extracted: {Extracted}, Failed: {Failed}, Output folder: {OutputFolder}", 
                             extractedCount, failedCount, outputFolder);
                     });
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Failed to extract new WEM audio files");
-                    Dispatcher.UIThread.Post(() => ComparisonStatus = $"WEM audio extraction failed: {ex.Message}");
+                    Dispatcher.UIThread.Post(() => ComparisonStatus = $"WEM extraction failed: {ex.Message}");
                 }
             });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error extracting new WEM audio files");
-            ComparisonStatus = $"Error extracting WEM audio files: {ex.Message}";
+            ComparisonStatus = $"Error extracting WEM files: {ex.Message}";
+        }
+        finally
+        {
+            IsComparing = false;
+        }
+    }
+
+    [RelayCommand]
+    public async Task ExtractSelectedP4kFiles()
+    {
+        if (!CanExtractSelectedP4kFiles)
+        {
+            _logger.LogWarning("Cannot extract selected P4K files - no files selected or output directory not configured");
+            return;
+        }
+
+        try
+        {
+            var outputFolder = Path.Combine(P4kOutputDirectory, "Selected_P4K_Files");
+            Directory.CreateDirectory(outputFolder);
+
+            IsComparing = true;
+            ComparisonStatus = "Extracting selected P4K files...";
+
+            await Task.Run(() =>
+            {
+                try
+                {
+                    var selectedFiles = SelectedP4kFiles.OfType<P4kComparisonFileNode>().ToArray();
+                    var extractedCount = 0;
+                    var failedCount = 0;
+
+                    for (int i = 0; i < selectedFiles.Length; i++)
+                    {
+                        var file = selectedFiles[i];
+                        
+                        Dispatcher.UIThread.Post(() => 
+                            ComparisonStatus = $"Extracting selected files... {i + 1}/{selectedFiles.Length}");
+
+                        try
+                        {
+                            // Determine which P4K to extract from based on file status
+                            P4kFile? sourceP4k = file.Status switch
+                            {
+                                P4kComparisonStatus.Added => _rightP4kFile,
+                                P4kComparisonStatus.Removed => _leftP4kFile,
+                                P4kComparisonStatus.Modified => _rightP4kFile,
+                                P4kComparisonStatus.Unchanged => _leftP4kFile,
+                                _ => _leftP4kFile
+                            };
+
+                            var zipEntry = file.Status switch
+                            {
+                                P4kComparisonStatus.Added => file.RightEntry,
+                                P4kComparisonStatus.Removed => file.LeftEntry,
+                                P4kComparisonStatus.Modified => file.RightEntry,
+                                P4kComparisonStatus.Unchanged => file.LeftEntry ?? file.RightEntry,
+                                _ => file.LeftEntry ?? file.RightEntry
+                            };
+
+                            if (sourceP4k == null || zipEntry == null)
+                            {
+                                _logger.LogWarning("Cannot extract file {FileName} - source P4K or entry not available", file.FullPath);
+                                failedCount++;
+                                continue;
+                            }
+
+                            // Create output path preserving directory structure
+                            var relativePath = file.FullPath.Replace('/', Path.DirectorySeparatorChar);
+                            var outputPath = Path.Combine(outputFolder, relativePath);
+                            var outputDir = Path.GetDirectoryName(outputPath);
+                            if (!string.IsNullOrEmpty(outputDir))
+                            {
+                                Directory.CreateDirectory(outputDir);
+                            }
+
+                            // Extract file
+                            using var entryStream = sourceP4k.OpenStream(zipEntry);
+                            using var outputStream = File.Create(outputPath);
+                            entryStream.CopyTo(outputStream);
+                            
+                            extractedCount++;
+                            
+                            _logger.LogDebug("Extracted selected file: {SourcePath} -> {OutputPath}", file.FullPath, outputPath);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to extract selected file: {FileName}", file.FullPath);
+                            failedCount++;
+                        }
+                    }
+
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        ComparisonStatus = $"Selected file extraction complete! Extracted: {extractedCount}, Failed: {failedCount}";
+                        _logger.LogInformation("Selected P4K file extraction completed - Extracted: {Extracted}, Failed: {Failed}, Output folder: {OutputFolder}", 
+                            extractedCount, failedCount, outputFolder);
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to extract selected P4K files");
+                    Dispatcher.UIThread.Post(() => ComparisonStatus = $"Selected file extraction failed: {ex.Message}");
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error extracting selected P4K files");
+            ComparisonStatus = $"Error extracting selected files: {ex.Message}";
+        }
+        finally
+        {
+            IsComparing = false;
+        }
+    }
+
+    [RelayCommand]
+    public async Task ExtractSelectedDataCoreFiles()
+    {
+        if (!CanExtractSelectedDataCoreFiles)
+        {
+            _logger.LogWarning("Cannot extract selected DataCore files - no files selected or output directory not configured");
+            return;
+        }
+
+        try
+        {
+            var outputFolder = Path.Combine(P4kOutputDirectory, "Selected_DataCore_Files");
+            Directory.CreateDirectory(outputFolder);
+
+            IsComparing = true;
+            ComparisonStatus = "Extracting selected DataCore files...";
+
+            await Task.Run(() =>
+            {
+                try
+                {
+                    var selectedFiles = SelectedDataCoreFiles.OfType<DataCoreComparisonFileNode>().ToArray();
+                    var extractedCount = 0;
+                    var failedCount = 0;
+
+                    for (int i = 0; i < selectedFiles.Length; i++)
+                    {
+                        var file = selectedFiles[i];
+                        
+                        Dispatcher.UIThread.Post(() => 
+                            ComparisonStatus = $"Extracting selected DataCore files... {i + 1}/{selectedFiles.Length}");
+
+                        try
+                        {
+                            // Determine which database to extract from based on file status
+                            DataCoreDatabase? sourceDatabase = file.Status switch
+                            {
+                                DataCoreComparisonStatus.Added => _rightDataCoreDatabase,
+                                DataCoreComparisonStatus.Removed => _leftDataCoreDatabase,
+                                DataCoreComparisonStatus.Modified => _rightDataCoreDatabase,
+                                DataCoreComparisonStatus.Unchanged => _leftDataCoreDatabase,
+                                _ => _leftDataCoreDatabase
+                            };
+
+                            var record = file.Status switch
+                            {
+                                DataCoreComparisonStatus.Added => file.RightRecord,
+                                DataCoreComparisonStatus.Removed => file.LeftRecord,
+                                DataCoreComparisonStatus.Modified => file.RightRecord,
+                                DataCoreComparisonStatus.Unchanged => file.LeftRecord ?? file.RightRecord,
+                                _ => file.LeftRecord ?? file.RightRecord
+                            };
+
+                            if (sourceDatabase == null || record == null)
+                            {
+                                _logger.LogWarning("Cannot extract DataCore file {FileName} - source database or record not available", file.Name);
+                                failedCount++;
+                                continue;
+                            }
+
+                            // Create output path
+                            var fileName = file.Name;
+                            if (!fileName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
+                            {
+                                fileName += ".xml";
+                            }
+                            var outputPath = Path.Combine(outputFolder, fileName);
+
+                            // Generate XML content for the record
+                            var xmlContent = GenerateDataCoreRecordPreview(record.Value, sourceDatabase);
+                            
+                            // Write to file
+                            File.WriteAllText(outputPath, xmlContent);
+                            
+                            extractedCount++;
+                            
+                            _logger.LogDebug("Extracted selected DataCore file: {FileName} -> {OutputPath}", file.Name, outputPath);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to extract selected DataCore file: {FileName}", file.Name);
+                            failedCount++;
+                        }
+                    }
+
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        ComparisonStatus = $"Selected DataCore file extraction complete! Extracted: {extractedCount}, Failed: {failedCount}";
+                        _logger.LogInformation("Selected DataCore file extraction completed - Extracted: {Extracted}, Failed: {Failed}, Output folder: {OutputFolder}", 
+                            extractedCount, failedCount, outputFolder);
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to extract selected DataCore files");
+                    Dispatcher.UIThread.Post(() => ComparisonStatus = $"Selected DataCore file extraction failed: {ex.Message}");
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error extracting selected DataCore files");
+            ComparisonStatus = $"Error extracting selected DataCore files: {ex.Message}";
         }
         finally
         {

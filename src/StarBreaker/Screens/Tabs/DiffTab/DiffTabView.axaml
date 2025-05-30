@@ -328,7 +328,7 @@
                 Padding="15" 
                 Margin="0,0,0,15"
                 IsVisible="{Binding IsP4kComparisonMode}">
-            <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto,Auto">
                 <StackPanel Grid.Column="0">
                     <TextBlock Text="P4K Comparison" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
                     <TextBlock Text="This will compare the two selected P4K files and show added, removed, and modified files."
@@ -358,15 +358,15 @@
                         ToolTip.Tip="Generate a detailed report of all P4K file changes"/>
                 
                 <Button Grid.Column="3" 
-                        Content="🖼️ Extract New DDS" 
+                        Content="🖼️ Extract DDS (New/Modified)" 
                         Command="{Binding ExtractNewDdsFilesCommand}" 
                         IsEnabled="{Binding CanExtractNewDdsFiles}"
                         VerticalAlignment="Center"
-                        MinWidth="140"
+                        MinWidth="200"
                         MinHeight="35"
                         FontWeight="SemiBold"
                         Margin="10,0,0,0"
-                        ToolTip.Tip="Extract all new DDS files and convert them to PNG"/>
+                        ToolTip.Tip="Extract all new and modified DDS files and convert them to PNG"/>
                 
                 <Button Grid.Column="4" 
                         Content="🎵 Extract New WEM" 
@@ -378,6 +378,17 @@
                         FontWeight="SemiBold"
                         Margin="10,0,0,0"
                         ToolTip.Tip="Extract all new WEM audio files"/>
+                
+                <Button Grid.Column="5" 
+                        Content="📦 Extract Selected" 
+                        Command="{Binding ExtractSelectedP4kFilesCommand}" 
+                        IsEnabled="{Binding CanExtractSelectedP4kFiles}"
+                        VerticalAlignment="Center"
+                        MinWidth="130"
+                        MinHeight="35"
+                        FontWeight="SemiBold"
+                        Margin="10,0,0,0"
+                        ToolTip.Tip="Extract currently selected files"/>
             </Grid>
         </Border>
         
@@ -390,7 +401,7 @@
                 Padding="15" 
                 Margin="0,0,0,15"
                 IsVisible="{Binding IsDataCoreComparisonMode}">
-            <Grid ColumnDefinitions="*,Auto,Auto">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto">
                 <StackPanel Grid.Column="0">
                     <TextBlock Text="DataCore Comparison" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
                     <TextBlock Text="This will extract DataCore from the selected P4K files and compare them to show added, removed, and modified records."
@@ -418,6 +429,17 @@
                         FontWeight="SemiBold"
                         Margin="10,0,0,0"
                         ToolTip.Tip="Generate a detailed report of all changes and localization additions"/>
+                
+                <Button Grid.Column="3" 
+                        Content="📦 Extract Selected" 
+                        Command="{Binding ExtractSelectedDataCoreFilesCommand}" 
+                        IsEnabled="{Binding CanExtractSelectedDataCoreFiles}"
+                        VerticalAlignment="Center"
+                        MinWidth="130"
+                        MinHeight="35"
+                        FontWeight="SemiBold"
+                        Margin="10,0,0,0"
+                        ToolTip.Tip="Extract currently selected DataCore files"/>
             </Grid>
         </Border>
         
