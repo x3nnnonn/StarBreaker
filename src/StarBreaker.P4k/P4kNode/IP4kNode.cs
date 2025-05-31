@@ -2,5 +2,7 @@
 
 public interface IP4kNode
 {
-    IP4kNode Parent { get; }
+    IP4kFile P4k { get; }
+    P4kRoot Root { get; }
+    ulong Size { get; }
 }
