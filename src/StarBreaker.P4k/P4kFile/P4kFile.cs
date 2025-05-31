@@ -89,14 +89,10 @@ public sealed class P4kFile : IP4kFile
                 progress?.Report(i / (double)totalEntries);
         }
 
-        // Create P4kFile instance first
-        var p4kFile = new P4kFile(filePath, entries, fileSystem);
-        
-        // Transform SOCPAK files into expandable nodes
-        fileSystem.TransformSocPakFiles(p4kFile);
-
+        // Create P4kFile instance
+        var p4kFile = new P4kFile(entries, backing);
         progress?.Report(1);
-        return new P4kFile(entries, backing);
+        return p4kFile;
     }
 
 

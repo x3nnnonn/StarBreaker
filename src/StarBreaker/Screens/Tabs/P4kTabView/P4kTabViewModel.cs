@@ -23,6 +23,20 @@ public class FilteredP4kDirectoryNode : IP4kNode
     public string Name { get; }
     public ICollection<IP4kNode> FilteredChildren { get; }
 
+    // IP4kNode implementation
+    public IP4kFile P4k => Parent.P4k;
+    public P4kRoot Root => Parent.Root;
+    public ulong Size
+    {
+        get
+        {
+            ulong total = 0;
+            foreach (var child in FilteredChildren)
+                total += child.Size;
+            return total;
+        }
+    }
+
     public FilteredP4kDirectoryNode(string name, IP4kNode parent, ICollection<IP4kNode> filteredChildren)
     {
         Name = name;
@@ -57,7 +71,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
         
         InitializeTreeDataGrid();
         
-        _allRootNodes = _p4KService.P4KFileSystem.Root.Children.Values;
+        _allRootNodes = _p4KService.P4KFileSystem.Children.Values;
         Source.Items = GetSortedNodes(_allRootNodes);
         
         // Initialize commands explicitly
@@ -181,7 +195,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
                 if (folderMatches || filteredChildren.Count > 0)
                 {
                     // Create a filtered directory node with only matching children
-                    var filteredDirNode = new FilteredP4kDirectoryNode(dirNode.Name, dirNode.Parent, filteredChildren);
+                    var filteredDirNode = new FilteredP4kDirectoryNode(dirNode.Name, dirNode, filteredChildren);
                     result.Add(filteredDirNode);
                 }
             }
@@ -245,7 +259,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
                     });
                 });
                 
-                var p4kFile = _p4KService.P4KFileSystem.P4kFile as P4kFile;
+                var p4kFile = _p4KService.P4KFileSystem.P4k as P4kFile;
                 if (p4kFile == null) return;
                 var extractor = new P4kExtractor(p4kFile);
                 
@@ -365,7 +379,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             
             // Fallback to extracting the original DDS file
             _logger.LogInformation("Falling back to extracting original DDS file");
-            var p4kFile = _p4KService.P4KFileSystem.P4kFile as P4kFile;
+            var p4kFile = _p4KService.P4KFileSystem.P4k as P4kFile;
             if (p4kFile != null)
             {
                 var extractor = new P4kExtractor(p4kFile);
@@ -390,7 +404,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
         Directory.CreateDirectory(outputDirPath);
         
         // Get P4kFile instance safely
-        var p4kFile = _p4KService.P4KFileSystem.P4kFile as P4kFile;
+        var p4kFile = _p4KService.P4KFileSystem.P4k as P4kFile;
         if (p4kFile == null)
         {
             _logger.LogError("Failed to get P4kFile instance");

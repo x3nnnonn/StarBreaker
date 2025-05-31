@@ -226,13 +226,17 @@ public class PreviewService : IPreviewService
 
     private static P4kSocPakFileNode? FindParentSocPakFileNode(IP4kNode node)
     {
-        var current = node.Parent;
-        while (current != null)
+        IP4kNode? current = node;
+        while (true)
         {
             if (current is P4kSocPakFileNode socPakFileNode)
                 return socPakFileNode;
-            current = current.Parent;
+            else if (current is P4kSocPakChildFileNode child)
+                current = child.Parent;
+            else if (current is P4kSocPakDirectoryNode dir)
+                current = dir.Parent;
+            else
+                return null;
         }
-        return null;
     }
 }

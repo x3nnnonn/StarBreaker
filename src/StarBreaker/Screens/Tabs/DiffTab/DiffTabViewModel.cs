@@ -3845,14 +3845,16 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             await Task.Run(() =>
             {
                 var p4k = P4kFile.FromFile(p4kFile);
+                // Create the directory node from the P4k file
+                var rootNode = P4kDirectoryNode.FromP4k(p4k);
                 var outputDir = Path.Combine(OutputDirectory, "P4k");
                 
                 // Count total nodes for progress tracking
-                var totalNodes = CountNodes(p4k.Root);
+                var totalNodes = CountNodes(rootNode);
                 var processedNodes = 0;
                 var lastReportedProgress = 0.0;
                 
-                WriteFileForNode(outputDir, p4k.Root, () =>
+                WriteFileForNode(outputDir, rootNode, () =>
                 {
                     processedNodes++;
                     var currentProgress = (double)processedNodes / totalNodes;

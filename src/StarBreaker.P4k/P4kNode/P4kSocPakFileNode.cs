@@ -1,4 +1,8 @@
 using System.Diagnostics;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace StarBreaker.P4k;
 
@@ -14,6 +18,11 @@ public sealed class P4kSocPakFileNode : IP4kNode, IDisposable
     /// </summary>
     public P4kFile? SocPakFile => _socPakFile.Value;
     
+    // IP4kNode implementation
+    public IP4kFile P4k => SocPakFile ?? _parentP4kFile;
+    public P4kRoot Root => Parent.Root;
+    public ulong Size => Children.Values.Aggregate(0UL, (total, child) => total + child.Size);
+
     private readonly Lazy<Dictionary<string, IP4kNode>> _children;
     public Dictionary<string, IP4kNode> Children => _children.Value;
     
@@ -182,6 +191,20 @@ public sealed class P4kSocPakDirectoryNode : IP4kNode
     public string Name { get; }
     public Dictionary<string, IP4kNode> Children { get; }
 
+    // IP4kNode implementation
+    public IP4kFile P4k => Parent.P4k;
+    public P4kRoot Root => Parent.Root;
+    public ulong Size
+    {
+        get
+        {
+            ulong size = 0;
+            foreach (var child in Children.Values)
+                size += child.Size;
+            return size;
+        }
+    }
+
     public P4kSocPakDirectoryNode(P4kDirectoryNode sourceDir, IP4kNode parent)
     {
         Name = sourceDir.Name;
@@ -222,6 +245,11 @@ public sealed class P4kSocPakChildFileNode : IP4kNode
     public IP4kNode Parent { get; }
     public P4kEntry P4KEntry { get; }
     public string Name => Path.GetFileName(P4KEntry.Name);
+
+    // IP4kNode implementation
+    public IP4kFile P4k => Parent.P4k;
+    public P4kRoot Root => Parent.Root;
+    public ulong Size => P4KEntry.UncompressedSize;
 
     public P4kSocPakChildFileNode(P4kEntry p4KEntry, IP4kNode parent)
     {
