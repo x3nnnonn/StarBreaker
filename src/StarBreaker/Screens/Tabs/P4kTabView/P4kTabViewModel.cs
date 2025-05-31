@@ -93,6 +93,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
 
         Source.RowSelection!.SingleSelect = true;
         Source.RowSelection.SelectionChanged += SelectionChanged;
+        Source.Items = GetSortedNodes(_p4KService.P4KFileSystem.Children.Values);
     }
     
     [RelayCommand]

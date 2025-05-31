@@ -17,18 +17,20 @@ public static class SocPakSandbox
     private static void TestP4kFileOnSocPak()
     {
         var socPaks = Directory.EnumerateFiles(@"D:\StarCitizen\P4kSocPak", "*.socpak", SearchOption.AllDirectories);
-        Parallel.ForEach(socPaks, socPak =>
-        {
-            var p4kFile = P4kFile.FromFile(socPak);
+        Parallel.ForEach(socPaks,
+            new ParallelOptions { MaxDegreeOfParallelism = 1 },
+            socPak =>
+            {
+                var p4kFile = P4kFile.FromFile(socPak);
 
-            var extractor = new P4kExtractor(p4kFile);
-            var xx = socPak
-                .Replace(@"D:\StarCitizen\P4kSocPak\", "")
-                .Replace(".socpak", "");
-            var finalDir = Path.Combine(@"D:\StarCitizen\P4kSocPakOut", xx);
+                var extractor = new P4kExtractor(p4kFile);
+                var xx = socPak
+                    .Replace(@"D:\StarCitizen\P4kSocPak\", "")
+                    .Replace(".socpak", "");
+                var finalDir = Path.Combine(@"D:\StarCitizen\P4kSocPakOut", xx);
 
-            extractor.ExtractFiltered(finalDir, "*");
-        });
+                extractor.ExtractFiltered(finalDir, "*");
+            });
     }
 
 

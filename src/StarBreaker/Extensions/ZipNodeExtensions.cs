@@ -9,13 +9,7 @@ public static class ZipNodeExtensions
 {
     public static string GetSize(this IP4kNode x)
     {
-        return x switch
-        {
-            P4kFileNode file => ((long?)file.P4KEntry?.UncompressedSize)?.Bytes().ToString() ?? "",
-            P4kSocPakFileNode socPak => ((long?)socPak.P4KEntry?.UncompressedSize)?.Bytes().ToString() ?? "",
-            P4kSocPakChildFileNode socPakFile => ((long?)socPakFile.P4KEntry?.UncompressedSize)?.Bytes().ToString() ?? "",
-            _ => ""
-        };
+        return ((long)x.Size).Bytes().Humanize();
     }
 
     public static string GetDate(this IP4kNode x)
