@@ -45,12 +45,37 @@ public static class P4kComparison
     private static Dictionary<string, P4kEntry> BuildFileIndex(IP4kFile p4kFile)
     {
         var fileIndex = new Dictionary<string, P4kEntry>();
-        
-        foreach (var entry in p4kFile.Entries)
+
+        void AddEntries(IP4kFile file, string prefix)
         {
-            fileIndex[entry.Name] = entry;
+            foreach (var entry in file.Entries)
+            {
+                var path = string.IsNullOrEmpty(prefix) ? entry.Name : prefix + "\\" + entry.Name;
+                var isArchive = entry.Name.EndsWith(".socpak", System.StringComparison.OrdinalIgnoreCase)
+                              || entry.Name.EndsWith(".pak", System.StringComparison.OrdinalIgnoreCase);
+                var isShaderCache = entry.Name.Contains("shadercache_", System.StringComparison.OrdinalIgnoreCase);
+                // Only add non-archive files (or shader caches) as file nodes; archives become directories for nested entries
+                if (!isArchive || isShaderCache)
+                {
+                    fileIndex[path] = entry;
+                }
+                // Recurse into archive files to include nested entries
+                if (isArchive && !isShaderCache)
+                {
+                    try
+                    {
+                        var nestedFile = P4kFile.FromP4kEntry(file, entry);
+                        AddEntries(nestedFile, path);
+                    }
+                    catch
+                    {
+                        // ignore invalid archives
+                    }
+                }
+            }
         }
-        
+
+        AddEntries(p4kFile, "");
         return fileIndex;
     }
     

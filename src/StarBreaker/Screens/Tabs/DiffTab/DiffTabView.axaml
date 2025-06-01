@@ -57,7 +57,7 @@
                 </StackPanel>
             </Button>
         </Grid>
-        
+                
         <!-- Configuration Section - Diff Tool Mode -->
                 <Border Grid.Row="1" 
                 Grid.ColumnSpan="3"
@@ -669,7 +669,7 @@
                            FontSize="16" 
                            FontWeight="SemiBold" 
                            Margin="0,0,0,10"/>
-                
+                        
                 <!-- Legend and Filter Controls -->
                 <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
                     <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15">
@@ -790,7 +790,7 @@
                              VerticalAlignment="Center"
                              HorizontalAlignment="Center"
                              Width="200"/>
-                             
+                            
                 <ContentControl Grid.Row="1"
                                 IsVisible="{Binding Preview, Converter={x:Static converters:ObjectConverters.IsNotNull}}"
                                 Content="{Binding Preview}" />

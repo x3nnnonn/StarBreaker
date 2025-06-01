@@ -178,7 +178,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                 _logger.LogError(ex, "Failed to preview file: {FileName}", fileNode.Name);
                 Dispatcher.UIThread.Post(() => Preview = new TextPreviewViewModel($"Failed to preview file: {ex.Message}"));
             }
-                 });
+        });
     }
     
     private void OnDataCoreComparisonSelectionChanged(object? sender, TreeSelectionModelSelectionChangedEventArgs<IDataCoreComparisonNode> e)
@@ -271,7 +271,48 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             return new TextPreviewViewModel("File entry not available for preview");
         }
 
-        using var entryStream = sourceP4k.OpenStream(zipEntry);
+        // Resolve nested archive contexts (socpak/pak) to find correct P4kFile and entry
+        var contextP4k = sourceP4k!;
+        var entryToOpen = zipEntry!;
+        var fullPathParts = fileNode.FullPath.Split('\\');
+        // Look for the first archive segment in the full path
+        for (int i = 0; i < fullPathParts.Length - 1; i++)
+        {
+            var part = fullPathParts[i];
+            if ((part.EndsWith(".socpak", StringComparison.OrdinalIgnoreCase) || part.EndsWith(".pak", StringComparison.OrdinalIgnoreCase))
+                && !part.Contains("shadercache_", StringComparison.OrdinalIgnoreCase))
+            {
+                // Find the archive entry in the current context
+                var archiveEntry = contextP4k.Entries.FirstOrDefault(e => Path.GetFileName(e.Name).Equals(part, StringComparison.OrdinalIgnoreCase));
+                if (archiveEntry != null)
+                {
+                    contextP4k = P4kFile.FromP4kEntry(contextP4k, archiveEntry);
+                    // The remaining path inside this archive
+                    var nestedPath = string.Join("\\", fullPathParts.Skip(i + 1));
+                    // Locate the inner entry by matching the file name directly, ignoring path separators
+                    var nestedEntry = contextP4k.Entries.FirstOrDefault(e => Path.GetFileName(e.Name)
+                        .Equals(fileNode.Name, StringComparison.OrdinalIgnoreCase));
+                    if (nestedEntry != null)
+                        entryToOpen = nestedEntry;
+                }
+                break;
+            }
+        }
+
+        // Open the resolved entry stream
+        Stream entryStream;
+        try
+        {
+            entryStream = contextP4k.OpenStream(entryToOpen);
+        }
+        catch (Exception ex) when (ex.Message.Contains("Invalid local file header"))
+        {
+            _logger.LogWarning(ex, "Nested archive read failed, falling back to direct stream for {FullPath}", fileNode.FullPath);
+            entryStream = sourceP4k.OpenStream(zipEntry!);
+            _logger.LogWarning(ex, "GetFilePreview: OpenStream failed: {Message}, falling back to source.OpenStream", ex.Message);
+        }
+        _logger.LogInformation("GetFilePreview: stream opened, checking CryXml for '{FileName}'", fileName);
+        using (entryStream)
 
         // Check CryXML before extension since ".xml" sometimes is cxml sometimes plaintext
         if (StarBreaker.CryXmlB.CryXml.IsCryXmlB(entryStream))
@@ -329,17 +370,17 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
 
     private bool IsCryXmlFile(P4kComparisonFileNode fileNode)
     {
-        // Check if either version is a CryXML file
+        // Detect CryXmlB by opening with nested-resolution
         if (fileNode.LeftEntry != null && _leftP4kFile != null)
         {
-            using var leftStream = _leftP4kFile.OpenStream(fileNode.LeftEntry);
+            using var leftStream = OpenEntryStream(fileNode, true);
             if (StarBreaker.CryXmlB.CryXml.IsCryXmlB(leftStream))
                 return true;
         }
 
         if (fileNode.RightEntry != null && _rightP4kFile != null)
         {
-            using var rightStream = _rightP4kFile.OpenStream(fileNode.RightEntry);
+            using var rightStream = OpenEntryStream(fileNode, false);
             if (StarBreaker.CryXmlB.CryXml.IsCryXmlB(rightStream))
                 return true;
         }
@@ -349,6 +390,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
 
     private FilePreviewViewModel CreateDiffPreview(P4kComparisonFileNode fileNode, string fileExtension)
     {
+        _logger.LogInformation("CreateDiffPreview start: {FullPath}", fileNode.FullPath);
         if (_leftP4kFile == null || _rightP4kFile == null || 
             fileNode.LeftEntry == null || fileNode.RightEntry == null)
         {
@@ -359,7 +401,48 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         {
             // Get old content (left P4K)
             string oldContent;
-            using (var leftStream = _leftP4kFile.OpenStream(fileNode.LeftEntry))
+            // Resolve nested context for left entry
+            var leftContext = _leftP4kFile!;
+            var leftEntryName = fileNode.FullPath;
+            var leftEntryToOpen = fileNode.LeftEntry!;
+            var leftParts = leftEntryName.Split('\\');
+            for (int i = 0; i < leftParts.Length - 1; i++)
+            {
+                var part = leftParts[i];
+                _logger.LogDebug("CreateDiffPreview [Left]: inspecting part '{Part}'", part);
+                if ((part.EndsWith(".socpak", StringComparison.OrdinalIgnoreCase) || part.EndsWith(".pak", StringComparison.OrdinalIgnoreCase))
+                    && !part.Contains("shadercache_", StringComparison.OrdinalIgnoreCase))
+                {
+                    var archiveEntry = leftContext.Entries.FirstOrDefault(e => Path.GetFileName(e.Name).Equals(part, StringComparison.OrdinalIgnoreCase));
+                    // Log the archive entry name or 'null' if not found
+                    _logger.LogDebug("CreateDiffPreview [Left]: found archiveEntry = '{ArchiveEntry}'", archiveEntry?.Name ?? "null");
+                    if (archiveEntry != null)
+                    {
+                        leftContext = P4kFile.FromP4kEntry(leftContext, archiveEntry);
+                        // Locate the nested entry by matching the file name directly, ignoring any path prefixes
+                        var nestedEntry = leftContext.Entries.FirstOrDefault(e => Path.GetFileName(e.Name)
+                            .Equals(fileNode.Name, StringComparison.OrdinalIgnoreCase));
+                        // Log the name or 'null' if not found
+                        _logger.LogDebug("CreateDiffPreview [Left]: nestedEntry = '{NestedEntry}'", nestedEntry?.Name ?? "null");
+                        if (nestedEntry != null)
+                            leftEntryToOpen = nestedEntry;
+                    }
+                    break;
+                }
+            }
+            Stream leftStream;
+            try
+            {
+                _logger.LogDebug("CreateDiffPreview [Left]: opening stream for '{EntryName}'", leftEntryToOpen.Name);
+                leftStream = leftContext.OpenStream(leftEntryToOpen);
+            }
+            catch (Exception ex) when (ex.Message.Contains("Invalid local file header"))
+            {
+                _logger.LogWarning(ex, "Nested archive read failed, falling back to direct left stream for {FileName}", fileNode.Name);
+                leftStream = _leftP4kFile!.OpenStream(fileNode.LeftEntry!);
+                _logger.LogWarning(ex, "CreateDiffPreview [Left]: OpenStream failed: {Message}, falling back", ex.Message);
+            }
+            using (leftStream)
             {
                 if (StarBreaker.CryXmlB.CryXml.IsCryXmlB(leftStream))
                 {
@@ -377,10 +460,52 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                     oldContent = leftStream.ReadString();
                 }
             }
+            _logger.LogDebug("CreateDiffPreview [Left]: oldContent length {OldContent.Length}", oldContent.Length);
 
             // Get new content (right P4K)
             string newContent;
-            using (var rightStream = _rightP4kFile.OpenStream(fileNode.RightEntry))
+            // Resolve nested context for right entry
+            var rightContext = _rightP4kFile!;
+            var rightEntryName = fileNode.FullPath;
+            var rightEntryToOpen = fileNode.RightEntry!;
+            var rightParts = rightEntryName.Split('\\');
+            for (int i = 0; i < rightParts.Length - 1; i++)
+            {
+                var part = rightParts[i];
+                _logger.LogDebug("CreateDiffPreview [Right]: inspecting part '{Part}'", part);
+                if ((part.EndsWith(".socpak", StringComparison.OrdinalIgnoreCase) || part.EndsWith(".pak", StringComparison.OrdinalIgnoreCase))
+                    && !part.Contains("shadercache_", StringComparison.OrdinalIgnoreCase))
+                {
+                    var archiveEntry = rightContext.Entries.FirstOrDefault(e => Path.GetFileName(e.Name).Equals(part, StringComparison.OrdinalIgnoreCase));
+                    // Log the archive entry name or 'null' if not found
+                    _logger.LogDebug("CreateDiffPreview [Right]: found archiveEntry = '{ArchiveEntry}'", archiveEntry?.Name ?? "null");
+                    if (archiveEntry != null)
+                    {
+                        rightContext = P4kFile.FromP4kEntry(rightContext, archiveEntry);
+                        // Locate the nested entry by matching the file name directly, ignoring any path prefixes
+                        var nestedEntry = rightContext.Entries.FirstOrDefault(e => Path.GetFileName(e.Name)
+                            .Equals(fileNode.Name, StringComparison.OrdinalIgnoreCase));
+                        // Log the name or 'null' if not found
+                        _logger.LogDebug("CreateDiffPreview [Right]: nestedEntry = '{NestedEntry}'", nestedEntry?.Name ?? "null");
+                        if (nestedEntry != null)
+                            rightEntryToOpen = nestedEntry;
+                    }
+                    break;
+                }
+            }
+            Stream rightStream;
+            try
+            {
+                _logger.LogDebug("CreateDiffPreview [Right]: opening stream for '{EntryName}'", rightEntryToOpen.Name);
+                rightStream = rightContext.OpenStream(rightEntryToOpen);
+            }
+            catch (Exception ex) when (ex.Message.Contains("Invalid local file header"))
+            {
+                _logger.LogWarning(ex, "Nested archive read failed, falling back to direct right stream for {FileName}", fileNode.Name);
+                rightStream = _rightP4kFile!.OpenStream(fileNode.RightEntry!);
+                _logger.LogWarning(ex, "CreateDiffPreview [Right]: OpenStream failed: {Message}, falling back", ex.Message);
+            }
+            using (rightStream)
             {
                 if (StarBreaker.CryXmlB.CryXml.IsCryXmlB(rightStream))
                 {
@@ -398,6 +523,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                     newContent = rightStream.ReadString();
                 }
             }
+            _logger.LogDebug("CreateDiffPreview [Right]: newContent length {NewContent.Length}", newContent.Length);
 
             // Check file sizes to provide user feedback for large files
             var oldLineCount = oldContent.Split('\n').Length;
@@ -415,6 +541,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             // Use .xml extension for CryXML files for better syntax highlighting
             var displayExtension = IsCryXmlFile(fileNode) ? ".xml" : fileExtension;
 
+            _logger.LogInformation("CreateDiffPreview: returning DiffPreviewViewModel for '{FileName}' with extension {DisplayExtension}", fileNode.Name, displayExtension);
             return new DiffPreviewViewModel(oldContent, newContent, oldLabel, newLabel, displayExtension);
         }
         catch (Exception ex)
@@ -4275,6 +4402,47 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                 _callback(progress);
                 _lastReportedProgress = progress;
             }
+        }
+    }
+
+    // Helper to open a nested entry stream with proper SOC/PAK resolution
+    private Stream OpenEntryStream(P4kComparisonFileNode fileNode, bool useLeft)
+    {
+        var sourceP4k = useLeft ? _leftP4kFile : _rightP4kFile;
+        var zipEntry = useLeft ? fileNode.LeftEntry : fileNode.RightEntry;
+        if (sourceP4k == null || zipEntry == null)
+            throw new InvalidOperationException("P4k file or entry is null in OpenEntryStream");
+
+        var contextP4k = sourceP4k;
+        var entryToOpen = zipEntry;
+        var fullPathParts = fileNode.FullPath.Split('\\');
+        for (int i = 0; i < fullPathParts.Length - 1; i++)
+        {
+            var part = fullPathParts[i];
+            if ((part.EndsWith(".socpak", StringComparison.OrdinalIgnoreCase) || part.EndsWith(".pak", StringComparison.OrdinalIgnoreCase))
+                && !part.Contains("shadercache_", StringComparison.OrdinalIgnoreCase))
+            {
+                var archiveEntry = contextP4k.Entries.FirstOrDefault(e => Path.GetFileName(e.Name)
+                    .Equals(part, StringComparison.OrdinalIgnoreCase));
+                if (archiveEntry != null)
+                {
+                    contextP4k = P4kFile.FromP4kEntry(contextP4k, archiveEntry);
+                    var nestedEntry = contextP4k.Entries.FirstOrDefault(e => Path.GetFileName(e.Name)
+                        .Equals(fileNode.Name, StringComparison.OrdinalIgnoreCase));
+                    if (nestedEntry != null)
+                        entryToOpen = nestedEntry;
+                }
+                break;
+            }
+        }
+        try
+        {
+            return contextP4k.OpenStream(entryToOpen);
+        }
+        catch (Exception ex) when (ex.Message.Contains("Invalid local file header"))
+        {
+            _logger.LogWarning(ex, "Nested archive stream failed in OpenEntryStream, falling back for {FilePath}", fileNode.FullPath);
+            return sourceP4k.OpenStream(zipEntry);
         }
     }
 } 
