@@ -1012,6 +1012,11 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             IsDataCoreComparisonMode = false; // Ensure only one comparison mode is active
         }
         _logger.LogInformation("Switched to {Mode} mode. New value: {Value}", IsP4kComparisonMode ? "P4K Comparison" : "Diff Tool", IsP4kComparisonMode);
+        // Reset preview when switching modes
+        Preview = null;
+        ShowNoSelectionMessage = true;
+        // Clear DataCore selection when switching to P4K mode
+        SelectedDataCoreFiles = new List<IDataCoreComparisonNode>();
     }
     
     [RelayCommand]
@@ -1024,6 +1029,11 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             IsP4kComparisonMode = false; // Ensure only one comparison mode is active
         }
         _logger.LogInformation("Switched to {Mode} mode. New value: {Value}", IsDataCoreComparisonMode ? "DataCore Comparison" : "Diff Tool", IsDataCoreComparisonMode);
+        // Reset preview when switching modes
+        Preview = null;
+        ShowNoSelectionMessage = true;
+        // Clear P4K selection when switching to DataCore mode
+        SelectedP4kFiles = new List<IP4kComparisonNode>();
     }
 
     [RelayCommand]
