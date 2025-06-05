@@ -48,14 +48,6 @@ public static class DiffAlgorithm
         var oldLines = oldText.Split('\n').Select(l => l.TrimEnd('\r')).ToArray();
         var newLines = newText.Split('\n').Select(l => l.TrimEnd('\r')).ToArray();
         
-        // Increase threshold since memory is usually not an issue for most XML files
-        const int maxLinesForLCS = 50000; // Increased limit
-        
-        if (oldLines.Length > maxLinesForLCS || newLines.Length > maxLinesForLCS)
-        {
-            return SmartBlockDiff(oldLines, newLines);
-        }
-        
         try
         {
             return LcsDiff(oldLines, newLines);
