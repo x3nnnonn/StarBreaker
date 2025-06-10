@@ -2410,14 +2410,16 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                 var changedStrings = rightLocalization.Where(kvp => leftLocalization.ContainsKey(kvp.Key) && leftLocalization[kvp.Key] != kvp.Value).ToArray();
                 var removedStrings = leftLocalization.Where(kvp => !rightLocalization.ContainsKey(kvp.Key)).ToArray();
 
-                // Added Localization Strings
+                // Added Localization
                 if (addedStrings.Length > 0)
                 {
-                    report.AppendLine("## Added Localization Strings");
+                    report.AppendLine("## Added Localization");
+                    report.AppendLine("```");
                     foreach (var kvp in addedStrings.OrderBy(x => x.Key))
                     {
-                        report.AppendLine($"- **{kvp.Key}:** `{kvp.Value}`");
+                        report.AppendLine($"{kvp.Key}={kvp.Value}");
                     }
+                    report.AppendLine("```");
                     report.AppendLine();
                 }
 
@@ -2878,14 +2880,16 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                 var changedStrings = rightLocalization.Where(kvp => leftLocalization.ContainsKey(kvp.Key) && leftLocalization[kvp.Key] != kvp.Value).ToArray();
                 var removedStrings = leftLocalization.Where(kvp => !rightLocalization.ContainsKey(kvp.Key)).ToArray();
 
-                // Added Localization Strings
+                // Added Localization
                 if (addedStrings.Length > 0)
                 {
-                    report.AppendLine("## Added Localization Strings");
+                    report.AppendLine("## Added Localization");
+                    report.AppendLine("```");
                     foreach (var kvp in addedStrings.OrderBy(x => x.Key))
                     {
-                        report.AppendLine($"- **{kvp.Key}:** `{kvp.Value}`");
+                        report.AppendLine($"{kvp.Key}={kvp.Value}");
                     }
+                    report.AppendLine("```");
                     report.AppendLine();
                 }
 
