@@ -1,4 +1,6 @@
-﻿using StarBreaker.Common;
+﻿using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
+using StarBreaker.Common;
 using StarBreaker.DataCore;
 using StarBreaker.P4k;
 
@@ -8,10 +10,34 @@ public static class DataCoreSandbox
 {
     public static void Run()
     {
+        TryBruteForceGuid();
         //ExtractProblematic();
         //ExtractAll();
-        ExtractJson();
-        ExtractXml();
+        // ExtractJson();
+        // ExtractXml();
+    }
+
+    private static void TryBruteForceGuid()
+    {
+        var timer = new TimeLogger();
+        var dcb = DataForge.FromDcbPathXml(@"D:\StarCitizen\P4k\Data\Game2.dcb");
+        timer.LogReset("Loaded DataForge");
+
+        const uint target = 1323318587;
+
+        var recordGuids = dcb.DataCore.Database.RecordDefinitions
+            .Select(s => s.Id).ToArray();
+
+        var needle = recordGuids.FirstOrDefault(g =>
+        {
+            var crcbytes = Crc32c.FromSpan(MemoryMarshal.Cast<CigGuid, byte>([g]));
+
+            return crcbytes == target;
+        });
+
+        timer.LogReset("Brute force search completed.");
+
+        Console.WriteLine(needle == default ? "No matching GUID found." : $"Found matching GUID: {needle}");
     }
 
     private static void ExtractProblematic()

@@ -36,9 +36,11 @@ public sealed class ConvertAllCryXmlBCommand : ICommand
             console.Error.WriteLine("Input folder not found");
             return default;
         }
+        
+        var sw = System.Diagnostics.Stopwatch.StartNew();
 
         var files = Directory.GetFiles(Input, Filter, SearchOption.AllDirectories);
-        foreach (var file in files)
+        Parallel.ForEach(files, file =>
         {
             var output = Path.Combine(Output, Path.GetRelativePath(Input, file));
             var path = Path.GetDirectoryName(output);
@@ -48,11 +50,13 @@ public sealed class ConvertAllCryXmlBCommand : ICommand
             if (!CryXml.TryOpen(File.OpenRead(file), out var cryXml))
             {
                 console.Error.WriteLine($"Invalid CryXmlB file: {file}");
-                continue;
+                return;
             }
 
             cryXml.Save(output);
-        }
+        });
+        
+        console.Output.WriteLine($"Converted {files.Length} files in {sw.Elapsed}");
 
         return default;
     }
