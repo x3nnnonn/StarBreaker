@@ -21,6 +21,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using StarBreaker.Common;
 using StarBreaker.Dds;
 using Avalonia.Media.Imaging;
+using StarBreaker.Protobuf;
 
 namespace StarBreaker.Screens;
 
@@ -4150,19 +4151,23 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         {
             await Task.Run(() =>
             {
-                progressCallback(0.3);
-                
+                progressCallback(0.1);
+
                 var outputDir = Path.Combine(OutputDirectory, "Protobuf");
                 Directory.CreateDirectory(outputDir);
-                
+
+                var extractor = ProtobufExtractor.FromFilename(exeFile);
+                progressCallback(0.3);
+
+                extractor.WriteProtos(outputDir, p => !p.Name.StartsWith("google/protobuf"));
                 progressCallback(0.7);
-                
-                // Note: Protobuf extraction is complex and would require additional CLI integration
-                // For now, we'll just create the directory and log that it would be done
-                AddLogMessage("Protobuf extraction placeholder - would extract protobuf definitions from executable.");
-                
+
+                var descriptorPath = Path.Combine(outputDir, "descriptor_set.bin");
+                extractor.WriteDescriptorSet(descriptorPath);
                 progressCallback(1.0);
             });
+
+            AddLogMessage("Protobuf definitions and descriptor set extracted.");
         }
         catch (Exception ex)
         {
