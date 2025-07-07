@@ -21,9 +21,9 @@
                 KeyDown="SearchBox_KeyDown"/>
             <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="4">
                 <CheckBox 
-                    Content="Convert DDS to PNG" 
+                    Content="Convert DDS to JPEG" 
                     IsChecked="{Binding ConvertDdsToPng}"
-                    ToolTip.Tip="When checked, DDS files will be converted to PNG during extraction"
+                    ToolTip.Tip="When checked, DDS files will be converted to JPEG during extraction"
                     VerticalAlignment="Center"/>
             </StackPanel>
             <Button

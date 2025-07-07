@@ -142,56 +142,55 @@ public static class DdsFile
         return path.EndsWith("ddna.dds") || path.EndsWith("ddna.dds.n") || (char.IsDigit(path[^1]) && path[..^1].EndsWith("ddna.dds"));
     }
 
-    /// <summary>
-    /// Converts a DDS file to PNG format with automatic HDR tone mapping.
-    /// </summary>
-    /// <param name="ddsFullPath">Path to the DDS file</param>
-    /// <param name="pngFullPath">Path where the PNG file will be saved</param>
     public static void ConvertToPng(string ddsFullPath, string pngFullPath)
     {
-        ConvertToPng(ddsFullPath, pngFullPath, 0.6f);
+        ConvertToPng(ddsFullPath, pngFullPath, false);
     }
 
-    /// <summary>
-    /// Converts a DDS file to PNG format with configurable HDR tone mapping.
-    /// </summary>
-    /// <param name="ddsFullPath">Path to the DDS file</param>
-    /// <param name="pngFullPath">Path where the PNG file will be saved</param>
-    /// <param name="exposureLevel">Exposure level for HDR tone mapping. Lower values (0.5-0.8) make bright textures darker, higher values (1.2-2.0) make them brighter. Default is 0.6.</param>
-    public static void ConvertToPng(string ddsFullPath, string pngFullPath, float exposureLevel = 0.6f)
+    public static void ConvertToPng(string ddsFullPath, string pngFullPath, bool applySrgbCorrection)
     {
         var tex = TexHelper.Instance.LoadFromDDSFile(ddsFullPath, DDS_FLAGS.NONE);
         var meta = tex.GetMetadata();
 
-        // Decompress if necessary
+        if (TexHelper.Instance.IsTypeless(meta.Format, false))
+        {
+            Console.WriteLine(" ");
+        }
+
+        if (TexHelper.Instance.IsPlanar(meta.Format))
+        {
+            Console.WriteLine(" ");
+        }
+
         if (TexHelper.Instance.IsCompressed(meta.Format))
         {
             var decompressed = tex.Decompress(DXGI_FORMAT.UNKNOWN);
             tex.Dispose();
             tex = decompressed;
-            meta = tex.GetMetadata();
         }
 
-        // Convert to float for gamma correction
-        var convertedFloat = tex.Convert(0, DXGI_FORMAT.R32G32B32A32_FLOAT, TEX_FILTER_FLAGS.DEFAULT, 0.5f);
-        tex.Dispose();
-        tex = convertedFloat;
-        meta = tex.GetMetadata();
-
-        // Apply gamma correction (linear → sRGB)
-        try
+        DXGI_FORMAT targetFormat;
+        
+        if (applySrgbCorrection)
         {
-            var gammaCorrected = ApplyGammaCorrection(tex, 2.2f);
-            tex.Dispose();
-            tex = gammaCorrected;
-            meta = tex.GetMetadata();
+            // Convert to sRGB format for proper gamma handling
+            targetFormat = DXGI_FORMAT.R8G8B8A8_UNORM_SRGB;
+            
+            // If the source format is already sRGB, use regular UNORM to avoid double gamma correction
+            if (TexHelper.Instance.IsSRGB(meta.Format))
+            {
+                targetFormat = DXGI_FORMAT.R8G8B8A8_UNORM;
+            }
         }
-        catch { /* fallback to float texture if correction fails */ }
-
-        // Final conversion to 8-bit format for PNG output
-        if (meta.Format != DXGI_FORMAT.R8G8B8A8_UNORM)
+        else
         {
-            var converted = tex.Convert(0, DXGI_FORMAT.R8G8B8A8_UNORM, TEX_FILTER_FLAGS.DEFAULT, 0.5f);
+            // Use original behavior - convert to regular UNORM (no gamma correction)
+            targetFormat = DXGI_FORMAT.R8G8B8A8_UNORM;
+        }
+
+        if (meta.Format != targetFormat)
+        {
+            var converted = tex.Convert(targetFormat, TEX_FILTER_FLAGS.DEFAULT, 0.5f);
             tex.Dispose();
             tex = converted;
         }
@@ -204,30 +203,20 @@ public static class DdsFile
         var pathWithoutExtension = Path.GetFileNameWithoutExtension(ddsFullPath);
         Directory.CreateDirectory(Path.GetDirectoryName(pngFullPath)!);
 
-        // Save the first image as PNG (most common case)
-        var bytes = tex.SaveToWICMemory(0, WIC_FLAGS.NONE, TexHelper.Instance.GetWICCodec(WICCodecs.PNG));
-        File.WriteAllBytes(pngFullPath, bytes.ToArray());
-
-        tex.Dispose();
+        for (var i = 0; i < count; i++)
+        {
+            var path = Path.Combine(Path.GetDirectoryName(pngFullPath)!, $"{pathWithoutExtension}_{i}.jpg");
+            tex.SaveToWICFile(i, WIC_FLAGS.NONE, TexHelper.Instance.GetWICCodec(WICCodecs.JPEG), path);
+            var bytes = tex.SaveToWICMemory(i, WIC_FLAGS.NONE, TexHelper.Instance.GetWICCodec(WICCodecs.PNG));
+        }
     }
 
-    /// <summary>
-    /// Converts a DDS file to PNG format.
-    /// </summary>
-    /// <param name="dds">The DDS file data as a byte array</param>
-    /// <returns>A MemoryStream containing the PNG data</returns>
     public static unsafe MemoryStream ConvertToPng(byte[] dds)
     {
-        return ConvertToPng(dds, 0.6f);
+        return ConvertToPng(dds, false);
     }
 
-    /// <summary>
-    /// Converts a DDS file to PNG format with tone mapping for HDR textures.
-    /// </summary>
-    /// <param name="dds">The DDS file data as a byte array</param>
-    /// <param name="exposureLevel">Exposure level for HDR tone mapping. Lower values (0.5-0.8) make bright textures darker, higher values (1.2-2.0) make them brighter. Default is 0.6.</param>
-    /// <returns>A MemoryStream containing the PNG data</returns>
-    public static unsafe MemoryStream ConvertToPng(byte[] dds, float exposureLevel = 0.6f)
+    public static unsafe MemoryStream ConvertToPng(byte[] dds, bool applySrgbCorrection)
     {
         ScratchImage? tex = null;
         fixed (byte* ptr = dds)
@@ -237,7 +226,14 @@ public static class DdsFile
 
         var meta = tex.GetMetadata();
 
-        // Decompress if necessary
+        // if (!TexHelper.Instance.IsPlanar(meta.Format))
+        // {
+        //     var planar = tex.ConvertToSinglePlane();
+        //     tex.Dispose();
+        //     tex = planar;
+        //     meta = tex.GetMetadata();
+        // }
+
         if (TexHelper.Instance.IsCompressed(meta.Format))
         {
             var decompressed = tex.Decompress(DXGI_FORMAT.UNKNOWN);
@@ -246,28 +242,32 @@ public static class DdsFile
             meta = tex.GetMetadata();
         }
 
-        // Convert to float for gamma correction
-        var convertedFloat = tex.Convert(0, DXGI_FORMAT.R32G32B32A32_FLOAT, TEX_FILTER_FLAGS.DEFAULT, 0.5f);
-        tex.Dispose();
-        tex = convertedFloat;
-        meta = tex.GetMetadata();
-
-        // Apply gamma correction (linear → sRGB)
-        try
+        DXGI_FORMAT targetFormat;
+        
+        if (applySrgbCorrection)
         {
-            var gammaCorrected = ApplyGammaCorrection(tex, 2.2f);
-            tex.Dispose();
-            tex = gammaCorrected;
-            meta = tex.GetMetadata();
+            // Convert to sRGB format for proper gamma handling to fix mobile brightness issues
+            // Game textures are often in linear space, but mobile devices expect gamma-corrected data
+            targetFormat = DXGI_FORMAT.R8G8B8A8_UNORM_SRGB;
+            
+            // If the source format is already sRGB, use regular UNORM to avoid double gamma correction
+            if (TexHelper.Instance.IsSRGB(meta.Format))
+            {
+                targetFormat = DXGI_FORMAT.R8G8B8A8_UNORM;
+            }
         }
-        catch { /* fallback to float texture if correction fails */ }
-
-        // Final conversion to 8-bit format for PNG output
-        if (meta.Format != DXGI_FORMAT.R8G8B8A8_UNORM)
+        else
         {
-            var converted = tex.Convert(0, DXGI_FORMAT.R8G8B8A8_UNORM, TEX_FILTER_FLAGS.DEFAULT, 0.5f);
+            // Use original behavior - convert to regular UNORM (no gamma correction)
+            targetFormat = DXGI_FORMAT.R8G8B8A8_UNORM;
+        }
+
+        if (meta.Format != targetFormat)
+        {
+            var converted = tex.Convert(0, targetFormat, TEX_FILTER_FLAGS.DEFAULT, 0.5f);
             tex.Dispose();
             tex = converted;
+            meta = tex.GetMetadata();
         }
 
         var count = tex.GetImageCount();
@@ -286,51 +286,131 @@ public static class DdsFile
         return stream;
     }
 
-    private static unsafe ScratchImage ApplyGammaCorrection(ScratchImage input, float gamma)
+    public static unsafe MemoryStream ConvertToJpeg(byte[] dds, bool applySrgbCorrection = false)
     {
-        var meta = input.GetMetadata();
-        var output = TexHelper.Instance.Initialize2D(meta.Format, meta.Width, meta.Height, 
-            meta.ArraySize, meta.MipLevels, CP_FLAGS.NONE);
-
-        for (uint i = 0; i < meta.ArraySize; ++i)
+        ScratchImage? tex = null;
+        fixed (byte* ptr = dds)
         {
-            for (uint j = 0; j < meta.MipLevels; ++j)
-            {
-                var srcImage = input.GetImage((int)j, (int)i, 0);
-                var dstImage = output.GetImage((int)j, (int)i, 0);
-                
-                var srcPixels = (float*)srcImage.Pixels;
-                var dstPixels = (float*)dstImage.Pixels;
-                
-                var pixelCount = (int)(srcImage.Width * srcImage.Height);
-                
-                for (int p = 0; p < pixelCount; ++p)
-                {
-                    // Each pixel has 4 components (RGBA)
-                    var r = srcPixels[p * 4 + 0];
-                    var g = srcPixels[p * 4 + 1];
-                    var b = srcPixels[p * 4 + 2];
-                    var a = srcPixels[p * 4 + 3];
-                    
-                    // Apply gamma correction for linear to sRGB conversion
-                    // Use gamma encoding (power of gamma) to make linear values darker
-                    r = (float)Math.Pow(Math.Max(0, r), gamma);
-                    g = (float)Math.Pow(Math.Max(0, g), gamma);
-                    b = (float)Math.Pow(Math.Max(0, b), gamma);
-                    
-                    // Clamp values to [0, 1]
-                    r = Math.Max(0, Math.Min(1, r));
-                    g = Math.Max(0, Math.Min(1, g));
-                    b = Math.Max(0, Math.Min(1, b));
-                    
-                    dstPixels[p * 4 + 0] = r;
-                    dstPixels[p * 4 + 1] = g;
-                    dstPixels[p * 4 + 2] = b;
-                    dstPixels[p * 4 + 3] = a; // Keep alpha unchanged
-                }
-            }
+            tex = TexHelper.Instance.LoadFromDDSMemory((IntPtr)ptr, dds.Length, DDS_FLAGS.NONE);
         }
 
-        return output;
+        var meta = tex.GetMetadata();
+
+        if (TexHelper.Instance.IsCompressed(meta.Format))
+        {
+            var decompressed = tex.Decompress(DXGI_FORMAT.UNKNOWN);
+            tex.Dispose();
+            tex = decompressed;
+            meta = tex.GetMetadata();
+        }
+
+        DXGI_FORMAT targetFormat;
+        
+        if (applySrgbCorrection)
+        {
+            // Convert to sRGB format for proper gamma handling
+            targetFormat = DXGI_FORMAT.R8G8B8A8_UNORM_SRGB;
+            
+            // If the source format is already sRGB, use regular UNORM to avoid double gamma correction
+            if (TexHelper.Instance.IsSRGB(meta.Format))
+            {
+                targetFormat = DXGI_FORMAT.R8G8B8A8_UNORM;
+            }
+        }
+        else
+        {
+            // Use original behavior - convert to regular UNORM (no gamma correction)
+            targetFormat = DXGI_FORMAT.R8G8B8A8_UNORM;
+        }
+
+        if (meta.Format != targetFormat)
+        {
+            var converted = tex.Convert(0, targetFormat, TEX_FILTER_FLAGS.DEFAULT, 0.5f);
+            tex.Dispose();
+            tex = converted;
+            meta = tex.GetMetadata();
+        }
+
+        var count = tex.GetImageCount();
+
+        if (count == 0)
+            throw new InvalidOperationException("No images found in DDS file");
+        var stream = new MemoryStream();
+
+        using var bytes = tex.SaveToWICMemory(0, WIC_FLAGS.NONE, TexHelper.Instance.GetWICCodec(WICCodecs.JPEG));
+
+        bytes.CopyTo(stream);
+
+        stream.Position = 0;
+
+        return stream;
+    }
+
+    public static void ConvertToJpeg(string ddsFullPath, string jpegFullPath)
+    {
+        ConvertToJpeg(ddsFullPath, jpegFullPath, false);
+    }
+
+    public static void ConvertToJpeg(string ddsFullPath, string jpegFullPath, bool applySrgbCorrection)
+    {
+        var tex = TexHelper.Instance.LoadFromDDSFile(ddsFullPath, DDS_FLAGS.NONE);
+        var meta = tex.GetMetadata();
+
+        if (TexHelper.Instance.IsTypeless(meta.Format, false))
+        {
+            Console.WriteLine(" ");
+        }
+
+        if (TexHelper.Instance.IsPlanar(meta.Format))
+        {
+            Console.WriteLine(" ");
+        }
+
+        if (TexHelper.Instance.IsCompressed(meta.Format))
+        {
+            var decompressed = tex.Decompress(DXGI_FORMAT.UNKNOWN);
+            tex.Dispose();
+            tex = decompressed;
+        }
+
+        DXGI_FORMAT targetFormat;
+        
+        if (applySrgbCorrection)
+        {
+            // Convert to sRGB format for proper gamma handling
+            targetFormat = DXGI_FORMAT.R8G8B8A8_UNORM_SRGB;
+            
+            // If the source format is already sRGB, use regular UNORM to avoid double gamma correction
+            if (TexHelper.Instance.IsSRGB(meta.Format))
+            {
+                targetFormat = DXGI_FORMAT.R8G8B8A8_UNORM;
+            }
+        }
+        else
+        {
+            // Use original behavior - convert to regular UNORM (no gamma correction)
+            targetFormat = DXGI_FORMAT.R8G8B8A8_UNORM;
+        }
+
+        if (meta.Format != targetFormat)
+        {
+            var converted = tex.Convert(targetFormat, TEX_FILTER_FLAGS.DEFAULT, 0.5f);
+            tex.Dispose();
+            tex = converted;
+        }
+
+        var count = tex.GetImageCount();
+
+        if (count == 0)
+            throw new InvalidOperationException("No images found in DDS file");
+
+        var pathWithoutExtension = Path.GetFileNameWithoutExtension(ddsFullPath);
+        Directory.CreateDirectory(Path.GetDirectoryName(jpegFullPath)!);
+
+        for (var i = 0; i < count; i++)
+        {
+            var path = Path.Combine(Path.GetDirectoryName(jpegFullPath)!, $"{pathWithoutExtension}_{i}.jpg");
+            tex.SaveToWICFile(i, WIC_FLAGS.NONE, TexHelper.Instance.GetWICCodec(WICCodecs.JPEG), path);
+        }
     }
 }

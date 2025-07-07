@@ -62,9 +62,9 @@ public class PreviewService : IPreviewService
         else if (ddsLodExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
         {
             var ms = DdsFile.MergeToStream(selectedEntry.P4KEntry.Name, selectedEntry.Root.RootNode);
-            var pngBytes = DdsFile.ConvertToPng(ms.ToArray());
+            var jpegBytes = DdsFile.ConvertToJpeg(ms.ToArray());
             _logger.LogInformation("ddsLodExtensions");
-            preview = new DdsPreviewViewModel(new Bitmap(pngBytes));
+            preview = new DdsPreviewViewModel(new Bitmap(jpegBytes));
         }
         else if (bitmapExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
         {
@@ -167,18 +167,18 @@ public class PreviewService : IPreviewService
                     {
                         var socPakFileSystem = new P4kFileSystem(socPakFile);
                         var ms = DdsFile.MergeToStream(selectedEntry.P4KEntry.Name, socPakFileSystem);
-                        var pngBytes = DdsFile.ConvertToPng(ms.ToArray());
+                        var jpegBytes = DdsFile.ConvertToJpeg(ms.ToArray());
                         _logger.LogInformation("ddsLodExtensions from SOCPAK (merged)");
-                        preview = new DdsPreviewViewModel(new Bitmap(pngBytes));
+                        preview = new DdsPreviewViewModel(new Bitmap(jpegBytes));
                     }
                     catch (Exception mergeEx)
                     {
                         _logger.LogDebug(mergeEx, "Failed to merge LOD levels for SOCPAK DDS, trying direct conversion: {FileName}", selectedEntry.P4KEntry.Name);
                         
                         // Fallback: try converting the raw DDS file directly
-                        var pngBytes = DdsFile.ConvertToPng(fileBytes);
+                        var jpegBytes = DdsFile.ConvertToJpeg(fileBytes);
                         _logger.LogInformation("ddsLodExtensions from SOCPAK (direct)");
-                        preview = new DdsPreviewViewModel(new Bitmap(pngBytes));
+                        preview = new DdsPreviewViewModel(new Bitmap(jpegBytes));
                     }
                 }
                 catch (Exception ex)

@@ -334,8 +334,8 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             {
                 var p4kFileSystem = new P4kFileSystem(sourceP4k);
                 var ms = DdsFile.MergeToStream(zipEntry.Name, p4kFileSystem);
-                var pngBytes = DdsFile.ConvertToPng(ms.ToArray());
-                return new DdsPreviewViewModel(new Bitmap(pngBytes));
+                var jpegBytes = DdsFile.ConvertToJpeg(ms.ToArray());
+                return new DdsPreviewViewModel(new Bitmap(jpegBytes));
             }
             catch (Exception ex)
             {
@@ -3064,16 +3064,16 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                             }
                             
                             // Create output path (overwrite existing files)
-                            var pngOutputPath = Path.Combine(outputFolder, fileNameWithoutExt + ".png");
+                            var jpegOutputPath = Path.Combine(outputFolder, fileNameWithoutExt + ".jpg");
 
-                            // Extract and convert DDS to PNG
+                            // Extract and convert DDS to JPEG
                             var ms = DdsFile.MergeToStream(file.RightEntry!.Name, p4kFileSystem);
-                            using var pngStream = DdsFile.ConvertToPng(ms.ToArray());
+                            using var jpegStream = DdsFile.ConvertToJpeg(ms.ToArray());
                             
-                            File.WriteAllBytes(pngOutputPath, pngStream.ToArray());
+                            File.WriteAllBytes(jpegOutputPath, jpegStream.ToArray());
                             extractedCount++;
                             
-                            _logger.LogDebug("Extracted DDS file: {SourcePath} -> {OutputPath}", file.FullPath, pngOutputPath);
+                            _logger.LogDebug("Extracted DDS file: {SourcePath} -> {OutputPath}", file.FullPath, jpegOutputPath);
                         }
                         catch (Exception ex)
                         {

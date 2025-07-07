@@ -335,18 +335,18 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
     {
         try
         {
-            _logger.LogInformation("Converting DDS to PNG: {FileName}", fileNode.P4KEntry.Name);
+            _logger.LogInformation("Converting DDS to JPEG: {FileName}", fileNode.P4KEntry.Name);
             
-            // Preserve the directory structure for the PNG file
+            // Preserve the directory structure for the JPEG file
             string relativePath = fileNode.P4KEntry.Name;
             string relativeDirectory = Path.GetDirectoryName(relativePath)?.Replace('\\', Path.DirectorySeparatorChar) ?? string.Empty;
             string fileName = Path.GetFileName(relativePath);
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
-            string pngFileName = fileNameWithoutExtension + ".png";
+            string jpegFileName = fileNameWithoutExtension + ".jpg";
             
             // Create full output path maintaining directory structure
             string outputDirectory = Path.Combine(destinationPath, relativeDirectory);
-            string outputPath = Path.Combine(outputDirectory, pngFileName);
+            string outputPath = Path.Combine(outputDirectory, jpegFileName);
             
             // Create directory structure if it doesn't exist
             Directory.CreateDirectory(outputDirectory);
@@ -362,20 +362,20 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
                 ddsBytes = memoryStream.ToArray();
             }
             
-            // Convert DDS to PNG
-            using var pngBytes = DdsFile.ConvertToPng(ddsBytes);
+            // Convert DDS to JPEG
+            using var jpegBytes = DdsFile.ConvertToJpeg(ddsBytes);
             
-            // Save the PNG
+            // Save the JPEG
             using (var fs = new FileStream(outputPath, FileMode.Create))
             {
-                pngBytes.CopyTo(fs);
+                jpegBytes.CopyTo(fs);
             }
             
-            _logger.LogInformation("Successfully saved PNG: {OutputPath}", outputPath);
+            _logger.LogInformation("Successfully saved JPEG: {OutputPath}", outputPath);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to convert DDS to PNG: {FileName}", fileNode.P4KEntry.Name);
+            _logger.LogError(ex, "Failed to convert DDS to JPEG: {FileName}", fileNode.P4KEntry.Name);
             
             // Fallback to extracting the original DDS file
             _logger.LogInformation("Falling back to extracting original DDS file");
