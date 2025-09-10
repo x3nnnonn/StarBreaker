@@ -334,7 +334,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             {
                 var p4kFileSystem = new P4kFileSystem(sourceP4k);
                 var ms = DdsFile.MergeToStream(zipEntry.Name, p4kFileSystem);
-                var jpegBytes = DdsFile.ConvertToJpeg(ms.ToArray());
+                var jpegBytes = DdsFile.ConvertToJpeg(ms.ToArray(), false);
                 return new DdsPreviewViewModel(new Bitmap(jpegBytes));
             }
             catch (Exception ex)
@@ -535,9 +535,8 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                 _logger.LogInformation("Large file diff detected - Old: {OldLines} lines, New: {NewLines} lines. Using simplified diff algorithm.", oldLineCount, newLineCount);
             }
 
-            // Create labels based on P4K file names
-            var oldLabel = $"Left: {Path.GetFileName(LeftP4kPath)}";
-            var newLabel = $"Right: {Path.GetFileName(RightP4kPath)}";
+            var oldLabel = string.Empty;
+            var newLabel = string.Empty;
 
             // Use .xml extension for CryXML files for better syntax highlighting
             var displayExtension = IsCryXmlFile(fileNode) ? ".xml" : fileExtension;
@@ -3064,16 +3063,16 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                             }
                             
                             // Create output path (overwrite existing files)
-                            var jpegOutputPath = Path.Combine(outputFolder, fileNameWithoutExt + ".jpg");
+                            var jpgOutputPath = Path.Combine(outputFolder, fileNameWithoutExt + ".jpg");
 
                             // Extract and convert DDS to JPEG
                             var ms = DdsFile.MergeToStream(file.RightEntry!.Name, p4kFileSystem);
-                            using var jpegStream = DdsFile.ConvertToJpeg(ms.ToArray());
+                            using var jpgStream = DdsFile.ConvertToJpeg(ms.ToArray(), false);
                             
-                            File.WriteAllBytes(jpegOutputPath, jpegStream.ToArray());
+                            File.WriteAllBytes(jpgOutputPath, jpgStream.ToArray());
                             extractedCount++;
                             
-                            _logger.LogDebug("Extracted DDS file: {SourcePath} -> {OutputPath}", file.FullPath, jpegOutputPath);
+                            _logger.LogDebug("Extracted DDS file: {SourcePath} -> {OutputPath}", file.FullPath, jpgOutputPath);
                         }
                         catch (Exception ex)
                         {

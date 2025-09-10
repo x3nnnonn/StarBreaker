@@ -9,6 +9,7 @@ public enum DdsExtractMode
     Combine,
     ConvertToPng,
     ConvertToJpeg,
+    ConvertToTiff,
 }
 
 public class P4kExtractOptions

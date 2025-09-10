@@ -274,7 +274,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
                         }
                         else if (ConvertDdsToPng && IsDdsFile(fileNode.P4KEntry.Name))
                         {
-                            ExtractDdsAsPng(fileNode, destinationPath);
+                            ExtractDdsAsJpeg(fileNode, destinationPath);
                         }
                         else
                         {
@@ -331,7 +331,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
                (fileName.Contains(".dds.") && char.IsDigit(fileName[fileName.Length - 1]));
     }
     
-    private void ExtractDdsAsPng(P4kFileNode fileNode, string destinationPath)
+    private void ExtractDdsAsJpeg(P4kFileNode fileNode, string destinationPath)
     {
         try
         {
@@ -363,7 +363,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             }
             
             // Convert DDS to JPEG
-            using var jpegBytes = DdsFile.ConvertToJpeg(ddsBytes);
+            using var jpegBytes = DdsFile.ConvertToJpeg(ddsBytes, false);
             
             // Save the JPEG
             using (var fs = new FileStream(outputPath, FileMode.Create))
@@ -423,7 +423,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
                 if (IsDdsFile(fileName))
                 {
                     var fileNode = FindFileNode(dirNode, fileName);
-                    if (fileNode != null) ExtractDdsAsPng(fileNode, outputDirPath);
+                    if (fileNode != null) ExtractDdsAsJpeg(fileNode, outputDirPath);
                 }
                 else
                 {

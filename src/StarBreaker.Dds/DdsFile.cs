@@ -10,6 +10,21 @@ public static class DdsFile
 {
     public static ReadOnlySpan<byte> Magic => "DDS "u8;
 
+    public static bool ShouldApplySrgb(string path)
+    {
+        // Heuristic: color (albedo/UI) textures should be sRGB; data maps (normals, gloss) should remain linear
+        var lower = path.ToLowerInvariant();
+        if (IsNormals(lower)) return false;
+        if (IsGlossMap(lower)) return false;
+
+        // Common data-map hints: avoid sRGB
+        if (lower.Contains("_n.") || lower.Contains("_nm") || lower.Contains("_normal") || lower.EndsWith("_n"))
+            return false;
+
+        // Default to sRGB for everything else
+        return true;
+    }
+
     public static Stream MergeToStream(string fullPath, IFileSystem? fileSystem = null)
     {
         fileSystem ??= RealFileSystem.Instance;
@@ -276,7 +291,8 @@ public static class DdsFile
             throw new InvalidOperationException("No images found in DDS file");
         var stream = new MemoryStream();
 
-        using var bytes = tex.SaveToWICMemory(0, WIC_FLAGS.NONE, TexHelper.Instance.GetWICCodec(WICCodecs.PNG));
+        var wicFlags = applySrgbCorrection ? WIC_FLAGS.FORCE_SRGB : WIC_FLAGS.IGNORE_SRGB;
+        using var bytes = tex.SaveToWICMemory(0, wicFlags, TexHelper.Instance.GetWICCodec(WICCodecs.PNG));
 
         //TODO: convert cubemap dds to a x-cross
         bytes.CopyTo(stream);
@@ -337,7 +353,8 @@ public static class DdsFile
             throw new InvalidOperationException("No images found in DDS file");
         var stream = new MemoryStream();
 
-        using var bytes = tex.SaveToWICMemory(0, WIC_FLAGS.NONE, TexHelper.Instance.GetWICCodec(WICCodecs.JPEG));
+        var wicFlags = applySrgbCorrection ? WIC_FLAGS.FORCE_SRGB : WIC_FLAGS.IGNORE_SRGB;
+        using var bytes = tex.SaveToWICMemory(0, wicFlags, TexHelper.Instance.GetWICCodec(WICCodecs.JPEG));
 
         bytes.CopyTo(stream);
 
@@ -412,5 +429,137 @@ public static class DdsFile
             var path = Path.Combine(Path.GetDirectoryName(jpegFullPath)!, $"{pathWithoutExtension}_{i}.jpg");
             tex.SaveToWICFile(i, WIC_FLAGS.NONE, TexHelper.Instance.GetWICCodec(WICCodecs.JPEG), path);
         }
+    }
+
+    public static unsafe MemoryStream ConvertToTiff(byte[] dds, bool applySrgbCorrection = false)
+    {
+        ScratchImage? tex = null;
+        fixed (byte* ptr = dds)
+        {
+            tex = TexHelper.Instance.LoadFromDDSMemory((IntPtr)ptr, dds.Length, DDS_FLAGS.NONE);
+        }
+
+        var meta = tex.GetMetadata();
+
+        if (TexHelper.Instance.IsCompressed(meta.Format))
+        {
+            var decompressed = tex.Decompress(DXGI_FORMAT.UNKNOWN);
+            tex.Dispose();
+            tex = decompressed;
+            meta = tex.GetMetadata();
+        }
+
+        DXGI_FORMAT targetFormat;
+        
+        if (applySrgbCorrection)
+        {
+            // Convert to sRGB format for proper gamma handling
+            targetFormat = DXGI_FORMAT.R8G8B8A8_UNORM_SRGB;
+        }
+        else
+        {
+            // Keep original format for Discord compatibility
+            targetFormat = DXGI_FORMAT.R8G8B8A8_UNORM;
+        }
+
+        if (meta.Format != targetFormat)
+        {
+            var converted = tex.Convert(targetFormat, TEX_FILTER_FLAGS.DEFAULT, 0.5f);
+            tex.Dispose();
+            tex = converted;
+            meta = tex.GetMetadata();
+        }
+
+        var stream = new MemoryStream();
+
+        // TIFF is not supported by DirectXTexNet, so use PNG as lossless alternative
+        var wicFlags = applySrgbCorrection ? WIC_FLAGS.FORCE_SRGB : WIC_FLAGS.IGNORE_SRGB;
+        using var bytes = tex.SaveToWICMemory(0, wicFlags, TexHelper.Instance.GetWICCodec(WICCodecs.PNG));
+        bytes.CopyTo(stream);
+
+        stream.Position = 0;
+
+        return stream;
+    }
+
+    public static void ConvertToTiff(string ddsFullPath, string tiffFullPath)
+    {
+        ConvertToTiff(ddsFullPath, tiffFullPath, false);
+    }
+
+    public static void ConvertToTiff(string ddsFullPath, string tiffFullPath, bool applySrgbCorrection)
+    {
+        var tex = TexHelper.Instance.LoadFromDDSFile(ddsFullPath, DDS_FLAGS.NONE);
+        var meta = tex.GetMetadata();
+
+        if (TexHelper.Instance.IsTypeless(meta.Format, false))
+        {
+            Console.WriteLine(" ");
+        }
+
+        if (TexHelper.Instance.IsPlanar(meta.Format))
+        {
+            Console.WriteLine(" ");
+        }
+
+        if (TexHelper.Instance.IsCompressed(meta.Format))
+        {
+            var decompressed = tex.Decompress(DXGI_FORMAT.UNKNOWN);
+            tex.Dispose();
+            tex = decompressed;
+            meta = tex.GetMetadata();
+        }
+
+        DXGI_FORMAT targetFormat;
+        
+        if (applySrgbCorrection)
+        {
+            targetFormat = DXGI_FORMAT.R8G8B8A8_UNORM_SRGB;
+        }
+        else
+        {
+            targetFormat = DXGI_FORMAT.R8G8B8A8_UNORM;
+        }
+
+        if (meta.Format != targetFormat)
+        {
+            var converted = tex.Convert(targetFormat, TEX_FILTER_FLAGS.DEFAULT, 0.5f);
+            tex.Dispose();
+            tex = converted;
+            meta = tex.GetMetadata();
+        }
+
+        // TIFF is not supported by DirectXTexNet, so use PNG as lossless alternative
+        var wicFlags2 = applySrgbCorrection ? WIC_FLAGS.FORCE_SRGB : WIC_FLAGS.IGNORE_SRGB;
+        tex.SaveToWICFile(0, wicFlags2, TexHelper.Instance.GetWICCodec(WICCodecs.PNG), tiffFullPath);
+
+        tex.Dispose();
+    }
+
+    public static unsafe MemoryStream ConvertWicToJpeg(byte[] bitmapBytes, bool applySrgbCorrection = false)
+    {
+        ScratchImage? img = null;
+        fixed (byte* ptr = bitmapBytes)
+        {
+            img = TexHelper.Instance.LoadFromWICMemory((IntPtr)ptr, bitmapBytes.Length, WIC_FLAGS.NONE);
+        }
+
+        var meta = img.GetMetadata();
+
+        // Normalize to 8-bit RGBA in appropriate color space
+        var target = applySrgbCorrection ? DXGI_FORMAT.R8G8B8A8_UNORM_SRGB : DXGI_FORMAT.R8G8B8A8_UNORM;
+        if (meta.Format != target)
+        {
+            var converted = img.Convert(0, target, TEX_FILTER_FLAGS.DEFAULT, 0.5f);
+            img.Dispose();
+            img = converted;
+        }
+
+        var stream = new MemoryStream();
+        var wicFlags = applySrgbCorrection ? WIC_FLAGS.FORCE_SRGB : WIC_FLAGS.IGNORE_SRGB;
+        using var bytes = img.SaveToWICMemory(0, wicFlags, TexHelper.Instance.GetWICCodec(WICCodecs.JPEG));
+        bytes.CopyTo(stream);
+        stream.Position = 0;
+        return stream;
     }
 }

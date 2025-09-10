@@ -15,7 +15,7 @@
             ColumnDefinitions="*,4,*"
             IsVisible="{Binding !IsLoading}">
             
-            <Grid Grid.Column="0" RowDefinitions="Auto,*">
+            <Grid Grid.Column="0" RowDefinitions="Auto,Auto,*">
                 <!-- Search Bar -->
                 <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="5">
                     <TextBox Grid.Column="0" 
@@ -27,9 +27,16 @@
                             Command="{Binding ClearSearchCommand}"
                             IsVisible="{Binding SearchText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                 </Grid>
+
+                <!-- Stream Script Quick Actions -->
+                <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" Margin="5,0,5,5">
+                    <TextBlock Grid.Column="0" Text="Apply selected record GUID to stream-sc.py" VerticalAlignment="Center" />
+                    <Button Grid.Column="1" Content="I own this item" Command="{Binding ApplyOwnedGuidCommand}" Margin="6,0,0,0" />
+                    <Button Grid.Column="2" Content="I want this item" Command="{Binding ApplyDesiredGuidCommand}" Margin="6,0,0,0" />
+                </Grid>
                 
                 <!-- Record Tree -->
-                <ScrollViewer Grid.Row="1">
+                <ScrollViewer Grid.Row="2">
                     <TreeDataGrid Source="{Binding Records}" />
                 </ScrollViewer>
             </Grid>

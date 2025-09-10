@@ -62,7 +62,7 @@ public class PreviewService : IPreviewService
         else if (ddsLodExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
         {
             var ms = DdsFile.MergeToStream(selectedEntry.P4KEntry.Name, selectedEntry.Root.RootNode);
-            var jpegBytes = DdsFile.ConvertToJpeg(ms.ToArray());
+            var jpegBytes = DdsFile.ConvertToJpeg(ms.ToArray(), false);
             _logger.LogInformation("ddsLodExtensions");
             preview = new DdsPreviewViewModel(new Bitmap(jpegBytes));
         }
@@ -167,7 +167,7 @@ public class PreviewService : IPreviewService
                     {
                         var socPakFileSystem = new P4kFileSystem(socPakFile);
                         var ms = DdsFile.MergeToStream(selectedEntry.P4KEntry.Name, socPakFileSystem);
-                        var jpegBytes = DdsFile.ConvertToJpeg(ms.ToArray());
+                        var jpegBytes = DdsFile.ConvertToJpeg(ms.ToArray(), false);
                         _logger.LogInformation("ddsLodExtensions from SOCPAK (merged)");
                         preview = new DdsPreviewViewModel(new Bitmap(jpegBytes));
                     }
@@ -176,7 +176,7 @@ public class PreviewService : IPreviewService
                         _logger.LogDebug(mergeEx, "Failed to merge LOD levels for SOCPAK DDS, trying direct conversion: {FileName}", selectedEntry.P4KEntry.Name);
                         
                         // Fallback: try converting the raw DDS file directly
-                        var jpegBytes = DdsFile.ConvertToJpeg(fileBytes);
+                        var jpegBytes = DdsFile.ConvertToJpeg(fileBytes, false);
                         _logger.LogInformation("ddsLodExtensions from SOCPAK (direct)");
                         preview = new DdsPreviewViewModel(new Bitmap(jpegBytes));
                     }
