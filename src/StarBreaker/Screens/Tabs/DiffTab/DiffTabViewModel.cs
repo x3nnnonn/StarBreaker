@@ -3003,7 +3003,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             foreach (var file in Directory.GetFiles(outputFolder))
             {
                 var ext = Path.GetExtension(file).ToLowerInvariant();
-                if (ext == ".png")
+                if (ext == ".jpg" || ext == ".jpeg" || ext == ".png")
                 {
                     File.Delete(file);
                 }
@@ -3180,8 +3180,8 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                             // Create output path (overwrite existing files)
                             var outputPath = Path.Combine(outputFolder, originalFileName);
 
-                            // Extract WEM file
-                            using var entryStream = _rightP4kFile!.OpenStream(file.RightEntry!);
+                            // Extract WEM file (supports nested .socpak/.pak)
+                            using var entryStream = OpenEntryStream(file, useLeft: false);
                             using var outputStream = File.Create(outputPath);
                             entryStream.CopyTo(outputStream);
                             
