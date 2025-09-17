@@ -60,16 +60,10 @@ public sealed partial class DataCoreTabViewModel : PageViewModelBase
     {
         try
         {
-            // Auto-detect variable name from selected content and mode
-            var effectiveVar = InferVarNameFromContent(SelectedRecordContent);
-            if (string.IsNullOrWhiteSpace(effectiveVar))
+            // Auto-detect base variable category from selected content
+            var baseVar = InferVarNameFromContent(SelectedRecordContent);
+            if (string.IsNullOrWhiteSpace(baseVar))
                 throw new InvalidOperationException("Could not auto-detect target variable. Select a record that identifies a ship/armor/weapon/paint.");
-
-            // Map mode to stream variable families
-            // owned: map to the "...2" variants if present (paint2, sidearm2, etc.) else family 1
-            // desired: map to the primary family 1 (idris, paint1, etc.) we want to receive
-            // owned -> family 1, desired -> family 2
-            effectiveVar = mode == "owned" ? PromoteToFamily(effectiveVar, 1) : PromoteToFamily(effectiveVar, 2);
 
             // Locate scripts/stream-sc.py relative to app root
             var root = AppContext.BaseDirectory;
@@ -87,11 +81,15 @@ public sealed partial class DataCoreTabViewModel : PageViewModelBase
 
             var text = await File.ReadAllTextAsync(scriptPath);
 
-            // Build a regex to find a line like: varName = "<guid>"
-            // e.g.: idris = "f0caa993-4c6b-4402-8ef1-d91879060f3b"
+            // Resolve actual target variable name based on what's present in the script and the selected mode
+            var effectiveVar = ResolveTargetVariableName(text, baseVar!, mode);
+            if (string.IsNullOrWhiteSpace(effectiveVar))
+                throw new InvalidOperationException($"No suitable variable found in stream-sc.py for base '{baseVar}' and mode '{mode}'.");
+
+            // Build a strict regex to find a line like: varName = "<guid>" or '<guid>'
             var safeName = Regex.Escape(effectiveVar);
-            // avoid verbatim+interpolation escaping issues
-            var pattern = "^\\s*" + safeName + "\\s*=\\s*\"(?<guid>[0-9a-fA-F\\-]{36})\"\\s*$";
+            var pattern = "^\\s*" + safeName + "\\s*=\\s*([\"']) (?<guid>[0-9a-fA-F\\-]{36}) \\1\\s*$";
+            pattern = pattern.Replace(" ", string.Empty); // keep pattern readable above
             var regex = new Regex(pattern, RegexOptions.Multiline);
             var match = regex.Match(text);
             if (!match.Success)
@@ -115,9 +113,8 @@ public sealed partial class DataCoreTabViewModel : PageViewModelBase
             if (string.Equals(currentGuid, newGuid, StringComparison.OrdinalIgnoreCase))
                 return; // already set
 
-            // Replace in file
-            // Only replace the specific variable's GUID; keep other vars unchanged
-            var updated = regex.Replace(text, m => m.Value.Replace(currentGuid, newGuid), 1);
+            // Replace only the specific variable's GUID; keep other vars unchanged
+            var updated = regex.Replace(text, m => m.Value.Replace(currentGuid, newGuid, StringComparison.OrdinalIgnoreCase), 1);
             await File.WriteAllTextAsync(scriptPath, updated);
         }
         catch (Exception ex)
@@ -230,52 +227,175 @@ public sealed partial class DataCoreTabViewModel : PageViewModelBase
     private static string? InferVarNameFromContent(string? content)
     {
         if (string.IsNullOrWhiteSpace(content)) return null;
-        var lower = content.ToLowerInvariant();
-        // helpers
-        bool HasWord(string w) => Regex.IsMatch(lower, @"\b" + Regex.Escape(w) + @"\b", RegexOptions.IgnoreCase);
+
+        // Try structured XML parsing first for reliable Type/SubType
+        try
+        {
+            var xml = System.Xml.Linq.XDocument.Parse(content);
+            var root = xml.Root;
+            if (root != null)
+            {
+                string GetElem(string name)
+                    => root.Descendants().FirstOrDefault(e => string.Equals(e.Name.LocalName, name, StringComparison.OrdinalIgnoreCase))?.Value?.Trim() ?? string.Empty;
+                string GetChildElem(System.Xml.Linq.XElement parent, string name)
+                    => parent.Elements().FirstOrDefault(e => string.Equals(e.Name.LocalName, name, StringComparison.OrdinalIgnoreCase))?.Value?.Trim() ?? string.Empty;
+
+                var anyType = GetElem("Type").ToLowerInvariant();
+                var subType = GetElem("SubType").ToLowerInvariant();
+                var displayType = GetElem("displayType").ToLowerInvariant();
+
+                // Paints
+                if (anyType == "paints" || displayType.Contains("item_typepaints", StringComparison.OrdinalIgnoreCase))
+                    return "paint";
+
+                // Compute AttachDef details once
+                var attachDef = root.Descendants().FirstOrDefault(e => string.Equals(e.Name.LocalName, "AttachDef", StringComparison.OrdinalIgnoreCase));
+                var attachType = attachDef != null ? GetChildElem(attachDef, "Type").ToLowerInvariant() : string.Empty;
+                var attachSubType = attachDef != null ? GetChildElem(attachDef, "SubType").ToLowerInvariant() : string.Empty;
+
+                // Vehicles: detect early to avoid false positives from loadout content (which can include armor/weapons)
+                bool hasVehicleComponent = root.Descendants().Any(e => string.Equals(e.Name.LocalName, "VehicleComponentParams", StringComparison.OrdinalIgnoreCase));
+                bool isShip = hasVehicleComponent
+                              || attachType.Contains("vehicle", StringComparison.OrdinalIgnoreCase)
+                              || attachSubType.Contains("vehicle", StringComparison.OrdinalIgnoreCase)
+                              || content.Contains("/spaceships/", StringComparison.OrdinalIgnoreCase)
+                              || content.Contains("/ships/", StringComparison.OrdinalIgnoreCase)
+                              || content.Contains("movementclass>spaceship<", StringComparison.OrdinalIgnoreCase);
+                if (isShip)
+                    return "ship";
+
+                // Prefer explicit armor identification via AttachDef/SCItemSuitArmorParams/displayType
+                bool hasArmorClass = attachType.StartsWith("char_armor_", StringComparison.OrdinalIgnoreCase)
+                                     || displayType.Contains("armor", StringComparison.OrdinalIgnoreCase)
+                                     || root.Descendants().Any(e => string.Equals(e.Name.LocalName, "SCItemSuitArmorParams", StringComparison.OrdinalIgnoreCase));
+                if (hasArmorClass)
+                {
+                    var lower = content.ToLowerInvariant();
+                    if (attachType.Contains("torso") || lower.Contains("torso") || lower.Contains("armor_core")) return "armorCore";
+                    if (lower.Contains("helmet") || lower.Contains("_helmet")) return "armorHelmet";
+                    if (lower.Contains("legs") || lower.Contains("_leg")) return "armorLegs";
+                    if (lower.Contains("arms") || lower.Contains("forearm") || lower.Contains("gauntlet") || lower.Contains("glove")) return "armorArms";
+                    // default to core for torso armor if ambiguous
+                    return "armorCore";
+                }
+
+                // Weapons (only if not classified as armor)
+                if (anyType == "weaponpersonal" || anyType == "weapon" || content.Contains("/weapons/", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (subType == "knife" || displayType.Contains("knife", StringComparison.OrdinalIgnoreCase)) return "meele";
+                    if (subType == "pistol" || displayType.Contains("pistol", StringComparison.OrdinalIgnoreCase) || content.Contains("pistol", StringComparison.OrdinalIgnoreCase)) return "sidearm";
+                    return "fpsWeapon";
+                }
+
+                // Vehicles (fallback)
+                if (anyType == "vehicle" || content.Contains("spaceship", StringComparison.OrdinalIgnoreCase) || content.Contains("/spaceships/", StringComparison.OrdinalIgnoreCase) || content.Contains("/ships/", StringComparison.OrdinalIgnoreCase))
+                    return "ship";
+
+                // Modules
+                if (content.Contains("/modules/", StringComparison.OrdinalIgnoreCase) || displayType.Contains("module", StringComparison.OrdinalIgnoreCase))
+                    return "moduleBase";
+            }
+        }
+        catch
+        {
+            // fall back to heuristics below if not XML or malformed
+        }
+
+        // Heuristic fallback (keywords/paths), returns base names without family suffix
+        var lowerText = content.ToLowerInvariant();
+        bool HasWord(string w) => Regex.IsMatch(lowerText, @"\b" + Regex.Escape(w) + @"\b", RegexOptions.IgnoreCase);
         bool HasAny(params string[] words) => words.Any(HasWord);
         bool HasTokenLike(string token)
-            => HasWord(token) || lower.Contains(token + "_") || lower.Contains("/" + token) || lower.Contains("\\" + token);
+            => HasWord(token) || lowerText.Contains(token + "_") || lowerText.Contains("/" + token) || lowerText.Contains("\\" + token);
 
-        // 1) Paints (explicit first to avoid ship path tokens like Objects/Spaceships/Paints/...)
-        if (lower.Contains("<type>paints</type>") || lower.Contains("/paints/") || lower.Contains("\\paints\\")
-            || HasAny("paints", "paint", "livery") || lower.Contains("@item_typepaints"))
-            return "paint1";
+        if (lowerText.Contains("<type>paints</type>") || lowerText.Contains("/paints/") || lowerText.Contains("\\paints\\")
+            || HasAny("paints", "paint", "livery") || lowerText.Contains("@item_typepaints"))
+            return "paint";
 
-        // 2) Ships/vehicles
-        if (HasAny("spaceship", "spaceships", "spacecraft", "ship", "vessel", "vehicle"))
-            return "idris";
-
-        // 3) Weapons (detect early to avoid incidental 'arm' hits)
-        if (HasAny("weapon", "weapons") || lower.Contains("/weapons/") || lower.Contains("\\weapons\\")
-            || lower.Contains("<type>weaponpersonal</type>"))
+        // Armor before weapons (records can list weapon ports)
+        if (HasAny("armor", "armour") || lowerText.Contains("/armor/") || lowerText.Contains("\\armor\\")
+            || lowerText.Contains("char_armor_") || lowerText.Contains("@item_displaytype_armor"))
         {
-            // melee first
+            if (HasTokenLike("helmet")) return "armorHelmet";
+            if (HasTokenLike("core") || HasTokenLike("torso")) return "armorCore";
+            if (HasTokenLike("legs") || HasTokenLike("leg")) return "armorLegs";
+            if (HasTokenLike("arms") || lowerText.Contains("forearm") || lowerText.Contains("gauntlet") || lowerText.Contains("glove"))
+                return "armorArms";
+        }
+
+        if (HasAny("weapon", "weapons") || lowerText.Contains("/weapons/") || lowerText.Contains("\\weapons\\")
+            || lowerText.Contains("<type>weaponpersonal</type>"))
+        {
             if (HasAny("melee", "meele", "knife", "blade", "sword", "axe", "dagger", "machete")
-                || lower.Contains("<subtype>knife</subtype>")
-                || lower.Contains("<tags>knife</tags>"))
-                return "meele1";
+                || lowerText.Contains("<subtype>knife</subtype>")
+                || lowerText.Contains("<tags>knife</tags>"))
+                return "meele";
 
-            if (HasAny("sidearm", "pistol")) return "sidearm1";
-            return "fpsWeapon1";
+            if (HasAny("sidearm", "pistol")) return "sidearm";
+            return "fpsWeapon";
         }
 
-        // 4) Armor family (only if clearly in armor context)
-        if (HasAny("armor", "armour") || lower.Contains("/armor/") || lower.Contains("\\armor\\"))
-        {
-            if (HasTokenLike("helmet")) return "armorHelmet1";
-            if (HasTokenLike("core") || HasTokenLike("torso")) return "armorCore1";
-            if (HasTokenLike("legs") || HasTokenLike("leg")) return "armorLegs1";
-            // arms: only explicit arms/forearm/gauntlet/glove (do NOT match bare 'arm' to avoid '/armor/')
-            if (HasTokenLike("arms") || lower.Contains("forearm") || lower.Contains("gauntlet") || lower.Contains("glove"))
-                return "armorArms1";
-        }
+        if (HasAny("spaceship", "spaceships", "spacecraft", "ship", "vessel", "vehicle"))
+            return "ship";
 
-        // 5) Modules
-        if ((HasWord("module") || lower.Contains("/modules/") || lower.Contains("\\modules\\")) && HasWord("attach"))
-            return "moduleBase1";
+        if ((HasWord("module") || lowerText.Contains("/modules/", StringComparison.OrdinalIgnoreCase)) && HasWord("attach"))
+            return "moduleBase";
 
         return null;
+    }
+
+    private static string? ResolveTargetVariableName(string scriptText, string baseVar, string mode)
+    {
+        // Enumerate existing variable names of the form: name = "GUID"
+        var varRegex = new Regex("^\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*([\\\"'])[0-9a-fA-F\\-]{36}\\2\\s*$", RegexOptions.Multiline);
+        var names = new HashSet<string>(varRegex.Matches(scriptText).Select(m => m.Groups[1].Value));
+
+        string Prefer(params string[] candidates) => candidates.FirstOrDefault(names.Contains) ?? string.Empty;
+
+        bool isOwned = string.Equals(mode, "owned", StringComparison.OrdinalIgnoreCase);
+        int family = isOwned ? 1 : 2;
+
+        // Normalize baseVar: strip trailing digits if any
+        if (baseVar.EndsWith("1") || baseVar.EndsWith("2")) baseVar = baseVar[..^1];
+
+        string pickWithFamily(string stem)
+        {
+            if (family == 1)
+                return Prefer(stem + "1", stem) ;
+            else
+                return Prefer(stem + "2", stem + "1", stem);
+        }
+
+        switch (baseVar)
+        {
+            case "paint":
+            case "sidearm":
+            case "meele":
+            case "fpsWeapon":
+            case "armorHelmet":
+            case "armorCore":
+            case "armorLegs":
+            case "armorArms":
+            case "moduleBase":
+                {
+                    var stem = baseVar;
+                    var chosen = pickWithFamily(stem);
+                    return string.IsNullOrEmpty(chosen) ? null : chosen;
+                }
+            case "ship":
+                {
+                    // Strictly use ship1/ship2 only
+                    var chosen = family == 1 ? Prefer("ship1") : Prefer("ship2");
+                    return string.IsNullOrEmpty(chosen) ? null : chosen;
+                }
+            default:
+                {
+                    // If baseVar is already a concrete name (e.g., idris), try it directly and then family variants
+                    var stem = baseVar;
+                    var chosen = family == 1 ? Prefer(stem + "1", stem) : Prefer(stem + "2", stem + "1", stem);
+                    return string.IsNullOrEmpty(chosen) ? null : chosen;
+                }
+        }
     }
     
     private void ApplySearch()
