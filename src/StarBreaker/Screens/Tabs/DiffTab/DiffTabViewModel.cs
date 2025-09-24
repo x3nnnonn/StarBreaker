@@ -44,6 +44,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
     [ObservableProperty] private bool _isLiveSelected = true;
     [ObservableProperty] private bool _isPtuSelected = false;
     [ObservableProperty] private bool _isEptuSelected = false;
+    [ObservableProperty] private bool _isTechPreviewSelected = false;
     
     // Comparison mode properties
     [ObservableProperty] private bool _isP4kComparisonMode = false;
@@ -806,7 +807,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                 {
                     // Try to derive channel from current GameFolder
                     var folderName = Path.GetFileName(GameFolder.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-                    if (folderName == "LIVE" || folderName == "PTU" || folderName == "EPTU")
+                    if (folderName == "LIVE" || folderName == "PTU" || folderName == "EPTU" || folderName == "TECH-PREVIEW")
                     {
                         channelToSelect = folderName;
                     }
@@ -926,7 +927,8 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             // If GameFolder appears to be a base installation folder (contains channel subdirectories)
             else if (Directory.Exists(Path.Combine(GameFolder, "LIVE")) || 
                      Directory.Exists(Path.Combine(GameFolder, "PTU")) || 
-                     Directory.Exists(Path.Combine(GameFolder, "EPTU")))
+                     Directory.Exists(Path.Combine(GameFolder, "EPTU")) ||
+                     Directory.Exists(Path.Combine(GameFolder, "TECH-PREVIEW")))
             {
                 _logger.LogInformation("Using GameFolder as base path (contains channels): {BasePath}", GameFolder);
                 return GameFolder;
@@ -969,14 +971,42 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         IsLiveSelected = channel == "LIVE";
         IsPtuSelected = channel == "PTU";
         IsEptuSelected = channel == "EPTU";
+        IsTechPreviewSelected = channel == "TECH-PREVIEW";
         
         var basePath = GetBaseInstallationPath();
         var channelPath = Path.Combine(basePath, channel);
         
         if (Directory.Exists(channelPath))
         {
-            GameFolder = channelPath;
+            // Do not override GameFolder; keep user-selected base path stable
             AddLogMessage($"Selected {channel} channel: {channelPath}");
+            // Set default output repo paths for TECH-PREVIEW
+            if (channel == "TECH-PREVIEW")
+            {
+                var previewRepo = @"C:\\Development\\StarCitizen\\StarCitizenDiffTechPreview";
+                if (Directory.Exists(previewRepo))
+                {
+                    OutputDirectory = previewRepo;
+                    P4kOutputDirectory = previewRepo;
+                }
+                else
+                {
+                    AddLogMessage($"TECH-PREVIEW output folder not found at {previewRepo}. Using current settings.");
+                }
+            }
+            else if (channel == "LIVE" || channel == "PTU" || channel == "EPTU")
+            {
+                var defaultRepo = @"C:\\Development\\StarCitizen\\StarCitizenDiff";
+                if (Directory.Exists(defaultRepo))
+                {
+                    OutputDirectory = defaultRepo;
+                    P4kOutputDirectory = defaultRepo;
+                }
+                else
+                {
+                    AddLogMessage($"Default repository folder not found at {defaultRepo}. Using current settings.");
+                }
+            }
         }
         else
         {
@@ -1000,6 +1030,12 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
     public void SelectEptuChannel()
     {
         UpdateChannelSelection("EPTU");
+    }
+
+    [RelayCommand]
+    public void SelectTechPreviewChannel()
+    {
+        UpdateChannelSelection("TECH-PREVIEW");
     }
     
     [RelayCommand]

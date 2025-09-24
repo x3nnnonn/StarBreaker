@@ -112,6 +112,11 @@
                                       IsChecked="{Binding IsEptuSelected}"
                                       MinWidth="60"
                                       ToolTip.Tip="Select EPTU channel folder"/>
+                        <ToggleButton Content="TECH-PREVIEW" 
+                                      Command="{Binding SelectTechPreviewChannelCommand}"
+                                      IsChecked="{Binding IsTechPreviewSelected}"
+                                      MinWidth="120"
+                                      ToolTip.Tip="Select TECH-PREVIEW channel folder"/>
                     </StackPanel>
                 </StackPanel>
                         
