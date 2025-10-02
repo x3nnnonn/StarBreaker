@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
+using Avalonia.Platform.Storage;
 
 namespace StarBreaker.Screens;
 
@@ -55,6 +56,62 @@ public sealed partial class DataCoreTabViewModel : PageViewModelBase
     [RelayCommand]
     private Task ApplyDesiredGuid()
         => ApplyGuidToStreamScriptInternal("desired");
+
+    [RelayCommand]
+    private async Task ExtractSelectedRecord()
+    {
+        try
+        {
+            var selected = Records.RowSelection?.SelectedItem;
+            if (selected == null || selected.IsFolder || selected.Record == null || DataCore == null)
+            {
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    ErrorMessage = "Select a single record to extract.";
+                });
+                return;
+            }
+
+            var appLifetime = Avalonia.Application.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+            var topLevel = appLifetime?.MainWindow;
+            if (topLevel == null)
+            {
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    ErrorMessage = "Unable to open folder picker.";
+                });
+                return;
+            }
+
+            var folderPickerOptions = new FolderPickerOpenOptions
+            {
+                Title = "Select destination folder",
+                AllowMultiple = false
+            };
+
+            var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(folderPickerOptions);
+            if (folders == null || folders.Count == 0)
+                return; // user canceled
+
+            var destinationPath = folders[0].Path.LocalPath;
+
+            var record = selected.Record.Value;
+            var fileName = record.GetFileName(DataCore.Database);
+            var outputPath = Path.Combine(destinationPath, fileName);
+            var outputDir = Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrEmpty(outputDir))
+                Directory.CreateDirectory(outputDir);
+
+            DataCore.SaveToFile(record, outputPath);
+        }
+        catch (Exception ex)
+        {
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                ErrorMessage = ex.Message;
+            });
+        }
+    }
 
     private async Task ApplyGuidToStreamScriptInternal(string mode)
     {
