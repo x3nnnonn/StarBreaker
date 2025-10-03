@@ -33,7 +33,7 @@
                     <TextBlock Grid.Column="0" Text="Apply selected record GUID to stream-sc.py" VerticalAlignment="Center" />
                     <Button Grid.Column="1" Content="I own this item" Command="{Binding ApplyOwnedGuidCommand}" Margin="6,0,0,0" />
                     <Button Grid.Column="2" Content="I want this item" Command="{Binding ApplyDesiredGuidCommand}" Margin="6,0,0,0" />
-                    <Button Grid.Column="3" Content="Extract DataCore" Command="{Binding ExtractSelectedRecordCommand}" Margin="6,0,0,0" />
+                    <Button Grid.Column="3" Content="Extract DataCore Entry" Command="{Binding ExtractSelectedRecordCommand}" Margin="6,0,0,0" />
                 </Grid>
                 
                 <!-- Record Tree -->
