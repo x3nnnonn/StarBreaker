@@ -4340,68 +4340,68 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         {
             await Task.Run(() =>
             {
-                progressCallback(0.1);
+                progressCallback(0.05);
 
                 var p4k = P4kFile.FromFile(p4kFile);
                 var outputDir = Path.Combine(OutputDirectory, "P4kContents");
                 Directory.CreateDirectory(outputDir);
 
-                progressCallback(0.2);
+                progressCallback(0.1);
 
-                // Find all XML files (CryXML and regular XML)
-                var xmlEntries = p4k.Entries
+                // Find all XML files in main P4K
+                var mainXmlEntries = p4k.Entries
                     .Where(e => e.Name.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
                     .ToList();
 
-                if (xmlEntries.Count == 0)
+                // Find all SOCPAK files
+                var socpakEntries = p4k.Entries
+                    .Where(e => (e.Name.EndsWith(".socpak", StringComparison.OrdinalIgnoreCase) || 
+                                 e.Name.EndsWith(".pak", StringComparison.OrdinalIgnoreCase)) &&
+                                !e.Name.Contains("shadercache_", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                progressCallback(0.15);
+
+                // Collect all XML entries from SOCPAKs
+                var socpakXmlEntries = new List<(P4kEntry entry, string socpakPath, P4kFile socpak)>();
+                foreach (var socpakEntry in socpakEntries)
                 {
-                    AddLogMessage("No XML files found in P4K.");
+                    try
+                    {
+                        var socpak = P4kFile.FromP4kEntry(p4k, socpakEntry);
+                        var xmlsInSocpak = socpak.Entries
+                            .Where(e => e.Name.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
+                            .Select(e => (entry: e, socpakPath: socpakEntry.RelativeOutputPath, socpak: socpak))
+                            .ToList();
+                        
+                        socpakXmlEntries.AddRange(xmlsInSocpak);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to open SOCPAK: {FileName}", socpakEntry.Name);
+                    }
+                }
+
+                progressCallback(0.2);
+
+                var totalFiles = mainXmlEntries.Count + socpakXmlEntries.Count;
+                
+                if (totalFiles == 0)
+                {
+                    AddLogMessage("No XML files found in P4K or SOCPAKs.");
                     progressCallback(1.0);
                     return;
                 }
 
-                progressCallback(0.3);
-
-                var totalFiles = xmlEntries.Count;
                 var processedFiles = 0;
-                var lastReportedProgress = 0.3;
+                var lastReportedProgress = 0.2;
 
-                foreach (var entry in xmlEntries)
+                // Extract XMLs from main P4K
+                foreach (var entry in mainXmlEntries)
                 {
                     try
                     {
-                        // Check if it's CryXML
-                        using var entryStream = p4k.OpenStream(entry);
-                        var ms = new MemoryStream();
-                        entryStream.CopyTo(ms);
-                        ms.Position = 0;
-
-                        var entryPath = Path.Combine(outputDir, entry.RelativeOutputPath);
-                        Directory.CreateDirectory(Path.GetDirectoryName(entryPath)!);
-
-                        if (CryXmlB.CryXml.IsCryXmlB(ms))
-                        {
-                            // Convert CryXML to text XML
-                            ms.Position = 0;
-                            if (CryXmlB.CryXml.TryOpen(ms, out var cryXml))
-                            {
-                                File.WriteAllText(entryPath, cryXml.ToString());
-                            }
-                            else
-                            {
-                                // Fallback: save as binary
-                                using var fs = File.Create(entryPath);
-                                ms.Position = 0;
-                                ms.CopyTo(fs);
-                            }
-                        }
-                        else
-                        {
-                            // Regular XML file
-                            using var fs = File.Create(entryPath);
-                            ms.Position = 0;
-                            ms.CopyTo(fs);
-                        }
+                        ExtractXmlEntry(p4k, entry, outputDir, entry.RelativeOutputPath);
                     }
                     catch (Exception ex)
                     {
@@ -4409,7 +4409,33 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                     }
 
                     processedFiles++;
-                    var currentProgress = 0.3 + ((double)processedFiles / totalFiles * 0.7);
+                    var currentProgress = 0.2 + ((double)processedFiles / totalFiles * 0.8);
+                    if (currentProgress - lastReportedProgress >= 0.02 || processedFiles == totalFiles)
+                    {
+                        progressCallback(currentProgress);
+                        lastReportedProgress = currentProgress;
+                    }
+                }
+
+                // Extract XMLs from SOCPAKs
+                foreach (var (entry, socpakPath, socpak) in socpakXmlEntries)
+                {
+                    try
+                    {
+                        // Preserve the SOCPAK path in the output
+                        var socpakDir = Path.GetDirectoryName(socpakPath) ?? "";
+                        var socpakName = Path.GetFileNameWithoutExtension(socpakPath);
+                        var fullOutputPath = Path.Combine(socpakDir, socpakName, entry.RelativeOutputPath);
+                        
+                        ExtractXmlEntry(socpak, entry, outputDir, fullOutputPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to extract XML from SOCPAK: {FileName}", entry.Name);
+                    }
+
+                    processedFiles++;
+                    var currentProgress = 0.2 + ((double)processedFiles / totalFiles * 0.8);
                     if (currentProgress - lastReportedProgress >= 0.02 || processedFiles == totalFiles)
                     {
                         progressCallback(currentProgress);
@@ -4418,7 +4444,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                 }
 
                 progressCallback(1.0);
-                AddLogMessage($"Extracted {processedFiles} XML files from P4K.");
+                AddLogMessage($"Extracted {mainXmlEntries.Count} XML files from P4K and {socpakXmlEntries.Count} from SOCPAKs.");
             });
         }
         catch (Exception ex)
@@ -4426,6 +4452,41 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             _logger.LogError(ex, "Error extracting P4K XML files");
             AddLogMessage($"Error extracting P4K XML files: {ex.Message}");
             progressCallback(1.0);
+        }
+    }
+
+    private void ExtractXmlEntry(P4kFile p4k, P4kEntry entry, string baseOutputDir, string relativePath)
+    {
+        using var entryStream = p4k.OpenStream(entry);
+        var ms = new MemoryStream();
+        entryStream.CopyTo(ms);
+        ms.Position = 0;
+
+        var entryPath = Path.Combine(baseOutputDir, relativePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(entryPath)!);
+
+        if (CryXmlB.CryXml.IsCryXmlB(ms))
+        {
+            // Convert CryXML to text XML
+            ms.Position = 0;
+            if (CryXmlB.CryXml.TryOpen(ms, out var cryXml))
+            {
+                File.WriteAllText(entryPath, cryXml.ToString());
+            }
+            else
+            {
+                // Fallback: save as binary
+                using var fs = File.Create(entryPath);
+                ms.Position = 0;
+                ms.CopyTo(fs);
+            }
+        }
+        else
+        {
+            // Regular XML file
+            using var fs = File.Create(entryPath);
+            ms.Position = 0;
+            ms.CopyTo(fs);
         }
     }
 
