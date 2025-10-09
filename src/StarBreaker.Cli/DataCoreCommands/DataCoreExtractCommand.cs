@@ -23,9 +23,15 @@ public class DataCoreExtractCommand : ICommand
 
     [CommandOption("filter", 'f', Description = "Pattern to filter entries", EnvironmentVariable = "FILTER")]
     public string? Filter { get; init; }
-    
+
     [CommandOption("text-format", 't', Description = "Output text format", EnvironmentVariable = "TEXT_FORMAT")]
     public string? TextFormat { get; init; }
+
+    [CommandOption("extract-types", 'e', Description = "Extract types to a separate folder", EnvironmentVariable = "OUTPUT_TYPES")]
+    public string? OutputFolderTypes { get; init; }
+
+    [CommandOption("extract-enums", 'n', Description = "Extract enums to a separate folder", EnvironmentVariable = "OUTPUT_ENUMS")]
+    public string? OutputFolderEnums { get; init; }
 
     public ValueTask ExecuteAsync(IConsole console)
     {
@@ -66,9 +72,9 @@ public class DataCoreExtractCommand : ICommand
             console.Output.WriteLine("DataCore not found.");
             return default;
         }
-        
+
         var df = TextFormat switch
-        {   
+        {
             "json" => DataForge.FromDcbStreamJson(dcbStream),
             _ => DataForge.FromDcbStreamXml(dcbStream),
         };
@@ -78,6 +84,18 @@ public class DataCoreExtractCommand : ICommand
 
         var sw = Stopwatch.StartNew();
         df.ExtractAllParallel(OutputDirectory, Filter, new ProgressBar(console));
+        if (!string.IsNullOrEmpty(OutputFolderTypes))
+        {
+            console.Output.WriteLine("Exporting  types...");
+            df.ExtractTypesParallel(OutputFolderTypes, new ProgressBar(console));
+        }
+
+        if (!string.IsNullOrEmpty(OutputFolderEnums))
+        {
+            console.Output.WriteLine("Exporting enums...");
+            df.ExtractEnumsParallel(OutputFolderEnums, new ProgressBar(console));
+        }
+
         sw.Stop();
 
         console.Output.WriteLine();

@@ -20,42 +20,48 @@ public class DiffCommand : ICommand
     [CommandOption("keep", 'k', Description = "Keep old files in the output directory", EnvironmentVariable = "KEEP_OLD")]
     public bool KeepOld { get; init; }
 
+    [CommandOption("include-binaries", 'b', Description = "Include DataCore.dcb.zst and StarCitizen.exe.zst in the output", EnvironmentVariable = "INCLUDE_BINARIES")]
+    public bool IncludeBinaries { get; init; } = false;
+
     [CommandOption("format", 'f', Description = "Output format", EnvironmentVariable = "TEXT_FORMAT")]
     public string TextFormat { get; init; } = "xml";
 
     public async ValueTask ExecuteAsync(IConsole console)
     {
+        var swTotal = Stopwatch.StartNew();
+        var sw = Stopwatch.StartNew();
+
         if (!KeepOld)
         {
             await console.Output.WriteLineAsync("Deleting old files...");
-            string[] deleteFolder =
+            List<string> deleteFolder =
             [
                 Path.Combine(OutputDirectory, "DataCore"),
+                Path.Combine(OutputDirectory, "DataCoreTypes"),
+                Path.Combine(OutputDirectory, "DataCoreEnums"),
                 Path.Combine(OutputDirectory, "P4k"),
                 Path.Combine(OutputDirectory, "P4kContents"),
-                Path.Combine(OutputDirectory, "Localization"),
-                Path.Combine(OutputDirectory, "build_manifest.json"),
-                Path.Combine(OutputDirectory, "DataCore.dcb.zst"),
-                Path.Combine(OutputDirectory, "StarCitizen.exe.zst"),
             ];
-            string[] deleteFile =
+
+            List<string> deleteFile =
             [
                 Path.Combine(OutputDirectory, "build_manifest.json"),
             ];
-
-            foreach (var folder in deleteFolder)
+            
+            if (IncludeBinaries)
             {
-                if (Directory.Exists(folder))
-                    Directory.Delete(folder, true);
+                deleteFile.Add(Path.Combine(OutputDirectory, "DataCore.dcb.zst"));
+                deleteFile.Add(Path.Combine(OutputDirectory, "StarCitizen.exe.zst"));
             }
 
-            foreach (var file in deleteFile)
-            {
-                if (File.Exists(file))
-                    File.Delete(file);
-            }
+            foreach (var folder in deleteFolder.Where(Directory.Exists))
+                Directory.Delete(folder, true);
 
-            await console.Output.WriteLineAsync("Old files deleted.");
+            foreach (var file in deleteFile.Where(File.Exists))
+                File.Delete(file);
+
+            await console.Output.WriteLineAsync("Old files deleted in " + sw.Elapsed);
+            sw.Restart();
         }
 
         // Hide output from subcommands
@@ -67,28 +73,44 @@ public class DiffCommand : ICommand
         var dumpP4k = new DumpP4kCommand
         {
             P4kFile = p4kFile,
-            OutputDirectory = Path.Combine(OutputDirectory, "P4k")
+            OutputDirectory = Path.Combine(OutputDirectory, "P4k"),
+            TextFormat = TextFormat,
         };
         await dumpP4k.ExecuteAsync(fakeConsole);
-        await console.Output.WriteLineAsync("P4k dumped.");
+        await console.Output.WriteLineAsync("P4k dumped in " + sw.Elapsed);
+        sw.Restart();
 
-        var localizationDump = new ExtractP4kCommand
+        string[] p4kContentsToExtract =
+        [
+            "*english\\global.ini",
+            "*TagDatabase.TagDatabase.xml",
+        ];
+
+        foreach (var p4kContentFilter in p4kContentsToExtract)
         {
-            P4kFile = p4kFile,
-            OutputDirectory = Path.Combine(OutputDirectory, "P4kContents"),
-            FilterPattern = "*english\\global.ini",
-        };
-        await localizationDump.ExecuteAsync(fakeConsole);
-        await console.Output.WriteLineAsync("Localization dumped.");
+            var localizationDump = new ExtractP4kCommand
+            {
+                P4kFile = p4kFile,
+                OutputDirectory = Path.Combine(OutputDirectory, "P4kContents"),
+                FilterPattern = p4kContentFilter,
+            };
+            await localizationDump.ExecuteAsync(fakeConsole);
+        }
+        
+        await console.Output.WriteLineAsync("P4k contents extracted in " + sw.Elapsed);
+        sw.Restart();
 
         var dcbExtract = new DataCoreExtractCommand
         {
             P4kFile = p4kFile,
             OutputDirectory = Path.Combine(OutputDirectory, "DataCore"),
+            OutputFolderTypes = Path.Combine(OutputDirectory, "DataCoreTypes"),
+            OutputFolderEnums = Path.Combine(OutputDirectory, "DataCoreEnums"),
             TextFormat = TextFormat
         };
         await dcbExtract.ExecuteAsync(fakeConsole);
-        await console.Output.WriteLineAsync("DataCore extracted.");
+        await console.Output.WriteLineAsync("DataCore extracted in " + sw.Elapsed);
+        sw.Restart();
 
         var extractProtobufs = new ExtractProtobufsCommand
         {
@@ -96,7 +118,8 @@ public class DiffCommand : ICommand
             Output = Path.Combine(OutputDirectory, "Protobuf")
         };
         await extractProtobufs.ExecuteAsync(fakeConsole);
-        await console.Output.WriteLineAsync("Protobufs extracted.");
+        await console.Output.WriteLineAsync("Protobuf definitions extracted in " + sw.Elapsed);
+        sw.Restart();
 
         var extractDescriptor = new ExtractDescriptorSetCommand
         {
@@ -104,14 +127,20 @@ public class DiffCommand : ICommand
             Output = Path.Combine(OutputDirectory, "Protobuf", "descriptor_set.bin")
         };
         await extractDescriptor.ExecuteAsync(fakeConsole);
-        await console.Output.WriteLineAsync("Descriptor set extracted.");
+        await console.Output.WriteLineAsync("Protobuf descriptor set extracted in " + sw.Elapsed);
+        sw.Restart();
 
-        await ExtractDataCoreIntoZip(p4kFile, Path.Combine(OutputDirectory, "DataCore.dcb.zst"));
-        await ExtractExecutableIntoZip(exeFile, Path.Combine(OutputDirectory, "StarCitizen.exe.zst"));
+        if (IncludeBinaries)
+        {
+            await ExtractDataCoreIntoZip(p4kFile, Path.Combine(OutputDirectory, "DataCore.dcb.zst"));
+            await ExtractExecutableIntoZip(exeFile, Path.Combine(OutputDirectory, "StarCitizen.exe.zst"));
+            await console.Output.WriteLineAsync("Binaries extracted in " + sw.Elapsed);
+            sw.Restart();
+        }
+
         File.Copy(Path.Combine(GameFolder, "build_manifest.id"), Path.Combine(OutputDirectory, "build_manifest.json"), true);
-        await console.Output.WriteLineAsync("Zipped DataCore and StarCitizen.");
 
-        await console.Output.WriteLineAsync("Done.");
+        await console.Output.WriteLineAsync($"Done in {swTotal.Elapsed}");
     }
 
     private static async Task ExtractDataCoreIntoZip(string p4kFile, string zipPath)

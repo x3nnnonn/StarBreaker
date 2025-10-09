@@ -14,7 +14,7 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
         Database = db;
     }
 
-    public void SaveToFile(DataCoreRecord record, string path)
+    public void SaveRecordToFile(DataCoreRecord record, string path)
     {
         using var fileStream = new FileStream(Path.ChangeExtension(path, "json"), FileMode.Create);
         using var writer = new Utf8JsonWriter(fileStream, new JsonWriterOptions
@@ -23,6 +23,58 @@ public sealed class DataCoreBinaryJson : IDataCoreBinary<string>
         });
 
         WriteInner(record, writer);
+    }
+
+    public void SaveStructToFile(int structIndex, string path)
+    {
+        using var fileStream = new FileStream(Path.ChangeExtension(path, "json"), FileMode.Create);
+        using var writer = new Utf8JsonWriter(fileStream, new JsonWriterOptions
+        {
+            Indented = true,
+        });
+        
+        var structDefinition = Database.StructDefinitions[structIndex];
+        
+        writer.WriteStartObject();
+        writer.WriteString("Name", structDefinition.GetName(Database));
+        if (structDefinition.ParentTypeIndex != -1)
+            writer.WriteString("Parent", Database.StructDefinitions[structDefinition.ParentTypeIndex].GetName(Database));
+        
+        writer.WriteStartArray("Properties");
+        foreach (var prop in Database.GetProperties(structIndex))
+        {
+            writer.WriteStartObject();
+            writer.WriteString("Name", prop.GetName(Database));
+            writer.WriteString("Type", prop.GetTypeString(Database));
+            writer.WriteEndObject();
+        }
+        writer.WriteEndArray();
+        writer.WriteEndObject();
+    }
+
+    public void SaveEnumToFile(int enumIndex, string path)
+    {
+        using var fileStream = new FileStream(Path.ChangeExtension(path, "json"), FileMode.Create);
+        using var writer = new Utf8JsonWriter(fileStream, new JsonWriterOptions
+        {
+            Indented = true,
+        });
+        
+        var enumDefinition = Database.EnumDefinitions[enumIndex];
+        
+        writer.WriteStartObject();
+        writer.WriteString("Name", enumDefinition.GetName(Database));
+        
+        writer.WriteStartArray("Values");
+        
+        for (var i = 0; i < enumDefinition.ValueCount; i++)
+        {
+            var enumOption = Database.EnumOptions[enumDefinition.FirstValueIndex + i].ToString(Database);
+            writer.WriteStringValue(enumOption);
+        }
+
+        writer.WriteEndArray();
+        writer.WriteEndObject();
     }
 
     public string GetFromMainRecord(DataCoreRecord record)

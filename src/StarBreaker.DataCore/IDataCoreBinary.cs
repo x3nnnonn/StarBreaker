@@ -6,5 +6,9 @@ public interface IDataCoreBinary<out T>
     
     T GetFromMainRecord(DataCoreRecord record);
     
-    void SaveToFile(DataCoreRecord record, string path);
+    void SaveRecordToFile(DataCoreRecord record, string path);
+    
+    void SaveStructToFile(int structIndex, string path);
+    
+    void SaveEnumToFile(int enumIndex, string path);
 }

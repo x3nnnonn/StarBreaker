@@ -36,11 +36,14 @@ public static class DataForge
 
 public class DataForge<T>
 {
+    private readonly List<DataCoreTypeNode> _rootNodes;
     public IDataCoreBinary<T> DataCore { get; }
+
 
     public DataForge(IDataCoreBinary<T> dataCore)
     {
         DataCore = dataCore;
+        _rootNodes = BuildTypeTree();
     }
 
     public Dictionary<string, DataCoreRecord> GetRecordsByFileName(string? fileNameFilter = null)
@@ -100,7 +103,7 @@ public class DataForge<T>
 
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
 
-            DataCore.SaveToFile(record, filePath);
+            DataCore.SaveRecordToFile(record, filePath);
 
             var currentProgress = Interlocked.Increment(ref progressValue);
             //only report progress every 1000 records and when we are done
@@ -124,7 +127,7 @@ public class DataForge<T>
 
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
 
-            DataCore.SaveToFile(record, filePath);
+            DataCore.SaveRecordToFile(record, filePath);
 
             var currentProgress = Interlocked.Increment(ref progressValue);
             //only report progress every 1000 records and when we are done
@@ -133,5 +136,107 @@ public class DataForge<T>
         });
 
         progress?.Report(1);
+    }
+
+    public void ExtractTypesParallel(string outputFolder,  IProgress<double>? progress = null)
+    {
+        var progressValue = 0;
+        var total = DataCore.Database.StructDefinitions.Length;
+
+        progress?.Report(progressValue);
+
+        foreach (var rootNode in _rootNodes)
+            ExtractTypeNode(rootNode, outputFolder, ref progressValue, progress);
+
+        progress?.Report(total);
+    }
+
+    private void ExtractTypeNode(DataCoreTypeNode node, string currentDirectory, ref int progressValue, IProgress<double>? progress)
+    {
+        var structDef = node.StructDefinition;
+        var nodeName = structDef.GetName(DataCore.Database);
+
+        string filePath;
+        if (node.Children.Count > 0)
+        {
+            var dirPath = Path.Combine(currentDirectory, nodeName);
+            Directory.CreateDirectory(dirPath);
+
+            // Save the node data to a file in this directory
+            filePath = Path.Combine(dirPath, $"{nodeName}.xml");
+        }
+        else
+        {
+            filePath = Path.Combine(currentDirectory, $"{nodeName}.xml");
+        }
+        
+        DataCore.SaveStructToFile(node.Index, filePath);
+
+        progressValue++;
+        progress?.Report(progressValue);
+
+        foreach (var child in node.Children)
+        {
+            ExtractTypeNode(child, Path.Combine(currentDirectory, nodeName), ref progressValue, progress);
+        }
+    }
+
+    public void ExtractEnumsParallel(string outputFolder, IProgress<double>? progress = null)
+    {
+        var progressValue = 0;
+        var total = DataCore.Database.EnumDefinitions.Length;
+
+        progress?.Report(progressValue);
+
+        Parallel.For(0, DataCore.Database.EnumDefinitions.Length, i =>
+        {
+            var enumDef = DataCore.Database.EnumDefinitions[i];
+            var enumName = enumDef.GetName(DataCore.Database);
+            var filePath = Path.Combine(outputFolder, $"{enumName}.xml");
+
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+
+            DataCore.SaveEnumToFile(i, filePath);
+
+            var currentProgress = Interlocked.Increment(ref progressValue);
+            //only report progress every 1000 records and when we are done
+            if (currentProgress == total || currentProgress % 1000 == 0)
+                progress?.Report(currentProgress / (double)total);
+        });
+
+        progress?.Report(1);
+    }
+
+    private List<DataCoreTypeNode> BuildTypeTree()
+    {
+        var definitions = DataCore.Database.StructDefinitions;
+
+        var nodesMap = new Dictionary<int, DataCoreTypeNode>(definitions.Length);
+        for (var i = 0; i < definitions.Length; i++)
+        {
+            nodesMap[i] = new DataCoreTypeNode(DataCore.Database, i);
+        }
+
+        var rootNodes = new List<DataCoreTypeNode>();
+        foreach (var kvp in nodesMap)
+        {
+            var node = kvp.Value;
+            var parentIndex = node.StructDefinition.ParentTypeIndex;
+
+            if (parentIndex == -1)
+            {
+                rootNodes.Add(node);
+            }
+            else if (nodesMap.TryGetValue(parentIndex, out var parentNode))
+            {
+                parentNode.Children.Add(node);
+            }
+            else
+            {
+                throw new InvalidOperationException($"Parent type with index {parentIndex} not found.");
+            }
+        }
+
+        return rootNodes;
     }
 }

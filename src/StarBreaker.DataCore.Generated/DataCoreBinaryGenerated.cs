@@ -35,7 +35,7 @@ public sealed partial class DataCoreBinaryGenerated : IDataCoreBinary<DataCoreTy
         return new DataCoreTypedRecord(record.GetFileName(Database), record.GetName(Database), record.Id, data);
     }
 
-    public void SaveToFile(DataCoreRecord record, string path)
+    public void SaveRecordToFile(DataCoreRecord record, string path)
     {
         throw new NotImplementedException();
     }

@@ -13,7 +13,7 @@ public sealed class DataCoreBinaryJsonObject : IDataCoreBinary<JsonObject>
         Database = db;
     }
 
-    public void SaveToFile(DataCoreRecord record, string path)
+    public void SaveRecordToFile(DataCoreRecord record, string path)
     {
         using var stream = File.OpenWrite(Path.ChangeExtension(path, "json"));
         using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions
@@ -21,6 +21,59 @@ public sealed class DataCoreBinaryJsonObject : IDataCoreBinary<JsonObject>
             Indented = true
         });
         var jsonRecord = GetFromMainRecord(record);
+        jsonRecord.WriteTo(writer);
+    }
+
+    public void SaveStructToFile(int structIndex, string path)
+    {
+        using var stream = File.OpenWrite(Path.ChangeExtension(path, "json"));
+        using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions
+        {
+            Indented = true
+        });
+        
+        var structDefinition = Database.StructDefinitions[structIndex];
+        
+        var jsonRecord = new JsonObject();
+        
+        jsonRecord.Add("Name", structDefinition.GetName(Database));
+        if (structDefinition.ParentTypeIndex != -1)
+            jsonRecord.Add("Parent", Database.StructDefinitions[structDefinition.ParentTypeIndex].GetName(Database));
+
+        var properties = new JsonArray();
+        foreach (var propDef in Database.GetProperties(structIndex))
+        {
+            properties.Add(new JsonObject()
+            {
+                { "Name", propDef.GetName(Database) },
+                { "Type", propDef.GetTypeString(Database)}
+            });
+        }
+        jsonRecord.Add("Properties", properties);
+        
+        jsonRecord.WriteTo(writer);
+    }
+    
+    public void SaveEnumToFile(int enumIndex, string path)
+    {
+        using var stream = File.OpenWrite(Path.ChangeExtension(path, "json"));
+        using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions
+        {
+            Indented = true
+        });
+        
+        var enumDefinition = Database.EnumDefinitions[enumIndex];
+        
+        var jsonRecord = new JsonObject();
+        jsonRecord.Add("Name", enumDefinition.GetName(Database));
+        var values = new JsonArray();
+        for (var i = 0; i < enumDefinition.ValueCount; i++)
+        {
+            var value = Database.GetString2(Database.EnumOptions[enumDefinition.FirstValueIndex + i]);
+            values.Add(value);
+        }
+        jsonRecord.Add("Values", values);
+        
         jsonRecord.WriteTo(writer);
     }
 
