@@ -102,7 +102,7 @@ public sealed partial class DataCoreTabViewModel : PageViewModelBase
             if (!string.IsNullOrEmpty(outputDir))
                 Directory.CreateDirectory(outputDir);
 
-            DataCore.SaveToFile(record, outputPath);
+            DataCore.SaveRecordToFile(record, outputPath);
         }
         catch (Exception ex)
         {

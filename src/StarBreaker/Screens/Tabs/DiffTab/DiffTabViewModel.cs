@@ -907,6 +907,35 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         OnPropertyChanged(nameof(CanExtractNewDdsFiles));
     }
 
+    private string GetChannelFolderPath(string baseFolder, string channel)
+    {
+        if (string.IsNullOrWhiteSpace(baseFolder))
+            return baseFolder;
+        
+        var folderName = Path.GetFileName(baseFolder.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        
+        // If baseFolder already ends with a channel name, return it as-is
+        if (folderName == "LIVE" || folderName == "PTU" || folderName == "EPTU" || folderName == "TECH-PREVIEW")
+        {
+            return baseFolder;
+        }
+        
+        // Otherwise, append the selected channel to the base folder
+        var channelFolder = Path.Combine(baseFolder, channel);
+        
+        // If the channel subfolder exists, use it
+        if (Directory.Exists(channelFolder))
+        {
+            _logger.LogInformation("Using channel subfolder: {ChannelFolder}", channelFolder);
+            return channelFolder;
+        }
+        
+        // If channel subfolder doesn't exist, return the constructed path anyway 
+        // (the caller will check if files exist and provide appropriate error messages)
+        _logger.LogWarning("Channel folder does not exist: {ChannelFolder}", channelFolder);
+        return channelFolder;
+    }
+
     private string GetBaseInstallationPath()
     {
         // First, check if GameFolder appears to be a base installation folder
@@ -3860,18 +3889,22 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             return;
         }
 
-        var p4kFile = Path.Combine(GameFolder, "Data.p4k");
-        var exeFile = Path.Combine(GameFolder, "Bin64", "StarCitizen.exe");
+        // Get the actual channel folder path (adds channel subfolder if needed)
+        var channelFolder = GetChannelFolderPath(GameFolder, SelectedChannel);
+        
+        var p4kFile = Path.Combine(channelFolder, "Data.p4k");
+        var exeFile = Path.Combine(channelFolder, "Bin64", "StarCitizen.exe");
 
         if (!File.Exists(p4kFile))
         {
-            AddLogMessage($"Data.p4k not found in {GameFolder}");
+            AddLogMessage($"Data.p4k not found in {channelFolder}");
+            AddLogMessage($"Make sure '{SelectedChannel}' channel is installed.");
             return;
         }
 
         if (!File.Exists(exeFile))
         {
-            AddLogMessage($"StarCitizen.exe not found in {Path.Combine(GameFolder, "Bin64")}");
+            AddLogMessage($"StarCitizen.exe not found in {Path.Combine(channelFolder, "Bin64")}");
             return;
         }
 
@@ -3904,7 +3937,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
 
     private async Task ExecuteDiffCommand(string p4kFile, string exeFile)
     {
-        var totalSteps = 8;
+        var totalSteps = 9;
         var currentStep = 0;
 
         // Helper to update progress with both step and sub-step progress
@@ -3936,30 +3969,35 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         UpdateStepProgress(currentStep, 0.0, "Extracting localization...");
         await ExtractLocalization(p4kFile, (progress) => UpdateStepProgress(currentStep, progress, "Extracting localization..."));
 
-        // Step 4: Extract DataCore
+        // Step 4: Extract TagDatabase
         currentStep = 4;
+        UpdateStepProgress(currentStep, 0.0, "Extracting TagDatabase...");
+        await ExtractTagDatabase(p4kFile, (progress) => UpdateStepProgress(currentStep, progress, "Extracting TagDatabase..."));
+
+        // Step 5: Extract DataCore
+        currentStep = 5;
         UpdateStepProgress(currentStep, 0.0, "Extracting DataCore...");
         await ExtractDataCore(p4kFile, (progress) => UpdateStepProgress(currentStep, progress, "Extracting DataCore..."));
 
-        // Step 5: Extract P4K XML files
-        currentStep = 5;
+        // Step 6: Extract P4K XML files
+        currentStep = 6;
         UpdateStepProgress(currentStep, 0.0, "Extracting P4K XML files...");
         await ExtractP4kXmlFiles(p4kFile, (progress) => UpdateStepProgress(currentStep, progress, "Extracting P4K XML files..."));
 
-        // Step 6: Extract Protobuf data
-        currentStep = 6;
+        // Step 7: Extract Protobuf data
+        currentStep = 7;
         UpdateStepProgress(currentStep, 0.0, "Extracting Protobuf data...");
         await ExtractProtobufData(exeFile, (progress) => UpdateStepProgress(currentStep, progress, "Extracting Protobuf data..."));
 
-        // Step 7: Create compressed archives
-        currentStep = 7;
+        // Step 8: Create compressed archives
+        currentStep = 8;
         UpdateStepProgress(currentStep, 0.0, "Creating compressed archives...");
         await CreateCompressedArchives(p4kFile, exeFile, (progress) => UpdateStepProgress(currentStep, progress, "Creating compressed archives..."));
 
-        // Step 8: Copy build manifest
-        currentStep = 8;
+        // Step 9: Copy build manifest
+        currentStep = 9;
         UpdateStepProgress(currentStep, 0.0, "Copying build manifest...");
-        CopyBuildManifest((progress) => UpdateStepProgress(currentStep, progress, "Copying build manifest..."));
+        CopyBuildManifest(p4kFile, (progress) => UpdateStepProgress(currentStep, progress, "Copying build manifest..."));
 
         UpdateProgress(1.0, "Diff operation completed!");
     }
@@ -3971,9 +4009,12 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             string[] deleteDirectories =
             [
                 Path.Combine(OutputDirectory, "DataCore"),
+                Path.Combine(OutputDirectory, "DataCoreTypes"),
+                Path.Combine(OutputDirectory, "DataCoreEnums"),
                 Path.Combine(OutputDirectory, "P4k"),
                 Path.Combine(OutputDirectory, "P4kContents"),
                 Path.Combine(OutputDirectory, "Localization"),
+                Path.Combine(OutputDirectory, "TagDatabase"),
                 Path.Combine(OutputDirectory, "Protobuf"),
             ];
 
@@ -4114,7 +4155,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         }
     }
 
-    private async Task ExtractDataCore(string p4kFile, Action<double> progressCallback)
+    private async Task ExtractTagDatabase(string p4kFile, Action<double> progressCallback)
     {
         try
         {
@@ -4122,9 +4163,83 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             {
                 progressCallback(0.1);
                 
+                var p4k = P4kFile.FromFile(p4kFile);
+                var outputDir = Path.Combine(OutputDirectory, "TagDatabase");
+                
+                progressCallback(0.3);
+                
+                // Look for TagDatabase file
+                var tagDbEntry = p4k.Entries.FirstOrDefault(e => 
+                    e.Name.Contains("TagDatabase.TagDatabase.xml", StringComparison.OrdinalIgnoreCase));
+
+                if (tagDbEntry != null)
+                {
+                    progressCallback(0.5);
+                    
+                    using var entryStream = p4k.OpenStream(tagDbEntry);
+                    var ms = new MemoryStream();
+                    entryStream.CopyTo(ms);
+                    ms.Position = 0;
+
+                    // Preserve the relative path structure
+                    var entryPath = Path.Combine(outputDir, tagDbEntry.RelativeOutputPath);
+                    Directory.CreateDirectory(Path.GetDirectoryName(entryPath)!);
+
+                    progressCallback(0.7);
+
+                    if (CryXmlB.CryXml.IsCryXmlB(ms))
+                    {
+                        ms.Position = 0;
+                        if (CryXmlB.CryXml.TryOpen(ms, out var cryXml))
+                        {
+                            File.WriteAllText(entryPath, cryXml.ToString());
+                            AddLogMessage("TagDatabase extracted and converted from CryXML.");
+                        }
+                        else
+                        {
+                            // Fallback: save as binary
+                            using var fs = File.Create(entryPath);
+                            ms.Position = 0;
+                            ms.CopyTo(fs);
+                            AddLogMessage("TagDatabase extracted (binary format).");
+                        }
+                    }
+                    else
+                    {
+                        using var fs = File.Create(entryPath);
+                        ms.Position = 0;
+                        ms.CopyTo(fs);
+                        AddLogMessage("TagDatabase extracted.");
+                    }
+                    
+                    progressCallback(1.0);
+                }
+                else
+                {
+                    AddLogMessage("TagDatabase not found in P4K.");
+                    progressCallback(1.0);
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error extracting TagDatabase");
+            AddLogMessage($"Error extracting TagDatabase: {ex.Message}");
+            progressCallback(1.0);
+        }
+    }
+
+    private async Task ExtractDataCore(string p4kFile, Action<double> progressCallback)
+    {
+        try
+        {
+            await Task.Run(() =>
+            {
+                progressCallback(0.05);
+                
                 var p4kFileSystem = new P4kFileSystem(P4kFile.FromFile(p4kFile));
                 
-                progressCallback(0.2);
+                progressCallback(0.1);
                 
                 Stream? dcbStream = null;
                 foreach (var file in DataCoreUtils.KnownPaths)
@@ -4141,41 +4256,75 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                     return;
                 }
 
-                progressCallback(0.3);
+                progressCallback(0.15);
 
                 var outputDir = Path.Combine(OutputDirectory, "DataCore");
+                var outputDirTypes = Path.Combine(OutputDirectory, "DataCoreTypes");
+                var outputDirEnums = Path.Combine(OutputDirectory, "DataCoreEnums");
+                
                 var df = TextFormat switch
                 {
                     "json" => DataForge.FromDcbStreamJson(dcbStream),
                     _ => DataForge.FromDcbStreamXml(dcbStream),
                 };
 
-                progressCallback(0.4);
+                progressCallback(0.2);
 
-                // Create a simple progress reporter that doesn't overwhelm the UI
-                var lastReportedProgress = 0.4;
-                var progress = new Progress<double>(value => 
+                // Extract records (60% of progress)
+                var lastReportedProgress = 0.2;
+                var recordsProgress = new Progress<double>(value => 
                 {
-                    var mappedProgress = 0.4 + (value * 0.6);
+                    var mappedProgress = 0.2 + (value * 0.6);
                     
-                    // Only update if progress changed by at least 2% or we're done
                     if (mappedProgress - lastReportedProgress >= 0.02 || value >= 1.0)
                     {
                         progressCallback(mappedProgress);
                         lastReportedProgress = mappedProgress;
                         
-                        // Only log every 10% to avoid flooding the log
                         if (value % 0.1 < 0.02 || value >= 1.0)
-                {
-                    AddLogMessage($"DataCore extraction progress: {value:P0}");
+                        {
+                            AddLogMessage($"DataCore records extraction: {value:P0}");
                         }
                     }
                 });
                 
-                df.ExtractAllParallel(outputDir, null, progress);
+                df.ExtractAllParallel(outputDir, null, recordsProgress);
+                progressCallback(0.8);
+                AddLogMessage("DataCore records extracted.");
+
+                // Extract types (10% of progress)
+                lastReportedProgress = 0.8;
+                var typesProgress = new Progress<double>(value => 
+                {
+                    var mappedProgress = 0.8 + (value * 0.1);
+                    if (mappedProgress - lastReportedProgress >= 0.02 || value >= 1.0)
+                    {
+                        progressCallback(mappedProgress);
+                        lastReportedProgress = mappedProgress;
+                    }
+                });
+                
+                df.ExtractTypesParallel(outputDirTypes, typesProgress);
+                progressCallback(0.9);
+                AddLogMessage("DataCore types extracted.");
+
+                // Extract enums (10% of progress)
+                lastReportedProgress = 0.9;
+                var enumsProgress = new Progress<double>(value => 
+                {
+                    var mappedProgress = 0.9 + (value * 0.1);
+                    if (mappedProgress - lastReportedProgress >= 0.02 || value >= 1.0)
+                    {
+                        progressCallback(mappedProgress);
+                        lastReportedProgress = mappedProgress;
+                    }
+                });
+                
+                df.ExtractEnumsParallel(outputDirEnums, enumsProgress);
                 progressCallback(1.0);
+                AddLogMessage("DataCore enums extracted.");
             });
-            AddLogMessage("DataCore extracted successfully.");
+            AddLogMessage("DataCore extraction completed successfully.");
         }
         catch (Exception ex)
         {
@@ -4336,13 +4485,20 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         }
     }
 
-    private void CopyBuildManifest(Action<double> progressCallback)
+    private void CopyBuildManifest(string p4kFile, Action<double> progressCallback)
     {
         try
         {
             progressCallback(0.2);
             
-            var buildManifestSource = Path.Combine(GameFolder, "build_manifest.id");
+            // Get the channel folder from the p4k file path
+            var channelFolder = Path.GetDirectoryName(p4kFile);
+            if (string.IsNullOrWhiteSpace(channelFolder))
+            {
+                channelFolder = GameFolder;
+            }
+            
+            var buildManifestSource = Path.Combine(channelFolder, "build_manifest.id");
             var buildManifestTarget = Path.Combine(OutputDirectory, "build_manifest.json");
             
             progressCallback(0.5);
