@@ -3904,7 +3904,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
 
     private async Task ExecuteDiffCommand(string p4kFile, string exeFile)
     {
-        var totalSteps = 7;
+        var totalSteps = 8;
         var currentStep = 0;
 
         // Helper to update progress with both step and sub-step progress
@@ -3941,18 +3941,23 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         UpdateStepProgress(currentStep, 0.0, "Extracting DataCore...");
         await ExtractDataCore(p4kFile, (progress) => UpdateStepProgress(currentStep, progress, "Extracting DataCore..."));
 
-        // Step 5: Extract Protobuf data
+        // Step 5: Extract P4K XML files
         currentStep = 5;
+        UpdateStepProgress(currentStep, 0.0, "Extracting P4K XML files...");
+        await ExtractP4kXmlFiles(p4kFile, (progress) => UpdateStepProgress(currentStep, progress, "Extracting P4K XML files..."));
+
+        // Step 6: Extract Protobuf data
+        currentStep = 6;
         UpdateStepProgress(currentStep, 0.0, "Extracting Protobuf data...");
         await ExtractProtobufData(exeFile, (progress) => UpdateStepProgress(currentStep, progress, "Extracting Protobuf data..."));
 
-        // Step 6: Create compressed archives
-        currentStep = 6;
+        // Step 7: Create compressed archives
+        currentStep = 7;
         UpdateStepProgress(currentStep, 0.0, "Creating compressed archives...");
         await CreateCompressedArchives(p4kFile, exeFile, (progress) => UpdateStepProgress(currentStep, progress, "Creating compressed archives..."));
 
-        // Step 7: Copy build manifest
-        currentStep = 7;
+        // Step 8: Copy build manifest
+        currentStep = 8;
         UpdateStepProgress(currentStep, 0.0, "Copying build manifest...");
         CopyBuildManifest((progress) => UpdateStepProgress(currentStep, progress, "Copying build manifest..."));
 
@@ -4176,6 +4181,101 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         {
             _logger.LogError(ex, "Error extracting DataCore");
             AddLogMessage($"Error extracting DataCore: {ex.Message}");
+            progressCallback(1.0);
+        }
+    }
+
+    private async Task ExtractP4kXmlFiles(string p4kFile, Action<double> progressCallback)
+    {
+        try
+        {
+            await Task.Run(() =>
+            {
+                progressCallback(0.1);
+
+                var p4k = P4kFile.FromFile(p4kFile);
+                var outputDir = Path.Combine(OutputDirectory, "P4kContents");
+                Directory.CreateDirectory(outputDir);
+
+                progressCallback(0.2);
+
+                // Find all XML files (CryXML and regular XML)
+                var xmlEntries = p4k.Entries
+                    .Where(e => e.Name.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                if (xmlEntries.Count == 0)
+                {
+                    AddLogMessage("No XML files found in P4K.");
+                    progressCallback(1.0);
+                    return;
+                }
+
+                progressCallback(0.3);
+
+                var totalFiles = xmlEntries.Count;
+                var processedFiles = 0;
+                var lastReportedProgress = 0.3;
+
+                foreach (var entry in xmlEntries)
+                {
+                    try
+                    {
+                        // Check if it's CryXML
+                        using var entryStream = p4k.OpenStream(entry);
+                        var ms = new MemoryStream();
+                        entryStream.CopyTo(ms);
+                        ms.Position = 0;
+
+                        var entryPath = Path.Combine(outputDir, entry.RelativeOutputPath);
+                        Directory.CreateDirectory(Path.GetDirectoryName(entryPath)!);
+
+                        if (CryXmlB.CryXml.IsCryXmlB(ms))
+                        {
+                            // Convert CryXML to text XML
+                            ms.Position = 0;
+                            if (CryXmlB.CryXml.TryOpen(ms, out var cryXml))
+                            {
+                                File.WriteAllText(entryPath, cryXml.ToString());
+                            }
+                            else
+                            {
+                                // Fallback: save as binary
+                                using var fs = File.Create(entryPath);
+                                ms.Position = 0;
+                                ms.CopyTo(fs);
+                            }
+                        }
+                        else
+                        {
+                            // Regular XML file
+                            using var fs = File.Create(entryPath);
+                            ms.Position = 0;
+                            ms.CopyTo(fs);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to extract XML file: {FileName}", entry.Name);
+                    }
+
+                    processedFiles++;
+                    var currentProgress = 0.3 + ((double)processedFiles / totalFiles * 0.7);
+                    if (currentProgress - lastReportedProgress >= 0.02 || processedFiles == totalFiles)
+                    {
+                        progressCallback(currentProgress);
+                        lastReportedProgress = currentProgress;
+                    }
+                }
+
+                progressCallback(1.0);
+                AddLogMessage($"Extracted {processedFiles} XML files from P4K.");
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error extracting P4K XML files");
+            AddLogMessage($"Error extracting P4K XML files: {ex.Message}");
             progressCallback(1.0);
         }
     }
