@@ -233,6 +233,11 @@ public static class DdsFile
 
     public static unsafe MemoryStream ConvertToPng(byte[] dds, bool applySrgbCorrection)
     {
+        return ConvertToPng(dds, applySrgbCorrection, false);
+    }
+
+    public static unsafe MemoryStream ConvertToPng(byte[] dds, bool applySrgbCorrection, bool removeAlpha)
+    {
         ScratchImage? tex = null;
         fixed (byte* ptr = dds)
         {
@@ -259,7 +264,12 @@ public static class DdsFile
 
         DXGI_FORMAT targetFormat;
         
-        if (applySrgbCorrection)
+        if (removeAlpha)
+        {
+            // First convert to RGBA to manually composite alpha onto white background
+            targetFormat = DXGI_FORMAT.R8G8B8A8_UNORM;
+        }
+        else if (applySrgbCorrection)
         {
             // Convert to sRGB format for proper gamma handling to fix mobile brightness issues
             // Game textures are often in linear space, but mobile devices expect gamma-corrected data
@@ -283,6 +293,37 @@ public static class DdsFile
             tex.Dispose();
             tex = converted;
             meta = tex.GetMetadata();
+        }
+
+        // If removeAlpha is enabled, composite alpha channel onto white background
+        if (removeAlpha)
+        {
+            var image = tex.GetImage(0);
+            var pixelsPtr = (byte*)image.Pixels;
+            var stride = image.RowPitch;
+            var width = (int)meta.Width;
+            var height = (int)meta.Height;
+
+            // Process each pixel: composite alpha onto white background
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    var offset = (int)(y * stride + x * 4);
+                    byte r = pixelsPtr[offset + 0];
+                    byte g = pixelsPtr[offset + 1];
+                    byte b = pixelsPtr[offset + 2];
+                    byte a = pixelsPtr[offset + 3];
+
+                    // Alpha blend with black background: result = src * alpha + black * (1 - alpha)
+                    // Since black = 0, this simplifies to: result = src * alpha
+                    float alpha = a / 255.0f;
+                    pixelsPtr[offset + 0] = (byte)(r * alpha);
+                    pixelsPtr[offset + 1] = (byte)(g * alpha);
+                    pixelsPtr[offset + 2] = (byte)(b * alpha);
+                    pixelsPtr[offset + 3] = 255; // Set alpha to fully opaque
+                }
+            }
         }
 
         var count = tex.GetImageCount();

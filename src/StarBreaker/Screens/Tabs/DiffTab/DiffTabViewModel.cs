@@ -335,8 +335,8 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             {
                 var p4kFileSystem = new P4kFileSystem(sourceP4k);
                 var ms = DdsFile.MergeToStream(zipEntry.Name, p4kFileSystem);
-                var jpegBytes = DdsFile.ConvertToJpeg(ms.ToArray(), false);
-                return new DdsPreviewViewModel(new Bitmap(jpegBytes));
+                var pngBytes = DdsFile.ConvertToPng(ms.ToArray(), true, true);
+                return new DdsPreviewViewModel(new Bitmap(pngBytes));
             }
             catch (Exception ex)
             {
@@ -1012,11 +1012,10 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             // Set default output repo paths for TECH-PREVIEW
             if (channel == "TECH-PREVIEW")
             {
-                var previewRepo = @"C:\\Development\\StarCitizen\\StarCitizenDiffTechPreview";
+                var previewRepo = @"C:\Development\StarCitizen\StarCitizenDiffTechPreview";
                 if (Directory.Exists(previewRepo))
                 {
                     OutputDirectory = previewRepo;
-                    P4kOutputDirectory = previewRepo;
                 }
                 else
                 {
@@ -1025,11 +1024,10 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             }
             else if (channel == "LIVE" || channel == "PTU" || channel == "EPTU")
             {
-                var defaultRepo = @"C:\\Development\\StarCitizen\\StarCitizenDiff";
+                var defaultRepo = @"C:\Development\StarCitizen\StarCitizenDiff";
                 if (Directory.Exists(defaultRepo))
                 {
                     OutputDirectory = defaultRepo;
-                    P4kOutputDirectory = defaultRepo;
                 }
                 else
                 {
@@ -3128,16 +3126,16 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
                             }
                             
                             // Create output path (overwrite existing files)
-                            var jpgOutputPath = Path.Combine(outputFolder, fileNameWithoutExt + ".jpg");
+                            var pngOutputPath = Path.Combine(outputFolder, fileNameWithoutExt + ".png");
 
-                            // Extract and convert DDS to JPEG
+                            // Extract and convert DDS to PNG (remove alpha, apply sRGB correction for mobile)
                             var ms = DdsFile.MergeToStream(file.RightEntry!.Name, p4kFileSystem);
-                            using var jpgStream = DdsFile.ConvertToJpeg(ms.ToArray(), false);
+                            using var pngStream = DdsFile.ConvertToPng(ms.ToArray(), true, true);
                             
-                            File.WriteAllBytes(jpgOutputPath, jpgStream.ToArray());
+                            File.WriteAllBytes(pngOutputPath, pngStream.ToArray());
                             extractedCount++;
                             
-                            _logger.LogDebug("Extracted DDS file: {SourcePath} -> {OutputPath}", file.FullPath, jpgOutputPath);
+                            _logger.LogDebug("Extracted DDS file: {SourcePath} -> {OutputPath}", file.FullPath, pngOutputPath);
                         }
                         catch (Exception ex)
                         {
