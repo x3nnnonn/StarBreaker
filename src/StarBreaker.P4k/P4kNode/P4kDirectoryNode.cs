@@ -14,17 +14,24 @@ public sealed class P4kDirectoryNode : IP4kNode, IFileSystem
     public string Name { get; }
     public Dictionary<string, IP4kNode> Children { get; }
 
+    private ulong? _sizeCache;
+
     public ulong Size
     {
         get
         {
-            ulong size = 0;
-            foreach (var child in Children.Values)
+            if (!_sizeCache.HasValue)
             {
-                size += child.Size;
+                ulong size = 0;
+                foreach (var child in Children.Values)
+                {
+                    size += child.Size;
+                }
+
+                _sizeCache = size;
             }
 
-            return size;
+            return _sizeCache.Value;
         }
     }
 
@@ -34,6 +41,7 @@ public sealed class P4kDirectoryNode : IP4kNode, IFileSystem
         Root = root;
         P4k = p4kFile;
         Children = [];
+        _sizeCache = null;
     }
 
     public void Insert(IP4kFile file, P4kEntry p4KEntry)
