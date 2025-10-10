@@ -43,8 +43,8 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
                 ),
                 new TextColumn<IP4kNode, string>("Size", x => x.GetSize(), options: new TextColumnOptions<IP4kNode>()
                 {
-                    CompareAscending = (a, b) => (a?.SizeOrZero() ?? 0).CompareTo(b?.SizeOrZero() ?? 0),
-                    CompareDescending = (a, b) => (b?.SizeOrZero() ?? 0).CompareTo(a?.SizeOrZero() ?? 0)
+                    CompareAscending = (a, b) => (a?.Size ?? 0).CompareTo(b?.Size ?? 0),
+                    CompareDescending = (a, b) => (b?.Size ?? 0).CompareTo(a?.Size ?? 0)
                 }),
                 new TextColumn<IP4kNode, string>("Date", x => x.GetDate()),
             },
