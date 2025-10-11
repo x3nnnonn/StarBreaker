@@ -3,20 +3,19 @@
 namespace StarBreaker.P4k;
 
 [DebuggerDisplay("{P4KEntry.Name}")]
-public sealed class P4kFileNode : IP4kNode
+public sealed class P4kFileNode : IP4kFileNode
 {
-    public P4kRoot Root { get; }
+    private readonly IP4kFile _p4k;
 
     public P4kEntry P4KEntry { get; }
-
-    public IP4kFile P4k { get; }
-
     public ulong Size => P4KEntry.UncompressedSize;
+    public IP4kDirectoryNode Directory { get; }
+    public Stream Open() => _p4k.OpenStream(P4KEntry);
 
-    public P4kFileNode(P4kEntry p4KEntry, P4kRoot root, IP4kFile p4kFile)
+    public P4kFileNode(IP4kDirectoryNode directory, P4kEntry p4KEntry, IP4kFile p4kFile)
     {
+        Directory = directory;
         P4KEntry = p4KEntry;
-        Root = root;
-        P4k = p4kFile;
+        _p4k = p4kFile;
     }
 }

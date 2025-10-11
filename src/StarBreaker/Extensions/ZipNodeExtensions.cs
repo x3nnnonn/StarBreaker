@@ -31,17 +31,10 @@ public static class ZipNodeExtensions
 
     public static ICollection<IP4kNode> GetChildren(this IP4kNode x)
     {
-        if (x is not P4kDirectoryNode dir)
-            return Array.Empty<IP4kNode>();
-
-        return dir.Children.Values;
-    }
-
-    public static ulong SizeOrZero(this IP4kNode x)
-    {
-        if (x is not P4kFileNode file)
-            return 0;
-
-        return file.P4KEntry?.UncompressedSize ?? 0;
+        return x switch
+        {
+            IP4kDirectoryNode dir => dir.Children.Values,
+            _ => Array.Empty<IP4kNode>(),
+        };
     }
 }

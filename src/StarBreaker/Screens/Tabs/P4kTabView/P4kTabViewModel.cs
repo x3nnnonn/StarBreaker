@@ -54,7 +54,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
         Source.RowSelection.SelectionChanged += SelectionChanged;
         Source.Items = GetSortedNodes(_p4KService.P4KFileSystem.Children.Values);
     }
-    
+
     private static int CompareNodes(IP4kNode? a, IP4kNode? b)
     {
         if (a == null && b == null) return 0;
@@ -102,13 +102,14 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             return;
         }
 
-        if (selectedEntry is not P4kFileNode selectedFile)
+        if (selectedEntry is not IP4kFileNode selectedFile)
         {
-            //we clicked on a folder, do nothing to the preview.
+            _logger.LogWarning("Selected node is not a file node");
+            Preview = null;
             return;
         }
 
-        if (selectedFile.P4KEntry.UncompressedSize > int.MaxValue)
+        if (selectedFile.Size > int.MaxValue)
         {
             _logger.LogWarning("File too big to preview");
             return;
@@ -127,7 +128,9 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             // {
             //     _logger.LogError(exception, "Failed to preview file");
             // }
-            finally { }
+            finally
+            {
+            }
         });
     }
 }

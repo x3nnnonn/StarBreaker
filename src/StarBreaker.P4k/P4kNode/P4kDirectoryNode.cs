@@ -7,10 +7,8 @@ using StarBreaker.FileSystem;
 namespace StarBreaker.P4k;
 
 [DebuggerDisplay("{Name}")]
-public sealed class P4kDirectoryNode : IP4kNode, IFileSystem
+public sealed class P4kDirectoryNode : IP4kDirectoryNode, IFileSystem
 {
-    public P4kRoot Root { get; }
-    public IP4kFile P4k { get; }
     public string Name { get; }
     public Dictionary<string, IP4kNode> Children { get; }
 
@@ -20,32 +18,24 @@ public sealed class P4kDirectoryNode : IP4kNode, IFileSystem
     {
         get
         {
-            if (!_sizeCache.HasValue)
-            {
-                ulong size = 0;
-                foreach (var child in Children.Values)
-                {
-                    size += child.Size;
-                }
-
-                _sizeCache = size;
-            }
+            _sizeCache ??= Children.Values.Aggregate<IP4kNode, ulong>(0, (acc, c) => acc + c.Size);
 
             return _sizeCache.Value;
         }
     }
 
-    public P4kDirectoryNode(string name, P4kRoot root, IP4kFile p4kFile)
+    public P4kDirectoryNode(string name)
     {
         Name = name;
-        Root = root;
-        P4k = p4kFile;
         Children = [];
         _sizeCache = null;
     }
 
-    public void Insert(IP4kFile file, P4kEntry p4KEntry)
+    private void Insert(IP4kFile file, P4kEntry p4KEntry)
     {
+        // Invalidate size cache as we're adding a new node
+        _sizeCache = null;
+
         var current = this;
         var name = p4KEntry.Name.AsSpan();
 
@@ -57,13 +47,13 @@ public sealed class P4kDirectoryNode : IP4kNode, IFileSystem
             if (range.End.Value == name.Length)
             {
                 // If this is the last part, we're at the file
-                value = GetFromEntry(file, p4KEntry, current);
+                value = GetFromEntry(file, p4KEntry);
                 return;
             }
 
             if (!existed)
             {
-                value = new P4kDirectoryNode(part.ToString(), Root, file);
+                value = new P4kDirectoryNode(part.ToString());
             }
 
             if (value is not P4kDirectoryNode directoryNode)
@@ -73,48 +63,25 @@ public sealed class P4kDirectoryNode : IP4kNode, IFileSystem
         }
     }
 
-    // This is probably suboptimal, but when we do this we'll be doing
-    // a lot of IO anyway so it doesn't really matter
-    public IEnumerable<P4kEntry> CollectEntries()
+    private IP4kNode GetFromEntry(IP4kFile p4kFile, P4kEntry p4KEntry)
     {
-        foreach (var child in Children.Values)
-        {
-            switch (child)
-            {
-                case P4kDirectoryNode directoryNode:
-                    foreach (var entry in directoryNode.CollectEntries())
-                        yield return entry;
-                    break;
-                case P4kFileNode fileNode:
-                    yield return fileNode.P4KEntry;
-                    break;
-                default:
-                    throw new Exception();
-            }
-        }
-    }
+        var isArchive = p4KEntry.Name.EndsWith(".socpak", StringComparison.InvariantCultureIgnoreCase) ||
+                        p4KEntry.Name.EndsWith(".pak", StringComparison.InvariantCultureIgnoreCase);
 
-    private IP4kNode GetFromEntry(IP4kFile p4kFile, P4kEntry p4KEntry, P4kDirectoryNode parent)
-    {
-        var isArchive = p4KEntry.Name.EndsWith(".socpak", StringComparison.OrdinalIgnoreCase) ||
-                        p4KEntry.Name.EndsWith(".pak", StringComparison.OrdinalIgnoreCase);
-
-        var isShaderCache = p4KEntry.Name.Contains("shadercache_", StringComparison.OrdinalIgnoreCase);
+        var isShaderCache = p4KEntry.Name.Contains("shadercache_", StringComparison.InvariantCultureIgnoreCase);
 
         if (isArchive && !isShaderCache)
             return FromP4k(P4kFile.FromP4kEntry(p4kFile, p4KEntry));
 
-        return new P4kFileNode(p4KEntry, Root, p4kFile);
+        return new P4kFileNode(this, p4KEntry, p4kFile);
     }
 
     public static P4kDirectoryNode FromP4k(IP4kFile file, IProgress<double>? progress = null)
     {
         progress?.Report(0.0);
-        var reportInterval = Math.Max(file.Entries.Length / 500, 1);
-        var p4kRoot = new P4kRoot(file);
-        var root = new P4kDirectoryNode(file.Name, p4kRoot, file);
-        //hacky but this is a recursive reference
-        p4kRoot.RootNode = root;
+        //only report every 1% 
+        var reportInterval = Math.Max(file.Entries.Length / 100, 1);
+        var root = new P4kDirectoryNode(file.Name);
 
         var entriesProcessed = 0;
         foreach (var entry in file.Entries)
@@ -249,7 +216,7 @@ public sealed class P4kDirectoryNode : IP4kNode, IFileSystem
             if (value is P4kDirectoryNode directory)
                 current = directory;
             else if (value is P4kFileNode file && index == partsCount - 1)
-                return P4k.OpenStream(file.P4KEntry);
+                return file.Open();
             else
                 throw new FileNotFoundException();
         }
@@ -273,7 +240,7 @@ public sealed class P4kDirectoryNode : IP4kNode, IFileSystem
             if (value is P4kDirectoryNode directory)
                 current = directory;
             else if (value is P4kFileNode file && index == partsCount - 1)
-                return P4k.OpenStream(file.P4KEntry).ToArray();
+                return file.Open().ToArray();
             else
                 throw new FileNotFoundException();
         }

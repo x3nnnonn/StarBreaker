@@ -2,7 +2,15 @@
 
 public interface IP4kNode
 {
-    IP4kFile P4k { get; }
-    P4kRoot Root { get; }
     ulong Size { get; }
+}
+
+public interface IP4kFileNode : IP4kNode
+{
+    Stream Open();
+}
+
+public interface IP4kDirectoryNode : IP4kNode
+{
+    Dictionary<string, IP4kNode> Children { get; }
 }

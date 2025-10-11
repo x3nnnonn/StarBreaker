@@ -6,8 +6,31 @@ public static class WwiseSandbox
 {
     public static void Run()
     {
-        var bnk = BnkFile.Open(File.OpenRead(@"D:\StarCitizen\P4k\Data\Sounds\wwise\SSAM_CRUS_StarFighter.bnk"));
-        bnk.ExtractWemFiles(@"D:\StarCitizen\Wems");
-        Console.WriteLine(bnk);
+        
+        var allBnks = Directory.GetFiles(@"D:\StarCitizen\P4kbnk\Data\Sounds\wwise", "*Default.bnk", SearchOption.AllDirectories);
+        
+        //sort by largest to smallest
+        allBnks = allBnks.OrderByDescending(x => new FileInfo(x).Length).ToArray();
+        
+
+        var sectionTypeCounts = new Dictionary<BnkSectionType, int>();
+        foreach(var sectionType in Enum.GetValues<BnkSectionType>())
+        {
+            sectionTypeCounts[sectionType] = 0;
+        }
+        
+        foreach (var bnk in allBnks)
+        {
+            var file = BnkFile.Open(File.OpenRead(bnk));
+            foreach (var type in file.SectionData.Keys)
+            {
+                sectionTypeCounts[type]++;
+            }
+        }
+        
+        foreach (var kv in sectionTypeCounts)
+        {
+            Console.WriteLine($"{kv.Key}: {kv.Value}");
+        }
     }
 }

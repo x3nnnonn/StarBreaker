@@ -1,18 +1,17 @@
-﻿using System.Text;
-using Avalonia.Media.Imaging;
+﻿using Avalonia.Media.Imaging;
 using Microsoft.Extensions.Logging;
 using StarBreaker.Common;
 using StarBreaker.Dds;
 using StarBreaker.Extensions;
+using StarBreaker.FileSystem;
 using StarBreaker.P4k;
 using StarBreaker.Screens;
-using TextMateSharp.Internal.Rules;
 
 namespace StarBreaker.Services;
 
 public interface IPreviewService
 {
-    FilePreviewViewModel GetPreview(P4kFileNode clickedNode);
+    FilePreviewViewModel GetPreview(IP4kFileNode clickedNode);
 }
 
 public class PreviewService : IPreviewService
@@ -31,10 +30,9 @@ public class PreviewService : IPreviewService
         _logger = logger;
     }
 
-    public FilePreviewViewModel GetPreview(P4kFileNode selectedEntry)
+    public FilePreviewViewModel GetPreview(IP4kFileNode selectedEntry)
     {
-        //TODO: move this to a service?
-        using var entryStream = selectedEntry.P4k.OpenStream(selectedEntry.P4KEntry);
+        using var entryStream = selectedEntry.Open();
 
         FilePreviewViewModel preview;
 
@@ -57,9 +55,12 @@ public class PreviewService : IPreviewService
 
             preview = new TextPreviewViewModel(entryStream.ReadString());
         }
-        else if (ddsLodExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
+        else if (ddsLodExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)) && selectedEntry is P4kFileNode p4kSelectedEntry)
         {
-            var ms = DdsFile.MergeToStream(selectedEntry.P4KEntry.Name, selectedEntry.Root.RootNode);
+            if (p4kSelectedEntry.Directory is not IFileSystem fs)
+                throw new NotSupportedException("Can only unsplit dds files that are stored in a filesystem");
+
+            var ms = DdsFile.MergeToStream(p4kSelectedEntry.P4KEntry.Name, fs);
             var pngBytes = DdsFile.ConvertToPng(ms.ToArray());
             _logger.LogInformation("ddsLodExtensions");
             preview = new DdsPreviewViewModel(new Bitmap(pngBytes));
