@@ -159,6 +159,15 @@
                 "FILTER": "*.ini"
             }
         },
+        "p4k-extract-bnk": {
+            "commandName": "Project",
+            "commandLineArgs": "p4k-extract",
+            "environmentVariables": {
+                "INPUT_P4K": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\PTU\\Data.p4k",
+                "OUTPUT_FOLDER": "D:\\StarCitizen\\P4kbnk",
+                "FILTER": "*.bnk"
+            }
+        },
         "p4k-dump": {
             "commandName": "Project",
             "commandLineArgs": "p4k-dump",
