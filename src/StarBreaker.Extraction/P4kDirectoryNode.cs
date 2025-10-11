@@ -28,55 +28,87 @@ public sealed class P4kDirectoryNode : IP4kDirectoryNode, IFileSystem
     public P4kDirectoryNode(string name)
     {
         Name = name;
-        Children = [];
+        Children = new Dictionary<string, IP4kNode>(StringComparer.OrdinalIgnoreCase);
         _sizeCache = null;
     }
 
-    private void Insert(IP4kFile file, P4kEntry p4KEntry)
+    private static void Insert(P4kDirectoryNode root, IP4kFile p4kFile, P4kEntry p4KEntry)
     {
         // Invalidate size cache as we're adding a new node
-        _sizeCache = null;
+        root._sizeCache = null;
 
-        var current = this;
+        var current = root;
         var name = p4KEntry.Name.AsSpan();
 
         foreach (var range in name.Split('\\'))
         {
             var part = name[range];
-            ref var value = ref CollectionsMarshal.GetValueRefOrAddDefault(current.Children.GetAlternateLookup<ReadOnlySpan<char>>(), part, out var existed);
 
             if (range.End.Value == name.Length)
             {
-                // If this is the last part, we're at the file
-                value = GetFromEntry(file, p4KEntry);
-                return;
-            }
+                //we are a file
+                var indexOfDds = name.IndexOf(".dds", StringComparison.InvariantCultureIgnoreCase);
+                ReadOnlySpan<char> key;
+                if (indexOfDds == -1)
+                {
+                    key = part;
+                }
+                else
+                {
+                    var baseNameEnd = indexOfDds + ".dds".Length;
+                    key = name[..baseNameEnd];
+                }
 
-            if (!existed)
+                ref var value = ref CollectionsMarshal.GetValueRefOrAddDefault(current.Children.GetAlternateLookup<ReadOnlySpan<char>>(), key, out var existed);
+                if (existed)
+                {
+                    switch (value)
+                    {
+                        case P4kFileNode:
+                            throw new InvalidOperationException("File already exists");
+                        case DdsFileNode ddsFile:
+                            ddsFile.AddEntry(p4KEntry);
+                            return;
+                        default:
+                            throw new InvalidOperationException("Expected a file node");
+                    }
+                }
+
+                var isSplitDds = key.EndsWith(".dds");
+
+                if (isSplitDds)
+                {
+                    value = new DdsFileNode(p4kFile, p4KEntry, key.ToString());
+                    continue;
+                }
+
+                var isArchive = part.EndsWith(".socpak", StringComparison.InvariantCultureIgnoreCase);
+
+                if (isArchive)
+                {
+                    var isShaderCache = part.StartsWith("shadercache_", StringComparison.InvariantCultureIgnoreCase);
+                    if (!isShaderCache)
+                    {
+                        value = FromP4k(P4kFile.FromP4kEntry(p4kFile, p4KEntry));
+                        continue;
+                    }
+                }
+
+                value = new P4kFileNode(p4KEntry, p4kFile);
+            }
+            else
             {
-                value = new P4kDirectoryNode(part.ToString());
+                //we are a directory
+                ref var value = ref CollectionsMarshal.GetValueRefOrAddDefault(current.Children.GetAlternateLookup<ReadOnlySpan<char>>(), part, out var existed);
+                if (!existed)
+                    value = new P4kDirectoryNode(part.ToString());
+
+                if (value is not P4kDirectoryNode directoryNode)
+                    throw new InvalidOperationException("Expected a directory node");
+
+                current = directoryNode;
             }
-
-            if (value is not P4kDirectoryNode directoryNode)
-                throw new InvalidOperationException("Expected a directory node");
-
-            current = directoryNode;
         }
-    }
-
-    private IP4kNode GetFromEntry(IP4kFile p4kFile, P4kEntry p4KEntry)
-    {
-        var isArchive = p4KEntry.Name.EndsWith(".socpak", StringComparison.InvariantCultureIgnoreCase) ||
-                        p4KEntry.Name.EndsWith(".pak", StringComparison.InvariantCultureIgnoreCase);
-
-        var isShaderCache = p4KEntry.Name.Contains("shadercache_", StringComparison.InvariantCultureIgnoreCase);
-        
-        var isSplitDds = p4KEntry.Name.Contains(".dds", StringComparison.InvariantCultureIgnoreCase);
-
-        if (isArchive && !isShaderCache)
-            return FromP4k(P4kFile.FromP4kEntry(p4kFile, p4KEntry));
-
-        return new P4kFileNode(this, p4KEntry, p4kFile);
     }
 
     public static P4kDirectoryNode FromP4k(IP4kFile file, IProgress<double>? progress = null)
@@ -89,7 +121,7 @@ public sealed class P4kDirectoryNode : IP4kDirectoryNode, IFileSystem
         var entriesProcessed = 0;
         foreach (var entry in file.Entries)
         {
-            root.Insert(file, entry);
+            Insert(root, file, entry);
 
             entriesProcessed++;
             if (entriesProcessed % reportInterval == 0)

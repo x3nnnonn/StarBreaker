@@ -54,12 +54,9 @@ public class PreviewService : IPreviewService
 
             preview = new TextPreviewViewModel(entryStream.ReadString());
         }
-        else if (ddsLodExtensions.Any(p => selectedEntry.Name.EndsWith(p, StringComparison.InvariantCultureIgnoreCase)) && selectedEntry is P4kFileNode p4kSelectedEntry)
+        else if (selectedEntry is DdsFileNode ddsNode)
         {
-            if (p4kSelectedEntry.Directory is not IFileSystem fs)
-                throw new NotSupportedException("Can only unsplit dds files that are stored in a filesystem");
-
-            var ms = DdsFile.MergeToStream(p4kSelectedEntry.P4KEntry.Name, fs);
+            var ms = ddsNode.Open();
             var pngBytes = DdsFile.ConvertToPng(ms.ToArray());
             _logger.LogInformation("ddsLodExtensions");
             preview = new DdsPreviewViewModel(new Bitmap(pngBytes));

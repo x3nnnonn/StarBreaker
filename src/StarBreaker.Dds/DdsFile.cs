@@ -1,6 +1,4 @@
-﻿using System.Buffers;
-using System.Runtime.InteropServices;
-using DirectXTexNet;
+﻿using DirectXTexNet;
 using StarBreaker.Common;
 using StarBreaker.FileSystem;
 
@@ -88,6 +86,67 @@ public static class DdsFile
 
         finalDds.Position = 0;
         return finalDds;
+    }
+
+    public static MemoryStream MergeToArray(IReadOnlyDictionary<string, byte[]> arrays)
+    {
+        var mainFile = arrays.FirstOrDefault(kv => kv.Key.EndsWith(".dds", StringComparison.OrdinalIgnoreCase)).Value;
+        var others = arrays.Values.Where(b => b != mainFile).OrderByDescending(b => b.Length).ToArray();
+
+        if (mainFile == null || others.Length == 0)
+            throw new ArgumentException("No DDS file found");
+
+        var ms = new MemoryStream();
+        var mainReader = new BinaryReader(new MemoryStream(mainFile));
+        var magic = mainReader.ReadBytes(4);
+        if (!Magic.SequenceEqual(magic))
+            throw new ArgumentException("File is not a DDS file");
+        var header = mainReader.BaseStream.Read<DdsHeader>();
+        bool readDx10Header = false;
+        DdsHeaderDxt10 headerDx10 = default;
+        if (header.PixelFormat.FourCC == CompressionAlgorithm.DX10)
+        {
+            headerDx10 = mainReader.BaseStream.Read<DdsHeaderDxt10>();
+            readDx10Header = true;
+            //if (headerDx10.DxgiFormat != DXGI_FORMAT.BC6H_UF16)
+            //    throw new ArgumentException("File is not a BC6H_UF16 DDS file");
+        }
+
+        var smallMipMapBytes = mainReader.BaseStream.ReadArray<byte>((int)(mainReader.BaseStream.Length - mainReader.BaseStream.Position));
+        var mipMapSizes = MipMapSizes(header);
+        ms.Write(Magic);
+        ms.Write(header);
+        if (readDx10Header)
+            ms.Write(headerDx10);
+        var largest = mipMapSizes[0];
+        var largestByteCount = GetMipmapSize(largest.Item1, largest.Item2, header.PixelFormat, readDx10Header ? headerDx10 : null);
+        if (others[0].Length % largestByteCount != 0)
+            throw new ArgumentException("File is not a valid DDS file");
+        var faces = others[0].Length / largestByteCount;
+        var smallOffset = 0;
+        for (var cubeFace = 0; cubeFace < faces; cubeFace++)
+        {
+            for (var mipMap = 0; mipMap < mipMapSizes.Length; mipMap++)
+            {
+                var mipMapSize = mipMapSizes[mipMap];
+                var mipMapByteCount = GetMipmapSize(mipMapSize.Item1, mipMapSize.Item2, header.PixelFormat, readDx10Header ? headerDx10 : null);
+                if (mipMap < others.Length)
+                {
+                    //If we have a dedicated file for this mipmap, use it.
+                    ms.Write(others[mipMap], cubeFace * mipMapByteCount, mipMapByteCount);
+                }
+                else
+                {
+                    //Otherwise, use the bytes at the end of the main file.
+                    ms.Write(smallMipMapBytes, smallOffset, mipMapByteCount);
+                    smallOffset += mipMapByteCount;
+                }
+            }
+        }
+
+        ms.Position = 0;
+
+        return ms;
     }
 
     private static (int, int)[] MipMapSizes(DdsHeader header)
