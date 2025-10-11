@@ -3,6 +3,7 @@ using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using StarBreaker.DataCore;
+using StarBreaker.Extraction;
 using StarBreaker.P4k;
 using ZstdSharp;
 

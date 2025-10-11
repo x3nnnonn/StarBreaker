@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics;
-using System.IO.Compression;
 using System.Text.Json;
 using StarBreaker.Common;
 using StarBreaker.CryChunkFile;
+using StarBreaker.Extraction;
 using StarBreaker.P4k;
 
 namespace StarBreaker.Sandbox;

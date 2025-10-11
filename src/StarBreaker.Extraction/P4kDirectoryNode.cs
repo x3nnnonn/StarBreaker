@@ -3,8 +3,9 @@ using System.IO.Enumeration;
 using System.Runtime.InteropServices;
 using StarBreaker.Common;
 using StarBreaker.FileSystem;
+using StarBreaker.P4k;
 
-namespace StarBreaker.P4k;
+namespace StarBreaker.Extraction;
 
 [DebuggerDisplay("{Name}")]
 public sealed class P4kDirectoryNode : IP4kDirectoryNode, IFileSystem
@@ -69,6 +70,8 @@ public sealed class P4kDirectoryNode : IP4kDirectoryNode, IFileSystem
                         p4KEntry.Name.EndsWith(".pak", StringComparison.InvariantCultureIgnoreCase);
 
         var isShaderCache = p4KEntry.Name.Contains("shadercache_", StringComparison.InvariantCultureIgnoreCase);
+        
+        var isSplitDds = p4KEntry.Name.Contains(".dds", StringComparison.InvariantCultureIgnoreCase);
 
         if (isArchive && !isShaderCache)
             return FromP4k(P4kFile.FromP4kEntry(p4kFile, p4KEntry));

@@ -1,4 +1,4 @@
-﻿namespace StarBreaker.P4k;
+﻿namespace StarBreaker.Extraction;
 
 public interface IP4kNode
 {

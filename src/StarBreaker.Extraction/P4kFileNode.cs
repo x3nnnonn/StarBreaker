@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
+using StarBreaker.P4k;
 
-namespace StarBreaker.P4k;
+namespace StarBreaker.Extraction;
 
 [DebuggerDisplay("{P4KEntry.Name}")]
 public sealed class P4kFileNode : IP4kFileNode
@@ -9,7 +10,7 @@ public sealed class P4kFileNode : IP4kFileNode
 
     public P4kEntry P4KEntry { get; }
     public ulong Size => P4KEntry.UncompressedSize;
-    public string Name => P4KEntry.Name;
+    public string Name { get; }
     public IP4kDirectoryNode Directory { get; }
     public Stream Open() => _p4k.OpenStream(P4KEntry);
 
@@ -18,5 +19,6 @@ public sealed class P4kFileNode : IP4kFileNode
         Directory = directory;
         P4KEntry = p4KEntry;
         _p4k = p4kFile;
+        Name = p4KEntry.Name.Split('\\').Last();
     }
 }

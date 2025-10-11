@@ -5,7 +5,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.Logging;
 using StarBreaker.Extensions;
-using StarBreaker.P4k;
+using StarBreaker.Extraction;
 using StarBreaker.Services;
 
 namespace StarBreaker.Screens;

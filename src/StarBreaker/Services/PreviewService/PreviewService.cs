@@ -2,9 +2,8 @@
 using Microsoft.Extensions.Logging;
 using StarBreaker.Common;
 using StarBreaker.Dds;
-using StarBreaker.Extensions;
+using StarBreaker.Extraction;
 using StarBreaker.FileSystem;
-using StarBreaker.P4k;
 using StarBreaker.Screens;
 
 namespace StarBreaker.Services;
