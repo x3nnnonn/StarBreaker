@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using StarBreaker.Common;
 
@@ -44,6 +45,33 @@ public class BnkFile
                     break;
 
                 case BnkSectionType.HIRC:
+                    var objCount = br.ReadUInt32();
+                    
+                    var objects = new List<BnkHircObject>((int)objCount);
+                    
+                    for (var i = 0; i < objCount; i++)
+                    {
+                        var objType = br.ReadByte();
+                        var objLength = br.ReadUInt32();
+                        var objId = br.ReadUInt32();
+                        var objData = br.ReadBytes((int)(objLength - 4));
+                        
+                        if (objType == (byte)BnkHircObjectType.SoundFx)
+                        {
+                            var soundFx = SoundFx.Read(objData);
+                            Console.WriteLine($"SoundFx: {objId}");
+                        }
+                        
+                        objects.Add(new BnkHircObject
+                        {
+                            Type = (BnkHircObjectType)objType,
+                            Id = objId,
+                            Data = objData
+                        });
+                    }
+                    
+                    Console.WriteLine($"HIRC: {objCount} objects");
+                    break;
                 case BnkSectionType.INIT:
                 case BnkSectionType.STMG:
                 case BnkSectionType.ENVS:
@@ -78,6 +106,11 @@ public class BnkFile
             string fileName = Path.Combine(outputDirectory, $"sound_{i}.wem");
             File.WriteAllBytes(fileName, data);
         }
+    }
+
+    public ReadOnlySpan<byte> GetData(BnkSection bnkSection)
+    {
+        return new ReadOnlySpan<byte>(RawData, (int)bnkSection.Offset, (int)bnkSection.Size);
     }
 }
 
@@ -126,4 +159,55 @@ public enum BnkSectionType : uint
 
     // Sound ID Section: Contains a list of sound IDs.
     STID = 0x44495453 // "STID" in ASCII (little-endian)
+}
+
+public enum BnkHircObjectType : byte
+{
+    Settings = 1,
+    SoundFx = 2,
+    EventAction = 3,
+    Event = 4,
+    RandomContainerSequenceContainer = 5,
+    SwitchContainer = 6,
+    ActorMixer = 7,
+    AudioBus = 8,
+    BlendContainer = 9,
+    MusicSegment = 10,
+    MusicTrack = 11,
+    MusicSwitchContainer = 12,
+    MusicPlaylistContainer = 13,
+    Attenuation = 14,
+    DialogueEvent = 15,
+    MotionBus = 16,
+    MotionFX = 17,
+    Effect = 18,
+    AuxBus = 19,
+}
+
+[DebuggerDisplay("{Type} - {Id}")]
+public class BnkHircObject
+{
+    public BnkHircObjectType Type { get; set; }
+    public uint Id { get; set; }
+    public byte[] Data { get; set; }
+}
+
+public class SoundFx
+{
+    public static SoundFx Read(ReadOnlySpan<byte> bytes)
+    {
+        var reader = new SpanReader(bytes);
+        
+        //var length = reader.ReadUInt32();
+        //var id = reader.ReadUInt32();
+        var unk = reader.ReadUInt32();
+        var streamed = reader.ReadUInt32();
+        var audioFileId = reader.ReadUInt32();
+        var sourceId = reader.ReadUInt32();
+        //if embedded in soundbank? I think this is always 0 in SC
+        var soundType = reader.ReadByte();//0 = fx, 1 = voice
+        var soundObject = reader.RemainingBytes;
+
+        return new SoundFx();
+    }
 }
