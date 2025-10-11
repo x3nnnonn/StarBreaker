@@ -14,4 +14,6 @@ public interface IP4kFileNode : IP4kNode
 public interface IP4kDirectoryNode : IP4kNode
 {
     Dictionary<string, IP4kNode> Children { get; }
+
+    IEnumerable<IP4kFileNode> CollectAllFiles();
 }

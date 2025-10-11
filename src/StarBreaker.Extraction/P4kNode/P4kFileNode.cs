@@ -13,10 +13,10 @@ public sealed class P4kFileNode : IP4kFileNode
     public string Name { get; }
     public Stream Open() => _p4k.OpenStream(P4KEntry);
 
-    public P4kFileNode(P4kEntry p4KEntry, IP4kFile p4kFile)
+    public P4kFileNode(P4kEntry p4KEntry, IP4kFile p4kFile, string name)
     {
-        P4KEntry = p4KEntry;
         _p4k = p4kFile;
-        Name = p4KEntry.Name.Split('\\').Last();
+        P4KEntry = p4KEntry;
+        Name = name;
     }
 }

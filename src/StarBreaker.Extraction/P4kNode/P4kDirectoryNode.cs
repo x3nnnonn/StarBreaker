@@ -94,7 +94,7 @@ public sealed class P4kDirectoryNode : IP4kDirectoryNode, IFileSystem
                     }
                 }
 
-                value = new P4kFileNode(p4KEntry, p4kFile);
+                value = new P4kFileNode(p4KEntry, p4kFile, key.ToString());
             }
             else
             {
@@ -281,5 +281,23 @@ public sealed class P4kDirectoryNode : IP4kDirectoryNode, IFileSystem
         }
 
         throw new FileNotFoundException();
+    }
+
+    public IEnumerable<IP4kFileNode> CollectAllFiles()
+    {
+        foreach (var child in Children.Values)
+        {
+            if (child is IP4kFileNode file)
+            {
+                yield return file;
+            }
+            else if (child is IP4kDirectoryNode dir)
+            {
+                foreach (var subFile in dir.CollectAllFiles())
+                {
+                    yield return subFile;
+                }
+            }
+        }
     }
 }

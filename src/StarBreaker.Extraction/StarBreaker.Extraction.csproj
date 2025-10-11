@@ -7,7 +7,4 @@
         <ProjectReference Include="..\StarBreaker.P4k\StarBreaker.P4k.csproj"/>
         <ProjectReference Include="..\StarBreaker.Wwise\StarBreaker.Wwise.csproj"/>
     </ItemGroup>
-    <ItemGroup>
-      <Folder Include="P4kNode\" />
-    </ItemGroup>
 </Project>
