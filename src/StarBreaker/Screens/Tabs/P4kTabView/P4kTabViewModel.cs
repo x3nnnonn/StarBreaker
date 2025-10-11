@@ -34,14 +34,14 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             Columns =
             {
                 new HierarchicalExpanderColumn<IP4kNode>(
-                    new TextColumn<IP4kNode, string>("Name", x => x.GetName(), options: new TextColumnOptions<IP4kNode>()
+                    new TextColumn<IP4kNode, string>("Name", x => x.Name, options: new TextColumnOptions<IP4kNode>()
                     {
                         CompareAscending = CompareNodes,
                         CompareDescending = (a, b) => CompareNodes(b, a)
                     }),
                     GetSortedChildren
                 ),
-                new TextColumn<IP4kNode, string>("Size", x => x.GetSize(), options: new TextColumnOptions<IP4kNode>()
+                new TextColumn<IP4kNode, string>("Size", x => x.GetSizeText(), options: new TextColumnOptions<IP4kNode>()
                 {
                     CompareAscending = (a, b) => (a?.Size ?? 0).CompareTo(b?.Size ?? 0),
                     CompareDescending = (a, b) => (b?.Size ?? 0).CompareTo(a?.Size ?? 0)
@@ -69,7 +69,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
         if (!aIsDir && bIsDir) return 1;
 
         // Both are the same type, sort by name
-        return string.Compare(a.GetName(), b.GetName(), StringComparison.OrdinalIgnoreCase);
+        return string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
     }
 
     private static IP4kNode[] GetSortedChildren(IP4kNode node)
@@ -81,7 +81,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
     private static IP4kNode[] GetSortedNodes(ICollection<IP4kNode> nodes)
     {
         return nodes.OrderBy(n => n is not P4kDirectoryNode) // Directories first
-            .ThenBy(n => n.GetName(), StringComparer.OrdinalIgnoreCase)
+            .ThenBy(n => n.Name, StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
 

@@ -9,6 +9,7 @@ public sealed class P4kFileNode : IP4kFileNode
 
     public P4kEntry P4KEntry { get; }
     public ulong Size => P4KEntry.UncompressedSize;
+    public string Name => P4KEntry.Name;
     public IP4kDirectoryNode Directory { get; }
     public Stream Open() => _p4k.OpenStream(P4KEntry);
 

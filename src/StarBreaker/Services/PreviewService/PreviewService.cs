@@ -49,13 +49,13 @@ public class PreviewService : IPreviewService
             _logger.LogInformation("cryxml");
             preview = new TextPreviewViewModel(c.ToString());
         }
-        else if (plaintextExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
+        else if (plaintextExtensions.Any(p => selectedEntry.Name.EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
         {
             _logger.LogInformation("plaintextExtensions");
 
             preview = new TextPreviewViewModel(entryStream.ReadString());
         }
-        else if (ddsLodExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)) && selectedEntry is P4kFileNode p4kSelectedEntry)
+        else if (ddsLodExtensions.Any(p => selectedEntry.Name.EndsWith(p, StringComparison.InvariantCultureIgnoreCase)) && selectedEntry is P4kFileNode p4kSelectedEntry)
         {
             if (p4kSelectedEntry.Directory is not IFileSystem fs)
                 throw new NotSupportedException("Can only unsplit dds files that are stored in a filesystem");
@@ -65,7 +65,7 @@ public class PreviewService : IPreviewService
             _logger.LogInformation("ddsLodExtensions");
             preview = new DdsPreviewViewModel(new Bitmap(pngBytes));
         }
-        else if (bitmapExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
+        else if (bitmapExtensions.Any(p => selectedEntry.Name.EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
         {
             _logger.LogInformation("bitmapExtensions");
             preview = new DdsPreviewViewModel(new Bitmap(entryStream));

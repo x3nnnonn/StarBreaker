@@ -2,6 +2,7 @@
 
 public interface IP4kNode
 {
+    string Name { get; }
     ulong Size { get; }
 }
 

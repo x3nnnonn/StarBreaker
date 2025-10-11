@@ -6,7 +6,7 @@ namespace StarBreaker.Extensions;
 
 public static class ZipNodeExtensions
 {
-    public static string GetSize(this IP4kNode x)
+    public static string GetSizeText(this IP4kNode x)
     {
         return ((long)x.Size).Bytes().Humanize();
     }
@@ -16,17 +16,7 @@ public static class ZipNodeExtensions
         if (x is not P4kFileNode file)
             return "";
 
-        return file.P4KEntry?.LastModified.ToString("s", CultureInfo.InvariantCulture) ?? "";
-    }
-
-    public static string GetName(this IP4kNode x)
-    {
-        return x switch
-        {
-            P4kFileNode file => file.P4KEntry.Name.Split('\\').Last(),
-            P4kDirectoryNode dir => dir.Name,
-            _ => "",
-        };
+        return file.P4KEntry.LastModified.ToString("s", CultureInfo.InvariantCulture) ?? "";
     }
 
     public static ICollection<IP4kNode> GetChildren(this IP4kNode x)
