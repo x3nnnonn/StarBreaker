@@ -13,12 +13,26 @@ public static class P4kSandbox
 
     public static void Run()
     {
-        TimeInit();
+        FancyExtract();
+        // TimeInit();
         //Verify();
         //ListByExtension();
         //CountEncrypted();
         //CountChunkTypes();
         // AllExtensions();
+    }
+
+    private static void FancyExtract()
+    {
+        var timer = new TimeLogger();
+
+        var p4kFile = P4kFile.FromFile(p4k);
+        timer.LogReset("P4kFile.FromFile");
+        var fs = P4kDirectoryNode.FromP4k(p4kFile);
+        timer.LogReset("P4kDirectoryNode.FromP4k");
+        var extractor = new P4kProcessorExtractor(fs);
+        timer.LogReset("P4kProcessorExtractor");
+        extractor.Extract(@"D:\StarCitizen\fancyExtract2");
     }
 
     private static void TimeInit()

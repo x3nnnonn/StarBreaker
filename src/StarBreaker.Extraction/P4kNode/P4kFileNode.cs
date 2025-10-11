@@ -11,6 +11,7 @@ public sealed class P4kFileNode : IP4kFileNode
     public P4kEntry P4KEntry { get; }
     public ulong Size => P4KEntry.UncompressedSize;
     public string Name { get; }
+    public string RelativeOutputPath => P4KEntry.RelativeOutputPath;
     public Stream Open() => _p4k.OpenStream(P4KEntry);
 
     public P4kFileNode(P4kEntry p4KEntry, IP4kFile p4kFile, string name)

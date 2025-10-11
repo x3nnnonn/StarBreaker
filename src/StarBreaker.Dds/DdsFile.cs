@@ -90,6 +90,11 @@ public static class DdsFile
 
     public static MemoryStream MergeToArray(IReadOnlyDictionary<string, byte[]> arrays)
     {
+        if (arrays.Count == 0)
+            throw new ArgumentException("No files provided");
+        if (arrays.Count == 1)
+            return new MemoryStream(arrays.Values.First());
+
         var mainFile = arrays.FirstOrDefault(kv => kv.Key.EndsWith(".dds", StringComparison.OrdinalIgnoreCase)).Value;
         var others = arrays.Values.Where(b => b != mainFile).OrderByDescending(b => b.Length).ToArray();
 

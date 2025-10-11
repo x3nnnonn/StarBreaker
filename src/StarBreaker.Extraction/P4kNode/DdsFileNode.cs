@@ -14,6 +14,17 @@ public sealed class DdsFileNode : IP4kFileNode
 
     public string Name { get; }
 
+    public string RelativeOutputPath
+    {
+        get
+        {
+            var shortestName = _entries.MinBy(x => x.RelativeOutputPath.Length);
+            if (shortestName == null)
+                throw new InvalidOperationException("DdsFileNode has no entries.");
+            return shortestName.RelativeOutputPath;
+        }
+    }
+
     public ulong Size
     {
         get
@@ -33,6 +44,9 @@ public sealed class DdsFileNode : IP4kFileNode
 
     public Stream Open()
     {
+        if (_entries.Count == 1)
+            return _p4k.OpenStream(_entries[0]);
+
         var arrays = _entries.ToDictionary(x => x.Name.Split('\\').Last(), x => _p4k.OpenStream(x).ToArray());
 
         return DdsFile.MergeToArray(arrays);
