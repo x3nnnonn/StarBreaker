@@ -4,7 +4,6 @@ using CliFx.Attributes;
 using CliFx.Infrastructure;
 using StarBreaker.Cli.Utils;
 using StarBreaker.P4k;
-using StarBreaker.P4k.Extraction;
 
 namespace StarBreaker.Cli;
 

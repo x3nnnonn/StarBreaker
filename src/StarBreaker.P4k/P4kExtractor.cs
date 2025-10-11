@@ -1,27 +1,11 @@
 ﻿using System.IO.Enumeration;
 using System.Text.RegularExpressions;
 
-namespace StarBreaker.P4k.Extraction;
+namespace StarBreaker.P4k;
 
-public enum DdsExtractMode
-{
-    None,
-    Combine,
-    ConvertToPng,
-}
-
-public class P4kExtractOptions
-{
-    public required bool ConvertCryXml { get; init; }
-    public required bool ExtractSocPak { get; init; }
-    public required DdsExtractMode ConvertDds { get; init; }
-
-    //TODO: models (cgf)
-    //TODO: sounds (wwise)
-    //TODO: videos (bik)
-    //TODO: ???
-}
-
+/// <summary>
+///     Extracts entries from a P4k file. Decrypts and decompresses entries, but does no further processing.
+/// </summary>
 public sealed class P4kExtractor
 {
     private readonly P4kFile _p4KFile;
@@ -60,13 +44,6 @@ public sealed class P4kExtractor
             ExtractEntriesParallel(outputDir, filteredEntries, progress);
     }
 
-    public void ExtractNode(string outputDir, P4kDirectoryNode directoryNode, IProgress<double>? progress = null)
-    {
-        var entries = directoryNode.CollectEntries().ToList();
-
-        ExtractEntriesParallel(outputDir, entries, progress);
-    }
-
     public void ExtractEntriesSequential(string outputDir, ICollection<P4kEntry> entries, IProgress<double>? progress = null)
     {
         var numberOfEntries = entries.Count;
@@ -99,13 +76,6 @@ public sealed class P4kExtractor
 
         var lockObject = new Lock();
 
-        //TODO: Preprocessing step:
-        // 1. start with the list of total files
-        // 2. run the following according to the filter:
-        // 3. find one-shot single file processors
-        // 4. find file -> multiple file processors
-        // 5. find multiple file -> single file unsplit processors - remove from the list so we don't double process
-        // run it!
         Parallel.ForEach(entries, entry =>
             {
                 ExtractEntry(outputDir, entry);
@@ -130,8 +100,6 @@ public sealed class P4kExtractor
             return;
 
         var entryPath = Path.Combine(outputDir, entry.RelativeOutputPath);
-        //if (File.Exists(entryPath))
-        //    return;
 
         Directory.CreateDirectory(Path.GetDirectoryName(entryPath) ?? throw new InvalidOperationException());
 
