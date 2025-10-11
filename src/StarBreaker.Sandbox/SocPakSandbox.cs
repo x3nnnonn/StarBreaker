@@ -2,7 +2,6 @@
 using StarBreaker.CryChunkFile;
 using StarBreaker.CryXmlB;
 using StarBreaker.P4k;
-using StarBreaker.P4k.Extraction;
 
 namespace StarBreaker.Sandbox;
 
