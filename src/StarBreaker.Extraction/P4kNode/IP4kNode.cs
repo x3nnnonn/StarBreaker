@@ -10,6 +10,7 @@ public interface IP4kFileNode : IP4kNode
 {
     Stream Open();
     string RelativeOutputPath { get; }
+    DateTime LastModified { get; }
 }
 
 public interface IP4kDirectoryNode : IP4kNode

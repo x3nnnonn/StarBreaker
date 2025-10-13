@@ -39,7 +39,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
                         CompareAscending = CompareNodes,
                         CompareDescending = (a, b) => CompareNodes(b, a)
                     }),
-                    GetSortedChildren
+                    x => x.GetChildren()
                 ),
                 new TextColumn<IP4kNode, string>("Size", x => x.GetSizeText(), options: new TextColumnOptions<IP4kNode>()
                 {
@@ -47,12 +47,12 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
                     CompareDescending = (a, b) => (b?.Size ?? 0).CompareTo(a?.Size ?? 0)
                 }),
                 new TextColumn<IP4kNode, string>("Date", x => x.GetDate()),
-            },
+            }
         };
 
         Source.RowSelection!.SingleSelect = true;
         Source.RowSelection.SelectionChanged += SelectionChanged;
-        Source.Items = GetSortedNodes(_p4KService.P4KFileSystem.Children.Values);
+        Source.Items = _p4KService.P4KFileSystem.Children.Values;
     }
 
     private static int CompareNodes(IP4kNode? a, IP4kNode? b)
@@ -70,19 +70,6 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
 
         // Both are the same type, sort by name
         return string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static IP4kNode[] GetSortedChildren(IP4kNode node)
-    {
-        var children = node.GetChildren();
-        return GetSortedNodes(children);
-    }
-
-    private static IP4kNode[] GetSortedNodes(ICollection<IP4kNode> nodes)
-    {
-        return nodes.OrderBy(n => n is not P4kDirectoryNode) // Directories first
-            .ThenBy(n => n.Name, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
     }
 
     private void SelectionChanged(object? sender, TreeSelectionModelSelectionChangedEventArgs<IP4kNode> e)

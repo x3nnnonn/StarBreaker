@@ -13,10 +13,10 @@ public static class ZipNodeExtensions
 
     public static string GetDate(this IP4kNode x)
     {
-        if (x is not P4kFileNode file)
+        if (x is not IP4kFileNode file)
             return "";
 
-        return file.P4KEntry.LastModified.ToString("s", CultureInfo.InvariantCulture) ?? "";
+        return file.LastModified.ToString("s", CultureInfo.InvariantCulture);
     }
 
     public static ICollection<IP4kNode> GetChildren(this IP4kNode x)

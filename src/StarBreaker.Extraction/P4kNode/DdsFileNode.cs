@@ -13,6 +13,7 @@ public sealed class DdsFileNode : IP4kFileNode
     private ulong? _sizeCache;
 
     public string Name { get; }
+    public DateTime LastModified { get; }
 
     public string RelativeOutputPath
     {
@@ -40,6 +41,7 @@ public sealed class DdsFileNode : IP4kFileNode
         _p4k = p4k;
         _entries = [entry];
         Name = name;
+        LastModified = entry.LastModified;
     }
 
     public Stream Open()
