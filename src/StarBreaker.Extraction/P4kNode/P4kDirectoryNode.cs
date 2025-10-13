@@ -47,7 +47,7 @@ public sealed class P4kDirectoryNode : IP4kDirectoryNode, IFileSystem
             if (range.End.Value == name.Length)
             {
                 //we are a file
-                var indexOfDds = name.IndexOf(".dds", StringComparison.InvariantCultureIgnoreCase);
+                var indexOfDds = part.IndexOf(".dds", StringComparison.InvariantCultureIgnoreCase);
                 ReadOnlySpan<char> key;
                 if (indexOfDds == -1)
                 {
@@ -56,7 +56,7 @@ public sealed class P4kDirectoryNode : IP4kDirectoryNode, IFileSystem
                 else
                 {
                     var baseNameEnd = indexOfDds + ".dds".Length;
-                    key = name[..baseNameEnd];
+                    key = part[..baseNameEnd];
                 }
 
                 ref var value = ref CollectionsMarshal.GetValueRefOrAddDefault(current.Children.GetAlternateLookup<ReadOnlySpan<char>>(), key, out var existed);
