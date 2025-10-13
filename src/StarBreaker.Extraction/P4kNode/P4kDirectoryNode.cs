@@ -7,6 +7,18 @@ using StarBreaker.P4k;
 
 namespace StarBreaker.Extraction;
 
+public sealed class P4kFileSystemOptions
+{
+    public bool MergeDdsFiles { get; init; }
+    public bool ExtractSocpakFiles { get; init; }
+
+    public static P4kFileSystemOptions Default { get; } = new()
+    {
+        MergeDdsFiles = true,
+        ExtractSocpakFiles = true,
+    };
+}
+
 [DebuggerDisplay("{Name}")]
 public sealed class P4kDirectoryNode : IP4kDirectoryNode, IFileSystem
 {
@@ -32,7 +44,7 @@ public sealed class P4kDirectoryNode : IP4kDirectoryNode, IFileSystem
         _sizeCache = null;
     }
 
-    private static void Insert(P4kDirectoryNode root, IP4kFile p4kFile, P4kEntry p4KEntry)
+    private static void Insert(P4kDirectoryNode root, IP4kFile p4kFile, P4kEntry p4KEntry, P4kFileSystemOptions options)
     {
         // Invalidate size cache as we're adding a new node
         root._sizeCache = null;
@@ -47,16 +59,17 @@ public sealed class P4kDirectoryNode : IP4kDirectoryNode, IFileSystem
             if (range.End.Value == name.Length)
             {
                 //we are a file
-                var indexOfDds = part.IndexOf(".dds", StringComparison.InvariantCultureIgnoreCase);
-                ReadOnlySpan<char> key;
-                if (indexOfDds == -1)
+
+                var key = part;
+
+                if (options.MergeDdsFiles)
                 {
-                    key = part;
-                }
-                else
-                {
-                    var baseNameEnd = indexOfDds + ".dds".Length;
-                    key = part[..baseNameEnd];
+                    var indexOfDds = part.IndexOf(".dds", StringComparison.InvariantCultureIgnoreCase);
+                    if (indexOfDds != -1)
+                    {
+                        var baseNameEnd = indexOfDds + ".dds".Length;
+                        key = part[..baseNameEnd];
+                    }
                 }
 
                 ref var value = ref CollectionsMarshal.GetValueRefOrAddDefault(current.Children.GetAlternateLookup<ReadOnlySpan<char>>(), key, out var existed);
@@ -74,23 +87,31 @@ public sealed class P4kDirectoryNode : IP4kDirectoryNode, IFileSystem
                     }
                 }
 
-                var isSplitDds = key.EndsWith(".dds");
 
-                if (isSplitDds)
+                if (options.MergeDdsFiles)
                 {
-                    value = new DdsFileNode(p4kFile, p4KEntry, key.ToString());
-                    continue;
+                    var isSplitDds = key.EndsWith(".dds");
+
+                    if (isSplitDds)
+                    {
+                        value = new DdsFileNode(p4kFile, p4KEntry, key.ToString());
+                        continue;
+                    }
                 }
 
-                var isArchive = part.EndsWith(".socpak", StringComparison.InvariantCultureIgnoreCase);
 
-                if (isArchive)
+                if (options.ExtractSocpakFiles)
                 {
-                    var isShaderCache = part.StartsWith("shadercache_", StringComparison.InvariantCultureIgnoreCase);
-                    if (!isShaderCache)
+                    var isArchive = part.EndsWith(".socpak", StringComparison.InvariantCultureIgnoreCase);
+
+                    if (isArchive)
                     {
-                        value = FromP4k(P4kFile.FromP4kEntry(p4kFile, p4KEntry));
-                        continue;
+                        var isShaderCache = part.StartsWith("shadercache_", StringComparison.InvariantCultureIgnoreCase);
+                        if (!isShaderCache)
+                        {
+                            value = FromP4k(P4kFile.FromP4kEntry(p4kFile, p4KEntry), options);
+                            continue;
+                        }
                     }
                 }
 
@@ -111,8 +132,10 @@ public sealed class P4kDirectoryNode : IP4kDirectoryNode, IFileSystem
         }
     }
 
-    public static P4kDirectoryNode FromP4k(IP4kFile file, IProgress<double>? progress = null)
+    public static P4kDirectoryNode FromP4k(IP4kFile file, P4kFileSystemOptions? options = null, IProgress<double>? progress = null)
     {
+        options ??= P4kFileSystemOptions.Default;
+
         progress?.Report(0.0);
         //only report every 1% 
         var reportInterval = Math.Max(file.Entries.Length / 100, 1);
@@ -121,7 +144,7 @@ public sealed class P4kDirectoryNode : IP4kDirectoryNode, IFileSystem
         var entriesProcessed = 0;
         foreach (var entry in file.Entries)
         {
-            Insert(root, file, entry);
+            Insert(root, file, entry, options);
 
             entriesProcessed++;
             if (entriesProcessed % reportInterval == 0)

@@ -23,7 +23,11 @@ public class DumpP4kCommand : ICommand
 
     public ValueTask ExecuteAsync(IConsole console)
     {
-        var p4k = P4kDirectoryNode.FromP4k(P4k.P4kFile.FromFile(P4kFile));
+        var p4k = P4kDirectoryNode.FromP4k(P4k.P4kFile.FromFile(P4kFile), new P4kFileSystemOptions
+        {
+            ExtractSocpakFiles = true,
+            MergeDdsFiles = false,
+        });
 
         var useJson = TextFormat switch
         {
