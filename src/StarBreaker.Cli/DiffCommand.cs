@@ -2,6 +2,7 @@
 using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
+using StarBreaker.CryXmlB;
 using StarBreaker.DataCore;
 using StarBreaker.P4k;
 using ZstdSharp;
@@ -20,8 +21,6 @@ public class DiffCommand : ICommand
     [CommandOption("keep", 'k', Description = "Keep old files in the output directory", EnvironmentVariable = "KEEP_OLD")]
     public bool KeepOld { get; init; }
 
-    [CommandOption("include-binaries", 'b', Description = "Include DataCore.dcb.zst and StarCitizen.exe.zst in the output", EnvironmentVariable = "INCLUDE_BINARIES")]
-    public bool IncludeBinaries { get; init; } = false;
 
     [CommandOption("format", 'f', Description = "Output format", EnvironmentVariable = "TEXT_FORMAT")]
     public string TextFormat { get; init; } = "xml";
@@ -41,18 +40,17 @@ public class DiffCommand : ICommand
                 Path.Combine(OutputDirectory, "DataCoreEnums"),
                 Path.Combine(OutputDirectory, "P4k"),
                 Path.Combine(OutputDirectory, "P4kContents"),
+                Path.Combine(OutputDirectory, "Localization"),
+                Path.Combine(OutputDirectory, "TagDatabase"),
+                Path.Combine(OutputDirectory, "Protobuf"),
             ];
 
             List<string> deleteFile =
             [
                 Path.Combine(OutputDirectory, "build_manifest.json"),
+                Path.Combine(OutputDirectory, "DataCore.dcb.zst"),
+                Path.Combine(OutputDirectory, "StarCitizen.exe.zst"),
             ];
-            
-            if (IncludeBinaries)
-            {
-                deleteFile.Add(Path.Combine(OutputDirectory, "DataCore.dcb.zst"));
-                deleteFile.Add(Path.Combine(OutputDirectory, "StarCitizen.exe.zst"));
-            }
 
             foreach (var folder in deleteFolder.Where(Directory.Exists))
                 Directory.Delete(folder, true);
@@ -80,24 +78,12 @@ public class DiffCommand : ICommand
         await console.Output.WriteLineAsync("P4k dumped in " + sw.Elapsed);
         sw.Restart();
 
-        string[] p4kContentsToExtract =
-        [
-            "*english\\global.ini",
-            "*TagDatabase.TagDatabase.xml",
-        ];
+        await ExtractLocalization(p4kFile, console);
+        await console.Output.WriteLineAsync("Localization extracted in " + sw.Elapsed);
+        sw.Restart();
 
-        foreach (var p4kContentFilter in p4kContentsToExtract)
-        {
-            var localizationDump = new ExtractP4kCommand
-            {
-                P4kFile = p4kFile,
-                OutputDirectory = Path.Combine(OutputDirectory, "P4kContents"),
-                FilterPattern = p4kContentFilter,
-            };
-            await localizationDump.ExecuteAsync(fakeConsole);
-        }
-        
-        await console.Output.WriteLineAsync("P4k contents extracted in " + sw.Elapsed);
+        await ExtractTagDatabase(p4kFile, console);
+        await console.Output.WriteLineAsync("TagDatabase extracted in " + sw.Elapsed);
         sw.Restart();
 
         var dcbExtract = new DataCoreExtractCommand
@@ -110,6 +96,10 @@ public class DiffCommand : ICommand
         };
         await dcbExtract.ExecuteAsync(fakeConsole);
         await console.Output.WriteLineAsync("DataCore extracted in " + sw.Elapsed);
+        sw.Restart();
+
+        await ExtractP4kXmlFiles(p4kFile, console);
+        await console.Output.WriteLineAsync("P4K XML files extracted in " + sw.Elapsed);
         sw.Restart();
 
         var extractProtobufs = new ExtractProtobufsCommand
@@ -130,27 +120,196 @@ public class DiffCommand : ICommand
         await console.Output.WriteLineAsync("Protobuf descriptor set extracted in " + sw.Elapsed);
         sw.Restart();
 
-        if (IncludeBinaries)
-        {
-            await ExtractDataCoreIntoZip(p4kFile, Path.Combine(OutputDirectory, "DataCore.dcb.zst"));
-            await ExtractExecutableIntoZip(exeFile, Path.Combine(OutputDirectory, "StarCitizen.exe.zst"));
-            await console.Output.WriteLineAsync("Binaries extracted in " + sw.Elapsed);
-            sw.Restart();
-        }
+        await ExtractDataCoreIntoZip(p4kFile, Path.Combine(OutputDirectory, "DataCore.dcb.zst"));
+        await ExtractExecutableIntoZip(exeFile, Path.Combine(OutputDirectory, "StarCitizen.exe.zst"));
+        await console.Output.WriteLineAsync("Compressed archives created in " + sw.Elapsed);
+        sw.Restart();
 
-        File.Copy(Path.Combine(GameFolder, "build_manifest.id"), Path.Combine(OutputDirectory, "build_manifest.json"), true);
+        var buildManifestSource = Path.Combine(GameFolder, "build_manifest.id");
+        var buildManifestTarget = Path.Combine(OutputDirectory, "build_manifest.json");
+        if (File.Exists(buildManifestSource))
+        {
+            File.Copy(buildManifestSource, buildManifestTarget, true);
+        }
 
         await console.Output.WriteLineAsync($"Done in {swTotal.Elapsed}");
     }
 
+    private async Task ExtractLocalization(string p4kFile, IConsole console)
+    {
+        var p4kFileSystem = new P4kFileSystem(P4kFile.FromFile(p4kFile));
+        var outputDir = Path.Combine(OutputDirectory, "Localization");
+
+        string[] localizationPaths = [
+            "Data/Localization/english/global.ini",
+            "Data\\Localization\\english\\global.ini"
+        ];
+
+        foreach (var path in localizationPaths)
+        {
+            if (p4kFileSystem.FileExists(path))
+            {
+                using var stream = p4kFileSystem.OpenRead(path);
+                var outputPath = Path.Combine(outputDir, Path.GetFileName(path));
+                Directory.CreateDirectory(outputDir);
+                
+                await using var outputFile = File.Create(outputPath);
+                await stream.CopyToAsync(outputFile);
+                
+                await console.Output.WriteLineAsync($"Extracted: {Path.GetFileName(path)}");
+                return;
+            }
+        }
+
+        await console.Output.WriteLineAsync("Localization file not found.");
+    }
+
+    private async Task ExtractTagDatabase(string p4kFile, IConsole console)
+    {
+        var p4k = P4kFile.FromFile(p4kFile);
+        var outputDir = Path.Combine(OutputDirectory, "TagDatabase");
+
+        var tagDbEntry = p4k.Entries.FirstOrDefault(e => 
+            e.Name.Contains("TagDatabase.TagDatabase.xml", StringComparison.OrdinalIgnoreCase));
+
+        if (tagDbEntry == null)
+        {
+            await console.Output.WriteLineAsync("TagDatabase not found in P4K.");
+            return;
+        }
+
+        using var entryStream = p4k.OpenStream(tagDbEntry);
+        var ms = new MemoryStream();
+        entryStream.CopyTo(ms);
+        ms.Position = 0;
+
+        var entryPath = Path.Combine(outputDir, tagDbEntry.RelativeOutputPath);
+        Directory.CreateDirectory(Path.GetDirectoryName(entryPath)!);
+
+        if (CryXml.IsCryXmlB(ms))
+        {
+            ms.Position = 0;
+            if (CryXml.TryOpen(ms, out var cryXml))
+            {
+                File.WriteAllText(entryPath, cryXml.ToString());
+                await console.Output.WriteLineAsync("TagDatabase extracted and converted from CryXML.");
+            }
+            else
+            {
+                using var fs = File.Create(entryPath);
+                ms.Position = 0;
+                ms.CopyTo(fs);
+                await console.Output.WriteLineAsync("TagDatabase extracted (binary format).");
+            }
+        }
+        else
+        {
+            using var fs = File.Create(entryPath);
+            ms.Position = 0;
+            ms.CopyTo(fs);
+            await console.Output.WriteLineAsync("TagDatabase extracted.");
+        }
+    }
+
+    private async Task ExtractP4kXmlFiles(string p4kFile, IConsole console)
+    {
+        var p4k = P4kFile.FromFile(p4kFile);
+        var outputDir = Path.Combine(OutputDirectory, "P4kContents");
+        Directory.CreateDirectory(outputDir);
+
+        var mainXmlEntries = p4k.Entries
+            .Where(e => e.Name.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var socpakEntries = p4k.Entries
+            .Where(e => (e.Name.EndsWith(".socpak", StringComparison.OrdinalIgnoreCase) || 
+                         e.Name.EndsWith(".pak", StringComparison.OrdinalIgnoreCase)) &&
+                        !e.Name.Contains("shadercache_", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var socpakXmlEntries = new List<(P4kEntry entry, string socpakPath, P4kFile socpak)>();
+        foreach (var socpakEntry in socpakEntries)
+        {
+            try
+            {
+                var socpak = P4kFile.FromP4kEntry(p4k, socpakEntry);
+                var xmlsInSocpak = socpak.Entries
+                    .Where(e => e.Name.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
+                    .Select(e => (entry: e, socpakPath: socpakEntry.RelativeOutputPath, socpak: socpak))
+                    .ToList();
+                
+                socpakXmlEntries.AddRange(xmlsInSocpak);
+            }
+            catch
+            {
+                // Skip problematic SOCPAK files
+            }
+        }
+
+        var totalFiles = mainXmlEntries.Count + socpakXmlEntries.Count;
+        
+        if (totalFiles == 0)
+        {
+            await console.Output.WriteLineAsync("No XML files found in P4K or SOCPAKs.");
+            return;
+        }
+
+        foreach (var entry in mainXmlEntries)
+        {
+            ExtractXmlEntry(p4k, entry, outputDir, entry.RelativeOutputPath);
+        }
+
+        foreach (var (entry, socpakPath, socpak) in socpakXmlEntries)
+        {
+            var socpakDir = Path.GetDirectoryName(socpakPath) ?? "";
+            var socpakName = Path.GetFileNameWithoutExtension(socpakPath);
+            var fullOutputPath = Path.Combine(socpakDir, socpakName, entry.RelativeOutputPath);
+            
+            ExtractXmlEntry(socpak, entry, outputDir, fullOutputPath);
+        }
+
+        await console.Output.WriteLineAsync($"Extracted {mainXmlEntries.Count} XML files from P4K and {socpakXmlEntries.Count} from SOCPAKs.");
+    }
+
+    private void ExtractXmlEntry(P4kFile p4k, P4kEntry entry, string baseOutputDir, string relativePath)
+    {
+        using var entryStream = p4k.OpenStream(entry);
+        var ms = new MemoryStream();
+        entryStream.CopyTo(ms);
+        ms.Position = 0;
+
+        var entryPath = Path.Combine(baseOutputDir, relativePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(entryPath)!);
+
+        if (CryXml.IsCryXmlB(ms))
+        {
+            ms.Position = 0;
+            if (CryXml.TryOpen(ms, out var cryXml))
+            {
+                File.WriteAllText(entryPath, cryXml.ToString());
+            }
+            else
+            {
+                using var fs = File.Create(entryPath);
+                ms.Position = 0;
+                ms.CopyTo(fs);
+            }
+        }
+        else
+        {
+            using var fs = File.Create(entryPath);
+            ms.Position = 0;
+            ms.CopyTo(fs);
+        }
+    }
+
     private static async Task ExtractDataCoreIntoZip(string p4kFile, string zipPath)
     {
-        var p4k = P4kDirectoryNode.FromP4k(P4kFile.FromFile(p4kFile));
+        var p4k = new P4kFileSystem(P4kFile.FromFile(p4kFile));
         Stream? input = null;
         foreach (var file in DataCoreUtils.KnownPaths)
         {
             if (!p4k.FileExists(file)) continue;
-
             input = p4k.OpenRead(file);
             break;
         }
@@ -158,6 +317,7 @@ public class DiffCommand : ICommand
         if (input == null)
             throw new InvalidOperationException("DataCore not found.");
 
+        Directory.CreateDirectory(Path.GetDirectoryName(zipPath)!);
         await using var output = File.OpenWrite(zipPath);
         await using var compressionStream = new CompressionStream(output, leaveOpen: false);
         await input.CopyToAsync(compressionStream);

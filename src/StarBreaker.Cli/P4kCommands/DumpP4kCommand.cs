@@ -55,6 +55,16 @@ public class DumpP4kCommand : ICommand
                     //if we're a directory, Call ourselves recursively
                     WriteFileForNode(Path.Combine(baseDir, childDirectoryNode.Name), childDirectoryNode, useJson);
                     break;
+                case P4kSocPakFileNode socPakNode:
+                    //SOCPAK files are expandable containers, skip them in the dump
+                    //They appear as .socpak files but are treated as directories
+                    break;
+                case P4kSocPakDirectoryNode socPakDirNode:
+                    //SOCPAK directories - skip them in the dump for now
+                    break;
+                case P4kSocPakChildFileNode socPakChildNode:
+                    //Files inside SOCPAK - skip them in the dump for now
+                    break;
                 case P4kFileNode childFileNode:
                     if (useJson)
                     {
@@ -83,7 +93,7 @@ public class DumpP4kCommand : ICommand
 
                     break;
                 default:
-                    throw new InvalidOperationException("Unknown node type");
+                    throw new InvalidOperationException($"Unknown node type: {childNode.GetType().Name}");
             }
         }
 
