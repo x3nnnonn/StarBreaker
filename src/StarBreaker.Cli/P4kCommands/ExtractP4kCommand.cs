@@ -28,7 +28,7 @@ public class ExtractP4kCommand : ICommand
         console.Output.WriteLine("Exporting...");
 
         var sw = Stopwatch.StartNew();
-        var extractor = new P4kExtractor(p4k);
+        var extractor = new StarBreaker.P4k.Extraction.P4kExtractor(p4k);
         extractor.ExtractFiltered(OutputDirectory, FilterPattern, new ProgressBar(console));
         sw.Stop();
 

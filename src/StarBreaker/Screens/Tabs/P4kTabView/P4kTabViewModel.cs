@@ -261,7 +261,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
                 
                 var p4kFile = _p4KService.P4KFileSystem.P4k as P4kFile;
                 if (p4kFile == null) return;
-                var extractor = new P4kExtractor(p4kFile);
+                var extractor = new StarBreaker.P4k.Extraction.P4kExtractor(p4kFile);
                 
                 if (selectedNode is P4kFileNode fileNode)
                 {
@@ -382,7 +382,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
             var p4kFile = _p4KService.P4KFileSystem.P4k as P4kFile;
             if (p4kFile != null)
             {
-                var extractor = new P4kExtractor(p4kFile);
+                var extractor = new StarBreaker.P4k.Extraction.P4kExtractor(p4kFile);
                 extractor.ExtractEntry(destinationPath, fileNode.P4KEntry);
             }
             else
@@ -412,7 +412,7 @@ public sealed partial class P4kTabViewModel : PageViewModelBase
         }
         
         // Create a single P4kExtractor instance
-        var extractor = new P4kExtractor(p4kFile);
+        var extractor = new StarBreaker.P4k.Extraction.P4kExtractor(p4kFile);
         
         // Extract files with DDS conversion
         foreach (var entry in entries)
