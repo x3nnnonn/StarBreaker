@@ -2,8 +2,10 @@
 using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
+using StarBreaker.Common;
 using StarBreaker.CryXmlB;
 using StarBreaker.DataCore;
+using StarBreaker.Dds;
 using StarBreaker.P4k;
 using ZstdSharp;
 
@@ -25,6 +27,12 @@ public class DiffCommand : ICommand
     [CommandOption("format", 'f', Description = "Output format", EnvironmentVariable = "TEXT_FORMAT")]
     public string TextFormat { get; init; } = "xml";
 
+    [CommandOption("extract-dds", Description = "Extract DDS files as PNG", EnvironmentVariable = "EXTRACT_DDS")]
+    public bool ExtractDds { get; init; }
+
+    [CommandOption("diff-against", Description = "Path to previous P4K file or output directory to compare against for extracting only new/modified DDS files", EnvironmentVariable = "DIFF_AGAINST")]
+    public string? DiffAgainst { get; init; }
+
     public async ValueTask ExecuteAsync(IConsole console)
     {
         var swTotal = Stopwatch.StartNew();
@@ -43,6 +51,7 @@ public class DiffCommand : ICommand
                 Path.Combine(OutputDirectory, "Localization"),
                 Path.Combine(OutputDirectory, "TagDatabase"),
                 Path.Combine(OutputDirectory, "Protobuf"),
+                Path.Combine(OutputDirectory, "DDS_Files"),
             ];
 
             List<string> deleteFile =
@@ -101,6 +110,13 @@ public class DiffCommand : ICommand
         await ExtractP4kXmlFiles(p4kFile, console);
         await console.Output.WriteLineAsync("P4K XML files extracted in " + sw.Elapsed);
         sw.Restart();
+
+        if (ExtractDds)
+        {
+            await ExtractDdsFiles(p4kFile, console, DiffAgainst);
+            await console.Output.WriteLineAsync("DDS files extracted in " + sw.Elapsed);
+            sw.Restart();
+        }
 
         var extractProtobufs = new ExtractProtobufsCommand
         {
@@ -331,5 +347,137 @@ public class DiffCommand : ICommand
 
         await using var compressionStream = new CompressionStream(output, leaveOpen: false);
         await input.CopyToAsync(compressionStream);
+    }
+
+    private async Task ExtractDdsFiles(string p4kFile, IConsole console, string? diffAgainst)
+    {
+        try
+        {
+            var p4k = P4kFile.FromFile(p4kFile);
+            var outputDir = Path.Combine(OutputDirectory, "DDS_Files");
+            Directory.CreateDirectory(outputDir);
+
+            var p4kFileSystem = new P4kFileSystem(p4k);
+
+            IEnumerable<P4kEntry> ddsEntriesToExtract;
+
+            if (!string.IsNullOrWhiteSpace(diffAgainst))
+            {
+                // Extract only new/modified DDS files by comparing with previous version
+                var previousP4kPath = GetPreviousP4kPath(diffAgainst);
+                if (File.Exists(previousP4kPath))
+                {
+                    var previousP4k = P4kFile.FromFile(previousP4kPath);
+                    var comparisonRoot = P4kComparison.Compare(previousP4k, p4k);
+                    
+                    var allFiles = comparisonRoot.GetAllFiles().ToList();
+                    var ddsFiles = allFiles
+                        .Where(f => f.Status == P4kComparisonStatus.Added || f.Status == P4kComparisonStatus.Modified)
+                        .Where(f => Path.GetFileName(f.FullPath).Contains(".dds", StringComparison.OrdinalIgnoreCase))
+                        .Where(f => f.RightEntry != null)
+                        .Where(f => !char.IsDigit(Path.GetFileName(f.FullPath)[^1])) // Filter out mipmap files
+                        .Select(f => f.RightEntry!)
+                        .ToList();
+                    
+                    ddsEntriesToExtract = ddsFiles;
+                    await console.Output.WriteLineAsync($"Found {ddsFiles.Count} new/modified DDS files to extract.");
+                }
+                else
+                {
+                    await console.Output.WriteLineAsync($"Previous P4K not found at {previousP4kPath}. Extracting all DDS files.");
+                    ddsEntriesToExtract = GetBaseDdsEntries(p4k);
+                }
+            }
+            else
+            {
+                // Extract all DDS files if no comparison specified
+                ddsEntriesToExtract = GetBaseDdsEntries(p4k);
+            }
+
+            var processedCount = 0;
+            var failedCount = 0;
+
+            foreach (var entry in ddsEntriesToExtract)
+            {
+                try
+                {
+                    var fileName = Path.GetFileName(entry.Name);
+                    var fileNameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
+                    
+                    if (fileNameWithoutExt.EndsWith(".dds", StringComparison.OrdinalIgnoreCase))
+                    {
+                        fileNameWithoutExt = fileNameWithoutExt.Substring(0, fileNameWithoutExt.Length - 4);
+                    }
+                    
+                    var pngOutputPath = Path.Combine(outputDir, fileNameWithoutExt + ".png");
+
+                    using var ms = DdsFile.MergeToStream(entry.Name, p4kFileSystem);
+                    var ddsBytes = ms.ToArray();
+                    using var pngStream = DdsFile.ConvertToPng(ddsBytes, true, true);
+                    
+                    var pngBytes = pngStream.ToArray();
+                    File.WriteAllBytes(pngOutputPath, pngBytes);
+                    processedCount++;
+                }
+                catch (Exception ex)
+                {
+                    failedCount++;
+                    console.Output.WriteLine($"Failed to extract DDS: {entry.Name} - {ex.Message}");
+                }
+            }
+
+            await console.Output.WriteLineAsync($"Extracted {processedCount} DDS files ({failedCount} failed).");
+        }
+        catch (Exception ex)
+        {
+            await console.Output.WriteLineAsync($"Error extracting DDS files: {ex.Message}");
+        }
+    }
+
+    private List<P4kEntry> GetBaseDdsEntries(P4kFile p4k)
+    {
+        return p4k.Entries
+            .Where(e => e.Name.EndsWith(".dds", StringComparison.OrdinalIgnoreCase) || 
+                       e.Name.EndsWith(".dds.a", StringComparison.OrdinalIgnoreCase))
+            .Where(e => !e.Name.EndsWith(".ddna.dds", StringComparison.OrdinalIgnoreCase) &&
+                       !e.Name.EndsWith(".ddna.dds.n", StringComparison.OrdinalIgnoreCase))
+            .Where(e => !char.IsDigit(e.Name[^1]))
+            .ToList();
+    }
+
+    private string GetPreviousP4kPath(string diffAgainst)
+    {
+        // If it's a file path, use it directly
+        if (File.Exists(diffAgainst))
+        {
+            return diffAgainst;
+        }
+        
+        // If it's a directory, check if it contains a previous diff output
+        if (Directory.Exists(diffAgainst))
+        {
+            // First check for a .p4k file in the directory
+            var p4kFile = Directory.GetFiles(diffAgainst, "*.p4k", SearchOption.TopDirectoryOnly).FirstOrDefault();
+            if (p4kFile != null)
+            {
+                return p4kFile;
+            }
+            
+            // Try to find P4k dump folder with the old structure
+            var p4kDumpDir = Path.Combine(diffAgainst, "P4k");
+            if (Directory.Exists(p4kDumpDir))
+            {
+                // Look for the latest dump file in the P4k directory
+                var latestDump = Directory.GetFiles(p4kDumpDir, "*.p4k", SearchOption.AllDirectories)
+                    .OrderByDescending(f => File.GetLastWriteTime(f))
+                    .FirstOrDefault();
+                if (latestDump != null)
+                {
+                    return latestDump;
+                }
+            }
+        }
+        
+        return diffAgainst;
     }
 }
