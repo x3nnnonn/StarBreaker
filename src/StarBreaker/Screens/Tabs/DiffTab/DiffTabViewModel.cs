@@ -9,6 +9,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Text.Json;
 using ZstdSharp;
 using Avalonia.Controls;
@@ -31,6 +32,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
     public override string Icon => "Compare";
 
     private readonly ILogger<DiffTabViewModel> _logger;
+    private readonly ITagDatabaseService _tagDatabaseService;
 
     [ObservableProperty] private string _gameFolder = string.Empty;
     [ObservableProperty] private string _outputDirectory = string.Empty;
@@ -77,9 +79,10 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
     [ObservableProperty] private IList<IP4kComparisonNode> _selectedP4kFiles = new List<IP4kComparisonNode>();
     [ObservableProperty] private IList<IDataCoreComparisonNode> _selectedDataCoreFiles = new List<IDataCoreComparisonNode>();
 
-    public DiffTabViewModel(ILogger<DiffTabViewModel> logger)
+    public DiffTabViewModel(ILogger<DiffTabViewModel> logger, ITagDatabaseService tagDatabaseService)
     {
         _logger = logger;
+        _tagDatabaseService = tagDatabaseService;
         LoadSettings();
         InitializeComparisonTreeDataGrid();
         InitializeDataCoreComparisonTreeDataGrid();
@@ -635,6 +638,12 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             {
                 // Fallback to basic info if extraction fails
                 return GenerateBasicRecordInfo(record, database, fileName, recordName, structTypeName);
+            }
+            
+            // Resolve Tag references if XML format
+            if (TextFormat == "xml")
+            {
+                recordContent = ResolveXmlTags(recordContent);
             }
             
             return recordContent;
@@ -4812,6 +4821,36 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         {
             _logger.LogWarning(ex, "Nested archive stream failed in OpenEntryStream, falling back for {FilePath}", fileNode.FullPath);
             return sourceP4k.OpenStream(zipEntry);
+        }
+    }
+    
+    private string ResolveXmlTags(string xml)
+    {
+        try
+        {
+            // Use regex to find all Tag/tag RecordId attributes and replace them with comments showing the tag name
+            var regex = new Regex(
+                @"<[Tt]ag[^>]*RecordId=""([a-fA-F0-9\-]+)""[^>]*/?>",
+                RegexOptions.IgnoreCase);
+
+            return regex.Replace(xml, match =>
+            {
+                var recordId = match.Groups[1].Value;
+                var tagName = _tagDatabaseService.ResolveTagName(recordId);
+                
+                if (tagName != null)
+                {
+                    // Add a comment before the Tag element showing the tag name
+                    return $"<!-- Tag: {tagName} -->{match.Value}";
+                }
+                
+                return match.Value;
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to resolve XML tags");
+            return xml;
         }
     }
 } 

@@ -4,6 +4,7 @@ using Avalonia.Controls.Selection;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Logging;
 using StarBreaker.DataCore;
 using StarBreaker.Services;
 using System;
@@ -23,10 +24,14 @@ public sealed partial class DataCoreTabViewModel : PageViewModelBase
     public override string Icon => "ViewAll";
 
     private readonly IP4kService _p4KService;
+    private readonly ITagDatabaseService _tagDatabaseService;
+    private readonly ILogger<DataCoreTabViewModel> _logger;
 
-    public DataCoreTabViewModel(IP4kService p4kService)
+    public DataCoreTabViewModel(IP4kService p4kService, ITagDatabaseService tagDatabaseService, ILogger<DataCoreTabViewModel> logger)
     {
         _p4KService = p4kService;
+        _tagDatabaseService = tagDatabaseService;
+        _logger = logger;
         
         Records = new HierarchicalTreeDataGridSource<DataCoreRecordViewModel>(Array.Empty<DataCoreRecordViewModel>())
         {
@@ -527,6 +532,7 @@ public sealed partial class DataCoreTabViewModel : PageViewModelBase
         try 
         {
             var content = DataCore.GetFromMainRecord(selectedRecord.Record ?? throw new InvalidOperationException("Record is null"));
+            content = ResolveXmlTags(content);
             SelectedRecordContent = content;
         }
         catch (Exception ex)
@@ -558,6 +564,36 @@ public sealed partial class DataCoreTabViewModel : PageViewModelBase
     private void ClearSearch()
     {
         SearchText = string.Empty;
+    }
+    
+    private string ResolveXmlTags(string xml)
+    {
+        try
+        {
+            // Use regex to find all Tag/tag RecordId attributes and replace them with comments showing the tag name
+            var regex = new Regex(
+                @"<[Tt]ag[^>]*RecordId=""([a-fA-F0-9\-]+)""[^>]*/?>",
+                RegexOptions.IgnoreCase);
+
+            return regex.Replace(xml, match =>
+            {
+                var recordId = match.Groups[1].Value;
+                var tagName = _tagDatabaseService.ResolveTagName(recordId);
+                
+                if (tagName != null)
+                {
+                    // Add a comment before the Tag element showing the tag name
+                    return $"<!-- Tag: {tagName} -->{match.Value}";
+                }
+                
+                return match.Value;
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to resolve XML tags");
+            return xml;
+        }
     }
 }
 

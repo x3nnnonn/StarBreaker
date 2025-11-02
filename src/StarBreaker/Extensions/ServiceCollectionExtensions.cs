@@ -20,6 +20,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<DataCoreTabViewModel>();
         services.AddTransient<DiffTabViewModel>();
         services.AddSingleton<IPreviewService, PreviewService>();
+        services.AddSingleton<ITagDatabaseService, TagDatabaseService>();
 
         if (isDesignMode)
         {
@@ -28,7 +29,6 @@ public static class ServiceCollectionExtensions
         else
         {
             services.AddSingleton<IP4kService, P4kService>();
-            services.AddSingleton<IPreviewService, PreviewService>();
         }
     }
 }

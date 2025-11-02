@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
+using System.Text.RegularExpressions;
 using Avalonia.Media.Imaging;
 using Microsoft.Extensions.Logging;
 using StarBreaker.Common;
@@ -20,15 +22,17 @@ public class PreviewService : IPreviewService
 {
     private readonly ILogger<PreviewService> _logger;
     private readonly IP4kService _p4KService;
+    private readonly ITagDatabaseService _tagDatabaseService;
 
     private static readonly string[] plaintextExtensions = [".cfg", ".xml", ".txt", ".json", "eco", ".ini"];
     private static readonly string[] ddsLodExtensions = [".dds"];
     private static readonly string[] bitmapExtensions = [".bmp", ".jpg", ".jpeg", ".png"];
     //, ".dds.1", ".dds.2", ".dds.3", ".dds.4", ".dds.5", ".dds.6", ".dds.7", ".dds.8", ".dds.9"];
 
-    public PreviewService(IP4kService p4kService, ILogger<PreviewService> logger)
+    public PreviewService(IP4kService p4kService, ITagDatabaseService tagDatabaseService, ILogger<PreviewService> logger)
     {
         _p4KService = p4kService;
+        _tagDatabaseService = tagDatabaseService;
         _logger = logger;
     }
 
@@ -52,12 +56,19 @@ public class PreviewService : IPreviewService
             }
 
             _logger.LogInformation("cryxml");
-            preview = new TextPreviewViewModel(c.ToString(), ".xml"); // CryXML converts to XML
+            var xmlText = c.ToString();
+            xmlText = ResolveXmlTags(xmlText);
+            preview = new TextPreviewViewModel(xmlText, ".xml"); // CryXML converts to XML
         }
         else if (plaintextExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
         {
             _logger.LogInformation("plaintextExtensions");
-            preview = new TextPreviewViewModel(entryStream.ReadString(), fileExtension);
+            var text = entryStream.ReadString();
+            if (fileExtension == ".xml")
+            {
+                text = ResolveXmlTags(text);
+            }
+            preview = new TextPreviewViewModel(text, fileExtension);
         }
         else if (ddsLodExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
         {
@@ -150,13 +161,20 @@ public class PreviewService : IPreviewService
                 }
 
                 _logger.LogInformation("cryxml from SOCPAK");
-                preview = new TextPreviewViewModel(c.ToString(), ".xml");
+                var socpakXmlText = c.ToString();
+                socpakXmlText = ResolveXmlTags(socpakXmlText);
+                preview = new TextPreviewViewModel(socpakXmlText, ".xml");
             }
             else if (plaintextExtensions.Any(p => fileName.EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
             {
                 _logger.LogInformation("plaintextExtensions from SOCPAK");
                 workingStream.Position = 0; // Reset position
-                preview = new TextPreviewViewModel(workingStream.ReadString(), fileExtension);
+                var text = workingStream.ReadString();
+                if (fileExtension == ".xml")
+                {
+                    text = ResolveXmlTags(text);
+                }
+                preview = new TextPreviewViewModel(text, fileExtension);
             }
             else if (ddsLodExtensions.Any(p => fileName.EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
             {
@@ -237,6 +255,36 @@ public class PreviewService : IPreviewService
                 current = dir.Parent;
             else
                 return null;
+        }
+    }
+
+    private string ResolveXmlTags(string xml)
+    {
+        try
+        {
+            // Use regex to find all Tag/tag RecordId attributes and replace them with comments showing the tag name
+            var regex = new Regex(
+                @"<[Tt]ag[^>]*RecordId=""([a-fA-F0-9\-]+)""[^>]*/?>",
+                RegexOptions.IgnoreCase);
+
+            return regex.Replace(xml, match =>
+            {
+                var recordId = match.Groups[1].Value;
+                var tagName = _tagDatabaseService.ResolveTagName(recordId);
+                
+                if (tagName != null)
+                {
+                    // Add a comment before the Tag element showing the tag name
+                    return $"<!-- Tag: {tagName} -->{match.Value}";
+                }
+                
+                return match.Value;
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to resolve XML tags");
+            return xml;
         }
     }
 }
