@@ -3,6 +3,7 @@ using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using StarBreaker.Common;
+using StarBreaker.CryChunkFile;
 using StarBreaker.CryXmlB;
 using StarBreaker.DataCore;
 using StarBreaker.Dds;
@@ -237,6 +238,10 @@ public class DiffCommand : ICommand
             .Where(e => e.Name.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
             .ToList();
 
+        var mainSocEntries = p4k.Entries
+            .Where(e => e.Name.EndsWith(".soc", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
         var socpakEntries = p4k.Entries
             .Where(e => (e.Name.EndsWith(".socpak", StringComparison.OrdinalIgnoreCase) || 
                          e.Name.EndsWith(".pak", StringComparison.OrdinalIgnoreCase)) &&
@@ -244,6 +249,7 @@ public class DiffCommand : ICommand
             .ToList();
 
         var socpakXmlEntries = new List<(P4kEntry entry, string socpakPath, P4kFile socpak)>();
+        var socpakSocEntries = new List<(P4kEntry entry, string socpakPath, P4kFile socpak)>();
         foreach (var socpakEntry in socpakEntries)
         {
             try
@@ -255,6 +261,13 @@ public class DiffCommand : ICommand
                     .ToList();
                 
                 socpakXmlEntries.AddRange(xmlsInSocpak);
+
+                var socsInSocpak = socpak.Entries
+                    .Where(e => e.Name.EndsWith(".soc", StringComparison.OrdinalIgnoreCase))
+                    .Select(e => (entry: e, socpakPath: socpakEntry.RelativeOutputPath, socpak: socpak))
+                    .ToList();
+
+                socpakSocEntries.AddRange(socsInSocpak);
             }
             catch
             {
@@ -262,17 +275,23 @@ public class DiffCommand : ICommand
             }
         }
 
-        var totalFiles = mainXmlEntries.Count + socpakXmlEntries.Count;
+        var totalXmlFiles = mainXmlEntries.Count + socpakXmlEntries.Count;
+        var totalSocFiles = mainSocEntries.Count + socpakSocEntries.Count;
         
-        if (totalFiles == 0)
+        if (totalXmlFiles == 0 && totalSocFiles == 0)
         {
-            await console.Output.WriteLineAsync("No XML files found in P4K or SOCPAKs.");
+            await console.Output.WriteLineAsync("No XML or SOC files found in P4K or SOCPAKs.");
             return;
         }
 
         foreach (var entry in mainXmlEntries)
         {
             ExtractXmlEntry(p4k, entry, outputDir, entry.RelativeOutputPath);
+        }
+
+        foreach (var entry in mainSocEntries)
+        {
+            ExtractSocEntry(p4k, entry, outputDir, entry.RelativeOutputPath);
         }
 
         foreach (var (entry, socpakPath, socpak) in socpakXmlEntries)
@@ -284,7 +303,17 @@ public class DiffCommand : ICommand
             ExtractXmlEntry(socpak, entry, outputDir, fullOutputPath);
         }
 
+        foreach (var (entry, socpakPath, socpak) in socpakSocEntries)
+        {
+            var socpakDir = Path.GetDirectoryName(socpakPath) ?? "";
+            var socpakName = Path.GetFileNameWithoutExtension(socpakPath);
+            var fullOutputPath = Path.Combine(socpakDir, socpakName, entry.RelativeOutputPath);
+
+            ExtractSocEntry(socpak, entry, outputDir, fullOutputPath);
+        }
+
         await console.Output.WriteLineAsync($"Extracted {mainXmlEntries.Count} XML files from P4K and {socpakXmlEntries.Count} from SOCPAKs.");
+        await console.Output.WriteLineAsync($"Extracted {mainSocEntries.Count} SOC files from P4K and {socpakSocEntries.Count} from SOCPAKs.");
     }
 
     private void ExtractXmlEntry(P4kFile p4k, P4kEntry entry, string baseOutputDir, string relativePath)
@@ -316,6 +345,58 @@ public class DiffCommand : ICommand
             using var fs = File.Create(entryPath);
             ms.Position = 0;
             ms.CopyTo(fs);
+        }
+    }
+
+    private void ExtractSocEntry(P4kFile p4k, P4kEntry entry, string baseOutputDir, string relativePath)
+    {
+        using var entryStream = p4k.OpenStream(entry);
+        using var ms = new MemoryStream();
+        entryStream.CopyTo(ms);
+        var socBytes = ms.ToArray();
+
+        var adjustedRelativePath = NormalizeSocRelativePath(relativePath);
+        var entryPath = Path.Combine(baseOutputDir, adjustedRelativePath);
+        var objectContainerDir = Path.GetDirectoryName(entryPath) ?? baseOutputDir;
+        var baseName = Path.GetFileNameWithoutExtension(entryPath);
+        Directory.CreateDirectory(objectContainerDir);
+
+        try
+        {
+            if (!CrChFile.TryRead(socBytes, out var socFile))
+            {
+                var rawPath = Path.Combine(objectContainerDir, Path.GetFileName(entryPath));
+                File.WriteAllBytes(rawPath, socBytes);
+                return;
+            }
+
+            var xmlChunks = 0;
+            for (int i = 0; i < socFile.Chunks.Length; i++)
+            {
+                var chunk = socFile.Chunks[i];
+                if (!CryXml.IsCryXmlB(chunk))
+                    continue;
+
+                using var chunkStream = new MemoryStream(chunk);
+                var cryXml = new CryXml(chunkStream);
+                var xmlPath = Path.Combine(objectContainerDir, $"{baseName}_{i}.xml");
+                File.WriteAllText(xmlPath, cryXml.ToString());
+                xmlChunks++;
+            }
+
+            if (xmlChunks == 0)
+            {
+                var rawPath = Path.Combine(objectContainerDir, Path.GetFileName(entryPath));
+                File.WriteAllBytes(rawPath, socBytes);
+            }
+        }
+        catch
+        {
+            var fallbackPath = Path.Combine(objectContainerDir, Path.GetFileName(entryPath));
+            if (!File.Exists(fallbackPath))
+            {
+                File.WriteAllBytes(fallbackPath, socBytes);
+            }
         }
     }
 
@@ -479,5 +560,29 @@ public class DiffCommand : ICommand
         }
         
         return diffAgainst;
+    }
+
+    private static string NormalizeSocRelativePath(string relativePath)
+    {
+        if (string.IsNullOrWhiteSpace(relativePath))
+            return relativePath;
+
+        var trimmed = relativePath.TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+            .Replace('\\', '/');
+
+        var parts = trimmed.Split('/', StringSplitOptions.RemoveEmptyEntries).ToList();
+
+        if (parts.Count > 0 && parts[0].Equals("ObjectContainers", StringComparison.OrdinalIgnoreCase))
+        {
+            parts.RemoveAt(0);
+        }
+
+        if (parts.Count > 0 && parts[0].Equals("Data", StringComparison.OrdinalIgnoreCase) == false)
+        {
+            parts.Insert(0, "Data");
+        }
+
+        var normalizedPath = Path.Combine(parts.ToArray());
+        return normalizedPath;
     }
 }

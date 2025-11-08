@@ -1,9 +1,12 @@
 ﻿using System;
+using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using Avalonia.Media.Imaging;
 using Microsoft.Extensions.Logging;
 using StarBreaker.Common;
+using StarBreaker.CryChunkFile;
+using StarBreaker.CryXmlB;
 using StarBreaker.Dds;
 using StarBreaker.Extensions;
 using StarBreaker.P4k;
@@ -59,6 +62,13 @@ public class PreviewService : IPreviewService
             var xmlText = c.ToString();
             xmlText = ResolveXmlTags(xmlText);
             preview = new TextPreviewViewModel(xmlText, ".xml"); // CryXML converts to XML
+        }
+        else if (fileName.EndsWith(".soc", StringComparison.InvariantCultureIgnoreCase))
+        {
+            using var ms = new MemoryStream();
+            entryStream.CopyTo(ms);
+            var socBytes = ms.ToArray();
+            preview = CreateSocPreview(socBytes);
         }
         else if (plaintextExtensions.Any(p => selectedEntry.GetName().EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
         {
@@ -164,6 +174,10 @@ public class PreviewService : IPreviewService
                 var socpakXmlText = c.ToString();
                 socpakXmlText = ResolveXmlTags(socpakXmlText);
                 preview = new TextPreviewViewModel(socpakXmlText, ".xml");
+            }
+            else if (fileName.EndsWith(".soc", StringComparison.InvariantCultureIgnoreCase))
+            {
+                preview = CreateSocPreview(fileBytes);
             }
             else if (plaintextExtensions.Any(p => fileName.EndsWith(p, StringComparison.InvariantCultureIgnoreCase)))
             {
@@ -285,6 +299,54 @@ public class PreviewService : IPreviewService
         {
             _logger.LogWarning(ex, "Failed to resolve XML tags");
             return xml;
+        }
+    }
+
+    private FilePreviewViewModel CreateSocPreview(byte[] socBytes)
+    {
+        try
+        {
+            if (!CrChFile.TryRead(socBytes, out var socFile))
+            {
+                return new TextPreviewViewModel("Unable to parse .soc file", ".txt");
+            }
+
+            var sb = new StringBuilder();
+            sb.AppendLine($"SOC chunk count: {socFile.Headers.Length}");
+            sb.AppendLine();
+
+            for (int i = 0; i < socFile.Headers.Length; i++)
+            {
+                var header = socFile.Headers[i];
+                sb.AppendLine($"[{i}] Type: {header.ChunkType} (0x{((ushort)header.ChunkType):X4}), Version: {header.Version}, Size: {header.Size} bytes");
+            }
+
+            string? firstXml = null;
+            foreach (var chunk in socFile.Chunks)
+            {
+                if (CryXml.IsCryXmlB(chunk))
+                {
+                    using var chunkStream = new MemoryStream(chunk);
+                    var cryXml = new CryXml(chunkStream);
+                    firstXml = ResolveXmlTags(cryXml.ToString());
+                    break;
+                }
+            }
+
+            if (firstXml != null)
+            {
+                sb.AppendLine();
+                sb.AppendLine("First CryXML chunk:");
+                sb.AppendLine(firstXml);
+                return new TextPreviewViewModel(sb.ToString(), ".xml");
+            }
+
+            return new TextPreviewViewModel(sb.ToString(), ".txt");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create SOC preview");
+            return new TextPreviewViewModel($"Failed to preview SOC file: {ex.Message}");
         }
     }
 }
