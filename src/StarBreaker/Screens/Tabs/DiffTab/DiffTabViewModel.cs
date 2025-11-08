@@ -744,8 +744,8 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             }
 
             // Create labels for the diff
-            var oldLabel = $"Left P4K";
-            var newLabel = $"Right P4K";
+            var oldLabel = "Old P4K";
+            var newLabel = "New P4K";
 
             var displayExtension = TextFormat == "json" ? ".json" : ".xml";
 
@@ -1145,7 +1145,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
 
         var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
             {
-            Title = "Select Left P4K File",
+            Title = "Select Old P4K File",
                 AllowMultiple = false,
                 FileTypeFilter = new[]
                 {
@@ -1171,7 +1171,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
 
         var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
             {
-            Title = "Select Right P4K File",
+            Title = "Select New P4K File",
                 AllowMultiple = false,
                 FileTypeFilter = new[]
                 {
@@ -1264,7 +1264,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
 
         var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
             {
-            Title = "Select Left P4K File (for DataCore)",
+            Title = "Select Old P4K File (for DataCore)",
                 AllowMultiple = false,
                 FileTypeFilter = new[]
                 {
@@ -1290,7 +1290,7 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
 
         var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = "Select Right P4K File (for DataCore)",
+            Title = "Select New P4K File (for DataCore)",
             AllowMultiple = false,
             FileTypeFilter = new[]
             {
@@ -2654,8 +2654,8 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         
         report.AppendLine($"# P4K Comparison Report: {leftVersion} → {rightVersion}");
         report.AppendLine($"**Generated:** {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-        report.AppendLine($"**Left P4K:** {Path.GetFileName(LeftP4kPath)} (v{leftVersion})");
-        report.AppendLine($"**Right P4K:** {Path.GetFileName(RightP4kPath)} (v{rightVersion})");
+        report.AppendLine($"**Old P4K:** {Path.GetFileName(LeftP4kPath)} (v{leftVersion})");
+        report.AppendLine($"**New P4K:** {Path.GetFileName(RightP4kPath)} (v{rightVersion})");
         report.AppendLine();
 
         // Summary

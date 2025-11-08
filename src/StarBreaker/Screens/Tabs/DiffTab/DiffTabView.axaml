@@ -166,10 +166,10 @@
             <StackPanel Spacing="12">
                 <TextBlock Text="P4K File Selection" FontSize="16" FontWeight="SemiBold"/>
                 
-                <!-- Left P4K Selection -->
+                <!-- Old P4K Selection -->
                 <Grid ColumnDefinitions="Auto,*,Auto">
                     <TextBlock Grid.Column="0" 
-                               Text="Left P4K:" 
+                               Text="Old P4K:" 
                                VerticalAlignment="Center" 
                                Width="100"
                                Margin="0,0,10,0"/>
@@ -184,10 +184,10 @@
                             MinWidth="80"/>
                 </Grid>
                 
-                <!-- Right P4K Selection -->
+                <!-- New P4K Selection -->
                 <Grid ColumnDefinitions="Auto,*,Auto">
                     <TextBlock Grid.Column="0" 
-                               Text="Right P4K:" 
+                               Text="New P4K:" 
                                VerticalAlignment="Center" 
                                Width="100"
                                Margin="0,0,10,0"/>
@@ -234,10 +234,10 @@
             <StackPanel Spacing="12">
                 <TextBlock Text="P4K File Selection (for DataCore Comparison)" FontSize="16" FontWeight="SemiBold"/>
                 
-                <!-- Left P4K Selection -->
+                <!-- Old P4K Selection -->
                 <Grid ColumnDefinitions="Auto,*,Auto">
                     <TextBlock Grid.Column="0" 
-                               Text="Left P4K:" 
+                               Text="Old P4K:" 
                                VerticalAlignment="Center" 
                                Width="100"
                                Margin="0,0,10,0"/>
@@ -252,10 +252,10 @@
                             MinWidth="80"/>
                 </Grid>
                 
-                <!-- Right P4K Selection -->
+                <!-- New P4K Selection -->
                 <Grid ColumnDefinitions="Auto,*,Auto">
                     <TextBlock Grid.Column="0" 
-                               Text="Right P4K:" 
+                               Text="New P4K:" 
                                VerticalAlignment="Center" 
                                Width="100"
                                Margin="0,0,10,0"/>
