@@ -236,7 +236,7 @@ public static class DdsFile
         return ConvertToPng(dds, applySrgbCorrection, false);
     }
 
-    public static unsafe MemoryStream ConvertToPng(byte[] dds, bool applySrgbCorrection, bool removeAlpha)
+    public static unsafe MemoryStream ConvertToPng(byte[] dds, bool applySrgbCorrection, bool premultiplyAlpha)
     {
         ScratchImage? tex = null;
         fixed (byte* ptr = dds)
@@ -264,9 +264,9 @@ public static class DdsFile
 
         DXGI_FORMAT targetFormat;
         
-        if (removeAlpha)
+        if (premultiplyAlpha)
         {
-            // First convert to RGBA to manually composite alpha onto white background
+            // Convert to RGBA so we can premultiply color channels before exporting
             targetFormat = DXGI_FORMAT.R8G8B8A8_UNORM;
         }
         else if (applySrgbCorrection)
@@ -296,7 +296,7 @@ public static class DdsFile
         }
 
         // If removeAlpha is enabled, composite alpha channel onto white background
-        if (removeAlpha)
+        if (premultiplyAlpha)
         {
             var image = tex.GetImage(0);
             var pixelsPtr = (byte*)image.Pixels;
@@ -304,7 +304,7 @@ public static class DdsFile
             var width = (int)meta.Width;
             var height = (int)meta.Height;
 
-            // Process each pixel: composite alpha onto white background
+            // Premultiply RGB values to avoid overbright previews while keeping original alpha
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
@@ -318,10 +318,10 @@ public static class DdsFile
                     // Alpha blend with black background: result = src * alpha + black * (1 - alpha)
                     // Since black = 0, this simplifies to: result = src * alpha
                     float alpha = a / 255.0f;
-                    pixelsPtr[offset + 0] = (byte)(r * alpha);
-                    pixelsPtr[offset + 1] = (byte)(g * alpha);
-                    pixelsPtr[offset + 2] = (byte)(b * alpha);
-                    pixelsPtr[offset + 3] = 255; // Set alpha to fully opaque
+                    pixelsPtr[offset + 0] = (byte)Math.Round(r * alpha);
+                    pixelsPtr[offset + 1] = (byte)Math.Round(g * alpha);
+                    pixelsPtr[offset + 2] = (byte)Math.Round(b * alpha);
+                    pixelsPtr[offset + 3] = a;
                 }
             }
         }
