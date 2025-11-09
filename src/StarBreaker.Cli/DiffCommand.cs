@@ -570,19 +570,12 @@ public class DiffCommand : ICommand
         var trimmed = relativePath.TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
             .Replace('\\', '/');
 
-        var parts = trimmed.Split('/', StringSplitOptions.RemoveEmptyEntries).ToList();
+        var parts = trimmed.Split('/', StringSplitOptions.RemoveEmptyEntries);
 
-        if (parts.Count > 0 && parts[0].Equals("ObjectContainers", StringComparison.OrdinalIgnoreCase))
-        {
-            parts.RemoveAt(0);
-        }
+        if (parts.Length == 0)
+            return string.Empty;
 
-        if (parts.Count > 0 && parts[0].Equals("Data", StringComparison.OrdinalIgnoreCase) == false)
-        {
-            parts.Insert(0, "Data");
-        }
-
-        var normalizedPath = Path.Combine(parts.ToArray());
+        var normalizedPath = Path.Combine(parts);
         return normalizedPath;
     }
 }

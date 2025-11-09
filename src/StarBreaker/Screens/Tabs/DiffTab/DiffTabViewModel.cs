@@ -4570,16 +4570,17 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         entryStream.CopyTo(ms);
         var socBytes = ms.ToArray();
 
-        var relativeDir = Path.GetDirectoryName(relativePath) ?? string.Empty;
-        var baseName = Path.GetFileNameWithoutExtension(relativePath);
-        var objectContainerDir = Path.Combine(baseOutputDir, "ObjectContainers", relativeDir);
+        var adjustedRelativePath = NormalizeSocRelativePath(relativePath);
+        var entryPath = Path.Combine(baseOutputDir, adjustedRelativePath);
+        var objectContainerDir = Path.GetDirectoryName(entryPath) ?? baseOutputDir;
+        var baseName = Path.GetFileNameWithoutExtension(entryPath);
         Directory.CreateDirectory(objectContainerDir);
 
         try
         {
             if (!CrChFile.TryRead(socBytes, out var socFile))
             {
-                var rawPath = Path.Combine(objectContainerDir, baseName + ".soc");
+                var rawPath = Path.Combine(objectContainerDir, Path.GetFileName(entryPath));
                 File.WriteAllBytes(rawPath, socBytes);
                 return;
             }
@@ -4588,29 +4589,29 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
             for (int i = 0; i < socFile.Chunks.Length; i++)
             {
                 var chunk = socFile.Chunks[i];
-                if (!CryXml.IsCryXmlB(chunk))
+                if (!CryXmlB.CryXml.IsCryXmlB(chunk))
                     continue;
 
                 using var chunkStream = new MemoryStream(chunk);
-                var cryXml = new CryXml(chunkStream);
+                var cryXml = new CryXmlB.CryXml(chunkStream);
                 var xmlPath = Path.Combine(objectContainerDir, $"{baseName}_{i}.xml");
-                File.WriteAllText(xmlPath, cryXml.ToString());
+                File.WriteAllText(xmlPath, ResolveXmlTags(cryXml.ToString()));
                 xmlChunks++;
             }
 
             if (xmlChunks == 0)
             {
-                var rawPath = Path.Combine(objectContainerDir, baseName + ".soc");
+                var rawPath = Path.Combine(objectContainerDir, Path.GetFileName(entryPath));
                 File.WriteAllBytes(rawPath, socBytes);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to parse SOC file: {FileName}", entry.Name);
-            var fallbackPath = Path.Combine(objectContainerDir, baseName + ".soc");
-            if (!File.Exists(fallbackPath))
+            _logger.LogWarning(ex, "Failed to convert SOC to XML, writing raw file");
+            var rawPath = Path.Combine(objectContainerDir, Path.GetFileName(entryPath));
+            if (!File.Exists(rawPath))
             {
-                File.WriteAllBytes(fallbackPath, socBytes);
+                File.WriteAllBytes(rawPath, socBytes);
             }
         }
     }
@@ -4986,19 +4987,12 @@ public sealed partial class DiffTabViewModel : PageViewModelBase
         var trimmed = relativePath.TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
             .Replace('\\', '/');
 
-        var parts = trimmed.Split('/', StringSplitOptions.RemoveEmptyEntries).ToList();
+        var parts = trimmed.Split('/', StringSplitOptions.RemoveEmptyEntries);
 
-        if (parts.Count > 0 && parts[0].Equals("ObjectContainers", StringComparison.OrdinalIgnoreCase))
-        {
-            parts.RemoveAt(0);
-        }
+        if (parts.Length == 0)
+            return string.Empty;
 
-        if (parts.Count > 0 && parts[0].Equals("Data", StringComparison.OrdinalIgnoreCase) == false)
-        {
-            parts.Insert(0, "Data");
-        }
-
-        var normalizedPath = Path.Combine(parts.ToArray());
+        var normalizedPath = Path.Combine(parts);
         return normalizedPath;
     }
 } 
